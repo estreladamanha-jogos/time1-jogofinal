@@ -3,13 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🌟 Estrela da Manhã — Aventura</title>
+<title>🌟 Estrela da Manhã — Caminho do Karatê</title>
 <style>
   :root{
-    --cor-ceu1:#7ec8f2;
-    --cor-ceu2:#bfe8ff;
-    --cor-estrela:#ffd93d;
-    --cor-hud-bg:rgba(20,20,40,.55);
+    --cor-hud-bg:rgba(20,20,30,.6);
+    --cor-destaque:#ffd93d;
   }
   *{box-sizing:border-box;}
   html,body{
@@ -18,6 +16,7 @@
     overflow:hidden;
     font-family:'Trebuchet MS','Segoe UI',Verdana,sans-serif;
     touch-action:none;
+    user-select:none;
   }
   #jogoContainer{
     position:relative;
@@ -30,24 +29,43 @@
     max-width:100%;
     max-height:100%;
     image-rendering:pixelated;
-    background:linear-gradient(var(--cor-ceu1),var(--cor-ceu2));
+    background:#7ec8f2;
     box-shadow:0 0 40px rgba(0,0,0,.5);
   }
 
   /* ---------- HUD ---------- */
   #hud{
-    position:absolute;top:14px;left:14px;
-    display:flex;gap:18px;align-items:center;
+    position:absolute;top:12px;left:12px;
+    display:flex;gap:14px;align-items:center;
     background:var(--cor-hud-bg);
-    padding:8px 16px;border-radius:14px;
-    color:#fff;font-weight:bold;font-size:18px;
+    padding:7px 14px;border-radius:12px;
+    color:#fff;font-weight:bold;font-size:15px;
     text-shadow:0 2px 3px rgba(0,0,0,.5);
     backdrop-filter:blur(3px);
     pointer-events:none;
-    user-select:none;
+    z-index:5;
   }
-  #vidasBox span{margin-right:2px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));}
+  #hud .faixaIcone{width:16px;height:16px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.4);}
   #vidasBox span.vazio{opacity:.25;}
+  #hudNivel{
+    position:absolute;top:12px;right:12px;
+    background:var(--cor-hud-bg);
+    padding:6px 12px;border-radius:12px;
+    color:#fff;font-size:13px;font-weight:bold;
+    text-shadow:0 2px 3px rgba(0,0,0,.5);
+    pointer-events:none;z-index:5;
+  }
+  #barraChefeBox{
+    position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:300px;max-width:60vw;
+    display:none;
+    flex-direction:column;align-items:center;
+    z-index:5;pointer-events:none;
+  }
+  #barraChefeBox.ativa{display:flex;}
+  #barraChefeNome{color:#ffd93d;font-size:13px;font-weight:bold;text-shadow:0 2px 3px rgba(0,0,0,.7);margin-bottom:2px;}
+  #barraChefeFundo{width:100%;height:12px;background:rgba(0,0,0,.5);border-radius:6px;border:2px solid #000;overflow:hidden;}
+  #barraChefeVida{height:100%;background:linear-gradient(90deg,#ff5c5c,#ff9d5c);width:100%;transition:width .15s ease;}
 
   /* ---------- Telas (overlay) ---------- */
   .tela{
@@ -55,77 +73,73 @@
     display:none;
     align-items:center;justify-content:center;
     flex-direction:column;
-    background:rgba(5,8,25,.82);
-    color:#fff;
-    text-align:center;
-    animation:fadeIn .5s ease;
+    background:rgba(5,8,25,.88);
+    color:#fff;text-align:center;
+    animation:fadeIn .4s ease;
     z-index:10;
+    padding:16px;
+    overflow:auto;
   }
   .tela.ativa{display:flex;}
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
   .tela h1{
-    font-size:2.6em;margin:0 0 6px 0;
-    color:var(--cor-estrela);
+    font-size:2.1em;margin:0 0 4px 0;
+    color:var(--cor-destaque);
     text-shadow:0 0 18px rgba(255,217,61,.8),0 3px 4px rgba(0,0,0,.5);
   }
-  .tela h2{
-    font-size:1.3em;font-weight:normal;margin:0 0 22px 0;
-    opacity:.9;
-  }
-  .tela p.pontos{
-    font-size:1.6em;margin-bottom:26px;
-    color:#ffe27a;
-  }
+  .tela h2{font-size:1.1em;font-weight:normal;margin:0 0 18px 0;opacity:.9;}
+  .tela p.pontos{font-size:1.3em;margin:4px 0;color:#ffe27a;}
   .botaoJogo{
     background:linear-gradient(180deg,#ffd93d,#f2a900);
-    border:none;border-radius:30px;
-    padding:14px 42px;
-    font-size:1.15em;font-weight:bold;
-    color:#3a2400;
+    border:none;border-radius:26px;
+    padding:12px 34px;margin:6px;
+    font-size:1.05em;font-weight:bold;color:#3a2400;
     cursor:pointer;
-    box-shadow:0 6px 0 #b97a00, 0 8px 14px rgba(0,0,0,.4);
+    box-shadow:0 5px 0 #b97a00, 0 7px 12px rgba(0,0,0,.4);
     transition:transform .08s ease;
-    letter-spacing:.5px;
+    letter-spacing:.4px;
   }
-  .botaoJogo:active{
-    transform:translateY(4px);
-    box-shadow:0 2px 0 #b97a00, 0 4px 8px rgba(0,0,0,.4);
-  }
+  .botaoJogo:active{transform:translateY(3px);box-shadow:0 2px 0 #b97a00, 0 3px 6px rgba(0,0,0,.4);}
+  .botaoJogo.secundario{background:linear-gradient(180deg,#8fb7d8,#5a84a8);color:#0c2233;box-shadow:0 5px 0 #3d5e78,0 7px 12px rgba(0,0,0,.4);}
+  .botaoJogo.secundario:active{box-shadow:0 2px 0 #3d5e78,0 3px 6px rgba(0,0,0,.4);}
+  .botaoJogo:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none;}
 
-  #telaInicio h1{font-size:2.3em;}
-  #telaInicio .subtitulo{
-    font-size:1em;opacity:.85;margin-bottom:30px;max-width:480px;
+  #telaTitulo .subtitulo{font-size:.95em;opacity:.8;margin-bottom:22px;max-width:480px;}
+  .gradeNiveis{display:grid;grid-template-columns:repeat(4,72px);gap:10px;margin:14px 0 20px;}
+  .botaoNivel{
+    width:72px;height:72px;border-radius:12px;border:3px solid rgba(255,255,255,.25);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:11px;font-weight:bold;color:#1a1a1a;cursor:pointer;gap:3px;
   }
+  .botaoNivel .num{font-size:16px;}
+  .botaoNivel:disabled{opacity:.3;cursor:not-allowed;filter:grayscale(1);}
+  .listaControles{text-align:left;font-size:.92em;line-height:1.7;max-width:380px;margin:0 0 18px;background:rgba(255,255,255,.06);padding:14px 18px;border-radius:12px;}
+  .listaControles b{color:var(--cor-destaque);}
+  .creditosTexto{max-width:440px;font-size:.88em;line-height:1.6;opacity:.85;margin-bottom:18px;}
+  .faixaGrande{width:64px;height:64px;border-radius:10px;margin:0 auto 14px;border:3px solid rgba(255,255,255,.4);box-shadow:0 0 24px rgba(255,255,255,.25);}
 
   #dicaMobile{
-    position:absolute;bottom:10px;left:0;right:0;
-    text-align:center;color:rgba(255,255,255,.55);
-    font-size:12px;pointer-events:none;
-    user-select:none;
+    position:absolute;bottom:8px;left:0;right:0;
+    text-align:center;color:rgba(255,255,255,.5);
+    font-size:11px;pointer-events:none;z-index:5;
   }
-
-  /* ---------- Controles touch ---------- */
   #controlesTouch{
-    position:absolute;bottom:18px;left:0;right:0;
-    display:none;
-    justify-content:space-between;
-    padding:0 18px;
-    pointer-events:none;
+    position:absolute;bottom:16px;left:0;right:0;
+    display:none;justify-content:space-between;padding:0 16px;
+    pointer-events:none;z-index:5;
   }
   #controlesTouch.ativo{display:flex;}
-  .ladoEsq,.ladoDir{display:flex;gap:12px;align-items:flex-end;pointer-events:none;}
+  .ladoEsq,.ladoDir{display:flex;gap:10px;align-items:flex-end;pointer-events:none;}
   .btnTouch{
-    width:62px;height:62px;border-radius:50%;
-    background:rgba(255,255,255,.18);
-    border:2px solid rgba(255,255,255,.4);
-    color:#fff;font-size:26px;
+    width:56px;height:56px;border-radius:50%;
+    background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);
+    color:#fff;font-size:22px;
     display:flex;align-items:center;justify-content:center;
-    pointer-events:all;
-    user-select:none;
-    backdrop-filter:blur(2px);
+    pointer-events:all;backdrop-filter:blur(2px);
   }
   .btnTouch:active{background:rgba(255,255,255,.4);}
-  #btnAtaque{background:rgba(255,120,80,.35);border-color:rgba(255,150,100,.6);}
+  #btnSoco{background:rgba(255,120,80,.35);border-color:rgba(255,150,100,.6);}
+  #btnDefender{background:rgba(120,170,255,.35);border-color:rgba(150,190,255,.6);}
 </style>
 </head>
 <body>
@@ -133,38 +147,107 @@
   <canvas id="canvas" width="960" height="540"></canvas>
 
   <div id="hud">
+    <span><span class="faixaIcone" id="faixaIcone"></span><span id="faixaNome">Branca</span></span>
     <div id="vidasBox"></div>
     <div id="pontosBox">⭐ <span id="pontosValor">0</span></div>
   </div>
+  <div id="hudNivel">Nível <span id="hudNivelNum">1</span> — <span id="hudNivelTema">O Primeiro Passo</span></div>
 
-  <div id="telaInicio" class="tela ativa">
+  <div id="barraChefeBox">
+    <div id="barraChefeNome">CHEFE</div>
+    <div id="barraChefeFundo"><div id="barraChefeVida"></div></div>
+  </div>
+
+  <!-- TELA: TÍTULO -->
+  <div id="telaTitulo" class="tela ativa">
     <h1>🌟 ESTRELA DA MANHÃ</h1>
-    <h2>A Aventura</h2>
-    <p class="subtitulo">Fase 1 — "O Caminho da Estrela"</p>
-    <button class="botaoJogo" id="btnIniciar">COMEÇAR</button>
+    <h2>CAMINHO DO KARATÊ</h2>
+    <p class="subtitulo">Inspirado no espírito de comunidade, esporte e superação do Projeto Estrela da Manhã — Lauro de Freitas, Bahia.</p>
+    <button class="botaoJogo" id="btnJogar">JOGAR</button>
+    <button class="botaoJogo secundario" id="btnAbrirSelecao">SELEÇÃO DE NÍVEIS</button>
+    <button class="botaoJogo secundario" id="btnAbrirComoJogar">COMO JOGAR</button>
+    <button class="botaoJogo secundario" id="btnAbrirCreditos">CRÉDITOS</button>
   </div>
 
-  <div id="telaVitoria" class="tela">
-    <h1>🌟 FASE CONCLUÍDA!</h1>
-    <h2>"O Caminho da Estrela"</h2>
-    <p class="pontos">⭐ <span id="pontosFinais">0</span></p>
-    <button class="botaoJogo" id="btnContinuar">CONTINUAR</button>
+  <!-- TELA: SELEÇÃO DE NÍVEIS -->
+  <div id="telaSelecao" class="tela">
+    <h1 style="font-size:1.5em;">SELEÇÃO DE NÍVEIS</h1>
+    <div class="gradeNiveis" id="gradeNiveis"></div>
+    <button class="botaoJogo secundario" id="btnVoltarSelecao">VOLTAR</button>
   </div>
 
+  <!-- TELA: COMO JOGAR -->
+  <div id="telaComoJogar" class="tela">
+    <h1 style="font-size:1.5em;">COMO JOGAR</h1>
+    <div class="listaControles">
+      <div><b>A / ←</b> — andar para esquerda</div>
+      <div><b>D / →</b> — andar para direita</div>
+      <div><b>W / ↑ / ESPAÇO</b> — pular</div>
+      <div><b>J</b> — soco (repita para combo: soco, soco, chute)</div>
+      <div><b>K</b> (segurar) — defender</div>
+      <div><b>K + J</b> — contra-ataque especial</div>
+      <div><b>ESC</b> — pausar</div>
+    </div>
+    <button class="botaoJogo secundario" id="btnVoltarComoJogar">VOLTAR</button>
+  </div>
+
+  <!-- TELA: CRÉDITOS -->
+  <div id="telaCreditos" class="tela">
+    <h1 style="font-size:1.5em;">CRÉDITOS</h1>
+    <div class="creditosTexto">
+      Jogo original criado como homenagem ao espírito do <b>Projeto Estrela da Manhã</b>, em Lauro de Freitas, Bahia —
+      comunidade, esporte, disciplina e superação.<br><br>
+      Personagens, inimigos, fases, artes e código são originais. O jogo usa apenas a estrutura de gênero
+      (plataforma 2D de ação) como referência, sem copiar conteúdo de nenhum outro jogo.<br><br>
+      Feito em HTML5 Canvas + JavaScript puro.
+    </div>
+    <button class="botaoJogo secundario" id="btnVoltarCreditos">VOLTAR</button>
+  </div>
+
+  <!-- TELA: PAUSA -->
+  <div id="telaPausa" class="tela">
+    <h1 style="font-size:1.6em;">PAUSADO</h1>
+    <button class="botaoJogo" id="btnContinuarPausa">CONTINUAR</button>
+    <button class="botaoJogo secundario" id="btnMenuPausa">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: TRANSIÇÃO DE FAIXA -->
+  <div id="telaTransicao" class="tela">
+    <h1 style="font-size:1.4em;">NÍVEL CONCLUÍDO!</h1>
+    <h2 id="transicaoTema"></h2>
+    <p class="pontos">⭐ <span id="transicaoPontos">0</span></p>
+    <div class="faixaGrande" id="transicaoFaixaCor"></div>
+    <h2 id="transicaoFaixaNome" style="margin-bottom:22px;">NOVA FAIXA DESBLOQUEADA</h2>
+    <button class="botaoJogo" id="btnProximoNivel">CONTINUAR</button>
+    <button class="botaoJogo secundario" id="btnMenuTransicao">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: GAME OVER -->
   <div id="telaGameOver" class="tela">
-    <h1 style="color:#ff6b6b;text-shadow:0 0 18px rgba(255,107,107,.8)">GAME OVER</h1>
-    <button class="botaoJogo" id="btnReiniciar">JOGAR NOVAMENTE</button>
+    <h1 style="color:#ff6b6b;text-shadow:0 0 18px rgba(255,107,107,.8);font-size:1.8em;">GAME OVER</h1>
+    <h2>A jornada continua...</h2>
+    <button class="botaoJogo" id="btnTentarNovamente">TENTAR NOVAMENTE</button>
+    <button class="botaoJogo secundario" id="btnMenuGameOver">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: VITÓRIA FINAL -->
+  <div id="telaVitoriaFinal" class="tela">
+    <h1 style="font-size:1.9em;">🥋 FAIXA PRETA CONQUISTADA</h1>
+    <h2>🌟 JORNADA CONCLUÍDA</h2>
+    <p class="pontos">Níveis concluídos: 8/8</p>
+    <p class="pontos">Pontuação final: <span id="pontosFinaisTotais">0</span></p>
+    <button class="botaoJogo" id="btnMenuVitoriaFinal">MENU PRINCIPAL</button>
   </div>
 
   <div id="dicaMobile">Toque nos controles para jogar</div>
-
   <div id="controlesTouch">
     <div class="ladoEsq">
       <div class="btnTouch" id="btnEsq">◀</div>
       <div class="btnTouch" id="btnDir">▶</div>
     </div>
     <div class="ladoDir">
-      <div class="btnTouch" id="btnAtaque">✦</div>
+      <div class="btnTouch" id="btnDefender">🛡</div>
+      <div class="btnTouch" id="btnSoco">👊</div>
       <div class="btnTouch" id="btnPular">⤴</div>
     </div>
   </div>
@@ -172,31 +255,72 @@
 
 <script>
 /* =====================================================================
-   🌟 ESTRELA DA MANHÃ — A AVENTURA — Fase 1: "O Caminho da Estrela"
-   HTML5 Canvas 2D + JavaScript puro + Web Audio API — sem backend,
-   sem bibliotecas externas. Jogo original inspirado apenas no GÊNERO
-   plataforma/ação 2D (ritmo, combate, obstáculos, câmera lateral).
-   Código organizado em seções para facilitar novas fases no futuro.
+   🌟 ESTRELA DA MANHÃ — CAMINHO DO KARATÊ
+   HTML5 Canvas 2D + JavaScript puro + Web Audio API + localStorage.
+   8 níveis (faixa branca -> faixa preta), combate com combo de golpes,
+   6 inimigos originais, chefe intermediário e chefe final.
+   Inspirado apenas no GÊNERO plataforma/ação 2D — sem copiar conteúdo
+   de nenhum outro jogo. Inspirado tematicamente no espírito do
+   Projeto Estrela da Manhã (Lauro de Freitas, Bahia): comunidade,
+   esporte, disciplina, superação — sem inventar fatos institucionais.
 ===================================================================== */
 
 /* =====================================================================
-   1. CONFIGURAÇÃO
+   SISTEMA: CONFIGURAÇÃO
 ===================================================================== */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const LARGURA = canvas.width;
 const ALTURA = canvas.height;
-const CHAO_Y = ALTURA - 90;      // linha base do chão
-const INICIO_X = 80;             // ponto absoluto de início da fase
+const CHAO_Y = ALTURA - 90;
+const INICIO_X = 80;
 const VIDAS_MAX = 3;
-const GRAVIDADE = 0.62;          // por frame, a 60fps (escalada por dt)
+const GRAVIDADE = 0.62;
 
 const teclas = {};
-
 function clamp(v,min,max){ return v<min?min:(v>max?max:v); }
+function agora(){ return performance.now(); }
 
 /* =====================================================================
-   2. ÁUDIO — Web Audio API (sem arquivos externos)
+   SISTEMA: FAIXAS (progressão)
+===================================================================== */
+const FAIXAS = [
+  {cor:'#f5f5f2', nome:'Faixa Branca',  tema:'O Primeiro Passo'},
+  {cor:'#ffd93d', nome:'Faixa Amarela', tema:'Disciplina'},
+  {cor:'#ff8c3b', nome:'Faixa Laranja', tema:'Superação'},
+  {cor:'#4caf50', nome:'Faixa Verde',   tema:'Crescimento'},
+  {cor:'#3d8bff', nome:'Faixa Azul',    tema:'Controle'},
+  {cor:'#9b4dff', nome:'Faixa Roxa',    tema:'Determinação'},
+  {cor:'#7a4a2b', nome:'Faixa Marrom',  tema:'Preparação'},
+  {cor:'#1c1c1c', nome:'Faixa Preta',   tema:'O Grande Desafio'},
+];
+const TOTAL_NIVEIS = 8;
+
+/* =====================================================================
+   SISTEMA: SAVE SYSTEM (localStorage)
+===================================================================== */
+const SaveSystem = (() => {
+  const CHAVE = 'estrelaManha_karate_progresso_v1';
+  function padrao(){ return { nivelDesbloqueado: 0, pontosPorNivel: new Array(TOTAL_NIVEIS).fill(0) }; }
+  function carregar(){
+    try{
+      const bruto = localStorage.getItem(CHAVE);
+      if(!bruto) return padrao();
+      const dados = JSON.parse(bruto);
+      if(typeof dados.nivelDesbloqueado!=='number') return padrao();
+      if(!Array.isArray(dados.pontosPorNivel)) dados.pontosPorNivel = new Array(TOTAL_NIVEIS).fill(0);
+      return dados;
+    }catch(e){ return padrao(); }
+  }
+  function salvar(dados){
+    try{ localStorage.setItem(CHAVE, JSON.stringify(dados)); }catch(e){}
+  }
+  return { carregar, salvar };
+})();
+let progresso = SaveSystem.carregar();
+
+/* =====================================================================
+   SISTEMA: ÁUDIO (Web Audio API — procedural, sem arquivos externos)
 ===================================================================== */
 const AudioSys = (() => {
   let ctxAudio = null;
@@ -205,7 +329,7 @@ const AudioSys = (() => {
     if(ctxAudio.state === 'suspended') ctxAudio.resume();
     return ctxAudio;
   }
-  function tom(freq, duracao, tipo='sine', volIni=0.18, atraso=0){
+  function tom(freq, duracao, tipo='sine', volIni=0.16, atraso=0){
     try{
       const ac = getCtx();
       const osc = ac.createOscillator();
@@ -219,46 +343,102 @@ const AudioSys = (() => {
       osc.stop(ac.currentTime + atraso + duracao);
     }catch(e){}
   }
+  function ruidoImpacto(duracao=0.08, vol=0.14){
+    try{
+      const ac = getCtx();
+      const bufferSize = Math.floor(ac.sampleRate*duracao);
+      const buffer = ac.createBuffer(1,bufferSize,ac.sampleRate);
+      const dados = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) dados[i] = (Math.random()*2-1)*(1-i/bufferSize);
+      const fonte = ac.createBufferSource();
+      fonte.buffer = buffer;
+      const gain = ac.createGain();
+      gain.gain.setValueAtTime(vol, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+duracao);
+      fonte.connect(gain); gain.connect(ac.destination);
+      fonte.start();
+    }catch(e){}
+  }
+  let ambiente = null;
   return {
-    pular(){ tom(520,0.12,'square',0.15); tom(780,0.08,'square',0.08,0.03); },
-    atacar(){ tom(320,0.07,'sawtooth',0.15); },
-    acerto(){ tom(700,0.06,'square',0.13); },
-    dano(){ tom(160,0.25,'sawtooth',0.18); },
-    inimigoDerrotado(){ tom(500,0.1,'square',0.15); tom(260,0.12,'square',0.1,0.05); },
-    guardiaoAtingido(){ tom(220,0.14,'sawtooth',0.16); },
-    guardiaoSlam(){ tom(90,0.3,'sawtooth',0.2); },
-    checkpoint(){ tom(660,0.1,'sine',0.16); tom(880,0.14,'sine',0.14,0.08); tom(1100,0.18,'sine',0.12,0.16); },
-    vitoria(){
-      const notas=[523,659,784,1046,1318];
-      notas.forEach((f,i)=> tom(f,0.22,'triangle',0.16,i*0.12) );
+    pular(){ tom(520,0.11,'square',0.14); tom(760,0.07,'square',0.07,0.03); },
+    aterrissar(){ tom(180,0.08,'sine',0.1); },
+    soco(){ tom(330,0.06,'sawtooth',0.13); },
+    socoForte(){ tom(260,0.09,'sawtooth',0.16); ruidoImpacto(0.05,0.1); },
+    contraataque(){ tom(180,0.05,'square',0.1); tom(520,0.14,'sawtooth',0.18,0.03); ruidoImpacto(0.08,0.14); },
+    bloqueio(){ tom(880,0.05,'square',0.09); },
+    impacto(){ ruidoImpacto(0.07,0.12); },
+    dano(){ tom(150,0.24,'sawtooth',0.17); },
+    morte(){ tom(180,0.3,'sawtooth',0.15); tom(90,0.4,'sawtooth',0.14,0.15); },
+    inimigoDerrotado(){ tom(500,0.1,'square',0.14); tom(260,0.12,'square',0.1,0.05); },
+    guardaQuebrada(){ tom(700,0.05,'square',0.12); tom(400,0.08,'square',0.1,0.04); },
+    checkpoint(){ tom(660,0.1,'sine',0.15); tom(880,0.14,'sine',0.13,0.08); tom(1100,0.18,'sine',0.11,0.16); },
+    novaFaixa(){
+      [523,659,784,1046].forEach((f,i)=> tom(f,0.2,'triangle',0.15,i*0.11));
+    },
+    chefeAlerta(){ tom(110,0.5,'sawtooth',0.18); tom(90,0.6,'sawtooth',0.14,0.2); },
+    chefeDerrotado(){ [200,300,450,600,900].forEach((f,i)=>tom(f,0.22,'sawtooth',0.15,i*0.09)); },
+    vitoria(){ [523,659,784,1046,1318].forEach((f,i)=> tom(f,0.22,'triangle',0.16,i*0.12)); },
+    gameOver(){ [300,260,220,160].forEach((f,i)=> tom(f,0.3,'sawtooth',0.15,i*0.18)); },
+    ambienteIniciar(cor){
+      this.ambienteParar();
+      try{
+        const ac = getCtx();
+        const osc1 = ac.createOscillator(); const osc2 = ac.createOscillator();
+        const gain = ac.createGain();
+        osc1.type='sine'; osc2.type='sine';
+        osc1.frequency.value = cor==='grave'?65:98;
+        osc2.frequency.value = (cor==='grave'?65:98)*1.5;
+        gain.gain.value = 0.018;
+        osc1.connect(gain); osc2.connect(gain); gain.connect(ac.destination);
+        osc1.start(); osc2.start();
+        ambiente = {osc1,osc2,gain};
+      }catch(e){}
+    },
+    ambienteParar(){
+      if(ambiente){
+        try{ ambiente.gain.gain.setTargetAtTime(0, getCtx().currentTime, 0.2); ambiente.osc1.stop(getCtx().currentTime+0.5); ambiente.osc2.stop(getCtx().currentTime+0.5); }catch(e){}
+        ambiente=null;
+      }
     }
   };
 })();
 
 /* =====================================================================
-   3. CÂMERA
+   SISTEMA: CÂMERA (com screen shake)
 ===================================================================== */
 class Camera{
-  constructor(){ this.x = 0; }
+  constructor(){ this.x=0; this.abaloForca=0; this.abaloAte=0; this.offX=0; this.offY=0; }
   seguir(alvo, limiteMundo, dt){
-    const alvoX = alvo.x - LARGURA * 0.4;
-    this.x += (alvoX - this.x) * clamp(0.09*dt,0,1);
-    if(this.x < 0) this.x = 0;
-    if(this.x > limiteMundo - LARGURA) this.x = limiteMundo - LARGURA;
+    const alvoX = alvo.x - LARGURA*0.4;
+    this.x += (alvoX-this.x) * clamp(0.09*dt,0,1);
+    if(this.x<0) this.x=0;
+    if(this.x>limiteMundo-LARGURA) this.x=limiteMundo-LARGURA;
+    if(agora()<this.abaloAte){
+      const t = (this.abaloAte-agora())/this.abaloDuracao;
+      this.offX = (Math.random()*2-1)*this.abaloForca*t;
+      this.offY = (Math.random()*2-1)*this.abaloForca*t*0.6;
+    } else { this.offX=0; this.offY=0; }
+  }
+  abalar(forca, duracaoMs){
+    this.abaloForca = Math.max(this.abaloForca, forca);
+    this.abaloDuracao = duracaoMs;
+    this.abaloAte = agora()+duracaoMs;
   }
 }
 
 /* =====================================================================
-   4. PARTÍCULAS (poeira, impacto, checkpoint, vitória)
+   SISTEMA: PARTÍCULAS
 ===================================================================== */
 class Particula{
-  constructor(x,y,cor,vx,vy,vida,tamanho=4){
+  constructor(x,y,cor,vx,vy,vida,tamanho=4,tipo='bola'){
     this.x=x;this.y=y;this.cor=cor;this.vx=vx;this.vy=vy;
-    this.vida=vida;this.vidaMax=vida;this.tamanho=tamanho;
+    this.vida=vida;this.vidaMax=vida;this.tamanho=tamanho;this.tipo=tipo;
+    this.ang = Math.atan2(vy,vx);
   }
   atualizar(dt){
     this.x+=this.vx*dt; this.y+=this.vy*dt;
-    this.vy+=0.12*dt;
+    if(this.tipo!=='linha') this.vy+=0.12*dt;
     this.vida-=dt;
   }
   get morta(){ return this.vida<=0; }
@@ -266,16 +446,24 @@ class Particula{
     const alpha = Math.max(this.vida/this.vidaMax,0);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = this.cor;
-    ctx.beginPath();
-    ctx.arc(this.x-camX, this.y, this.tamanho*alpha, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    if(this.tipo==='linha'){
+      ctx.strokeStyle=this.cor; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(this.x-camX-this.vx*1.6, this.y-this.vy*1.6);
+      ctx.lineTo(this.x-camX, this.y);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x-camX, this.y, this.tamanho*alpha, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
   }
 }
 class SistemaParticulas{
   constructor(){ this.lista=[]; }
   emitir(x,y,cor,qtd=8,opts={}){
-    if(this.lista.length>260) return; // limite de performance
+    if(this.lista.length>300) return;
     for(let i=0;i<qtd;i++){
       const ang = Math.random()*Math.PI*2;
       const vel = (opts.vel||2)+Math.random()*(opts.velVar||2);
@@ -283,22 +471,27 @@ class SistemaParticulas{
         x,y,cor,
         Math.cos(ang)*vel*(opts.espalhar!==false?1:0.3),
         Math.sin(ang)*vel - (opts.subir||0),
-        opts.vida||30 + Math.random()*10,
+        opts.vida||30+Math.random()*10,
         opts.tamanho||(3+Math.random()*3)
       ));
     }
   }
+  linhasImpacto(x,y,dir,cor='#ffffff',qtd=5){
+    if(this.lista.length>300) return;
+    for(let i=0;i<qtd;i++){
+      const espalho=(Math.random()-0.5)*1.4;
+      this.lista.push(new Particula(x,y,cor, dir*(6+Math.random()*4), espalho*3, 10+Math.random()*4, 2,'linha'));
+    }
+  }
   poeira(x,y){
-    if(this.lista.length>260) return;
+    if(this.lista.length>300) return;
     this.lista.push(new Particula(x,y,'rgba(210,180,140,0.8)',(Math.random()-0.5)*1.5,-Math.random()*1,20,3));
   }
   atualizar(dt){
     this.lista.forEach(p=>p.atualizar(dt));
     this.lista = this.lista.filter(p=>!p.morta);
   }
-  desenhar(ctx,camX){
-    this.lista.forEach(p=>p.desenhar(ctx,camX));
-  }
+  desenhar(ctx,camX){ this.lista.forEach(p=>p.desenhar(ctx,camX)); }
 }
 const particulas = new SistemaParticulas();
 
@@ -306,47 +499,72 @@ function desenharEstrela(ctx,cx,cy,pontas,rOut,rIn,cor){
   ctx.beginPath();
   for(let i=0;i<pontas*2;i++){
     const r = i%2===0?rOut:rIn;
-    const ang = (Math.PI/pontas)*i - Math.PI/2;
-    const x = cx+Math.cos(ang)*r;
-    const y = cy+Math.sin(ang)*r;
+    const ang=(Math.PI/pontas)*i - Math.PI/2;
+    const x=cx+Math.cos(ang)*r, y=cy+Math.sin(ang)*r;
     if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   }
-  ctx.closePath();
-  ctx.fillStyle=cor;
-  ctx.fill();
+  ctx.closePath(); ctx.fillStyle=cor; ctx.fill();
 }
 
 /* =====================================================================
-   5. PLATAFORMAS E OBSTÁCULOS
+   SISTEMA: COLLISION
 ===================================================================== */
-// tipo: 'solido' | 'movel' | 'sumindo'
+function colideRect(a,b){
+  return a.x<b.x+b.largura && a.x+a.largura>b.x &&
+         a.y<b.y+b.altura && a.y+a.altura>b.y;
+}
+
+/* =====================================================================
+   SISTEMA: HIT-STOP GLOBAL (congelamento breve no impacto)
+===================================================================== */
+const GameFeel = {
+  hitStopAte: 0,
+  congelar(ms){ this.hitStopAte = Math.max(this.hitStopAte, agora()+ms); },
+  get congelado(){ return agora() < this.hitStopAte; }
+};
+
+/* =====================================================================
+   SISTEMA: OBSTACLES / PLATFORMS
+===================================================================== */
+// tipo: 'solido' | 'movel' | 'sumindo' | 'caidica'
 class Plataforma{
   constructor(x,y,largura,altura=24,opts={}){
     this.x=x;this.y=y;this.largura=largura;this.altura=altura;
+    this.xOriginal=x; this.yOriginal=y;
     this.tipo = opts.tipo || 'solido';
-    this.velX = opts.velX || 0;
-    this.velY = opts.velY || 0;
+    this.velX = opts.velX||0; this.velY = opts.velY||0;
     this.limiteMin = opts.limiteMin ?? x;
     this.limiteMax = opts.limiteMax ?? x;
-    this.eixo = opts.eixo || 'x';
-    this.dir = 1;
-    this.deltaX = 0; // deslocamento neste frame (para o jogador acompanhar)
-    // plataforma "sumindo"
-    this.tempoVisivel = opts.tempoVisivel || 110;
-    this.tempoInvisivel = opts.tempoInvisivel || 70;
-    this.avisoFrames = opts.avisoFrames || 35;
-    this.timerCiclo = opts.faseInicial || 0;
-    this.visivel = true;
+    this.eixo = opts.eixo||'x';
+    this.dir=1; this.deltaX=0;
+    this.tempoVisivel = opts.tempoVisivel||110;
+    this.tempoInvisivel = opts.tempoInvisivel||70;
+    this.avisoFrames = opts.avisoFrames||35;
+    this.timerCiclo = opts.faseInicial||0;
+    this.visivel=true;
+    this.ativada=false; this.caindo=false; this.caiu=false; this.timerQueda=0;
   }
-  get solida(){ return this.tipo!=='sumindo' || this.visivel; }
+  get solida(){
+    if(this.tipo==='sumindo') return this.visivel;
+    if(this.tipo==='caidica') return !this.caiu;
+    return true;
+  }
+  ativarQueda(){
+    if(this.tipo==='caidica' && !this.ativada){ this.ativada=true; this.timerQueda=26; }
+  }
+  resetar(){
+    this.x=this.xOriginal; this.y=this.yOriginal; this.dir=1;
+    this.timerCiclo=0; this.visivel=true;
+    this.ativada=false; this.caindo=false; this.caiu=false; this.timerQueda=0;
+  }
   atualizar(dt){
-    this.deltaX = 0;
+    this.deltaX=0;
     if(this.tipo==='movel'){
-      const antesX=this.x, antesY=this.y;
+      const antesX=this.x;
       if(this.eixo==='x'){
         this.x += this.velX*this.dir*dt;
         if(this.x<this.limiteMin||this.x>this.limiteMax) this.dir*=-1;
-      }else{
+      } else {
         this.y += this.velY*this.dir*dt;
         if(this.y<this.limiteMin||this.y>this.limiteMax) this.dir*=-1;
       }
@@ -357,24 +575,37 @@ class Plataforma{
       const fase = this.timerCiclo % ciclo;
       this.visivel = fase < this.tempoVisivel;
       this.piscando = this.visivel && (this.tempoVisivel-fase) < this.avisoFrames;
+    } else if(this.tipo==='caidica'){
+      if(this.ativada && !this.caindo){
+        this.timerQueda -= dt;
+        if(this.timerQueda<=0) this.caindo=true;
+      } else if(this.caindo){
+        this.y += 7*dt;
+        if(this.y>ALTURA+80) this.caiu=true;
+      }
     }
   }
   desenhar(ctx,camX){
     if(this.tipo==='sumindo' && !this.visivel) return;
-    const sx = this.x-camX;
-    if(sx+this.largura<0 || sx>LARGURA) return;
+    if(this.tipo==='caidica' && this.caiu) return;
+    let sx = this.x-camX;
+    if(this.tipo==='caidica' && this.ativada && !this.caindo){
+      sx += (Math.random()-0.5)*2;
+    }
+    if(sx+this.largura<0||sx>LARGURA) return;
     let alpha=1;
     if(this.piscando) alpha = 0.35+0.4*Math.abs(Math.sin(this.timerCiclo*0.35));
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = this.tipo==='sumindo' ? '#8a6fbf' : '#8a5a34';
-    ctx.fillRect(sx, this.y+6, this.largura, this.altura-6);
-    ctx.fillStyle = this.tipo==='sumindo' ? '#c9a6ff' : '#6fbf5e';
-    ctx.fillRect(sx, this.y, this.largura, 10);
-    ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    for(let i=0;i<this.largura;i+=14){
-      ctx.fillRect(sx+i, this.y, 6, 3);
-    }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=alpha;
+    let corBase='#8a5a34', corTopo='#6fbf5e';
+    if(this.tipo==='sumindo'){ corBase='#8a6fbf'; corTopo='#c9a6ff'; }
+    if(this.tipo==='caidica'){ corBase='#7a4a2b'; corTopo= this.ativada? '#e08a5c':'#a86a3c'; }
+    ctx.fillStyle=corBase;
+    ctx.fillRect(Math.round(sx), Math.round(this.y+6), this.largura, this.altura-6);
+    ctx.fillStyle=corTopo;
+    ctx.fillRect(Math.round(sx), Math.round(this.y), this.largura, 10);
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    for(let i=0;i<this.largura;i+=14) ctx.fillRect(Math.round(sx+i), Math.round(this.y), 6,3);
+    ctx.globalAlpha=1;
   }
 }
 
@@ -384,33 +615,26 @@ class Espinho{
   desenhar(ctx,camX){
     const sx=this.x-camX;
     if(sx+this.largura<0||sx>LARGURA) return;
-    ctx.fillStyle = '#b23a3a';
-    const n = Math.max(1,Math.floor(this.largura/16));
+    ctx.fillStyle='#b23a3a';
+    const n=Math.max(1,Math.floor(this.largura/16));
     for(let i=0;i<n;i++){
       ctx.beginPath();
       ctx.moveTo(sx+i*16, this.y+this.altura);
       ctx.lineTo(sx+i*16+8, this.y);
       ctx.lineTo(sx+i*16+16, this.y+this.altura);
-      ctx.closePath();
-      ctx.fill();
+      ctx.closePath(); ctx.fill();
     }
   }
 }
 
-class Buraco{
-  constructor(x,largura){ this.x=x; this.largura=largura; }
-}
+class Buraco{ constructor(x,largura){ this.x=x; this.largura=largura; } }
 
-// Armadilha: objeto que cai periodicamente do topo, com aviso (sombra) antes de cair
 class ArmadilhaQueda{
-  constructor(x){
-    this.x=x; this.y=-30; this.raio=13;
-    this.estado='espera'; // espera -> aviso -> caindo -> pausa
-    this.timer = 40+Math.random()*40;
-  }
+  constructor(x){ this.x=x; this.y=-30; this.raio=13; this.estado='espera'; this.timer=40+Math.random()*40; }
   get rect(){ return {x:this.x-this.raio,y:this.y-this.raio,largura:this.raio*2,altura:this.raio*2}; }
+  resetar(){ this.y=-30; this.estado='espera'; this.timer=40+Math.random()*40; }
   atualizar(dt){
-    this.timer -= dt;
+    this.timer-=dt;
     if(this.estado==='espera' && this.timer<=0){ this.estado='aviso'; this.timer=38; }
     else if(this.estado==='aviso' && this.timer<=0){ this.estado='caindo'; this.y=-30; }
     else if(this.estado==='caindo'){
@@ -419,247 +643,23 @@ class ArmadilhaQueda{
         this.estado='pausa'; this.timer=55;
         particulas.emitir(this.x,CHAO_Y,'#caa86b',8,{vel:2,velVar:1.5,vida:16});
       }
-    } else if(this.estado==='pausa' && this.timer<=0){
-      this.estado='espera'; this.timer=90+Math.random()*60;
-    }
+    } else if(this.estado==='pausa' && this.timer<=0){ this.estado='espera'; this.timer=90+Math.random()*60; }
   }
   desenhar(ctx,camX){
     const sx=this.x-camX;
     if(sx<-40||sx>LARGURA+40) return;
     if(this.estado==='aviso'){
-      const pulso = 0.3+0.35*Math.abs(Math.sin(this.timer*0.4));
-      ctx.globalAlpha=pulso;
-      ctx.fillStyle='#3a2a1a';
+      const pulso=0.3+0.35*Math.abs(Math.sin(this.timer*0.4));
+      ctx.globalAlpha=pulso; ctx.fillStyle='#3a2a1a';
       ctx.beginPath(); ctx.ellipse(sx,CHAO_Y+4,16,6,0,0,Math.PI*2); ctx.fill();
       ctx.globalAlpha=1;
     } else if(this.estado==='caindo'){
-      ctx.fillStyle='#6b4a2a';
-      ctx.beginPath(); ctx.arc(sx,this.y,this.raio,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#8a6a42';
-      ctx.beginPath(); ctx.arc(sx-3,this.y-3,this.raio*0.4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#6b4a2a'; ctx.beginPath(); ctx.arc(sx,this.y,this.raio,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#8a6a42'; ctx.beginPath(); ctx.arc(sx-3,this.y-3,this.raio*0.4,0,Math.PI*2); ctx.fill();
     }
   }
 }
 
-/* =====================================================================
-   6. INIMIGOS — 3 tipos originais
-===================================================================== */
-// INIMIGO 1 — Patrulheiro: anda de um lado a outro, percebe o jogador
-// (acelera perto dele), dano por contato, derrotado com 1 ataque.
-class InimigoPatrulheiro{
-  constructor(x,y,limiteEsq,limiteDir){
-    this.x=x; this.y=y;
-    this.largura=34; this.altura=38;
-    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
-    this.velBase=1.3; this.dir=1;
-    this.vivo=true; this.anim=Math.random()*10;
-  }
-  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
-  atualizar(dt, jogador){
-    if(!this.vivo) return;
-    this.anim+=0.15*dt;
-    const perto = Math.abs(jogador.x-this.x) < 150 && !jogador.vitoriaAtiva;
-    const vel = perto ? this.velBase*1.7 : this.velBase;
-    this.x += vel*this.dir*dt;
-    if(this.x<this.limiteEsq){this.x=this.limiteEsq;this.dir=1;}
-    if(this.x>this.limiteDir){this.x=this.limiteDir;this.dir=-1;}
-  }
-  receberAtaque(){
-    this.vivo=false;
-    particulas.emitir(this.x,this.y-this.altura/2,'#ffd93d',12,{vel:3,velVar:2,vida:22});
-    AudioSys.inimigoDerrotado();
-  }
-  desenhar(ctx,camX){
-    if(!this.vivo) return;
-    const sx=this.x-camX;
-    if(sx<-60||sx>LARGURA+60) return;
-    ctx.save();
-    ctx.translate(sx,this.y);
-    ctx.scale(this.dir,1);
-    const bounce = Math.sin(this.anim)*3;
-    ctx.fillStyle='#5b4b8a';
-    ctx.beginPath();
-    ctx.ellipse(0,-this.altura/2+bounce*0.2, this.largura/2, this.altura/2, 0,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#8577c4';
-    ctx.beginPath();
-    ctx.ellipse(2,-this.altura/2+6+bounce*0.2, this.largura/3, this.altura/3,0,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.arc(6,-this.altura/2-2,6,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#2a1f4d';
-    ctx.beginPath(); ctx.arc(8,-this.altura/2-2,3,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#5b4b8a';
-    ctx.beginPath();
-    ctx.moveTo(-8,-this.altura+2); ctx.lineTo(-2,-this.altura-8); ctx.lineTo(4,-this.altura+2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-// INIMIGO 2 — Saltador: fica parado até o jogador se aproximar, então
-// salta em direção a ele dentro de sua área. Derrotado com 1 ataque.
-class InimigoSaltador{
-  constructor(x,y,limiteEsq,limiteDir){
-    this.xBase=x; this.x=x; this.y=y; this.yChao=y;
-    this.largura=32; this.altura=34;
-    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
-    this.vivo=true; this.anim=0;
-    this.velY=0; this.noAr=false;
-    this.cooldown=0;
-    this.raioDeteccao=230;
-  }
-  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
-  atualizar(dt, jogador){
-    if(!this.vivo) return;
-    this.anim+=0.12*dt;
-    if(this.noAr){
-      this.y += this.velY*dt;
-      this.velY += GRAVIDADE*dt;
-      if(this.y>=this.yChao){ this.y=this.yChao; this.noAr=false; this.velY=0; }
-    } else {
-      this.cooldown -= dt;
-      const dist = Math.abs(jogador.x-this.x);
-      if(dist < this.raioDeteccao && this.cooldown<=0 && !jogador.vitoriaAtiva){
-        this.cooldown = 70;
-        this.velY = -10.5;
-        this.noAr = true;
-        const dir = jogador.x>this.x?1:-1;
-        this.velXSalto = dir*2.6;
-      }
-    }
-    if(this.noAr && this.velXSalto){
-      let novoX = this.x + this.velXSalto*dt;
-      novoX = clamp(novoX, this.limiteEsq, this.limiteDir);
-      this.x = novoX;
-    }
-  }
-  receberAtaque(){
-    this.vivo=false;
-    particulas.emitir(this.x,this.y-this.altura/2,'#ff9d5c',12,{vel:3,velVar:2,vida:22});
-    AudioSys.inimigoDerrotado();
-  }
-  desenhar(ctx,camX){
-    if(!this.vivo) return;
-    const sx=this.x-camX;
-    if(sx<-60||sx>LARGURA+60) return;
-    const achatado = this.noAr? 1 : 0.85+0.15*Math.abs(Math.sin(this.anim*2));
-    ctx.save();
-    ctx.translate(sx,this.y);
-    ctx.scale(1, achatado);
-    ctx.fillStyle='#e0632f';
-    ctx.beginPath();
-    ctx.ellipse(0,-this.altura*0.5,this.largura/2,this.altura/2,0,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#ffb27a';
-    ctx.beginPath();
-    ctx.ellipse(0,-this.altura*0.42,this.largura/3.2,this.altura/3.2,0,0,Math.PI*2);
-    ctx.fill();
-    // olhos grandes
-    ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.arc(-6,-this.altura*0.58,6,0,Math.PI*2); ctx.arc(6,-this.altura*0.58,6,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#2a1f1a';
-    ctx.beginPath(); ctx.arc(-6,-this.altura*0.56,2.6,0,Math.PI*2); ctx.arc(6,-this.altura*0.56,2.6,0,Math.PI*2); ctx.fill();
-    // antena
-    ctx.strokeStyle='#e0632f'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(0,-this.altura*0.92); ctx.lineTo(0,-this.altura*1.1); ctx.stroke();
-    ctx.fillStyle='#ffd93d';
-    ctx.beginPath(); ctx.arc(0,-this.altura*1.1,3,0,Math.PI*2); ctx.fill();
-    // pés
-    ctx.fillStyle='#b8461f';
-    ctx.beginPath(); ctx.ellipse(-8,-1,6,3,0,0,Math.PI*2); ctx.ellipse(8,-1,6,3,0,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-}
-
-// INIMIGO 3 — Guardião: mais resistente (2 hits), protege uma área,
-// quase não se move, mas dá um golpe de área telegrafado (avisa antes).
-class InimigoGuardiao{
-  constructor(x,y){
-    this.xBase=x; this.x=x; this.y=y;
-    this.largura=46; this.altura=52;
-    this.vivo=true; this.vida=2;
-    this.anim=0;
-    this.estado='idle'; // idle -> aviso -> golpe -> recuperando
-    this.timer=90+Math.random()*40;
-    this.flashDano=0;
-  }
-  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
-  get golpeAtivo(){ return this.estado==='golpe'; }
-  get raioGolpe(){ return 80; }
-  atualizar(dt, jogador){
-    if(!this.vivo) return;
-    this.anim += 0.08*dt;
-    if(this.flashDano>0) this.flashDano -= dt;
-    this.x = this.xBase + Math.sin(this.anim*0.5)*6;
-    this.timer -= dt;
-    if(this.estado==='idle' && this.timer<=0){
-      this.estado='aviso'; this.timer=34;
-    } else if(this.estado==='aviso' && this.timer<=0){
-      this.estado='golpe'; this.timer=14;
-      AudioSys.guardiaoSlam();
-      particulas.emitir(this.x,this.y,'#7ee08a',14,{vel:3,velVar:2.5,vida:22,espalhar:true});
-    } else if(this.estado==='golpe' && this.timer<=0){
-      this.estado='recuperando'; this.timer=60;
-    } else if(this.estado==='recuperando' && this.timer<=0){
-      this.estado='idle'; this.timer=90+Math.random()*50;
-    }
-  }
-  receberAtaque(){
-    this.vida--;
-    this.flashDano=14;
-    if(this.vida<=0){
-      this.vivo=false;
-      particulas.emitir(this.x,this.y-this.altura/2,'#7ee08a',18,{vel:3.5,velVar:2.5,vida:26});
-      AudioSys.inimigoDerrotado();
-    } else {
-      particulas.emitir(this.x,this.y-this.altura/2,'#c9ffb0',8,{vel:2,velVar:1.5,vida:16});
-      AudioSys.guardiaoAtingido();
-    }
-  }
-  desenhar(ctx,camX){
-    if(!this.vivo) return;
-    const sx=this.x-camX;
-    if(sx<-80||sx>LARGURA+80) return;
-    ctx.save();
-    ctx.translate(sx,this.y);
-    if(this.estado==='golpe'){
-      ctx.strokeStyle='rgba(126,224,138,0.55)';
-      ctx.lineWidth=4;
-      ctx.beginPath(); ctx.arc(0,-4,this.raioGolpe*(1-this.timer/14), 0, Math.PI*2); ctx.stroke();
-    }
-    const alertaCor = this.estado==='aviso' ? `rgba(255,${80+Math.sin(this.anim*3)*40},60,0.9)` : '#3f7d3a';
-    // corpo tronco
-    ctx.fillStyle = this.flashDano>0 ? '#ffffff' : alertaCor;
-    ctx.beginPath();
-    ctx.moveTo(-18,0); ctx.lineTo(-20,-this.altura*0.55); ctx.lineTo(-10,-this.altura*0.7);
-    ctx.lineTo(10,-this.altura*0.7); ctx.lineTo(20,-this.altura*0.55); ctx.lineTo(18,0);
-    ctx.closePath(); ctx.fill();
-    // folhagem
-    ctx.fillStyle = this.flashDano>0 ? '#ffffff' : '#57a34c';
-    ctx.beginPath();
-    ctx.ellipse(-12,-this.altura*0.78,13,13,0,0,Math.PI*2);
-    ctx.ellipse(12,-this.altura*0.8,12,12,0,0,Math.PI*2);
-    ctx.ellipse(0,-this.altura*0.95,13,13,0,0,Math.PI*2);
-    ctx.fill();
-    // olhos
-    const brilhoOlho = this.estado==='aviso'||this.estado==='golpe' ? '#fff35c' : '#fff';
-    ctx.fillStyle=brilhoOlho;
-    ctx.beginPath(); ctx.arc(-8,-this.altura*0.6,5.5,0,Math.PI*2); ctx.arc(8,-this.altura*0.6,5.5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#1d3a17';
-    ctx.beginPath(); ctx.arc(-8,-this.altura*0.6,2.4,0,Math.PI*2); ctx.arc(8,-this.altura*0.6,2.4,0,Math.PI*2); ctx.fill();
-    // vida restante (pequenas folhas indicadoras)
-    for(let i=0;i<this.vida;i++){
-      ctx.fillStyle='#ffd93d';
-      ctx.beginPath(); ctx.arc(-8+i*16,-this.altura-10,4,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-}
-
-/* =====================================================================
-   7. CHECKPOINT
-===================================================================== */
 class Checkpoint{
   constructor(x,y){ this.x=x;this.y=y; this.ativado=false; this.anim=0; }
   ativar(){
@@ -672,10 +672,9 @@ class Checkpoint{
     const sx=this.x-camX;
     if(sx<-40||sx>LARGURA+40) return;
     this.anim+=0.08;
-    const cor = this.ativado? '#ffd93d' : '#9fb8c9';
-    const brilho = this.ativado ? 14+Math.sin(this.anim)*6 : 0;
-    ctx.save();
-    ctx.translate(sx,this.y);
+    const cor=this.ativado?'#ffd93d':'#9fb8c9';
+    const brilho=this.ativado?14+Math.sin(this.anim)*6:0;
+    ctx.save(); ctx.translate(sx,this.y);
     if(brilho>0){ ctx.shadowColor='#ffd93d'; ctx.shadowBlur=brilho; }
     desenharEstrela(ctx,0,0,5,16,8,cor);
     ctx.restore();
@@ -683,75 +682,581 @@ class Checkpoint{
 }
 
 /* =====================================================================
-   8. PLAYER — "Luz", protagonista original desenhado em canvas
+   SISTEMA: INIMIGOS (6 arquétipos originais)
 ===================================================================== */
-const ATAQUE_DURACAO = 20;       // frames de duração do golpe
-const ATAQUE_JANELA_MAX = 16;    // hitbox ativa enquanto atacando está nesta faixa
-const ATAQUE_JANELA_MIN = 6;
+// 1) PATRULHEIRO — anda de um lado a outro, dano por contato, 1 golpe derrota.
+class InimigoPatrulheiro{
+  constructor(x,y,limiteEsq,limiteDir,dificuldade=1){
+    this.x=x;this.y=y; this.largura=32; this.altura=38;
+    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
+    this.velBase=1.2*dificuldade; this.dir=1;
+    this.vida=1; this.vivo=true; this.anim=Math.random()*10;
+    this.flash=0;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  atualizar(dt,jogador){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.15*dt;
+    const perto = Math.abs(jogador.x-this.x)<150 && !jogador.vitoriaAtiva;
+    const vel = perto? this.velBase*1.6 : this.velBase;
+    this.x += vel*this.dir*dt;
+    if(this.x<this.limiteEsq){this.x=this.limiteEsq;this.dir=1;}
+    if(this.x>this.limiteDir){this.x=this.limiteDir;this.dir=-1;}
+  }
+  receberAtaque(dano){
+    this.vida-=dano; this.flash=10;
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#ffd93d',12,{vel:3,velVar:2,vida:22});
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    if(sx<-60||sx>LARGURA+60) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    const bounce=Math.sin(this.anim)*3;
+    ctx.fillStyle = this.flash>0?'#ffffff':'#5b4b8a';
+    ctx.beginPath(); ctx.ellipse(0,-this.altura/2+bounce*0.2,this.largura/2,this.altura/2,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.flash>0?'#ffffff':'#8577c4';
+    ctx.beginPath(); ctx.ellipse(2,-this.altura/2+6+bounce*0.2,this.largura/3,this.altura/3,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(6,-this.altura/2-2,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2a1f4d'; ctx.beginPath(); ctx.arc(8,-this.altura/2-2,3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
 
-class Jogador{
+// 2) CORREDOR — idle e dispara em investida rápida quando o jogador se aproxima.
+class InimigoCorredor{
+  constructor(x,y,limiteEsq,limiteDir,dificuldade=1){
+    this.xBase=x; this.x=x; this.y=y; this.largura=30; this.altura=34;
+    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
+    this.vida=2; this.vivo=true; this.dificuldade=dificuldade;
+    this.estado='idle'; this.timer=30+Math.random()*30; this.dir=1; this.anim=0; this.flash=0;
+    this.raioDeteccao=220;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  atualizar(dt,jogador){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.2*dt;
+    this.timer-=dt;
+    const dist=jogador.x-this.x;
+    if(this.estado==='idle'){
+      if(Math.abs(dist)<this.raioDeteccao && this.timer<=0 && !jogador.vitoriaAtiva){
+        this.estado='alerta'; this.timer=16; this.dir = dist>0?1:-1;
+      }
+    } else if(this.estado==='alerta'){
+      if(this.timer<=0){ this.estado='dash'; this.timer=26; }
+    } else if(this.estado==='dash'){
+      this.x += this.dir*4.6*this.dificuldade*dt;
+      if(this.x<this.limiteEsq){this.x=this.limiteEsq;this.estado='pausa';this.timer=40;}
+      if(this.x>this.limiteDir){this.x=this.limiteDir;this.estado='pausa';this.timer=40;}
+      if(this.timer<=0){ this.estado='pausa'; this.timer=40; }
+    } else if(this.estado==='pausa'){
+      if(this.timer<=0){ this.estado='idle'; this.timer=50+Math.random()*40; }
+    }
+  }
+  receberAtaque(dano){
+    this.vida-=dano; this.flash=10;
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#ff5c5c',12,{vel:3.5,velVar:2,vida:22});
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    if(sx<-60||sx>LARGURA+60) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    if(this.estado==='dash') particulas.poeira(this.x-this.dir*8,this.y-2);
+    const agacha = this.estado==='alerta' ? 6:0;
+    ctx.fillStyle = this.flash>0?'#fff':(this.estado==='alerta'?'#ff8a5c':'#d94f4f');
+    ctx.beginPath();
+    ctx.moveTo(-14,0); ctx.lineTo(-10,-this.altura+agacha); ctx.lineTo(10,-this.altura+agacha); ctx.lineTo(14,0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(6,-this.altura+agacha+8,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2a1010';
+    ctx.beginPath(); ctx.arc(8,-this.altura+agacha+8,2.4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// 3) PESADO — lento, resistente (3 golpes), empurra com força ao tocar.
+class InimigoPesado{
+  constructor(x,y,limiteEsq,limiteDir,dificuldade=1){
+    this.x=x;this.y=y; this.largura=42; this.altura=48;
+    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
+    this.velBase=0.6*dificuldade; this.dir=1;
+    this.vida=3; this.vivo=true; this.anim=Math.random()*10; this.flash=0;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  atualizar(dt){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.08*dt;
+    this.x += this.velBase*this.dir*dt;
+    if(this.x<this.limiteEsq){this.x=this.limiteEsq;this.dir=1;}
+    if(this.x>this.limiteDir){this.x=this.limiteDir;this.dir=-1;}
+  }
+  receberAtaque(dano){
+    this.vida-=dano; this.flash=10;
+    particulas.emitir(this.x,this.y-this.altura/2,'#caa86b',6,{vel:2,velVar:1.5,vida:14});
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#8a5a34',16,{vel:3.5,velVar:2.5,vida:26});
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    if(sx<-70||sx>LARGURA+70) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    const bounce=Math.sin(this.anim)*2;
+    ctx.fillStyle = this.flash>0?'#fff':'#6b5238';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(-this.largura/2,-this.altura+bounce,this.largura,this.altura,6) : ctx.rect(-this.largura/2,-this.altura+bounce,this.largura,this.altura);
+    ctx.fill();
+    ctx.fillStyle = this.flash>0?'#fff':'#8a6a48';
+    ctx.fillRect(-this.largura/2+6,-this.altura+bounce+8,this.largura-12,14);
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(10,-this.altura+bounce+16,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#231a10'; ctx.beginPath(); ctx.arc(12,-this.altura+bounce+16,2.4,0,Math.PI*2); ctx.fill();
+    for(let i=0;i<this.vida;i++){ ctx.fillStyle='#ffd93d'; ctx.beginPath(); ctx.arc(-14+i*12,-this.altura-8,3.2,0,Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+}
+
+// 4) DEFENSOR — bloqueia o primeiro golpe (guarda), fica vulnerável por uma janela curta.
+class InimigoDefensor{
+  constructor(x,y,dificuldade=1){
+    this.xBase=x; this.x=x; this.y=y; this.largura=36; this.altura=44;
+    this.vida=2; this.vivo=true; this.anim=0;
+    this.guarda=true; this.janelaVulneravel=0; this.flash=0; this.dir=1;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  atualizar(dt,jogador){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.1*dt;
+    this.dir = jogador.x>this.x?1:-1;
+    if(!this.guarda){
+      this.janelaVulneravel -= dt;
+      if(this.janelaVulneravel<=0) this.guarda=true;
+    }
+  }
+  receberAtaque(dano){
+    if(this.guarda){
+      this.guarda=false; this.janelaVulneravel=70;
+      particulas.emitir(this.x,this.y-this.altura*0.6,'#cfd8e6',8,{vel:2.5,velVar:1.5,vida:14});
+      AudioSys.guardaQuebrada();
+      return false;
+    }
+    this.vida-=dano; this.flash=10;
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#9fb8c9',14,{vel:3,velVar:2,vida:22});
+      AudioSys.inimigoDerrotado();
+    } else {
+      this.guarda=true;
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    if(sx<-70||sx>LARGURA+70) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    ctx.fillStyle = this.flash>0?'#fff':'#3d5e78';
+    ctx.beginPath();
+    ctx.moveTo(-16,0); ctx.lineTo(-17,-this.altura*0.85); ctx.lineTo(0,-this.altura); ctx.lineTo(17,-this.altura*0.85); ctx.lineTo(16,0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(7,-this.altura*0.65,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#132030'; ctx.beginPath(); ctx.arc(9,-this.altura*0.65,2.4,0,Math.PI*2); ctx.fill();
+    if(this.guarda){
+      ctx.fillStyle='rgba(159,184,201,0.85)';
+      ctx.beginPath(); ctx.ellipse(16,-this.altura*0.55,7,16,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(16,-this.altura*0.55,7,16,0,0,Math.PI*2); ctx.stroke();
+    } else {
+      ctx.fillStyle='#ffd93d';
+      desenharEstrela(ctx,16,-this.altura*0.55,4,6,3,'#ffd93d');
+    }
+    ctx.restore();
+  }
+}
+
+// 5) ATIRADOR — parado, arremessa cocos em arco quando o jogador se aproxima.
+class InimigoAtirador{
+  constructor(x,y,dificuldade=1){
+    this.x=x; this.y=y; this.largura=30; this.altura=44;
+    this.vida=2; this.vivo=true; this.anim=0; this.flash=0;
+    this.raioDeteccao=300; this.cooldown=60; this.dificuldade=dificuldade;
+    this.projeteis=[];
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  atualizar(dt,jogador){
+    this.projeteis.forEach(p=>{ p.x+=p.vx*dt; p.vy+=GRAVIDADE*0.5*dt; p.y+=p.vy*dt; });
+    this.projeteis = this.projeteis.filter(p=> p.y < ALTURA+40);
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.1*dt;
+    this.cooldown-=dt;
+    const dist=Math.abs(jogador.x-this.x);
+    if(dist<this.raioDeteccao && this.cooldown<=0 && !jogador.vitoriaAtiva){
+      this.cooldown = 95/this.dificuldade;
+      const dir = jogador.x>this.x?1:-1;
+      this.projeteis.push({x:this.x,y:this.y-this.altura*0.7,vx:dir*3.4,vy:-4.2,raio:8});
+    }
+  }
+  receberAtaque(dano){
+    this.vida-=dano; this.flash=10;
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#caa86b',12,{vel:3,velVar:2,vida:22});
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(this.vivo){
+      const sx=this.x-camX;
+      if(sx>-60&&sx<LARGURA+60){
+        ctx.save(); ctx.translate(sx,this.y);
+        const balanco=Math.sin(this.anim)*2;
+        ctx.fillStyle = this.flash>0?'#fff':'#8a5a34';
+        ctx.fillRect(-6,-this.altura*0.55,12,this.altura*0.55);
+        ctx.fillStyle = this.flash>0?'#fff':'#57a34c';
+        ctx.beginPath(); ctx.ellipse(balanco,-this.altura*0.65,15,14,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(4,-this.altura*0.66,4.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1d3a17'; ctx.beginPath(); ctx.arc(5.5,-this.altura*0.66,2,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+    this.projeteis.forEach(p=>{
+      const px=p.x-camX;
+      ctx.fillStyle='#6b4a2a'; ctx.beginPath(); ctx.arc(px,p.y,p.raio,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#caa86b'; ctx.beginPath(); ctx.arc(px-2,p.y-2,p.raio*0.35,0,Math.PI*2); ctx.fill();
+    });
+  }
+}
+
+// 6) VOADOR — plana em padrão senoidal e mergulha periodicamente sobre o jogador.
+class InimigoVoador{
+  constructor(x,y,limiteEsq,limiteDir,dificuldade=1){
+    this.xBase=x; this.x=x; this.y=y; this.yBase=y;
+    this.largura=34; this.altura=26;
+    this.limiteEsq=limiteEsq; this.limiteDir=limiteDir;
+    this.vida=2; this.vivo=true; this.anim=Math.random()*10; this.flash=0;
+    this.estado='patrulha'; this.timer=60+Math.random()*40; this.dir=1; this.dificuldade=dificuldade;
+    this.yMergulho=0;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura/2,largura:this.largura,altura:this.altura}; }
+  atualizar(dt,jogador){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.1*dt;
+    this.timer-=dt;
+    if(this.estado==='patrulha'){
+      this.x += this.dir*1.1*this.dificuldade*dt;
+      if(this.x<this.limiteEsq){this.x=this.limiteEsq;this.dir=1;}
+      if(this.x>this.limiteDir){this.x=this.limiteDir;this.dir=-1;}
+      this.y = this.yBase + Math.sin(this.anim)*10;
+      if(this.timer<=0 && Math.abs(jogador.x-this.x)<160 && !jogador.vitoriaAtiva){
+        this.estado='mergulho'; this.timer=34;
+      }
+    } else if(this.estado==='mergulho'){
+      this.y += 3.6*this.dificuldade*dt;
+      if(this.timer<=0 || this.y>CHAO_Y-30){ this.estado='subindo'; this.timer=40; }
+    } else if(this.estado==='subindo'){
+      this.y -= 2.4*dt;
+      if(this.y<=this.yBase || this.timer<=0){ this.y=this.yBase; this.estado='patrulha'; this.timer=90+Math.random()*50; }
+    }
+  }
+  receberAtaque(dano){
+    this.vida-=dano; this.flash=10;
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y,'#7ecbff',12,{vel:3,velVar:2,vida:22});
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    if(sx<-60||sx>LARGURA+60) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    const bateAsa = Math.sin(this.anim*3)*8;
+    ctx.fillStyle = this.flash>0?'#fff':'rgba(126,203,255,0.85)';
+    ctx.beginPath(); ctx.ellipse(-10,-bateAsa*0.3,12,5,0.3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(10,bateAsa*0.3,12,5,-0.3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.flash>0?'#fff':'#3d8bff';
+    ctx.beginPath(); ctx.ellipse(0,0,13,9,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(5,-2,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0c2233'; ctx.beginPath(); ctx.arc(6.5,-2,1.8,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* =====================================================================
+   SISTEMA: CHEFES (BOSS)
+===================================================================== */
+// CHEFE INTERMEDIÁRIO — "O Rival": um karateca adversário, duelo direto.
+class ChefeRival{
   constructor(x,y){
-    this.xInicio=x; this.yInicio=y;     // ponto absoluto de início da fase
-    this.respawnX=x; this.respawnY=y;   // último checkpoint ativado
+    this.x=x;this.y=y; this.xBase=x; this.largura=40;this.altura=60;
+    this.vidaMax=10; this.vida=this.vidaMax; this.vivo=true;
+    this.nome='O RIVAL';
+    this.estado='idle'; this.timer=60; this.dir=-1; this.anim=0; this.flash=0;
+    this.vulneravel=false; this.vulneravelAte=0;
+    this.projeteis=[];
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  get golpeRect(){
+    const alc=40;
+    return { x:this.dir>0?this.x:this.x-alc, y:this.y-this.altura+10, largura:alc, altura:this.altura-20 };
+  }
+  atualizar(dt,jogador){
+    if(!this.vivo) return;
+    if(this.flash>0) this.flash-=dt;
+    this.anim+=0.12*dt;
+    this.dir = jogador.x>this.x?1:-1;
+    this.timer-=dt;
+    const dist = Math.abs(jogador.x-this.x);
+    if(this.estado==='idle'){
+      if(dist>90) this.x += this.dir*1.4*dt;
+      if(this.timer<=0){
+        this.estado = dist<80 ? 'golpe' : 'avanco';
+        this.timer = this.estado==='golpe'?18:40;
+        if(this.estado==='golpe') this.vulneravel=false;
+      }
+    } else if(this.estado==='avanco'){
+      this.x += this.dir*2.6*dt;
+      if(this.timer<=0 || dist<70){ this.estado='golpe'; this.timer=18; }
+    } else if(this.estado==='golpe'){
+      if(this.timer<=0){
+        this.estado='vulneravel'; this.timer=55;
+        this.vulneravel=true;
+      }
+    } else if(this.estado==='vulneravel'){
+      if(this.timer<=0){ this.vulneravel=false; this.estado='idle'; this.timer=55+Math.random()*30; }
+    }
+  }
+  receberAtaque(dano){
+    if(!this.vulneravel) { AudioSys.bloqueio(); return false; }
+    this.vida-=dano; this.flash=10;
+    particulas.emitir(this.x,this.y-this.altura*0.6,'#ffd93d',10,{vel:3,velVar:2,vida:20});
+    if(this.vida<=0){
+      this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#ffd93d',26,{vel:4,velVar:3,vida:32});
+      AudioSys.chefeDerrotado();
+    } else {
+      this.estado='idle'; this.timer=45; this.vulneravel=false;
+      AudioSys.guardaQuebrada();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    const golpeAtivo = this.estado==='golpe';
+    ctx.fillStyle = this.flash>0?'#fff':(this.vulneravel?'#ffb347':'#c0392b');
+    ctx.beginPath();
+    ctx.moveTo(-14,0); ctx.lineTo(-15,-this.altura+16); ctx.lineTo(0,-this.altura); ctx.lineTo(15,-this.altura+16); ctx.lineTo(14,0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8b48c'; ctx.beginPath(); ctx.arc(0,-this.altura+8,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1c1c1c'; ctx.fillRect(-9,-this.altura-2,18,5);
+    ctx.save();
+    ctx.translate(14,-this.altura+30);
+    if(golpeAtivo) ctx.rotate(-1.1);
+    ctx.fillStyle='#c0392b'; ctx.fillRect(-4,0,8,26);
+    ctx.restore();
+    ctx.restore();
+  }
+}
+
+// CHEFE FINAL — "Grão-Mestre Vendaval": 2 fases, múltiplos padrões, janela de vulnerabilidade.
+class ChefeFinal{
+  constructor(x,y){
+    this.x=x;this.y=y; this.xBase=x; this.largura=64;this.altura=92;
+    this.vidaMax=30; this.vida=this.vidaMax; this.vivo=true;
+    this.nome='GRÃO-MESTRE VENDAVAL';
+    this.estado='desperta'; this.timer=60; this.dir=-1; this.anim=0; this.flash=0;
+    this.vulneravel=false; this.fase2=false;
+    this.projeteis=[];
+    this.golpeAoRedor=false;
+  }
+  get rect(){ return {x:this.x-this.largura/2,y:this.y-this.altura,largura:this.largura,altura:this.altura}; }
+  get golpeRect(){
+    const alc=60;
+    return { x:this.dir>0?this.x:this.x-alc, y:this.y-this.altura+16, largura:alc, altura:this.altura-30 };
+  }
+  atualizar(dt,jogador){
+    this.projeteis.forEach(p=>{ p.x+=p.vx*dt; });
+    this.projeteis = this.projeteis.filter(p=> p.x>-200 && p.x<20000);
+    if(!this.vivo) return;
+    if(!this.fase2 && this.vida <= this.vidaMax*0.5){ this.fase2=true; AudioSys.chefeAlerta(); }
+    if(this.flash>0) this.flash-=dt;
+    this.anim += (this.fase2?0.16:0.11)*dt;
+    this.dir = jogador.x>this.x?1:-1;
+    this.timer-=dt;
+    const dist = Math.abs(jogador.x-this.x);
+
+    if(this.estado==='desperta'){
+      if(this.timer<=0){ this.estado='idle'; this.timer=50; }
+      return;
+    }
+    if(this.estado==='idle'){
+      if(this.timer<=0){
+        const opcoes = this.fase2? ['avanco','golpe','varredura','avanco','golpe'] : ['avanco','golpe'];
+        this.estado = opcoes[Math.floor(Math.random()*opcoes.length)];
+        if(this.estado==='golpe'){ this.timer=24; this.vulneravel=false; }
+        else if(this.estado==='avanco'){ this.timer=46; }
+        else if(this.estado==='varredura'){ this.timer=30; this.vulneravel=false; }
+      }
+    } else if(this.estado==='avanco'){
+      this.x += this.dir*2.2*(this.fase2?1.4:1)*dt;
+      if(this.timer<=0 || dist<90){ this.estado='golpe'; this.timer=24; this.vulneravel=false; }
+    } else if(this.estado==='golpe'){
+      if(this.timer<=0){ this.estado='vulneravel'; this.timer=this.fase2?42:60; this.vulneravel=true; }
+    } else if(this.estado==='varredura'){
+      if(this.timer===29){
+        const dirTiro = this.dir;
+        this.projeteis.push({x:this.x,y:this.y-this.altura*0.55,vx:dirTiro*5.2,raio:10});
+      }
+      if(this.timer<=0){ this.estado='vulneravel'; this.timer=this.fase2?42:60; this.vulneravel=true; }
+    } else if(this.estado==='vulneravel'){
+      if(this.timer<=0){ this.vulneravel=false; this.estado='idle'; this.timer=50+Math.random()*30; }
+    }
+  }
+  receberAtaque(dano){
+    if(!this.vulneravel){ AudioSys.bloqueio(); return false; }
+    this.vida-=dano; this.flash=10;
+    particulas.emitir(this.x,this.y-this.altura*0.6,'#c9a6ff',14,{vel:3.5,velVar:2.5,vida:22});
+    GameFeel.congelar(this.fase2?70:50);
+    if(this.vida<=0){
+      this.vida=0; this.vivo=false;
+      particulas.emitir(this.x,this.y-this.altura/2,'#c9a6ff',40,{vel:5,velVar:3.5,vida:40});
+      AudioSys.chefeDerrotado();
+    } else {
+      this.estado='idle'; this.timer=this.fase2?35:50; this.vulneravel=false;
+      AudioSys.guardaQuebrada();
+    }
+    return this.vivo===false;
+  }
+  desenhar(ctx,camX){
+    if(!this.vivo) return;
+    const sx=this.x-camX;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
+    if(this.vulneravel){
+      ctx.strokeStyle='rgba(255,217,61,0.6)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(0,-this.altura*0.5,this.largura*0.8+Math.sin(this.anim*4)*4,0,Math.PI*2); ctx.stroke();
+    }
+    const corBase = this.flash>0?'#fff':(this.vulneravel?'#8a6fbf':(this.fase2?'#241b33':'#3a2a4d'));
+    ctx.fillStyle=corBase;
+    ctx.beginPath();
+    ctx.moveTo(-24,0); ctx.lineTo(-26,-this.altura+24); ctx.lineTo(-10,-this.altura+6);
+    ctx.lineTo(10,-this.altura+6); ctx.lineTo(26,-this.altura+24); ctx.lineTo(24,0);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8b48c'; ctx.beginPath(); ctx.arc(0,-this.altura+16,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.fase2? '#ff8a3b' : '#1c1c1c';
+    ctx.fillRect(-13,-this.altura-4,26,7);
+    ctx.fillStyle='#fff35c';
+    ctx.beginPath(); ctx.arc(5,-this.altura+15,2.4,0,Math.PI*2); ctx.arc(-3,-this.altura+15,2.4,0,Math.PI*2); ctx.fill();
+    const golpeAtivo = this.estado==='golpe'||this.estado==='varredura';
+    ctx.save();
+    ctx.translate(22,-this.altura+42);
+    if(golpeAtivo) ctx.rotate(-1.3);
+    ctx.fillStyle=corBase; ctx.fillRect(-6,0,12,40);
+    ctx.restore();
+    ctx.restore();
+
+    this.projeteis.forEach(p=>{
+      const px=p.x-camX;
+      ctx.fillStyle='rgba(180,150,220,0.85)';
+      ctx.beginPath(); ctx.ellipse(px,p.y,14,6,0,0,Math.PI*2); ctx.fill();
+    });
+  }
+}
+
+/* =====================================================================
+   SISTEMA: PLAYER (combate karatê, faixa, bloqueio/contra-ataque)
+===================================================================== */
+const COMBO_JANELA_MS = 480;
+class Jogador{
+  constructor(x,y,faixaIndex=0){
+    this.xInicio=x; this.yInicio=y;
+    this.respawnX=x; this.respawnY=y;
     this.x=x; this.y=y;
     this.largura=30; this.altura=52;
     this.velX=0; this.velY=0;
-    this.noChao=false;
-    this.dir=1;
-    this.estado='parado';
-    this.anim=0;
-    this.vidas=VIDAS_MAX;
-    this.pontos=0;
-    this.invulneravel=0;
-    this.piscar=false;
-    this.atacando=0;
-    this.jaAtacou=false;
-    this.travado=false;
-    this.morto=false;
-    this.vitoriaAtiva=false;
-    this.velMax=4.6;
-    this.aceleracao=0.55;
-    this.atrito=0.62;
-    this.controleAereo=0.45;
-    this.inimigosAtingidosNesteGolpe = new Set();
+    this.noChao=false; this.dir=1;
+    this.estado='parado'; this.anim=0;
+    this.vidas=VIDAS_MAX; this.pontos=0;
+    this.faixaIndex=faixaIndex;
+    this.invulneravelAte=0; this.travadoAte=0; this.piscar=false;
+    this.atacando=0; this.tipoAtaque=null; this.jaApertouJ=false;
+    this.comboEstagio=0; this.comboJanelaAte=0;
+    this.bloqueando=false;
+    this.morto=false; this.vitoriaAtiva=false;
+    this.velMax=4.6; this.aceleracao=0.55; this.atrito=0.62; this.controleAereo=0.45;
+    this.inimigosAtingidosNesteGolpe=new Set();
     this.pulRecemPressionado=false;
+    this.squash=0; // escala vertical extra (negativo=achatado, positivo=esticado)
   }
 
   definirCheckpoint(x,y){ this.respawnX=x; this.respawnY=y; }
+  get invulneravel(){ return agora() < this.invulneravelAte; }
+  get travado(){ return agora() < this.travadoAte; }
+  get atacandoAtivo(){
+    if(!this.tipoAtaque) return false;
+    const janela = JANELAS_ATAQUE[this.tipoAtaque];
+    return this.atacando>janela.min && this.atacando<=janela.max;
+  }
+  get retangulo(){ return { x:this.x-this.largura/2, y:this.y-this.altura, largura:this.largura, altura:this.altura }; }
+  get retanguloAtaque(){
+    const alc = this.tipoAtaque? JANELAS_ATAQUE[this.tipoAtaque].alcance : 30;
+    return { x: this.dir>0? this.x+4 : this.x-alc-4, y:this.y-this.altura+10, largura:alc, altura:this.altura-20 };
+  }
 
-  get atacandoAtivo(){ return this.atacando>ATAQUE_JANELA_MIN && this.atacando<=ATAQUE_JANELA_MAX; }
-
-  atualizar(mundo, dt){
+  atualizar(mundo,dt){
     this.anim+=dt;
+    this.squash *= Math.pow(0.8,dt);
 
     if(this.vitoriaAtiva){
-      this.estado='vitoria';
-      this.velX*=Math.pow(0.85,dt);
-      this.aplicarFisica(mundo,dt);
-      return;
+      this.estado='vitoria'; this.velX*=Math.pow(0.85,dt);
+      this.aplicarFisica(mundo,dt); return;
     }
     if(this.travado && this.estado==='morte'){
-      this.velX*=Math.pow(0.9,dt);
-      this.aplicarFisica(mundo,dt);
-      return;
+      this.velX*=Math.pow(0.9,dt); this.aplicarFisica(mundo,dt); return;
     }
-    if(this.travado && this.estado==='dano'){
-      this.velX*=Math.pow(0.88,dt); // amortece o knockback (corrige "voo" infinito)
+    if(this.travado){
       this.aplicarFisica(mundo,dt);
-      this.invulneravel-=dt;
-      if(this.invulneravel<=36) this.travado=false;
-      this.piscar = this.invulneravel>0;
+      this.piscar = this.invulneravel && Math.floor((this.invulneravelAte-agora())/100)%2===0;
       return;
     }
 
-    // --- Entrada ---
-    let entradaX = 0;
-    if(teclas['a']||teclas['arrowleft']) entradaX -= 1;
-    if(teclas['d']||teclas['arrowright']) entradaX += 1;
-    if(entradaX!==0) this.dir = entradaX>0?1:-1;
+    let entradaX=0;
+    if(teclas['a']||teclas['arrowleft']) entradaX-=1;
+    if(teclas['d']||teclas['arrowright']) entradaX+=1;
 
-    const fator = this.noChao? 1 : this.controleAereo;
-    if(entradaX!==0){
+    this.bloqueando = !!(teclas['k']) && this.noChao && this.atacando<=0;
+
+    if(!this.bloqueando && entradaX!==0) this.dir = entradaX>0?1:-1;
+
+    const fator = this.noChao?1:this.controleAereo;
+    if(this.bloqueando){
+      this.velX *= Math.pow(0.5,dt);
+    } else if(entradaX!==0){
       this.velX += entradaX*this.aceleracao*fator*2*dt;
       this.velX = clamp(this.velX,-this.velMax,this.velMax);
     } else if(this.noChao){
@@ -759,43 +1264,51 @@ class Jogador{
       if(Math.abs(this.velX)<0.05) this.velX=0;
     }
 
-    // Pulo
     const pedirPulo = teclas['w']||teclas['arrowup']||teclas[' '];
-    if(pedirPulo && this.noChao && !this.pulRecemPressionado){
-      this.velY = -12.6;
-      this.noChao=false;
+    if(pedirPulo && this.noChao && !this.pulRecemPressionado && !this.bloqueando){
+      this.velY=-12.6; this.noChao=false; this.squash=8;
       AudioSys.pular();
-      particulas.poeira(this.x-this.dir*6, this.y-2);
-      particulas.poeira(this.x+this.dir*6, this.y-2);
+      particulas.poeira(this.x-this.dir*6,this.y-2);
+      particulas.poeira(this.x+this.dir*6,this.y-2);
     }
-    this.pulRecemPressionado = !!pedirPulo;
+    this.pulRecemPressionado=!!pedirPulo;
 
-    // Ataque
-    if((teclas['j']||teclas['x']) && this.atacando<=0 && !this.jaAtacou){
-      this.atacando = ATAQUE_DURACAO;
-      this.jaAtacou = true;
+    // --- Combate ---
+    const pedirSoco = teclas['j'];
+    if(pedirSoco && this.atacando<=0 && !this.jaApertouJ){
+      this.jaApertouJ=true;
+      if(this.bloqueando || teclas['k']){
+        this.tipoAtaque='contra';
+        this.comboEstagio=0;
+      } else {
+        const dentroDaJanela = agora() < this.comboJanelaAte;
+        this.comboEstagio = dentroDaJanela ? (this.comboEstagio%3)+1 : 1;
+        this.tipoAtaque = 'soco'+this.comboEstagio;
+      }
+      const j = JANELAS_ATAQUE[this.tipoAtaque];
+      this.atacando = j.duracao;
+      this.comboJanelaAte = agora()+j.duracao*16.6+COMBO_JANELA_MS;
       this.inimigosAtingidosNesteGolpe.clear();
-      AudioSys.atacar();
+      if(this.tipoAtaque==='contra') AudioSys.contraataque();
+      else if(this.tipoAtaque==='soco3') AudioSys.socoForte();
+      else AudioSys.soco();
     }
-    if(!(teclas['j']||teclas['x'])) this.jaAtacou=false;
+    if(!pedirSoco) this.jaApertouJ=false;
     if(this.atacando>0) this.atacando=Math.max(0,this.atacando-dt);
+    else this.tipoAtaque=null;
 
-    // poeira ao correr
     if(this.noChao && Math.abs(this.velX)>1.5 && Math.floor(this.anim)%6===0){
-      particulas.poeira(this.x-this.dir*10, this.y-2);
+      particulas.poeira(this.x-this.dir*10,this.y-2);
     }
 
-    // Estado visual
     if(this.atacando>0) this.estado='atacando';
+    else if(this.bloqueando) this.estado='bloqueio';
     else if(!this.noChao) this.estado = this.velY<0?'pulando':'caindo';
     else if(Math.abs(this.velX)>2.6) this.estado='correndo';
     else if(Math.abs(this.velX)>0.2) this.estado='andando';
     else this.estado='parado';
 
-    if(this.invulneravel>0){
-      this.invulneravel-=dt;
-      this.piscar = true;
-    } else this.piscar=false;
+    this.piscar = this.invulneravel && Math.floor((this.invulneravelAte-agora())/100)%2===0;
 
     this.aplicarFisica(mundo,dt);
   }
@@ -804,20 +1317,20 @@ class Jogador{
     this.velY += GRAVIDADE*dt;
     if(this.velY>18) this.velY=18;
     this.x += this.velX*dt;
+    const estavaNoAr = !this.noChao;
     this.y += this.velY*dt;
 
-    if(this.x < 20) this.x=20;
-    if(this.x > mundo.largura-20) this.x = mundo.largura-20;
+    if(this.x<20) this.x=20;
+    if(this.x>mundo.largura-20) this.x=mundo.largura-20;
 
+    const estavaNoChao = this.noChao;
     this.noChao=false;
     for(const p of mundo.plataformas){
       if(!p.solida) continue;
-      if(this.x+10 > p.x && this.x-10 < p.x+p.largura){
-        if(this.y >= p.y && this.y <= p.y + 16 && this.velY>=0){
-          this.y = p.y;
-          this.velY = 0;
-          this.noChao = true;
-          this.x += p.deltaX;
+      if(this.x+10>p.x && this.x-10<p.x+p.largura){
+        if(this.y>=p.y && this.y<=p.y+16 && this.velY>=0){
+          this.y=p.y; this.velY=0; this.noChao=true; this.x+=p.deltaX;
+          if(p.tipo==='caidica') p.ativarQueda();
         }
       }
     }
@@ -826,105 +1339,94 @@ class Jogador{
     for(const b of mundo.buracos){
       if(this.x>b.x+6 && this.x<b.x+b.largura-6){ sobreBuraco=true; break; }
     }
-    if(!sobreBuraco && this.y>=CHAO_Y && this.velY>=0){
-      this.y=CHAO_Y; this.velY=0; this.noChao=true;
+    if(!sobreBuraco && this.y>=CHAO_Y && this.velY>=0){ this.y=CHAO_Y; this.velY=0; this.noChao=true; }
+
+    if(!estavaNoChao && this.noChao){
+      this.squash=-7; AudioSys.aterrissar();
+      particulas.poeira(this.x-6,this.y-1); particulas.poeira(this.x+6,this.y-1);
     }
 
-    // caiu fora do mundo (buraco ou entre plataformas): SEMPRE reposiciona,
-    // independente de invulnerabilidade — nunca deixa o jogador preso caindo.
-    if(this.y > ALTURA + 80){
-      this.caiuNoVazio();
-      return;
-    }
+    if(this.y>ALTURA+80){ this.caiuNoVazio(mundo); return; }
 
     for(const e of mundo.espinhos){
-      if(this.invulneravel<=0 && colideRect(this.retangulo, e.rect)){
-        this.receberDano();
-      }
+      if(!this.invulneravel && colideRect(this.retangulo,e.rect)) this.receberDano(mundo,false);
     }
     for(const a of mundo.armadilhas){
-      if(this.invulneravel<=0 && a.estado==='caindo' && colideRect(this.retangulo, a.rect)){
-        this.receberDano();
-      }
+      if(!this.invulneravel && a.estado==='caindo' && colideRect(this.retangulo,a.rect)) this.receberDano(mundo,false);
     }
   }
 
-  // Dano por contato (inimigo/espinho/armadilha): apenas recuo no lugar.
-  receberDano(){
-    if(this.invulneravel>0 || this.travado || this.vitoriaAtiva) return;
+  // Dano com bloqueio possível: nega dano se estiver bloqueando de frente.
+  receberDanoComBloqueio(mundo, direcaoAtaque){
+    if(this.bloqueando && Math.sign(direcaoAtaque||1)===this.dir){
+      particulas.emitir(this.x+this.dir*14,this.y-this.altura*0.6,'#dfe8f5',6,{vel:2,velVar:1.5,vida:12});
+      AudioSys.bloqueio();
+      return;
+    }
+    this.receberDano(mundo,false);
+  }
+
+  receberDano(mundo, inevitavel){
+    if(this.invulneravel || this.travado || this.vitoriaAtiva) return;
     this.vidas--;
     AudioSys.dano();
     particulas.emitir(this.x,this.y-this.altura/2,'#ff8a8a',10,{vel:3,velVar:2,vida:22});
+    GameFeel.congelar(40);
     if(this.vidas<=0){
-      this.vidas=0;
-      this.estado='morte';
-      this.travado=true;
-      this.morto=true;
-      this.velX=0; this.velY=-6;
+      this.vidas=0; this.estado='morte'; this.travadoAte=agora()+99999;
+      this.morto=true; this.velX=0; this.velY=-6;
+      AudioSys.morte();
       return;
     }
+    // retorna ao checkpoint imediatamente e reinicia perigos próximos
+    this.x=this.respawnX; this.y=this.respawnY;
+    this.velX=0; this.velY=0; this.noChao=true;
+    if(mundo && mundo.resetarPerigos) mundo.resetarPerigos();
     this.estado='dano';
-    this.travado=true;
-    this.invulneravel=72;
-    this.velX = -this.dir*4.5;
-    this.velY = -5.5;
+    this.travadoAte = agora()+260;
+    this.invulneravelAte = agora()+1000;
   }
 
-  // Queda em buraco/vazio: reposiciona no checkpoint e perde uma vida.
-  caiuNoVazio(){
+  caiuNoVazio(mundo){
     if(this.vitoriaAtiva || (this.travado && this.estado==='morte')) return;
     this.vidas = Math.max(0,this.vidas-1);
     AudioSys.dano();
     particulas.emitir(this.x, CHAO_Y-10, '#ff8a8a', 10, {vel:3,velVar:2,vida:22});
     if(this.vidas<=0){
       this.vidas=0;
-      this.x = this.respawnX; this.y = this.respawnY-30;
-      this.velX=0; this.velY=-4;
-      this.estado='morte'; this.travado=true; this.morto=true;
+      this.x=this.respawnX; this.y=this.respawnY-30; this.velX=0; this.velY=-4;
+      this.estado='morte'; this.travadoAte=agora()+99999; this.morto=true;
+      AudioSys.morte();
       return;
     }
-    this.x = this.respawnX; this.y = this.respawnY;
+    this.x=this.respawnX; this.y=this.respawnY;
     this.velX=0; this.velY=0; this.noChao=true;
-    this.estado='dano'; this.travado=false;
-    this.invulneravel=72; this.piscar=true;
+    if(mundo && mundo.resetarPerigos) mundo.resetarPerigos();
+    this.estado='dano';
+    this.travadoAte = agora()+260;
+    this.invulneravelAte = agora()+1000;
   }
 
   atingirVitoria(){
     if(this.vitoriaAtiva) return;
-    this.vitoriaAtiva=true;
-    this.velX=0; this.velY=0;
+    this.vitoriaAtiva=true; this.velX=0; this.velY=0;
     AudioSys.vitoria();
   }
 
-  get retangulo(){
-    return { x:this.x-this.largura/2, y:this.y-this.altura, largura:this.largura, altura:this.altura };
-  }
-  get retanguloAtaque(){
-    const alcance=32;
-    return {
-      x: this.dir>0? this.x+4 : this.x-alcance-4,
-      y: this.y-this.altura+10,
-      largura: alcance,
-      altura: this.altura-20
-    };
-  }
-
   desenhar(ctx,camX){
-    const sx = this.x-camX;
-    if(this.piscar && Math.floor(this.anim/4)%2===0) return;
-    ctx.save();
-    ctx.translate(sx,this.y);
-    ctx.scale(this.dir,1);
+    const sx=this.x-camX;
+    if(this.piscar) return;
+    ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
 
-    const t = this.anim*0.18;
+    const t=this.anim*0.18;
     let balancoPerna=0, balancoBraco=0, inclinacao=0, pulos=0;
-
     switch(this.estado){
       case 'andando': balancoPerna=Math.sin(t*1.3)*10; balancoBraco=Math.sin(t*1.3+Math.PI)*8; break;
       case 'correndo': balancoPerna=Math.sin(t*2)*16; balancoBraco=Math.sin(t*2+Math.PI)*14; inclinacao=6; break;
       case 'pulando': pulos=-6; balancoPerna=-8; balancoBraco=-20; break;
       case 'caindo': pulos=2; balancoPerna=10; balancoBraco=10; break;
-      case 'atacando': balancoBraco=26; inclinacao=8; break;
+      case 'atacando': inclinacao = this.tipoAtaque==='contra'?10:6; break;
+      case 'bloqueio': inclinacao=-4; break;
       case 'dano': inclinacao=-14; break;
       case 'morte': inclinacao=90; break;
       case 'vitoria': balancoBraco=-28+Math.sin(this.anim*0.2)*6; pulos=Math.sin(this.anim*0.15)*4; break;
@@ -933,209 +1435,349 @@ class Jogador{
 
     ctx.rotate(inclinacao*Math.PI/180);
     ctx.translate(0,pulos);
+    const esc = 1 + this.squash*0.01;
+    ctx.scale(1/esc, esc);
 
-    const corRoupa1 = '#2d6ca8';
-    const corRoupa2 = '#ffd93d';
-    const corPele = '#e8b48c';
-    const corCabelo = '#3b2a1f';
-    const corCalca = '#354b6b';
+    const faixaCor = FAIXAS[this.faixaIndex].cor;
+    const corGi='#f2f2ee', corPele='#e8b48c', corCabelo='#2c2018';
 
     ctx.fillStyle='rgba(0,0,0,0.25)';
     ctx.beginPath(); ctx.ellipse(0,4,16,5,0,0,Math.PI*2); ctx.fill();
 
-    ctx.fillStyle=corCalca;
-    ctx.fillRect(-7, -22+balancoPerna*0.2, 7, 22-balancoPerna*0.15);
-    ctx.fillRect(1, -22-balancoPerna*0.2, 7, 22+balancoPerna*0.15);
+    // pernas (calça de treino)
+    ctx.fillStyle=corGi;
+    ctx.fillRect(-7,-22+balancoPerna*0.2,7,22-balancoPerna*0.15);
+    ctx.fillRect(1,-22-balancoPerna*0.2,7,22+balancoPerna*0.15);
 
-    ctx.fillStyle=corRoupa1;
+    // tronco (gi branco)
+    ctx.fillStyle=corGi;
     ctx.beginPath();
     ctx.moveTo(-11,-24); ctx.lineTo(11,-24); ctx.lineTo(9,-44); ctx.lineTo(-9,-44);
     ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(-9,-44); ctx.lineTo(-3,-24); ctx.moveTo(9,-44); ctx.lineTo(3,-24); ctx.stroke();
 
-    desenharEstrela(ctx,0,-34,5,5,2.4,corRoupa2);
+    // faixa (muda de cor conforme progressão)
+    ctx.fillStyle=faixaCor;
+    ctx.fillRect(-10,-29,20,6);
+    ctx.fillStyle=faixaCor;
+    ctx.fillRect(this.dir>0?4:-9,-29,5,10);
 
-    ctx.fillStyle=corRoupa1;
-    ctx.save();
-    ctx.translate(-8,-40);
-    ctx.rotate((balancoBraco-10)*Math.PI/180);
-    ctx.fillRect(-3,0,6,20);
-    ctx.restore();
+    // braço de trás
+    ctx.fillStyle=corGi;
+    ctx.save(); ctx.translate(-8,-40); ctx.rotate((balancoBraco-10)*Math.PI/180); ctx.fillRect(-3,0,6,20); ctx.restore();
 
-    ctx.save();
-    ctx.translate(8,-40);
-    let anguloBraco = (balancoBraco)*Math.PI/180;
-    if(this.estado==='atacando') anguloBraco = -Math.PI/2.1 + Math.sin((ATAQUE_DURACAO-this.atacando)*0.35)*0.4;
-    ctx.rotate(anguloBraco);
-    ctx.fillStyle=corRoupa1;
-    ctx.fillRect(-3,0,6,20);
-    if(this.atacandoAtivo){
-      ctx.fillStyle='rgba(255,217,61,0.9)';
-      ctx.beginPath(); ctx.arc(0,22,7,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.6)';
-      ctx.beginPath(); ctx.arc(0,22,3,0,Math.PI*2); ctx.fill();
+    // braço/perna da frente — animação de golpe conforme tipoAtaque
+    ctx.save(); ctx.translate(8,-40);
+    let anguloBraco=(balancoBraco)*Math.PI/180;
+    let pernaChute=false;
+    if(this.estado==='atacando'){
+      const j=JANELAS_ATAQUE[this.tipoAtaque];
+      const progresso=(j.duracao-this.atacando)/j.duracao;
+      if(this.tipoAtaque==='soco3'){ pernaChute=true; }
+      else { anguloBraco = -Math.PI/2.1 + Math.sin(progresso*Math.PI)*0.9; }
+    } else if(this.estado==='bloqueio'){
+      anguloBraco = -Math.PI/2.6;
+    }
+    if(!pernaChute){
+      ctx.rotate(anguloBraco);
+      ctx.fillStyle=corGi; ctx.fillRect(-3,0,6,20);
+      if(this.atacandoAtivo && this.tipoAtaque!=='soco3'){
+        const corBrilho = this.tipoAtaque==='contra' ? 'rgba(255,217,61,0.95)' : 'rgba(255,255,255,0.75)';
+        ctx.fillStyle=corBrilho;
+        ctx.beginPath(); ctx.arc(0,22,this.tipoAtaque==='contra'?9:6,0,Math.PI*2); ctx.fill();
+      }
     }
     ctx.restore();
 
-    ctx.fillStyle=corPele;
-    ctx.beginPath(); ctx.arc(0,-50,10,0,Math.PI*2); ctx.fill();
+    if(pernaChute){
+      const j=JANELAS_ATAQUE[this.tipoAtaque];
+      const progresso=clamp((j.duracao-this.atacando)/j.duracao,0,1);
+      const anguloChute = -Math.sin(progresso*Math.PI)*1.3;
+      ctx.save(); ctx.translate(2,-22); ctx.rotate(anguloChute);
+      ctx.fillStyle=corGi; ctx.fillRect(-4,0,8,22);
+      if(this.atacandoAtivo){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(0,22,7,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    }
 
-    ctx.fillStyle=corCabelo;
-    ctx.beginPath(); ctx.arc(0,-53,10.5,Math.PI*0.95,Math.PI*2.05); ctx.fill();
+    if(this.bloqueando){
+      ctx.fillStyle='rgba(159,184,201,0.6)';
+      ctx.beginPath(); ctx.ellipse(14,-34,7,14,0,0,Math.PI*2); ctx.fill();
+    }
+
+    // cabeça
+    ctx.fillStyle=corPele; ctx.beginPath(); ctx.arc(0,-50,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=corCabelo; ctx.beginPath(); ctx.arc(0,-53,10.5,Math.PI*0.95,Math.PI*2.05); ctx.fill();
     ctx.fillRect(-10,-56,4,10);
-
     if(this.estado!=='morte'){
-      ctx.fillStyle='#22262e';
-      ctx.beginPath(); ctx.arc(4,-50,1.6,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#22262e'; ctx.beginPath(); ctx.arc(4,-50,1.6,0,Math.PI*2); ctx.fill();
     } else {
       ctx.strokeStyle='#22262e'; ctx.lineWidth=1.4;
       ctx.beginPath(); ctx.moveTo(2,-52);ctx.lineTo(6,-48); ctx.moveTo(6,-52);ctx.lineTo(2,-48); ctx.stroke();
     }
-
-    ctx.fillStyle=corRoupa2;
-    ctx.fillRect(-10,-58,20,3);
+    // faixa na testa (headband) reforça identidade
+    ctx.fillStyle=faixaCor; ctx.fillRect(-10,-58,20,3);
 
     ctx.restore();
   }
 }
+const JANELAS_ATAQUE = {
+  soco1:{duracao:14, min:4, max:11, alcance:26, dano:1, hitstop:40, shake:2},
+  soco2:{duracao:16, min:5, max:13, alcance:28, dano:1, hitstop:50, shake:3},
+  soco3:{duracao:22, min:8, max:18, alcance:34, dano:2, hitstop:80, shake:5},
+  contra:{duracao:20, min:5, max:16, alcance:38, dano:2, hitstop:90, shake:6},
+};
 
 /* =====================================================================
-   9. COLISÕES
+   SISTEMA: NIVEL BASE (compartilhado pelas 8 fases)
 ===================================================================== */
-function colideRect(a,b){
-  return a.x < b.x+b.largura && a.x+a.largura>b.x &&
-         a.y < b.y+b.altura && a.y+a.altura>b.y;
-}
-
-/* =====================================================================
-   10. FASE 1 — "O Caminho da Estrela" (construção por cursor sequencial)
-===================================================================== */
-class Fase1{
-  constructor(){
-    this.plataformas = [];
-    this.espinhos = [];
-    this.buracos = [];
-    this.armadilhas = [];
-    this.inimigosPatrulheiro = [];
-    this.inimigosSaltador = [];
-    this.inimigosGuardiao = [];
-    this.checkpoints = [];
-    this.decoracoes = [];
+class NivelBase{
+  constructor(indice){
+    this.indice=indice;
+    this.faixa=FAIXAS[indice];
+    this.plataformas=[]; this.espinhos=[]; this.buracos=[]; this.armadilhas=[];
+    this.inimigos=[]; this.checkpoints=[]; this.decoracoes=[];
+    this.chefe=null;
+    this.dificuldade = 1 + indice*0.1;
     this.montar();
-    this.largura = this.cursorFinal + 900;
-    this.estrelaFinalX = this.largura - 260;
-    this.estrelaFinalY = CHAO_Y - 120;
-    this.areaEstrelaX = this.largura - 640;
+    this.largura = this.cursorFinal + (this.chefe? 700:900);
+    this.estrelaFinalX = this.chefe ? null : this.largura-260;
+    this.estrelaFinalY = CHAO_Y-120;
+    this.areaEstrelaX = this.chefe ? this.cursorFinal+220 : this.largura-640;
+    this.chefeAtivado=false;
   }
-
-  montar(){
-    let c = 420; // cursor de construção
-
-    // ============ ESTÁGIO 1 — INTRODUÇÃO ============
-    this.buracos.push(new Buraco(c,70)); c+=70+170;
-    this.inimigosPatrulheiro.push(new InimigoPatrulheiro(c,CHAO_Y,c-70,c+70)); c+=220;
-    this.espinhos.push(new Espinho(c,CHAO_Y-22,50)); c+=50+150;
-    this.buracos.push(new Buraco(c,90)); c+=90+180;
-
-    // ============ ESTÁGIO 2 — PRIMEIROS DESAFIOS ============
-    this.plataformas.push(new Plataforma(c,CHAO_Y-70,100));
-    this.buracos.push(new Buraco(c,330));
-    this.plataformas.push(new Plataforma(c+140,CHAO_Y-130,90));
-    this.plataformas.push(new Plataforma(c+280,CHAO_Y-70,100));
-    c+=380;
-    this.espinhos.push(new Espinho(c,CHAO_Y-22,60)); c+=60+140;
-    this.plataformas.push(new Plataforma(c,CHAO_Y-60,80,24,{tipo:'sumindo',tempoVisivel:130,tempoInvisivel:80,avisoFrames:40}));
-    this.buracos.push(new Buraco(c-20,150)); c+=140;
-    this.inimigosPatrulheiro.push(new InimigoPatrulheiro(c,CHAO_Y,c-90,c+90)); c+=240;
-
-    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); this.cpSeguroX=c; c+=170;
-
-    // ============ ESTÁGIO 3 — COMBATE INTENSO ============
-    // arena: patrulheiro + saltador combinados
-    this.inimigosPatrulheiro.push(new InimigoPatrulheiro(c,CHAO_Y,c-60,c+160));
-    this.inimigosSaltador.push(new InimigoSaltador(c+260,CHAO_Y,c+180,c+360));
-    c+=460;
-    // saltador sobre buraco: obriga combate + cuidado com o vazio
-    this.buracos.push(new Buraco(c,110));
-    this.inimigosSaltador.push(new InimigoSaltador(c+220,CHAO_Y,c+150,c+330));
-    c+=420;
-    // guardião protegendo a passagem (combo INIMIGO + área elevada)
-    this.plataformas.push(new Plataforma(c-40,CHAO_Y-60,50));
-    this.plataformas.push(new Plataforma(c+170,CHAO_Y-60,50));
-    this.inimigosGuardiao.push(new InimigoGuardiao(c+65,CHAO_Y));
-    c+=280;
-
-    // ============ ESTÁGIO 4 — DESAFIOS DE PLATAFORMA ============
-    this.buracos.push(new Buraco(c,260));
-    this.plataformas.push(new Plataforma(c,CHAO_Y-90,80,24,{tipo:'movel',eixo:'y',velY:1.3,limiteMin:CHAO_Y-210,limiteMax:CHAO_Y-90}));
-    c+=310;
-    this.espinhos.push(new Espinho(c,CHAO_Y-22,60)); c+=60+130;
-    this.plataformas.push(new Plataforma(c,CHAO_Y-70,70));
-    this.plataformas.push(new Plataforma(c+140,CHAO_Y-130,70));
-    this.plataformas.push(new Plataforma(c+280,CHAO_Y-70,70));
-    c+=380;
-    // combo: espinhos entre plataformas em sequência
-    this.buracos.push(new Buraco(c,300));
-    this.plataformas.push(new Plataforma(c,CHAO_Y-60,90,24,{tipo:'movel',eixo:'x',velX:1.8,limiteMin:c,limiteMax:c+210}));
-    c+=340;
-    // armadilha de objeto caindo, sobre trecho de chão firme
-    this.armadilhas.push(new ArmadilhaQueda(c+70));
-    c+=220;
-    this.inimigosPatrulheiro.push(new InimigoPatrulheiro(c,CHAO_Y,c-90,c+90)); c+=240;
-
-    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=170;
-
-    // ============ ESTÁGIO 5 — TRECHO FINAL ============
-    // combo: buraco + saltador perseguindo sobre plataforma estreita
-    this.buracos.push(new Buraco(c,240));
-    this.plataformas.push(new Plataforma(c+60,CHAO_Y-50,70));
-    this.inimigosSaltador.push(new InimigoSaltador(c+300,CHAO_Y,c+230,c+420));
-    c+=460;
-    // combo: espinho + plataforma sumindo
-    this.plataformas.push(new Plataforma(c,CHAO_Y-90,70,24,{tipo:'sumindo',tempoVisivel:110,tempoInvisivel:70,avisoFrames:35}));
-    this.buracos.push(new Buraco(c-30,200));
-    this.espinhos.push(new Espinho(c+90,CHAO_Y-22,50));
-    c+=260;
-    // patrulheiro numa plataforma elevada ampla, perto de um vão
-    this.buracos.push(new Buraco(c,150));
-    this.plataformas.push(new Plataforma(c+150,CHAO_Y-60,180));
-    this.inimigosPatrulheiro.push(new InimigoPatrulheiro(c+240,CHAO_Y-60,c+160,c+310));
-    c+=390;
-    // guardião final antes da Estrela
-    this.inimigosGuardiao.push(new InimigoGuardiao(c,CHAO_Y));
-    c+=320;
-
-    this.cursorFinal = c;
-
-    // ============ DECORAÇÕES ============
-    const largAprox = c+900;
-    for(let x=0; x<largAprox; x+=260) this.decoracoes.push(new Decoracao(x+Math.random()*80, CHAO_Y-10, 'arvore', 0.8+Math.random()*0.6));
-    for(let x=100; x<largAprox; x+=420) this.decoracoes.push(new Decoracao(x+Math.random()*100, 70+Math.random()*40, 'nuvem', 0.7+Math.random()*0.7));
-    for(let x=0; x<largAprox; x+=180) this.decoracoes.push(new Decoracao(x+Math.random()*60, 90+Math.random()*180, 'estrelaFundo', 0.5+Math.random()*0.7));
-    for(let x=300; x<largAprox-400; x+=650) this.decoracoes.push(new Decoracao(x, CHAO_Y-46, 'casa', 1));
-    for(let x=500; x<largAprox-400; x+=900) this.decoracoes.push(new Decoracao(x, CHAO_Y-8, 'banco', 1));
+  montar(){ this.cursorFinal = 420; }
+  resetarPerigos(){
+    this.plataformas.forEach(p=> p.resetar && p.resetar());
+    this.armadilhas.forEach(a=> a.resetar());
   }
-
-  atualizar(jogador, dt){
+  atualizar(jogador,dt){
     this.plataformas.forEach(p=>p.atualizar(dt));
     this.armadilhas.forEach(a=>a.atualizar(dt));
-    this.inimigosPatrulheiro.forEach(i=>i.atualizar(dt,jogador));
-    this.inimigosSaltador.forEach(i=>i.atualizar(dt,jogador));
-    this.inimigosGuardiao.forEach(i=>i.atualizar(dt,jogador));
-  }
-
-  get todosInimigos(){
-    return [...this.inimigosPatrulheiro, ...this.inimigosSaltador, ...this.inimigosGuardiao];
+    this.inimigos.forEach(i=>i.vivo!==false && i.atualizar(dt,jogador));
+    if(this.chefe && this.chefe.vivo) this.chefe.atualizar(dt,jogador);
   }
 }
 
+/* ---- Helpers de decoração ---- */
 class Decoracao{
   constructor(x,y,tipo,escala=1){ this.x=x;this.y=y;this.tipo=tipo;this.escala=escala; this.tw=Math.random()*Math.PI*2; }
 }
+function espalharDecoracoesPadrao(nivel, largAprox, tipos){
+  for(let x=0;x<largAprox;x+=260) nivel.decoracoes.push(new Decoracao(x+Math.random()*80, CHAO_Y-10, tipos.chao||'arvore', 0.8+Math.random()*0.6));
+  for(let x=100;x<largAprox;x+=420) nivel.decoracoes.push(new Decoracao(x+Math.random()*100, 70+Math.random()*40, 'nuvem', 0.7+Math.random()*0.7));
+  for(let x=0;x<largAprox;x+=180) nivel.decoracoes.push(new Decoracao(x+Math.random()*60, 90+Math.random()*180, 'estrelaFundo', 0.5+Math.random()*0.7));
+  if(tipos.extra){
+    for(let x=300;x<largAprox-400;x+=650) nivel.decoracoes.push(new Decoracao(x, CHAO_Y-40, tipos.extra, 1));
+  }
+}
 
 /* =====================================================================
-   11. CENÁRIO — fundo, parallax, área da estrela
+   SISTEMA: LEVELS (as 8 fases / faixas)
 ===================================================================== */
-function desenharFundo(ctx,camX,fase,tempo){
+// NÍVEL 1 — FAIXA BRANCA — "O Primeiro Passo" (centro de treinamento / comunidade)
+class Nivel1 extends NivelBase{
+  montar(){
+    let c=380;
+    this.buracos.push(new Buraco(c,60)); c+=60+160;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-70,c+70,this.dificuldade)); c+=220;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,90)); c+=90+140;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,50)); c+=50+150;
+    this.buracos.push(new Buraco(c,90)); c+=90+170;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-90,c+90,this.dificuldade)); c+=220;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,90));
+    this.plataformas.push(new Plataforma(c+150,CHAO_Y-120,80));
+    c+=280;
+    this.cursorFinal=c;
+    const larg=c+900;
+    espalharDecoracoesPadrao(this,larg,{chao:'arvore',extra:'casa'});
+    for(let x=500;x<larg-400;x+=900) this.decoracoes.push(new Decoracao(x, CHAO_Y-8, 'banco', 1));
+  }
+}
+
+// NÍVEL 2 — FAIXA AMARELA — "Disciplina" (bairro tropical)
+class Nivel2 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-80,c+80,this.dificuldade)); c+=220;
+    this.buracos.push(new Buraco(c,100)); c+=100+160;
+    this.inimigos.push(new InimigoCorredor(c,CHAO_Y,c-60,c+220,this.dificuldade)); c+=320;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,60)); c+=60+140;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,80,24,{tipo:'sumindo',tempoVisivel:120,tempoInvisivel:75,avisoFrames:36}));
+    this.buracos.push(new Buraco(c-20,150)); c+=150;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=170;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-70,c+120,this.dificuldade));
+    this.inimigos.push(new InimigoCorredor(c+260,CHAO_Y,c+180,c+380,this.dificuldade));
+    c+=460;
+    this.buracos.push(new Buraco(c,140));
+    this.plataformas.push(new Plataforma(c+30,CHAO_Y-70,80));
+    c+=300;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.cursorFinal=c;
+    espalharDecoracoesPadrao(this,c+900,{chao:'arvore',extra:'casa'});
+  }
+}
+
+// NÍVEL 3 — FAIXA LARANJA — "Superação" (floresta)
+class Nivel3 extends NivelBase{
+  montar(){
+    let c=380;
+    this.buracos.push(new Buraco(c,90)); c+=90+150;
+    this.inimigos.push(new InimigoAtirador(c,CHAO_Y,this.dificuldade)); c+=260;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,80));
+    this.plataformas.push(new Plataforma(c+140,CHAO_Y-120,80));
+    this.plataformas.push(new Plataforma(c+280,CHAO_Y-70,80));
+    this.buracos.push(new Buraco(c,360));
+    c+=380;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-70,c+140,this.dificuldade));
+    this.inimigos.push(new InimigoAtirador(c+300,CHAO_Y,this.dificuldade));
+    c+=440;
+    this.armadilhas.push(new ArmadilhaQueda(c+60)); c+=220;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,70)); c+=70+140;
+    this.inimigos.push(new InimigoCorredor(c,CHAO_Y,c-70,c+160,this.dificuldade)); c+=280;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.cursorFinal=c;
+    espalharDecoracoesPadrao(this,c+900,{chao:'arvore',extra:null});
+  }
+}
+
+// NÍVEL 4 — FAIXA VERDE — "Crescimento" (área urbana, mais verticalidade)
+class Nivel4 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoPatrulheiro(c,CHAO_Y,c-70,c+70,this.dificuldade)); c+=200;
+    this.buracos.push(new Buraco(c,300));
+    this.plataformas.push(new Plataforma(c,CHAO_Y-90,80,24,{tipo:'movel',eixo:'y',velY:1.3,limiteMin:CHAO_Y-220,limiteMax:CHAO_Y-90}));
+    c+=330;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,70));
+    this.plataformas.push(new Plataforma(c+140,CHAO_Y-140,70));
+    this.plataformas.push(new Plataforma(c+280,CHAO_Y-210,70));
+    this.inimigos.push(new InimigoVoador(c+140,CHAO_Y-240,c,c+280,this.dificuldade));
+    c+=380;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,70,24,{tipo:'caidica'}));
+    this.plataformas.push(new Plataforma(c+120,CHAO_Y-60,70,24,{tipo:'caidica'}));
+    this.buracos.push(new Buraco(c-20,230));
+    c+=260;
+    this.inimigos.push(new InimigoDefensor(c,CHAO_Y,this.dificuldade)); c+=260;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,70)); c+=70+150;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.cursorFinal=c;
+    espalharDecoracoesPadrao(this,c+900,{chao:'casa',extra:'casa'});
+  }
+}
+
+// NÍVEL 5 — FAIXA AZUL — "Controle" (região costeira, precisão)
+class Nivel5 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoCorredor(c,CHAO_Y,c-60,c+140,this.dificuldade)); c+=240;
+    this.buracos.push(new Buraco(c,220));
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,70,24,{tipo:'movel',eixo:'x',velX:1.9,limiteMin:c,limiteMax:c+150}));
+    c+=260;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,60)); c+=60+130;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,60,24,{tipo:'sumindo',tempoVisivel:100,tempoInvisivel:70,avisoFrames:32}));
+    this.plataformas.push(new Plataforma(c+130,CHAO_Y-120,60,24,{tipo:'sumindo',tempoVisivel:100,tempoInvisivel:70,avisoFrames:32,faseInicial:35}));
+    this.buracos.push(new Buraco(c-20,270));
+    c+=280;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.inimigos.push(new InimigoAtirador(c,CHAO_Y,this.dificuldade));
+    this.inimigos.push(new InimigoVoador(c+220,CHAO_Y-150,c+120,c+340,this.dificuldade));
+    c+=420;
+    this.buracos.push(new Buraco(c,260));
+    this.plataformas.push(new Plataforma(c+30,CHAO_Y-60,60,24,{tipo:'movel',eixo:'y',velY:1.5,limiteMin:CHAO_Y-190,limiteMax:CHAO_Y-60}));
+    c+=300;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.cursorFinal=c;
+    espalharDecoracoesPadrao(this,c+900,{chao:'arvore',extra:null});
+  }
+}
+
+// NÍVEL 6 — FAIXA ROXA — "Determinação" (complexo de treinamento) + CHEFE INTERMEDIÁRIO
+class Nivel6 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoPesado(c,CHAO_Y,c-70,c+70,this.dificuldade)); c+=240;
+    this.buracos.push(new Buraco(c,120));
+    this.inimigos.push(new InimigoCorredor(c+180,CHAO_Y,c+120,c+320,this.dificuldade));
+    c+=400;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,70));
+    this.plataformas.push(new Plataforma(c+140,CHAO_Y-130,70));
+    this.plataformas.push(new Plataforma(c+280,CHAO_Y-70,70));
+    this.espinhos.push(new Espinho(c+140,CHAO_Y-152,40));
+    this.buracos.push(new Buraco(c,360));
+    c+=400;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.inimigos.push(new InimigoDefensor(c,CHAO_Y,this.dificuldade));
+    this.inimigos.push(new InimigoAtirador(c+260,CHAO_Y,this.dificuldade));
+    c+=380;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,70,24,{tipo:'caidica'})); c+=180;
+    this.buracos.push(new Buraco(c-160,150));
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=200;
+    this.cursorFinal=c;
+    this.chefe = new ChefeRival(c+260,CHAO_Y);
+    espalharDecoracoesPadrao(this,c+700,{chao:'casa',extra:null});
+  }
+}
+
+// NÍVEL 7 — FAIXA MARROM — "Preparação" (montanha / templo)
+class Nivel7 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoVoador(c,CHAO_Y-100,c-80,c+120,this.dificuldade)); c+=220;
+    this.buracos.push(new Buraco(c,260));
+    this.plataformas.push(new Plataforma(c,CHAO_Y-70,70,24,{tipo:'movel',eixo:'y',velY:1.4,limiteMin:CHAO_Y-210,limiteMax:CHAO_Y-70}));
+    c+=310;
+    this.inimigos.push(new InimigoPesado(c,CHAO_Y,c-70,c+90,this.dificuldade)); c+=260;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,80)); c+=80+130;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=160;
+    this.plataformas.push(new Plataforma(c,CHAO_Y-60,60,24,{tipo:'sumindo',tempoVisivel:95,tempoInvisivel:65,avisoFrames:30}));
+    this.plataformas.push(new Plataforma(c+130,CHAO_Y-110,60,24,{tipo:'sumindo',tempoVisivel:95,tempoInvisivel:65,avisoFrames:30,faseInicial:40}));
+    this.plataformas.push(new Plataforma(c+260,CHAO_Y-60,60,24,{tipo:'sumindo',tempoVisivel:95,tempoInvisivel:65,avisoFrames:30,faseInicial:80}));
+    this.buracos.push(new Buraco(c-20,360));
+    c+=380;
+    this.inimigos.push(new InimigoDefensor(c,CHAO_Y,this.dificuldade));
+    this.inimigos.push(new InimigoVoador(c+240,CHAO_Y-130,c+140,c+340,this.dificuldade));
+    c+=420;
+    this.armadilhas.push(new ArmadilhaQueda(c+60));
+    this.inimigos.push(new InimigoCorredor(c+220,CHAO_Y,c+150,c+360,this.dificuldade));
+    c+=420;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=170;
+    this.cursorFinal=c;
+    espalharDecoracoesPadrao(this,c+900,{chao:'arvore',extra:null});
+  }
+}
+
+// NÍVEL 8 — FAIXA PRETA — "O Grande Desafio" (arena final) + CHEFE FINAL
+class Nivel8 extends NivelBase{
+  montar(){
+    let c=380;
+    this.inimigos.push(new InimigoPesado(c,CHAO_Y,c-70,c+70,this.dificuldade)); c+=220;
+    this.inimigos.push(new InimigoAtirador(c,CHAO_Y,this.dificuldade)); c+=260;
+    this.buracos.push(new Buraco(c,260));
+    this.plataformas.push(new Plataforma(c,CHAO_Y-80,70,24,{tipo:'movel',eixo:'x',velX:2.0,limiteMin:c,limiteMax:c+180}));
+    c+=320;
+    this.inimigos.push(new InimigoDefensor(c,CHAO_Y,this.dificuldade));
+    this.inimigos.push(new InimigoCorredor(c+220,CHAO_Y,c+160,c+360,this.dificuldade));
+    c+=420;
+    this.espinhos.push(new Espinho(c,CHAO_Y-22,80)); c+=80+140;
+    this.checkpoints.push(new Checkpoint(c,CHAO_Y-30)); c+=170;
+    this.inimigos.push(new InimigoVoador(c,CHAO_Y-150,c-100,c+200,this.dificuldade));
+    this.inimigos.push(new InimigoPesado(c+280,CHAO_Y,c+200,c+400,this.dificuldade));
+    c+=480;
+    this.cursorFinal=c;
+    this.chefe = new ChefeFinal(c+340,CHAO_Y);
+    espalharDecoracoesPadrao(this,c+700,{chao:'arvore',extra:null});
+  }
+}
+const CLASSES_NIVEL = [Nivel1,Nivel2,Nivel3,Nivel4,Nivel5,Nivel6,Nivel7,Nivel8];
+
+/* =====================================================================
+   SISTEMA: CENÁRIO (parallax + decorações + ponto da faixa)
+===================================================================== */
+function desenharFundo(ctx,camX,nivel,tempo){
   const solX = 160 - camX*0.05;
   ctx.save();
   ctx.fillStyle='rgba(255,226,122,0.95)';
@@ -1144,37 +1786,26 @@ function desenharFundo(ctx,camX,fase,tempo){
   ctx.restore();
 
   ctx.fillStyle='#bfe0a8';
-  ctx.beginPath();
-  ctx.moveTo(0,CHAO_Y+10);
-  for(let x=0;x<=LARGURA;x+=60){
-    const wx = x+camX*0.25;
-    ctx.lineTo(x, CHAO_Y-30+Math.sin(wx*0.004)*22);
-  }
+  ctx.beginPath(); ctx.moveTo(0,CHAO_Y+10);
+  for(let x=0;x<=LARGURA;x+=60){ const wx=x+camX*0.25; ctx.lineTo(x, CHAO_Y-30+Math.sin(wx*0.004)*22); }
   ctx.lineTo(LARGURA,ALTURA); ctx.lineTo(0,ALTURA); ctx.closePath(); ctx.fill();
 
   ctx.fillStyle='#a7d18c';
-  ctx.beginPath();
-  ctx.moveTo(0,CHAO_Y+20);
-  for(let x=0;x<=LARGURA;x+=50){
-    const wx = x+camX*0.45;
-    ctx.lineTo(x, CHAO_Y-10+Math.sin(wx*0.006+2)*16);
-  }
+  ctx.beginPath(); ctx.moveTo(0,CHAO_Y+20);
+  for(let x=0;x<=LARGURA;x+=50){ const wx=x+camX*0.45; ctx.lineTo(x, CHAO_Y-10+Math.sin(wx*0.006+2)*16); }
   ctx.lineTo(LARGURA,ALTURA); ctx.lineTo(0,ALTURA); ctx.closePath(); ctx.fill();
 
-  fase.decoracoes.forEach(d=>{
-    let camAjustada = camX;
-    if(d.tipo==='nuvem') camAjustada = camX*0.5;
-    if(d.tipo==='estrelaFundo') camAjustada = camX*0.7;
-    const sx = d.x-camAjustada;
+  nivel.decoracoes.forEach(d=>{
+    let camAjustada=camX;
+    if(d.tipo==='nuvem') camAjustada=camX*0.5;
+    if(d.tipo==='estrelaFundo') camAjustada=camX*0.7;
+    const sx=d.x-camAjustada;
     if(sx<-100||sx>LARGURA+100) return;
     desenharDecoracao(ctx,d,sx,tempo);
   });
 }
-
 function desenharDecoracao(ctx,d,sx,tempo){
-  ctx.save();
-  ctx.translate(sx,d.y);
-  ctx.scale(d.escala,d.escala);
+  ctx.save(); ctx.translate(sx,d.y); ctx.scale(d.escala,d.escala);
   switch(d.tipo){
     case 'arvore':
       ctx.fillStyle='#7a5230'; ctx.fillRect(-5,-40,10,40);
@@ -1186,10 +1817,8 @@ function desenharDecoracao(ctx,d,sx,tempo){
       ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.arc(20,4,14,0,Math.PI*2); ctx.arc(-18,6,13,0,Math.PI*2); ctx.fill();
       break;
     case 'estrelaFundo':{
-      const piscar = 0.4+0.4*Math.abs(Math.sin(tempo*0.002+d.tw));
-      ctx.globalAlpha = piscar;
-      desenharEstrela(ctx,0,0,4,4,2,'#fff6c9');
-      ctx.globalAlpha=1;
+      const piscar=0.4+0.4*Math.abs(Math.sin(tempo*0.002+d.tw));
+      ctx.globalAlpha=piscar; desenharEstrela(ctx,0,0,4,4,2,'#fff6c9'); ctx.globalAlpha=1;
       break;}
     case 'casa':
       ctx.fillStyle='#e6c68a'; ctx.fillRect(-34,-46,68,46);
@@ -1205,209 +1834,282 @@ function desenharDecoracao(ctx,d,sx,tempo){
   }
   ctx.restore();
 }
-
-function desenharAreaEstrela(ctx,camX,fase,tempo,jogadorVenceu){
-  const sx = fase.estrelaFinalX-camX;
+function desenharAreaEstrela(ctx,camX,nivel,tempo,jogadorVenceu){
+  if(nivel.chefe) return;
+  const sx=nivel.estrelaFinalX-camX;
   if(sx<-150||sx>LARGURA+150) return;
-  const y = fase.estrelaFinalY;
+  const y=nivel.estrelaFinalY;
   ctx.fillStyle='#e8d9a0';
   ctx.beginPath(); ctx.ellipse(sx,CHAO_Y+6,70,16,0,0,Math.PI*2); ctx.fill();
-  const pulso = 18+Math.sin(tempo*0.004)*8 + (jogadorVenceu?20:0);
-  ctx.save();
-  ctx.translate(sx,y);
-  ctx.rotate(tempo*0.0006);
+  const pulso=18+Math.sin(tempo*0.004)*8+(jogadorVenceu?20:0);
+  ctx.save(); ctx.translate(sx,y); ctx.rotate(tempo*0.0006);
   ctx.strokeStyle='rgba(255,217,61,0.35)'; ctx.lineWidth=4;
-  for(let i=0;i<8;i++){
-    ctx.save(); ctx.rotate(i*Math.PI/4);
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-60-pulso); ctx.stroke();
-    ctx.restore();
-  }
+  for(let i=0;i<8;i++){ ctx.save(); ctx.rotate(i*Math.PI/4); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-60-pulso); ctx.stroke(); ctx.restore(); }
   ctx.restore();
-
-  ctx.save();
-  ctx.translate(sx,y);
-  ctx.shadowColor='#ffd93d'; ctx.shadowBlur = pulso;
+  ctx.save(); ctx.translate(sx,y);
+  ctx.shadowColor='#ffd93d'; ctx.shadowBlur=pulso;
   desenharEstrela(ctx,0,Math.sin(tempo*0.003)*6,5,42,20,'#ffe27a');
   ctx.shadowBlur=0;
   desenharEstrela(ctx,0,Math.sin(tempo*0.003)*6,5,24,11,'#fff8d6');
   ctx.restore();
 }
-
-function desenharChaoComBuracos(ctx,camX,fase){
-  const buracosOrdenados = [...fase.buracos].sort((a,b)=>a.x-b.x);
-  let cursor = 0;
-  const segmentos=[];
-  buracosOrdenados.forEach(b=>{
-    if(b.x>cursor) segmentos.push([cursor,b.x]);
-    cursor = Math.max(cursor,b.x+b.largura);
-  });
-  segmentos.push([cursor, fase.largura]);
-
+function desenharChaoComBuracos(ctx,camX,nivel){
+  const buracosOrd=[...nivel.buracos].sort((a,b)=>a.x-b.x);
+  let cursor=0; const segmentos=[];
+  buracosOrd.forEach(b=>{ if(b.x>cursor) segmentos.push([cursor,b.x]); cursor=Math.max(cursor,b.x+b.largura); });
+  segmentos.push([cursor, nivel.largura]);
   segmentos.forEach(([ini,fim])=>{
-    const sx = ini-camX, sw = fim-ini;
+    const sx=ini-camX, sw=fim-ini;
     if(sx+sw<0||sx>LARGURA) return;
-    ctx.fillStyle='#8a5a34'; ctx.fillRect(sx, CHAO_Y+10, sw, ALTURA-CHAO_Y);
-    ctx.fillStyle='#6fbf5e'; ctx.fillRect(sx, CHAO_Y, sw, 14);
+    ctx.fillStyle='#8a5a34'; ctx.fillRect(sx,CHAO_Y+10,sw,ALTURA-CHAO_Y);
+    ctx.fillStyle='#6fbf5e'; ctx.fillRect(sx,CHAO_Y,sw,14);
     ctx.fillStyle='rgba(255,255,255,0.15)';
-    for(let x=0;x<sw;x+=18) ctx.fillRect(sx+x, CHAO_Y, 8,4);
+    for(let x=0;x<sw;x+=18) ctx.fillRect(sx+x,CHAO_Y,8,4);
   });
 }
 
 /* =====================================================================
-   12. VIDAS / HUD
+   SISTEMA: HUD
 ===================================================================== */
-function atualizarHUD(jogador){
-  const vidasBox = document.getElementById('vidasBox');
-  vidasBox.innerHTML = '';
+function atualizarHUD(jogador,nivelIndice){
+  const vidasBox=document.getElementById('vidasBox');
+  vidasBox.innerHTML='';
   for(let i=0;i<VIDAS_MAX;i++){
-    const s = document.createElement('span');
-    s.textContent = '❤️';
+    const s=document.createElement('span'); s.textContent='❤️';
     if(i>=jogador.vidas) s.classList.add('vazio');
     vidasBox.appendChild(s);
   }
-  document.getElementById('pontosValor').textContent = jogador.pontos;
+  document.getElementById('pontosValor').textContent=jogador.pontos;
+  const faixa=FAIXAS[jogador.faixaIndex];
+  document.getElementById('faixaIcone').style.background=faixa.cor;
+  document.getElementById('faixaNome').textContent=faixa.nome.replace('Faixa ','');
+  document.getElementById('hudNivelNum').textContent=nivelIndice+1;
+  document.getElementById('hudNivelTema').textContent=faixa.tema;
 }
-
+function atualizarBarraChefe(chefe){
+  const box=document.getElementById('barraChefeBox');
+  if(!chefe || !chefe.vivo){ box.classList.remove('ativa'); return; }
+  box.classList.add('ativa');
+  document.getElementById('barraChefeNome').textContent=chefe.nome;
+  document.getElementById('barraChefeVida').style.width = Math.max(0,(chefe.vida/chefe.vidaMax)*100)+'%';
+}
 function trocarTela(idAtiva){
   document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
   if(idAtiva) document.getElementById(idAtiva).classList.add('ativa');
 }
 
 /* =====================================================================
-   13. GAME — orquestrador geral (fase, vitória, game over)
+   SISTEMA: GAME (orquestrador, estados, progressão)
 ===================================================================== */
 class Game{
   constructor(){
-    this.camera = new Camera();
-    this.iniciarNovaTentativa();
+    this.camera=new Camera();
     this.tempo=0;
-    this.estadoTela='inicio'; // inicio, jogando, vitoria, gameover
+    this.estadoTela='titulo';
+    this.nivelIndice=0;
+    this.montarMenuSelecao();
   }
 
-  // Reinício TOTAL: nova fase, novo jogador do zero. Usado por
-  // "COMEÇAR" e "JOGAR NOVAMENTE" — corrige o bug em que reiniciar
-  // após Game Over voltava no último checkpoint em vez do início.
-  iniciarNovaTentativa(){
-    this.fase = new Fase1();
-    this.jogador = new Jogador(INICIO_X, CHAO_Y);
-    this.camera.x = 0;
-    this.timerVitoria = 0;
-    this.timerMorte = 0;
-    particulas.lista.length = 0;
-    atualizarHUD(this.jogador);
+  iniciarNivel(indice){
+    this.nivelIndice=indice;
+    this.nivel = new (CLASSES_NIVEL[indice])(indice);
+    this.jogador = new Jogador(INICIO_X, CHAO_Y, indice);
+    this.jogador.pontos = progresso.pontosPorNivel[indice]||0;
+    this.camera.x=0;
+    this.timerVitoria=0; this.timerMorte=0;
+    particulas.lista.length=0;
+    this.chefeAvisado=false;
+    atualizarHUD(this.jogador,indice);
+    atualizarBarraChefe(null);
+    AudioSys.ambienteIniciar(indice%2===0?'grave':'agudo');
+    trocarTela(null);
+    this.estadoTela='jogando';
+  }
+
+  montarMenuSelecao(){
+    const grade=document.getElementById('gradeNiveis');
+    grade.innerHTML='';
+    for(let i=0;i<TOTAL_NIVEIS;i++){
+      const btn=document.createElement('button');
+      btn.className='botaoNivel';
+      btn.style.background=FAIXAS[i].cor;
+      btn.style.color = (i===0||i===1) ? '#1a1a1a' : '#fff';
+      const bloqueado = i>progresso.nivelDesbloqueado;
+      btn.disabled = bloqueado;
+      btn.innerHTML = `<span class="num">${i+1}</span><span>${bloqueado?'🔒':FAIXAS[i].nome.replace('Faixa ','')}</span>`;
+      btn.addEventListener('click', ()=>{ if(!bloqueado) this.iniciarNivel(i); });
+      grade.appendChild(btn);
+    }
   }
 
   atualizar(dt){
-    this.tempo += dt;
+    this.tempo+=dt;
     if(this.estadoTela!=='jogando') return;
-    const j = this.jogador;
-    j.atualizar(this.fase, dt);
-    this.fase.atualizar(j, dt);
+    if(GameFeel.congelado) return;
+    const j=this.jogador, n=this.nivel;
+    j.atualizar(n,dt);
+    n.atualizar(j,dt);
     particulas.atualizar(dt);
-    this.camera.seguir(j, this.fase.largura, dt);
+    this.camera.seguir(j,n.largura,dt);
 
-    // checkpoints
-    this.fase.checkpoints.forEach(c=>{
+    n.checkpoints.forEach(c=>{
       if(!c.ativado && Math.abs(j.x-c.x)<26 && j.y>c.y-60){
-        c.ativar();
-        j.definirCheckpoint(c.x, CHAO_Y);
-        j.pontos += 50;
+        c.ativar(); j.definirCheckpoint(c.x,CHAO_Y); j.pontos+=50;
       }
     });
 
-    // combate: jogador x inimigos
-    this.fase.todosInimigos.forEach(ini=>{
-      if(!ini.vivo) return;
-      const atingidoAgora = j.atacandoAtivo && !j.inimigosAtingidosNesteGolpe.has(ini) && colideRect(j.retanguloAtaque, ini.rect);
+    // combate: jogador x inimigos comuns
+    n.inimigos.forEach(ini=>{
+      if(ini.vivo===false) return;
+      const atingidoAgora = j.atacandoAtivo && j.tipoAtaque && !j.inimigosAtingidosNesteGolpe.has(ini) && colideRect(j.retanguloAtaque, ini.rect);
       if(atingidoAgora){
         j.inimigosAtingidosNesteGolpe.add(ini);
-        ini.receberAtaque();
-        j.pontos += ini instanceof InimigoGuardiao ? 80 : 100;
-        AudioSys.acerto();
-      } else if(ini.vivo && colideRect(j.retangulo, ini.rect)){
-        j.receberDano();
+        const cfg=JANELAS_ATAQUE[j.tipoAtaque];
+        const derrotado = ini.receberAtaque(cfg.dano);
+        j.pontos += derrotado? 120 : 15;
+        particulas.linhasImpacto(ini.x,ini.y-ini.altura*0.5,j.dir,'#fff',5);
+        this.camera.abalar(cfg.shake, cfg.hitstop);
+        GameFeel.congelar(cfg.hitstop);
+        AudioSys.impacto();
+      } else if(colideRect(j.retangulo, ini.rect)){
+        const direcaoAtaque = ini.x - j.x;
+        j.receberDanoComBloqueio(n, direcaoAtaque);
+      }
+      // projéteis do atirador
+      if(ini.projeteis){
+        ini.projeteis.forEach(p=>{
+          const pr={x:p.x-(p.raio||8),y:p.y-(p.raio||8),largura:(p.raio||8)*2,altura:(p.raio||8)*2};
+          if(!j.invulneravel && colideRect(j.retangulo,pr)){ j.receberDanoComBloqueio(n, p.x-j.x); p.y=ALTURA+999; }
+        });
       }
     });
 
-    // golpe de área do guardião
-    this.fase.inimigosGuardiao.forEach(g=>{
-      if(g.vivo && g.golpeAtivo && j.invulneravel<=0){
-        const dist = Math.abs(j.x-g.x);
-        if(dist < g.raioGolpe && j.y >= g.y-70) j.receberDano();
+    // chefe
+    if(n.chefe){
+      if(!this.chefeAvisado && Math.abs(j.x-n.chefe.x)<380){ this.chefeAvisado=true; AudioSys.chefeAlerta(); }
+      atualizarBarraChefe(n.chefe.vivo? n.chefe : null);
+      if(n.chefe.vivo){
+        const atingidoChefe = j.atacandoAtivo && j.tipoAtaque && !j.inimigosAtingidosNesteGolpe.has(n.chefe) && colideRect(j.retanguloAtaque, n.chefe.rect);
+        if(atingidoChefe){
+          j.inimigosAtingidosNesteGolpe.add(n.chefe);
+          const cfg=JANELAS_ATAQUE[j.tipoAtaque];
+          const derrotado = n.chefe.receberAtaque(cfg.dano);
+          if(derrotado){ j.pontos+=1000; } else { j.pontos+=10; }
+          particulas.linhasImpacto(n.chefe.x,n.chefe.y-n.chefe.altura*0.5,j.dir,'#fff',6);
+          this.camera.abalar(cfg.shake+2, cfg.hitstop);
+          GameFeel.congelar(cfg.hitstop);
+          AudioSys.impacto();
+        } else if((n.chefe.estado==='golpe'||n.chefe.estado==='varredura') && colideRect(j.retangulo, n.chefe.golpeRect)){
+          j.receberDano(n,true);
+          this.camera.abalar(6,120);
+        }
+        if(n.chefe.projeteis){
+          n.chefe.projeteis.forEach(p=>{
+            const pr={x:p.x-p.raio,y:p.y-p.raio,largura:p.raio*2,altura:p.raio*2};
+            if(!j.invulneravel && colideRect(j.retangulo,pr)){ j.receberDano(n,true); p.x=-99999; }
+          });
+        }
+      } else {
+        atualizarBarraChefe(null);
       }
-    });
+    }
 
-    // vitória: área da estrela
-    if(!j.vitoriaAtiva && j.x > this.fase.estrelaFinalX-40){
-      j.atingirVitoria();
-      particulas.emitir(j.x, j.y-j.altura, '#ffe27a', 30, {vel:4,velVar:3,vida:50,subir:2});
+    // vitória: ponto da faixa (fases sem chefe) OU derrota do chefe (fases com chefe)
+    if(!j.vitoriaAtiva){
+      if(n.chefe){
+        if(!n.chefe.vivo){ j.atingirVitoria(); this.concluirComChefe=true; particulas.emitir(j.x,j.y-j.altura,'#ffe27a',30,{vel:4,velVar:3,vida:50,subir:2}); }
+      } else if(j.x > n.estrelaFinalX-40){
+        j.atingirVitoria();
+        particulas.emitir(j.x,j.y-j.altura,'#ffe27a',30,{vel:4,velVar:3,vida:50,subir:2});
+      }
     }
     if(j.vitoriaAtiva){
-      this.timerVitoria += dt;
-      if(this.timerVitoria>90) this.mostrarVitoria();
+      this.timerVitoria+=dt;
+      if(this.timerVitoria>90) this.concluirNivel();
     }
 
     if(j.morto){
-      this.timerMorte += dt;
+      this.timerMorte+=dt;
       if(this.timerMorte>70) this.mostrarGameOver();
     } else this.timerMorte=0;
 
-    atualizarHUD(j);
+    atualizarHUD(j,this.nivelIndice);
   }
 
-  mostrarVitoria(){
-    this.estadoTela='vitoria';
-    document.getElementById('pontosFinais').textContent = this.jogador.pontos;
-    trocarTela('telaVitoria');
+  concluirNivel(){
+    this.estadoTela='transicao';
+    AudioSys.ambienteParar();
+    const idx=this.nivelIndice;
+    progresso.pontosPorNivel[idx] = Math.max(progresso.pontosPorNivel[idx]||0, this.jogador.pontos);
+    const ultimoNivel = idx===TOTAL_NIVEIS-1;
+    if(!ultimoNivel && progresso.nivelDesbloqueado<=idx) progresso.nivelDesbloqueado = idx+1;
+    SaveSystem.salvar(progresso);
+    this.montarMenuSelecao();
+
+    if(ultimoNivel){
+      AudioSys.vitoria();
+      document.getElementById('pontosFinaisTotais').textContent = progresso.pontosPorNivel.reduce((a,b)=>a+b,0);
+      trocarTela('telaVitoriaFinal');
+      return;
+    }
+
+    AudioSys.novaFaixa();
+    document.getElementById('transicaoTema').textContent = `"${FAIXAS[idx].tema}" concluído`;
+    document.getElementById('transicaoPontos').textContent = this.jogador.pontos;
+    document.getElementById('transicaoFaixaCor').style.background = FAIXAS[idx+1].cor;
+    document.getElementById('transicaoFaixaNome').textContent = `🥋 ${FAIXAS[idx+1].nome.toUpperCase()} DESBLOQUEADA`;
+    particulas.emitir(this.jogador.x,this.jogador.y-40,FAIXAS[idx+1].cor,24,{vel:3,velVar:3,vida:40});
+    trocarTela('telaTransicao');
   }
+
   mostrarGameOver(){
     this.estadoTela='gameover';
+    AudioSys.ambienteParar();
+    AudioSys.gameOver();
     trocarTela('telaGameOver');
   }
 
   desenhar(){
     ctx.clearRect(0,0,LARGURA,ALTURA);
-    const camX = this.camera.x;
-    desenharFundo(ctx,camX,this.fase,this.tempo);
-
-    desenharChaoComBuracos(ctx,camX,this.fase);
-
-    this.fase.espinhos.forEach(e=>e.desenhar(ctx,camX));
-    this.fase.armadilhas.forEach(a=>a.desenhar(ctx,camX));
-    this.fase.plataformas.forEach(p=>p.desenhar(ctx,camX));
-    this.fase.checkpoints.forEach(c=>c.desenhar(ctx,camX));
-
-    const revelarEstrela = this.jogador.x > this.fase.areaEstrelaX;
-    if(revelarEstrela) desenharAreaEstrela(ctx,camX,this.fase,this.tempo,this.jogador.vitoriaAtiva);
-
-    this.fase.todosInimigos.forEach(i=>i.desenhar(ctx,camX));
-
+    if(this.estadoTela!=='jogando' && this.estadoTela!=='transicao' && this.estadoTela!=='gameover') return;
+    if(!this.nivel) return;
+    const n=this.nivel;
+    const camX=this.camera.x+this.camera.offX;
+    desenharFundo(ctx,camX,n,this.tempo);
+    desenharChaoComBuracos(ctx,camX,n);
+    n.espinhos.forEach(e=>e.desenhar(ctx,camX));
+    n.armadilhas.forEach(a=>a.desenhar(ctx,camX));
+    n.plataformas.forEach(p=>p.desenhar(ctx,camX));
+    n.checkpoints.forEach(c=>c.desenhar(ctx,camX));
+    const revelar = n.chefe ? this.jogador.x>n.areaEstrelaX : this.jogador.x>n.areaEstrelaX;
+    if(revelar) desenharAreaEstrela(ctx,camX,n,this.tempo,this.jogador.vitoriaAtiva);
+    n.inimigos.forEach(i=> i.vivo!==false && i.desenhar(ctx,camX));
+    if(n.chefe && n.chefe.vivo) n.chefe.desenhar(ctx,camX);
     particulas.desenhar(ctx,camX);
     this.jogador.desenhar(ctx,camX);
-
-    const grad = ctx.createRadialGradient(LARGURA/2,ALTURA/2,LARGURA*0.35,LARGURA/2,ALTURA/2,LARGURA*0.7);
-    grad.addColorStop(0,'rgba(0,0,0,0)');
-    grad.addColorStop(1,'rgba(0,0,0,0.18)');
-    ctx.fillStyle=grad;
-    ctx.fillRect(0,0,LARGURA,ALTURA);
+    const grad=ctx.createRadialGradient(LARGURA/2,ALTURA/2,LARGURA*0.35,LARGURA/2,ALTURA/2,LARGURA*0.7);
+    grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(1,'rgba(0,0,0,0.18)');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,LARGURA,ALTURA);
   }
 }
 
 /* =====================================================================
-   14. ENTRADA (teclado + touch)
+   SISTEMA: ENTRADA (teclado + touch + pausa)
 ===================================================================== */
 window.addEventListener('keydown', e=>{
-  teclas[e.key.toLowerCase()] = true;
-  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) e.preventDefault();
+  const k=e.key.toLowerCase();
+  teclas[k]=true;
+  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  if(k==='escape' && jogo.estadoTela==='jogando'){
+    jogo.estadoTela='pausado'; AudioSys.ambienteParar(); trocarTela('telaPausa');
+  }
 });
-window.addEventListener('keyup', e=>{
-  teclas[e.key.toLowerCase()] = false;
-});
+window.addEventListener('keyup', e=>{ teclas[e.key.toLowerCase()]=false; });
 
 function configurarBotaoTouch(id,tecla){
-  const el = document.getElementById(id);
-  const ligar = ev=>{ ev.preventDefault(); teclas[tecla]=true; };
-  const desligar = ev=>{ ev.preventDefault(); teclas[tecla]=false; };
+  const el=document.getElementById(id);
+  const ligar=ev=>{ ev.preventDefault(); teclas[tecla]=true; };
+  const desligar=ev=>{ ev.preventDefault(); teclas[tecla]=false; };
   el.addEventListener('touchstart',ligar,{passive:false});
   el.addEventListener('touchend',desligar,{passive:false});
   el.addEventListener('touchcancel',desligar,{passive:false});
@@ -1418,26 +2120,21 @@ function configurarBotaoTouch(id,tecla){
 configurarBotaoTouch('btnEsq','a');
 configurarBotaoTouch('btnDir','d');
 configurarBotaoTouch('btnPular',' ');
-configurarBotaoTouch('btnAtaque','j');
-
-if('ontouchstart' in window){
-  document.getElementById('controlesTouch').classList.add('ativo');
-} else {
-  document.getElementById('dicaMobile').style.display='none';
-}
+configurarBotaoTouch('btnSoco','j');
+configurarBotaoTouch('btnDefender','k');
+if('ontouchstart' in window) document.getElementById('controlesTouch').classList.add('ativo');
+else document.getElementById('dicaMobile').style.display='none';
 
 /* =====================================================================
-   15. LOOP PRINCIPAL — requestAnimationFrame + delta time
+   SISTEMA: LOOP PRINCIPAL
 ===================================================================== */
 const jogo = new Game();
-let ultimoTempo = null;
-
+let ultimoTempo=null;
 function loop(timestamp){
-  if(ultimoTempo===null) ultimoTempo = timestamp;
-  const deltaMs = timestamp - ultimoTempo;
+  if(ultimoTempo===null) ultimoTempo=timestamp;
+  const deltaMs = timestamp-ultimoTempo;
   ultimoTempo = timestamp;
-  const dt = clamp(deltaMs/(1000/60), 0.0001, 2.5); // normalizado a 60fps, protegido de saltos grandes
-
+  const dt = clamp(deltaMs/(1000/60), 0.0001, 2.5);
   jogo.atualizar(dt);
   jogo.desenhar();
   requestAnimationFrame(loop);
@@ -1445,33 +2142,44 @@ function loop(timestamp){
 requestAnimationFrame(loop);
 
 /* =====================================================================
-   16. BOTÕES DE TELA
+   SISTEMA: MENUS (wiring dos botões)
 ===================================================================== */
-document.getElementById('btnIniciar').addEventListener('click', ()=>{
-  trocarTela(null);
-  jogo.iniciarNovaTentativa();
-  jogo.estadoTela='jogando';
-  AudioSys.pular();
+document.getElementById('btnJogar').addEventListener('click', ()=>{
+  jogo.iniciarNivel(clamp(progresso.nivelDesbloqueado,0,TOTAL_NIVEIS-1));
+});
+document.getElementById('btnAbrirSelecao').addEventListener('click', ()=>{ jogo.montarMenuSelecao(); trocarTela('telaSelecao'); });
+document.getElementById('btnVoltarSelecao').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+document.getElementById('btnAbrirComoJogar').addEventListener('click', ()=>{ trocarTela('telaComoJogar'); });
+document.getElementById('btnVoltarComoJogar').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+document.getElementById('btnAbrirCreditos').addEventListener('click', ()=>{ trocarTela('telaCreditos'); });
+document.getElementById('btnVoltarCreditos').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+
+document.getElementById('btnContinuarPausa').addEventListener('click', ()=>{
+  jogo.estadoTela='jogando'; trocarTela(null);
+  AudioSys.ambienteIniciar(jogo.nivelIndice%2===0?'grave':'agudo');
+});
+document.getElementById('btnMenuPausa').addEventListener('click', ()=>{
+  jogo.estadoTela='titulo'; AudioSys.ambienteParar(); trocarTela('telaTitulo');
 });
 
-document.getElementById('btnContinuar').addEventListener('click', ()=>{
-  trocarTela('telaInicio');
-  jogo.estadoTela='inicio';
+document.getElementById('btnProximoNivel').addEventListener('click', ()=>{
+  const prox = jogo.nivelIndice+1;
+  if(prox<TOTAL_NIVEIS) jogo.iniciarNivel(prox);
+  else { jogo.estadoTela='titulo'; trocarTela('telaTitulo'); }
 });
+document.getElementById('btnMenuTransicao').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); });
 
-document.getElementById('btnReiniciar').addEventListener('click', ()=>{
-  trocarTela(null);
-  jogo.iniciarNovaTentativa();
-  jogo.estadoTela='jogando';
-});
+document.getElementById('btnTentarNovamente').addEventListener('click', ()=>{ jogo.iniciarNivel(jogo.nivelIndice); });
+document.getElementById('btnMenuGameOver').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); });
+
+document.getElementById('btnMenuVitoriaFinal').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); jogo.montarMenuSelecao(); });
 
 /* =====================================================================
-   17. PREPARADO PARA FUTURAS FASES
-   Para criar a Fase 2: crie uma classe "Fase2" com o mesmo formato de
-   Fase1 (mesmos arrays e método montar()) e troque "new Fase1()" por
-   um seletor de fase dentro de Game.iniciarNovaTentativa(). Todos os
-   sistemas (Player, Câmera, Inimigos, Obstáculos, Checkpoints, HUD,
-   Áudio, Vitória, Game Over) já são reutilizáveis entre fases.
+   PROGRESSION — resumo:
+   Cada Nivel* reaproveita o motor comum (NivelBase). Ao concluir um
+   nível, salva o melhor score e desbloqueia o próximo via localStorage
+   (SaveSystem). O nível 6 tem chefe intermediário (ChefeRival) e o
+   nível 8 tem o chefe final (ChefeFinal com 2 fases).
 ===================================================================== */
 </script>
 </body>
