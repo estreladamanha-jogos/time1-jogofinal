@@ -162,7 +162,7 @@
   <div id="telaTitulo" class="tela ativa">
     <h1>🌟 ESTRELA DA MANHÃ</h1>
     <h2>CAMINHO DO KARATÊ</h2>
-    <p class="subtitulo">Inspirado no espírito de comunidade, esporte e superação do Projeto Estrela da Manhã — Lauro de Freitas, Bahia.</p>
+    <p class="subtitulo">Colete alimentos em cada uma das 8 faixas do karatê e derrote o Monstro da Fome, que impede crianças de se alimentarem. Inspirado no espírito de comunidade, esporte e superação do Projeto Estrela da Manhã — Lauro de Freitas, Bahia.</p>
     <button class="botaoJogo" id="btnJogar">JOGAR</button>
     <button class="botaoJogo secundario" id="btnAbrirSelecao">SELEÇÃO DE NÍVEIS</button>
     <button class="botaoJogo secundario" id="btnAbrirComoJogar">COMO JOGAR</button>
@@ -197,6 +197,8 @@
     <div class="creditosTexto">
       Jogo original criado como homenagem ao espírito do <b>Projeto Estrela da Manhã</b>, em Lauro de Freitas, Bahia —
       comunidade, esporte, disciplina e superação.<br><br>
+      A história de um Monstro da Fome e da coleta de alimentos é uma fantasia de jogo — não representa fatos reais
+      sobre o projeto, apenas presta homenagem ao seu trabalho de levar esporte, educação e alimentação a crianças.<br><br>
       Personagens, inimigos, fases, artes e código são originais. O jogo usa apenas a estrutura de gênero
       (plataforma 2D de ação) como referência, sem copiar conteúdo de nenhum outro jogo.<br><br>
       Feito em HTML5 Canvas + JavaScript puro.
@@ -215,6 +217,7 @@
   <div id="telaTransicao" class="tela">
     <h1 style="font-size:1.4em;">NÍVEL CONCLUÍDO!</h1>
     <h2 id="transicaoTema"></h2>
+    <p class="pontos" id="transicaoComida" style="font-size:1.6em;"></p>
     <p class="pontos">⭐ <span id="transicaoPontos">0</span></p>
     <div class="faixaGrande" id="transicaoFaixaCor"></div>
     <h2 id="transicaoFaixaNome" style="margin-bottom:22px;">NOVA FAIXA DESBLOQUEADA</h2>
@@ -234,7 +237,7 @@
   <div id="telaVitoriaFinal" class="tela">
     <h1 style="font-size:1.9em;">🥋 FAIXA PRETA CONQUISTADA</h1>
     <h2>🌟 JORNADA CONCLUÍDA</h2>
-    <p class="pontos">Níveis concluídos: 8/8</p>
+    <p class="pontos" style="font-size:1.4em;">🍱 Monstro da Fome derrotado — alimentos entregues: 8/8</p>
     <p class="pontos">Pontuação final: <span id="pontosFinaisTotais">0</span></p>
     <button class="botaoJogo" id="btnMenuVitoriaFinal">MENU PRINCIPAL</button>
   </div>
@@ -285,14 +288,14 @@ function agora(){ return performance.now(); }
    SISTEMA: FAIXAS (progressão)
 ===================================================================== */
 const FAIXAS = [
-  {cor:'#f5f5f2', nome:'Faixa Branca',  tema:'O Primeiro Passo'},
-  {cor:'#ffd93d', nome:'Faixa Amarela', tema:'Disciplina'},
-  {cor:'#ff8c3b', nome:'Faixa Laranja', tema:'Superação'},
-  {cor:'#4caf50', nome:'Faixa Verde',   tema:'Crescimento'},
-  {cor:'#3d8bff', nome:'Faixa Azul',    tema:'Controle'},
-  {cor:'#9b4dff', nome:'Faixa Roxa',    tema:'Determinação'},
-  {cor:'#7a4a2b', nome:'Faixa Marrom',  tema:'Preparação'},
-  {cor:'#1c1c1c', nome:'Faixa Preta',   tema:'O Grande Desafio'},
+  {cor:'#f5f5f2', nome:'Faixa Branca',   tema:'O Primeiro Passo', comida:{emoji:'🍞', nome:'Pão'}},
+  {cor:'#ffd93d', nome:'Faixa Amarela',  tema:'Disciplina',       comida:{emoji:'🍌', nome:'Banana'}},
+  {cor:'#e53935', nome:'Faixa Vermelha', tema:'Coragem',          comida:{emoji:'🍎', nome:'Maçã'}},
+  {cor:'#ff8c3b', nome:'Faixa Laranja',  tema:'Superação',        comida:{emoji:'🥕', nome:'Cenoura'}},
+  {cor:'#4caf50', nome:'Faixa Verde',    tema:'Crescimento',      comida:{emoji:'🥦', nome:'Brócolis'}},
+  {cor:'#9b4dff', nome:'Faixa Roxa',     tema:'Determinação',     comida:{emoji:'🍇', nome:'Uvas'}},
+  {cor:'#7a4a2b', nome:'Faixa Marrom',   tema:'Preparação',       comida:{emoji:'🍲', nome:'Sopa Quente'}},
+  {cor:'#1c1c1c', nome:'Faixa Preta',    tema:'O Grande Desafio', comida:{emoji:'🍱', nome:'Cesta de Alimentos'}},
 ];
 const TOTAL_NIVEIS = 8;
 
@@ -1084,12 +1087,13 @@ class ChefeRival{
   }
 }
 
-// CHEFE FINAL — "Grão-Mestre Vendaval": 2 fases, múltiplos padrões, janela de vulnerabilidade.
+// CHEFE FINAL — "Monstro da Fome": criatura que rouba a merenda das crianças.
+// 2 fases, múltiplos padrões, janela de vulnerabilidade.
 class ChefeFinal{
   constructor(x,y){
     this.x=x;this.y=y; this.xBase=x; this.largura=64;this.altura=92;
     this.vidaMax=30; this.vida=this.vidaMax; this.vivo=true;
-    this.nome='GRÃO-MESTRE VENDAVAL';
+    this.nome='MONSTRO DA FOME';
     this.estado='desperta'; this.timer=60; this.dir=-1; this.anim=0; this.flash=0;
     this.vulneravel=false; this.fase2=false;
     this.projeteis=[];
@@ -1141,11 +1145,11 @@ class ChefeFinal{
   receberAtaque(dano){
     if(!this.vulneravel){ AudioSys.bloqueio(); return false; }
     this.vida-=dano; this.flash=10;
-    particulas.emitir(this.x,this.y-this.altura*0.6,'#c9a6ff',14,{vel:3.5,velVar:2.5,vida:22});
+    particulas.emitir(this.x,this.y-this.altura*0.6,'#9bb07a',14,{vel:3.5,velVar:2.5,vida:22});
     GameFeel.congelar(this.fase2?70:50);
     if(this.vida<=0){
       this.vida=0; this.vivo=false;
-      particulas.emitir(this.x,this.y-this.altura/2,'#c9a6ff',40,{vel:5,velVar:3.5,vida:40});
+      particulas.emitir(this.x,this.y-this.altura/2,'#ffd93d',40,{vel:5,velVar:3.5,vida:40});
       AudioSys.chefeDerrotado();
     } else {
       this.estado='idle'; this.timer=this.fase2?35:50; this.vulneravel=false;
@@ -1158,20 +1162,25 @@ class ChefeFinal{
     const sx=this.x-camX;
     ctx.save(); ctx.translate(sx,this.y); ctx.scale(this.dir,1);
     if(this.vulneravel){
-      ctx.strokeStyle='rgba(255,217,61,0.6)'; ctx.lineWidth=3;
+      ctx.strokeStyle='rgba(200,220,150,0.6)'; ctx.lineWidth=3;
       ctx.beginPath(); ctx.arc(0,-this.altura*0.5,this.largura*0.8+Math.sin(this.anim*4)*4,0,Math.PI*2); ctx.stroke();
     }
-    const corBase = this.flash>0?'#fff':(this.vulneravel?'#8a6fbf':(this.fase2?'#241b33':'#3a2a4d'));
+    const corBase = this.flash>0?'#fff':(this.vulneravel?'#8a9b6a':(this.fase2?'#3a1f14':'#4a5a3a'));
     ctx.fillStyle=corBase;
     ctx.beginPath();
     ctx.moveTo(-24,0); ctx.lineTo(-26,-this.altura+24); ctx.lineTo(-10,-this.altura+6);
     ctx.lineTo(10,-this.altura+6); ctx.lineTo(26,-this.altura+24); ctx.lineTo(24,0);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#e8b48c'; ctx.beginPath(); ctx.arc(0,-this.altura+16,13,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = this.fase2? '#ff8a3b' : '#1c1c1c';
+    // barriga vazia e encolhida (fome) — marcas de costela
+    ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      ctx.beginPath(); ctx.moveTo(-14+i*2,-this.altura+30+i*10); ctx.lineTo(14-i*2,-this.altura+30+i*10); ctx.stroke();
+    }
+    ctx.fillStyle='#caa86b'; ctx.beginPath(); ctx.arc(0,-this.altura+16,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.fase2? '#ff3b3b' : '#902020';
     ctx.fillRect(-13,-this.altura-4,26,7);
-    ctx.fillStyle='#fff35c';
-    ctx.beginPath(); ctx.arc(5,-this.altura+15,2.4,0,Math.PI*2); ctx.arc(-3,-this.altura+15,2.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.fase2? '#ff5c3b' : '#ffd93d';
+    ctx.beginPath(); ctx.arc(5,-this.altura+15,2.6,0,Math.PI*2); ctx.arc(-3,-this.altura+15,2.6,0,Math.PI*2); ctx.fill();
     const golpeAtivo = this.estado==='golpe'||this.estado==='varredura';
     ctx.save();
     ctx.translate(22,-this.altura+42);
@@ -1182,7 +1191,7 @@ class ChefeFinal{
 
     this.projeteis.forEach(p=>{
       const px=p.x-camX;
-      ctx.fillStyle='rgba(180,150,220,0.85)';
+      ctx.fillStyle='rgba(120,100,80,0.9)';
       ctx.beginPath(); ctx.ellipse(px,p.y,14,6,0,0,Math.PI*2); ctx.fill();
     });
   }
@@ -1619,7 +1628,7 @@ class Nivel2 extends NivelBase{
   }
 }
 
-// NÍVEL 3 — FAIXA LARANJA — "Superação" (floresta)
+// NÍVEL 3 — FAIXA VERMELHA — "Coragem" (floresta)
 class Nivel3 extends NivelBase{
   montar(){
     let c=380;
@@ -1643,7 +1652,7 @@ class Nivel3 extends NivelBase{
   }
 }
 
-// NÍVEL 4 — FAIXA VERDE — "Crescimento" (área urbana, mais verticalidade)
+// NÍVEL 4 — FAIXA LARANJA — "Superação" (área urbana, mais verticalidade)
 class Nivel4 extends NivelBase{
   montar(){
     let c=380;
@@ -1669,7 +1678,7 @@ class Nivel4 extends NivelBase{
   }
 }
 
-// NÍVEL 5 — FAIXA AZUL — "Controle" (região costeira, precisão)
+// NÍVEL 5 — FAIXA VERDE — "Crescimento" (região costeira, precisão)
 class Nivel5 extends NivelBase{
   montar(){
     let c=380;
@@ -1851,6 +1860,24 @@ function desenharAreaEstrela(ctx,camX,nivel,tempo,jogadorVenceu){
   desenharEstrela(ctx,0,Math.sin(tempo*0.003)*6,5,42,20,'#ffe27a');
   ctx.shadowBlur=0;
   desenharEstrela(ctx,0,Math.sin(tempo*0.003)*6,5,24,11,'#fff8d6');
+  ctx.restore();
+}
+// Anima a comida sendo erguida pelo personagem ao concluir a fase
+// (ou ao derrotar um chefe) — reforça a identidade "coletar alimentos".
+function desenharComidaVitoria(ctx,camX,jogador,comida,timerVitoria){
+  if(!comida) return;
+  const sx=jogador.x-camX;
+  const subida = Math.min(timerVitoria/20,1);
+  const y = jogador.y-jogador.altura-14-subida*14+Math.sin(timerVitoria*0.12)*3;
+  const escala = 1+Math.sin(Math.min(timerVitoria/10,1)*Math.PI)*0.5;
+  ctx.save();
+  ctx.translate(sx,y);
+  ctx.scale(escala,escala);
+  ctx.font='28px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.shadowColor='#ffd93d'; ctx.shadowBlur=12;
+  ctx.fillText(comida.emoji,0,0);
   ctx.restore();
 }
 function desenharChaoComBuracos(ctx,camX,nivel){
@@ -2055,6 +2082,8 @@ class Game{
 
     AudioSys.novaFaixa();
     document.getElementById('transicaoTema').textContent = `"${FAIXAS[idx].tema}" concluído`;
+    const comida = FAIXAS[idx].comida;
+    document.getElementById('transicaoComida').textContent = `${comida.emoji} ${comida.nome} coletado(a)!`;
     document.getElementById('transicaoPontos').textContent = this.jogador.pontos;
     document.getElementById('transicaoFaixaCor').style.background = FAIXAS[idx+1].cor;
     document.getElementById('transicaoFaixaNome').textContent = `🥋 ${FAIXAS[idx+1].nome.toUpperCase()} DESBLOQUEADA`;
@@ -2087,6 +2116,7 @@ class Game{
     if(n.chefe && n.chefe.vivo) n.chefe.desenhar(ctx,camX);
     particulas.desenhar(ctx,camX);
     this.jogador.desenhar(ctx,camX);
+    if(this.jogador.vitoriaAtiva) desenharComidaVitoria(ctx,camX,this.jogador,FAIXAS[this.nivelIndice].comida,this.timerVitoria);
     const grad=ctx.createRadialGradient(LARGURA/2,ALTURA/2,LARGURA*0.35,LARGURA/2,ALTURA/2,LARGURA*0.7);
     grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(1,'rgba(0,0,0,0.18)');
     ctx.fillStyle=grad; ctx.fillRect(0,0,LARGURA,ALTURA);
