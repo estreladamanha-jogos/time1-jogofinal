@@ -154,6 +154,56 @@ const FAIXAS = [
   {cor:"#1b1b1b", nome:"Preta",   tema:"O covil do Monstro da Fome",    comida:{emoji:"🍚",nome:"arroz"}},
 ];
 
+/* ========================= CICLO DO DIA (manhã / tarde / noite) ========================= */
+const Ciclo = {
+  duracaoMs: 150000, // 2min30 = um dia completo jogando
+  inicio: performance.now(),
+  estrelas: null,
+  t(){
+    const passado = (performance.now()-this.inicio) % this.duracaoMs;
+    return passado/this.duracaoMs; // 0..1
+  },
+  fase(){
+    const t = this.t();
+    if(t<0.25) return {nome:"Manhã", emoji:"🌅"};
+    if(t<0.55) return {nome:"Tarde", emoji:"☀️"};
+    if(t<0.8) return {nome:"Entardecer", emoji:"🌇"};
+    return {nome:"Noite", emoji:"🌙"};
+  },
+  // retorna cores de céu interpoladas + brilho geral (0 escuro .. 1 claro)
+  cores(){
+    const t = this.t();
+    const pontos = [
+      {p:0.00, topo:[40,48,110],  baixo:[255,183,120], brilho:0.55}, // madrugada/manhã
+      {p:0.25, topo:[70,140,210], baixo:[255,221,150], brilho:1.00}, // manhã plena
+      {p:0.50, topo:[60,120,200], baixo:[255,200,120], brilho:0.95}, // tarde
+      {p:0.70, topo:[80,60,110],  baixo:[255,120,80],  brilho:0.65}, // entardecer
+      {p:0.85, topo:[10,10,35],   baixo:[40,30,70],    brilho:0.30}, // noite fechada
+      {p:1.00, topo:[40,48,110],  baixo:[255,183,120], brilho:0.55},
+    ];
+    let a=pontos[0], b=pontos[pontos.length-1];
+    for(let i=0;i<pontos.length-1;i++){
+      if(t>=pontos[i].p && t<=pontos[i+1].p){ a=pontos[i]; b=pontos[i+1]; break; }
+    }
+    const span = (b.p-a.p)||1;
+    const f = clamp((t-a.p)/span,0,1);
+    const lerp=(x,y)=>x+(y-x)*f;
+    const topo = [0,1,2].map(i=>Math.round(lerp(a.topo[i],b.topo[i])));
+    const baixo = [0,1,2].map(i=>Math.round(lerp(a.baixo[i],b.baixo[i])));
+    const brilho = lerp(a.brilho,b.brilho);
+    return {topo:`rgb(${topo.join(',')})`, baixo:`rgb(${baixo.join(',')})`, brilho, t};
+  },
+  // posição do sol (dia) ou lua (noite) no céu, 0..1 de x e y de arco
+  astro(){
+    const t = this.t();
+    const noite = t>0.8 || t<0; // fallback
+    const ehNoite = t>=0.8;
+    const faseLocal = ehNoite ? (t-0.8)/0.2 : (t%0.8)/0.8;
+    const ang = Math.PI*(1-faseLocal);
+    return { x:faseLocal, altura:Math.sin(ang), ehNoite };
+  }
+};
+
 /* ========================= SALVAMENTO ========================= */
 const SaveSystem = {
   CHAVE:"estrelaManha_pixelart_progresso_v1",
@@ -259,7 +309,7 @@ class Jogador{
   constructor(x,y){
     this.x=x; this.y=y; this.largura=14; this.altura=22;
     this.vx=0; this.vy=0; this.noChao=false; this.dir=1;
-    this.vidas=4; this.vidaMax=4;
+    this.vidas=5; this.vidaMax=5;
     this.invulneravelAte=0;
     this.atacando=null; this.atacandoDesde=0; this.comboProximo=null;
     this.bloqueando=false;
@@ -313,7 +363,7 @@ class Jogador{
       if(atacanteNaFrente){ AudioSys.bloqueio(); GameFeel.congelar(60); return false; }
     }
     this.vidas -= dano;
-    this.invulneravelAte = performance.now()+1000;
+    this.invulneravelAte = performance.now()+800;
     AudioSys.dano();
     GameFeel.congelar(90); GameFeel.abalar(4);
     if(this.vidas<=0){ this.vidas=0; this.vivo=false; AudioSys.morte(); }
@@ -453,14 +503,14 @@ class InimigoDefensor extends InimigoBase{
   }
 }
 class InimigoAtirador extends InimigoBase{
-  constructor(x,y,opts,projeteis){ super(x,y,{vida:2,dano:1,alcanceDetec:220,...opts}); this.proximoTiro=0; this.projeteis=projeteis; }
+  constructor(x,y,opts,projeteis){ super(x,y,{vida:2,dano:2,alcanceDetec:220,...opts}); this.proximoTiro=0; this.projeteis=projeteis; }
   atualizar(dt,jogador){
     if(!this.vivo) return;
     const d = this.distX(jogador);
     this.dir = d>0?1:-1;
     if(Math.abs(d)<this.alcanceDetec && performance.now()>this.proximoTiro){
-      this.proximoTiro = performance.now()+1800;
-      this.projeteis.push({x:this.x, y:this.y+6, vx:this.dir*1.8, dano:1});
+      this.proximoTiro = performance.now()+1500;
+      this.projeteis.push({x:this.x, y:this.y+6, vx:this.dir*2.1, dano:this.dano});
     }
   }
 }
@@ -487,7 +537,7 @@ class InimigoVoador extends InimigoBase{
 /* ========================= CHEFES ========================= */
 class ChefeRival extends InimigoBase{
   constructor(x,y){
-    super(x,y,{vida:10,dano:1,alcanceDetec:300});
+    super(x,y,{vida:10,dano:2,alcanceDetec:300});
     this.nome="O RIVAL"; this.largura=16; this.altura=24;
     this.atacando=null; this.atacandoDesde=0; this.proximoAtaqueAte=0;
   }
@@ -495,7 +545,7 @@ class ChefeRival extends InimigoBase{
     if(!this.vivo) return;
     const d = this.distX(jogador);
     this.dir = d>0?1:-1;
-    if(Math.abs(d)>26) this.x += this.dir*0.5*dt;
+    if(Math.abs(d)>26) this.x += this.dir*0.65*dt;
     if(!this.atacando && performance.now()>this.proximoAtaqueAte && Math.abs(d)<40){
       this.atacando = Math.random()<0.5?"soco":"chute";
       this.atacandoDesde = performance.now();
@@ -513,7 +563,7 @@ class ChefeRival extends InimigoBase{
 }
 class ChefeFinal extends InimigoBase{
   constructor(x,y,projeteis){
-    super(x,y,{vida:16,dano:1,alcanceDetec:400});
+    super(x,y,{vida:18,dano:1,alcanceDetec:400});
     this.nome="MONSTRO DA FOME"; this.largura=26; this.altura=34;
     this.fase=1; this.atacando=null; this.atacandoDesde=0; this.proximoAtaqueAte=performance.now()+1200;
     this.projeteis=projeteis; this.vulneravelAte=0;
@@ -524,7 +574,7 @@ class ChefeFinal extends InimigoBase{
     if(agora>this.vulneravelAte){ return; }
     this.vida -= dano;
     this.invulneravelAte = agora+150;
-    if(this.vida<=8 && this.fase===1){ this.fase=2; }
+    if(this.vida<=9 && this.fase===1){ this.fase=2; this.dano=2; }
     if(this.vida<=0){ this.vida=0; this.vivo=false; AudioSys.chefeDerrotado(); }
   }
   atualizar(dt,jogador){
@@ -797,44 +847,141 @@ class Jogo{
       `Você coletou ${FAIXAS[this.nivelIdx].comida.emoji} ${FAIXAS[this.nivelIdx].comida.nome} para as crianças do projeto! Total guardado: ${dados.comidas}.`;
     if(this.nivelIdx===7) AudioSys.vitoria(); else AudioSys.novaFaixa();
   }
+  desenharPersonagem(ctx, x, y, largura, altura, corPele, corRoupa, corFaixa, dir, andando, atacando, bloqueando, piscar){
+    const px = Math.round(x), py = Math.round(y);
+    const t = performance.now()/120;
+    const passo = andando ? Math.sin(t)*3 : 0;
+    const braco = atacando ? (dir>0?6:-6) : Math.sin(t*0.8)*2*dir;
+    ctx.save();
+    ctx.translate(px,py);
+    if(piscar) ctx.globalAlpha = 0.55 + 0.45*Math.sin(performance.now()/40);
+    const meio = largura/2;
+    // sombra
+    ctx.fillStyle="rgba(0,0,0,.35)";
+    ctx.beginPath(); ctx.ellipse(0, 1, meio*0.9, 2.4, 0,0,Math.PI*2); ctx.fill();
+    // pernas (alternando)
+    ctx.fillStyle = "#2c2c2c";
+    ctx.fillRect(-meio*0.55, -altura*0.42+passo, meio*0.5, altura*0.42);
+    ctx.fillRect(meio*0.05, -altura*0.42-passo, meio*0.5, altura*0.42);
+    // tronco (gi/roupa)
+    ctx.fillStyle = corRoupa;
+    ctx.fillRect(-meio*0.72, -altura*0.95, largura*0.72*2*0.5+largura*0.0, altura*0.56);
+    ctx.fillRect(-meio, -altura*0.95, largura, altura*0.56);
+    // faixa na cintura
+    ctx.fillStyle = corFaixa;
+    ctx.fillRect(-meio, -altura*0.46, largura, altura*0.1);
+    // bracos
+    ctx.fillStyle = corPele;
+    ctx.fillRect(dir>0? meio*0.5 : -meio*0.5-4, -altura*0.85+braco*0.3, 4, altura*0.4);
+    ctx.fillRect(dir>0? -meio*0.75 : meio*0.75-4, -altura*0.85-braco*0.15, 4, altura*0.36);
+    if(atacando){
+      ctx.fillStyle="#ffe0b2";
+      ctx.fillRect(dir>0? meio*0.5+2 : -meio*0.5-10, -altura*0.82, 8, 6);
+    }
+    // cabeça
+    ctx.fillStyle = corPele;
+    ctx.beginPath(); ctx.arc(0, -altura*1.0, meio*0.78, 0, Math.PI*2); ctx.fill();
+    // faixa na testa (headband) sutil
+    ctx.fillStyle = corFaixa;
+    ctx.fillRect(-meio*0.78, -altura*1.08, meio*1.56, 2.4);
+    // escudo de bloqueio
+    if(bloqueando){
+      ctx.fillStyle="rgba(100,180,255,.45)";
+      ctx.fillRect(dir>0? meio*0.3: -meio*1.1, -altura*0.95, meio*0.9, altura*0.75);
+    }
+    ctx.restore();
+  }
   desenhar(){
     const ctx=this.ctx; const W=384,H=216;
     ctx.save();
     if(GameFeel.abalo>0){ ctx.translate((Math.random()-0.5)*GameFeel.abalo, (Math.random()-0.5)*GameFeel.abalo); }
+
+    const ceu = Ciclo.cores();
+    const astro = Ciclo.astro();
+    const brilho = ceu.brilho;
     const grad = ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0,"#2b2140"); grad.addColorStop(1,"#4b3a6b");
+    grad.addColorStop(0,ceu.topo); grad.addColorStop(1,ceu.baixo);
     ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+    // estrelas (mais visíveis quanto mais escuro)
+    const opacidadeEstrelas = clamp(1-brilho*1.4,0,1);
+    if(opacidadeEstrelas>0.02){
+      if(!this._estrelas){
+        this._estrelas=[];
+        for(let i=0;i<60;i++) this._estrelas.push({x:Math.random()*W,y:Math.random()*H*0.65,r:Math.random()*1.2+0.3,f:Math.random()*6});
+      }
+      ctx.globalAlpha = opacidadeEstrelas;
+      ctx.fillStyle="#fff";
+      for(const s of this._estrelas){
+        const pisca = 0.6+0.4*Math.sin(performance.now()/500+s.f);
+        ctx.globalAlpha = opacidadeEstrelas*pisca;
+        ctx.fillRect(s.x, s.y, s.r, s.r);
+      }
+      ctx.globalAlpha=1;
+    }
+
+    // sol ou lua
+    const arcoX = astro.x*(W+60)-30;
+    const arcoY = H*0.62 - astro.altura*H*0.55;
+    if(astro.altura>-0.1){
+      ctx.fillStyle = astro.ehNoite? "#e8eef7" : "#fff6c9";
+      ctx.beginPath(); ctx.arc(arcoX,arcoY,astro.ehNoite?8:12,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.25; ctx.beginPath(); ctx.arc(arcoX,arcoY,astro.ehNoite?14:22,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    }
+
     if(this.nivel){
       const camX=this.camX;
+
+      // montanhas em paralaxe (camadas distantes)
+      ctx.fillStyle = `rgba(${Math.round(30*brilho+20)},${Math.round(25*brilho+15)},${Math.round(55*brilho+30)},0.65)`;
+      this._montanhas(ctx, camX*0.25, H-70, 70, 140);
+      ctx.fillStyle = `rgba(${Math.round(40*brilho+15)},${Math.round(30*brilho+15)},${Math.round(60*brilho+25)},0.8)`;
+      this._montanhas(ctx, camX*0.45, H-50, 50, 110);
+
+      // nuvens
+      ctx.fillStyle = `rgba(255,255,255,${0.5*brilho+0.05})`;
+      for(let i=0;i<5;i++){
+        const nx = ((i*220 - camX*0.15) % (W+200)) - 100;
+        const ny = 24+ (i%3)*18;
+        ctx.beginPath();
+        ctx.ellipse(nx,ny,18,7,0,0,Math.PI*2);
+        ctx.ellipse(nx+14,ny+2,13,6,0,0,Math.PI*2);
+        ctx.fill();
+      }
+
       for(const p of this.nivel.plataformas){
         if(!p.visivel) continue;
-        ctx.fillStyle = p.tipo==="movel"?"#8d6e63":p.tipo==="sumindo"?"#ab7fd4":p.tipo==="caidica"?"#b08968":"#5d4037";
+        const corBase = p.tipo==="movel"?"#8d6e63":p.tipo==="sumindo"?"#ab7fd4":p.tipo==="caidica"?"#b08968":"#5d4037";
+        ctx.fillStyle = this._sombrear(corBase, brilho);
         ctx.fillRect(Math.round(p.x-camX), Math.round(p.y), p.w, p.h);
-        ctx.fillStyle="#3e2723"; ctx.fillRect(Math.round(p.x-camX), Math.round(p.y), p.w, 3);
+        ctx.fillStyle = this._sombrear("#8bc34a", brilho);
+        ctx.fillRect(Math.round(p.x-camX), Math.round(p.y), p.w, 3);
+        ctx.fillStyle="rgba(0,0,0,.25)";
+        ctx.fillRect(Math.round(p.x-camX), Math.round(p.y+p.h-2), p.w, 2);
       }
-      ctx.fillStyle="#ffd23f";
-      ctx.fillRect(Math.round(this.nivel.metaX-camX), this.nivel.CH-40, 4, 40);
+      // bandeira da meta
+      const metaPx = Math.round(this.nivel.metaX-camX);
+      ctx.fillStyle="#6b4226"; ctx.fillRect(metaPx, this.nivel.CH-42, 3, 42);
+      ctx.fillStyle="#ffd23f"; ctx.fillRect(metaPx+3, this.nivel.CH-42, 14, 10);
+
       for(const ini of this.inimigosETodos){
         if(!ini.vivo) continue;
-        ctx.fillStyle = ini.invulneravel ? "#fff" : (ini.guarda? "#607d8b" : "#c0392b");
-        ctx.fillRect(Math.round(ini.x-ini.largura/2-camX), Math.round(ini.y-ini.altura), ini.largura, ini.altura);
+        const cor = ini.guarda? "#607d8b" : (ini instanceof ChefeFinal || ini instanceof ChefeRival? "#8b1a2b" : "#c0392b");
+        this.desenharPersonagem(ctx, ini.x-camX, ini.y, ini.largura, ini.altura, "#e0a375", cor, ini.guarda?"#cfd8dc":"#333", ini.dir, Math.abs(ini.vx)>0.05, ini.janelaAtivaAtaque, ini.guarda, ini.invulneravel);
       }
       ctx.fillStyle="#ffeb3b";
-      for(const pr of this.projeteis){ ctx.fillRect(Math.round(pr.x-camX-3), Math.round(pr.y-3), 6,6); }
+      for(const pr of this.projeteis){
+        ctx.beginPath(); ctx.arc(Math.round(pr.x-camX), Math.round(pr.y), 3.4, 0, Math.PI*2); ctx.fill();
+      }
       const j=this.jogador;
       if(j){
-        ctx.fillStyle = j.invulneravel ? (Math.floor(performance.now()/80)%2===0?"#ffffff":FAIXAS[j.faixaIndex].cor) : FAIXAS[j.faixaIndex].cor;
-        ctx.fillRect(Math.round(j.x-j.largura/2-camX), Math.round(j.y-j.altura), j.largura, j.altura);
-        ctx.fillStyle="#222";
-        ctx.fillRect(Math.round(j.x-j.largura/2-camX), Math.round(j.y-j.altura+4), j.largura, 3);
+        this.desenharPersonagem(ctx, j.x-camX, j.y, j.largura, j.altura, "#e0a375", FAIXAS[j.faixaIndex].cor, j.faixaIndex===0?"#c0392b":"#1b1b1b", j.dir, Math.abs(j.vx)>0.1, j.atacando, j.bloqueando, j.invulneravel);
         if(j.atacando){
           const al = JANELAS_ATAQUE[j.atacando].alcance;
-          ctx.fillStyle = j.atacando==="contra"?"rgba(255,210,63,.7)":"rgba(255,255,255,.6)";
-          ctx.fillRect(Math.round(j.x+(j.dir>0?j.largura/2:-j.largura/2-al)-camX), Math.round(j.y-j.altura+6), al, 8);
-        }
-        if(j.bloqueando){
-          ctx.fillStyle="rgba(100,180,255,.5)";
-          ctx.fillRect(Math.round(j.x+(j.dir>0?2:-8)-camX), Math.round(j.y-j.altura), 6, j.altura);
+          ctx.fillStyle = j.atacando==="contra"?"rgba(255,210,63,.55)":"rgba(255,255,255,.4)";
+          ctx.beginPath();
+          ctx.ellipse(Math.round(j.x-camX)+(j.dir>0?al*0.5:-al*0.5), Math.round(j.y-j.altura*0.85), al*0.55, 7, 0,0,Math.PI*2);
+          ctx.fill();
         }
         if(this.comidaAnim){
           const t = performance.now()-this.comidaAnim.inicio;
@@ -844,15 +991,43 @@ class Jogo{
       }
       this.particulas.desenhar(ctx,camX);
     }
+
+    // sombreamento geral de noite (vinheta azulada)
+    if(brilho<0.95){
+      ctx.fillStyle = `rgba(10,10,40,${(1-brilho)*0.45})`;
+      ctx.fillRect(0,0,W,H);
+    }
+
     ctx.restore();
     this.atualizarHud();
+  }
+  _montanhas(ctx, offset, baseY, altura, largura){
+    const W=384;
+    ctx.beginPath();
+    ctx.moveTo(-50,216);
+    for(let x=-largura; x<W+largura; x+=largura){
+      const ox = x - (offset % largura);
+      const h = altura*(0.6+0.4*Math.sin(x*0.013));
+      ctx.lineTo(ox, baseY-h);
+      ctx.lineTo(ox+largura/2, baseY-h*0.4);
+    }
+    ctx.lineTo(W+50,216);
+    ctx.closePath();
+    ctx.fill();
+  }
+  _sombrear(corHex, brilho){
+    const c = corHex.replace('#','');
+    const r = parseInt(c.substring(0,2),16), g = parseInt(c.substring(2,4),16), b = parseInt(c.substring(4,6),16);
+    const f = clamp(0.35+brilho*0.65, 0, 1);
+    return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
   }
   atualizarHud(){
     const vidasEl = document.getElementById('vidas');
     const j=this.jogador;
     if(j){ vidasEl.textContent = "❤".repeat(Math.max(0,j.vidas))+"🖤".repeat(Math.max(0,j.vidaMax-j.vidas)); }
+    const fase = Ciclo.fase();
     document.getElementById('hudFaixa').textContent = this.nivel? `Faixa: ${FAIXAS[this.nivelIdx].nome}`:'';
-    document.getElementById('hudNivel').textContent = this.nivel? `Fase ${this.nivelIdx+1}/8`:'';
+    document.getElementById('hudNivel').textContent = this.nivel? `Fase ${this.nivelIdx+1}/8 ${fase.emoji} ${fase.nome}`:'';
     const chefe = this.nivel && this.nivel.chefes[0];
     const box = document.getElementById('barraChefeBox');
     if(chefe){
