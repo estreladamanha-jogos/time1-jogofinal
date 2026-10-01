@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🌟 Estrela da Manhã — Caminho do Karatê</title>
+<style>
+  :root{
+    --cor-hud-bg:rgba(20,20,30,.6);
+    --cor-destaque:#ffd93d;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;
+    background:#0b1026;
+    overflow:hidden;
+    font-family:'Trebuchet MS','Segoe UI',Verdana,sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
+  #jogoContainer{
+    position:relative;
+    width:100vw;height:100vh;
+    background:#0b1026;
+  }
+  #canvas3d{
+    display:block;
+    width:100%;height:100%;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute;top:12px;left:12px;
+    display:flex;gap:14px;align-items:center;
+    background:var(--cor-hud-bg);
+    padding:7px 14px;border-radius:12px;
+    color:#fff;font-weight:bold;font-size:15px;
+    text-shadow:0 2px 3px rgba(0,0,0,.5);
+    backdrop-filter:blur(3px);
+    pointer-events:none;
+    z-index:5;
+  }
+  #hud .faixaIcone{width:16px;height:16px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.4);}
+  #vidasBox span.vazio{opacity:.25;}
+  #hudNivel{
+    position:absolute;top:12px;right:12px;
+    background:var(--cor-hud-bg);
+    padding:6px 12px;border-radius:12px;
+    color:#fff;font-size:13px;font-weight:bold;
+    text-shadow:0 2px 3px rgba(0,0,0,.5);
+    pointer-events:none;z-index:5;
+  }
+  #hudInimigos{
+    position:absolute;bottom:12px;right:12px;
+    background:var(--cor-hud-bg);
+    padding:6px 12px;border-radius:12px;
+    color:#fff;font-size:13px;font-weight:bold;
+    text-shadow:0 2px 3px rgba(0,0,0,.5);
+    pointer-events:none;z-index:5;
+  }
+  #barraChefeBox{
+    position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:300px;max-width:60vw;
+    display:none;
+    flex-direction:column;align-items:center;
+    z-index:5;pointer-events:none;
+  }
+  #barraChefeBox.ativa{display:flex;}
+  #barraChefeNome{color:#ffd93d;font-size:13px;font-weight:bold;text-shadow:0 2px 3px rgba(0,0,0,.7);margin-bottom:2px;}
+  #barraChefeFundo{width:100%;height:12px;background:rgba(0,0,0,.5);border-radius:6px;border:2px solid #000;overflow:hidden;}
+  #barraChefeVida{height:100%;background:linear-gradient(90deg,#ff5c5c,#ff9d5c);width:100%;transition:width .15s ease;}
+
+  /* ---------- Telas (overlay) ---------- */
+  .tela{
+    position:absolute;inset:0;
+    display:none;
+    align-items:center;justify-content:center;
+    flex-direction:column;
+    background:rgba(5,8,25,.88);
+    color:#fff;text-align:center;
+    animation:fadeIn .4s ease;
+    z-index:10;
+    padding:16px;
+    overflow:auto;
+  }
+  .tela.ativa{display:flex;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .tela h1{
+    font-size:2.1em;margin:0 0 4px 0;
+    color:var(--cor-destaque);
+    text-shadow:0 0 18px rgba(255,217,61,.8),0 3px 4px rgba(0,0,0,.5);
+  }
+  .tela h2{font-size:1.1em;font-weight:normal;margin:0 0 18px 0;opacity:.9;}
+  .tela p.pontos{font-size:1.3em;margin:4px 0;color:#ffe27a;}
+  .botaoJogo{
+    background:linear-gradient(180deg,#ffd93d,#f2a900);
+    border:none;border-radius:26px;
+    padding:12px 34px;margin:6px;
+    font-size:1.05em;font-weight:bold;color:#3a2400;
+    cursor:pointer;
+    box-shadow:0 5px 0 #b97a00, 0 7px 12px rgba(0,0,0,.4);
+    transition:transform .08s ease;
+    letter-spacing:.4px;
+  }
+  .botaoJogo:active{transform:translateY(3px);box-shadow:0 2px 0 #b97a00, 0 3px 6px rgba(0,0,0,.4);}
+  .botaoJogo.secundario{background:linear-gradient(180deg,#8fb7d8,#5a84a8);color:#0c2233;box-shadow:0 5px 0 #3d5e78,0 7px 12px rgba(0,0,0,.4);}
+  .botaoJogo.secundario:active{box-shadow:0 2px 0 #3d5e78,0 3px 6px rgba(0,0,0,.4);}
+  .botaoJogo:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none;}
+
+  #telaTitulo .subtitulo{font-size:.95em;opacity:.8;margin-bottom:22px;max-width:480px;}
+  .gradeNiveis{display:grid;grid-template-columns:repeat(4,72px);gap:10px;margin:14px 0 20px;}
+  .botaoNivel{
+    width:72px;height:72px;border-radius:12px;border:3px solid rgba(255,255,255,.25);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:11px;font-weight:bold;color:#1a1a1a;cursor:pointer;gap:3px;
+  }
+  .botaoNivel .num{font-size:16px;}
+  .botaoNivel:disabled{opacity:.3;cursor:not-allowed;filter:grayscale(1);}
+  .listaControles{text-align:left;font-size:.92em;line-height:1.7;max-width:380px;margin:0 0 18px;background:rgba(255,255,255,.06);padding:14px 18px;border-radius:12px;}
+  .listaControles b{color:var(--cor-destaque);}
+  .creditosTexto{max-width:440px;font-size:.88em;line-height:1.6;opacity:.85;margin-bottom:18px;}
+  .faixaGrande{width:64px;height:64px;border-radius:10px;margin:0 auto 14px;border:3px solid rgba(255,255,255,.4);box-shadow:0 0 24px rgba(255,255,255,.25);}
+  .avisoTecnico{font-size:.78em;opacity:.65;max-width:420px;margin-top:4px;}
+
+  #dicaMobile{
+    position:absolute;bottom:8px;left:0;right:0;
+    text-align:center;color:rgba(255,255,255,.5);
+    font-size:11px;pointer-events:none;z-index:5;
+  }
+  #controlesTouch{
+    position:absolute;bottom:16px;left:0;right:0;
+    display:none;justify-content:space-between;padding:0 16px;
+    pointer-events:none;z-index:5;
+  }
+  #controlesTouch.ativo{display:flex;}
+  .blocoMover{
+    display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,48px);
+    gap:4px;pointer-events:none;
+  }
+  .ladoDir{display:flex;gap:10px;align-items:flex-end;pointer-events:none;}
+  .btnTouch{
+    width:48px;height:48px;border-radius:12px;
+    background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);
+    color:#fff;font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:all;backdrop-filter:blur(2px);
+  }
+  .btnTouch.redondo{border-radius:50%;width:56px;height:56px;}
+  .btnTouch:active{background:rgba(255,255,255,.4);}
+  #btnSoco{background:rgba(255,120,80,.35);border-color:rgba(255,150,100,.6);}
+  #btnDefender{background:rgba(120,170,255,.35);border-color:rgba(150,190,255,.6);}
+</style>
+</head>
+<body>
+<div id="jogoContainer">
+  <canvas id="canvas3d"></canvas>
+
+  <div id="hud">
+    <span><span class="faixaIcone" id="faixaIcone"></span><span id="faixaNome">Branca</span></span>
+    <div id="vidasBox"></div>
+    <div id="pontosBox">⭐ <span id="pontosValor">0</span></div>
+  </div>
+  <div id="hudNivel">Arena <span id="hudNivelNum">1</span> — <span id="hudNivelTema">O Primeiro Passo</span></div>
+  <div id="hudInimigos">Rivais na arena: <span id="hudInimigosValor">0</span></div>
+
+  <div id="barraChefeBox">
+    <div id="barraChefeNome">CHEFE</div>
+    <div id="barraChefeFundo"><div id="barraChefeVida"></div></div>
+  </div>
+
+  <!-- TELA: TÍTULO -->
+  <div id="telaTitulo" class="tela ativa">
+    <h1>🌟 ESTRELA DA MANHÃ</h1>
+    <h2>CAMINHO DO KARATÊ</h2>
+    <p class="subtitulo">Entre na arena em 3ª pessoa, derrote os rivais de cada faixa e colete o alimento de cada arena para enfrentar o Monstro da Fome. Inspirado no espírito de comunidade, esporte e superação do Projeto Estrela da Manhã — Lauro de Freitas, Bahia.</p>
+    <button class="botaoJogo" id="btnJogar">JOGAR</button>
+    <button class="botaoJogo secundario" id="btnAbrirSelecao">SELEÇÃO DE ARENAS</button>
+    <button class="botaoJogo secundario" id="btnAbrirComoJogar">COMO JOGAR</button>
+    <button class="botaoJogo secundario" id="btnAbrirCreditos">CRÉDITOS</button>
+    <p class="avisoTecnico" id="avisoWebgl"></p>
+  </div>
+
+  <!-- TELA: SELEÇÃO DE NÍVEIS -->
+  <div id="telaSelecao" class="tela">
+    <h1 style="font-size:1.5em;">SELEÇÃO DE ARENAS</h1>
+    <div class="gradeNiveis" id="gradeNiveis"></div>
+    <button class="botaoJogo secundario" id="btnVoltarSelecao">VOLTAR</button>
+  </div>
+
+  <!-- TELA: COMO JOGAR -->
+  <div id="telaComoJogar" class="tela">
+    <h1 style="font-size:1.5em;">COMO JOGAR</h1>
+    <div class="listaControles">
+      <div><b>W / ↑</b> — andar para frente</div>
+      <div><b>S / ↓</b> — andar para trás</div>
+      <div><b>A / ←</b> — mover para esquerda</div>
+      <div><b>D / →</b> — mover para direita</div>
+      <div><b>ESPAÇO</b> — pular</div>
+      <div><b>J</b> — soco (repita para combo: soco, soco, chute)</div>
+      <div><b>K</b> (segurar) — defender</div>
+      <div><b>K + J</b> — contra-ataque especial</div>
+      <div><b>ESC</b> — pausar</div>
+    </div>
+    <button class="botaoJogo secundario" id="btnVoltarComoJogar">VOLTAR</button>
+  </div>
+
+  <!-- TELA: CRÉDITOS -->
+  <div id="telaCreditos" class="tela">
+    <h1 style="font-size:1.5em;">CRÉDITOS</h1>
+    <div class="creditosTexto">
+      Jogo original criado como homenagem ao espírito do <b>Projeto Estrela da Manhã</b>, em Lauro de Freitas, Bahia —
+      comunidade, esporte, disciplina e superação.<br><br>
+      A história de um Monstro da Fome e da coleta de alimentos é uma fantasia de jogo — não representa fatos reais
+      sobre o projeto, apenas presta homenagem ao seu trabalho de levar esporte, educação e alimentação a crianças.<br><br>
+      Personagens, inimigos, arenas, artes e código são originais. O jogo usa apenas a estrutura de gênero
+      (combate 3D em terceira pessoa) como referência, sem copiar conteúdo de nenhum outro jogo.<br><br>
+      Feito em HTML5 + JavaScript + <b>Three.js</b> (biblioteca 3D de código aberto, via CDN).
+    </div>
+    <button class="botaoJogo secundario" id="btnVoltarCreditos">VOLTAR</button>
+  </div>
+
+  <!-- TELA: PAUSA -->
+  <div id="telaPausa" class="tela">
+    <h1 style="font-size:1.6em;">PAUSADO</h1>
+    <button class="botaoJogo" id="btnContinuarPausa">CONTINUAR</button>
+    <button class="botaoJogo secundario" id="btnMenuPausa">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: TRANSIÇÃO DE FAIXA -->
+  <div id="telaTransicao" class="tela">
+    <h1 style="font-size:1.4em;">ARENA VENCIDA!</h1>
+    <h2 id="transicaoTema"></h2>
+    <p class="pontos" id="transicaoComida" style="font-size:1.6em;"></p>
+    <p class="pontos">⭐ <span id="transicaoPontos">0</span></p>
+    <div class="faixaGrande" id="transicaoFaixaCor"></div>
+    <h2 id="transicaoFaixaNome" style="margin-bottom:22px;">NOVA FAIXA DESBLOQUEADA</h2>
+    <button class="botaoJogo" id="btnProximoNivel">CONTINUAR</button>
+    <button class="botaoJogo secundario" id="btnMenuTransicao">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: GAME OVER -->
+  <div id="telaGameOver" class="tela">
+    <h1 style="color:#ff6b6b;text-shadow:0 0 18px rgba(255,107,107,.8);font-size:1.8em;">GAME OVER</h1>
+    <h2>A jornada continua...</h2>
+    <button class="botaoJogo" id="btnTentarNovamente">TENTAR NOVAMENTE</button>
+    <button class="botaoJogo secundario" id="btnMenuGameOver">MENU PRINCIPAL</button>
+  </div>
+
+  <!-- TELA: VITÓRIA FINAL -->
+  <div id="telaVitoriaFinal" class="tela">
+    <h1 style="font-size:1.9em;">🥋 FAIXA PRETA CONQUISTADA</h1>
+    <h2>🌟 JORNADA CONCLUÍDA</h2>
+    <p class="pontos" style="font-size:1.4em;">🍱 Monstro da Fome derrotado — alimentos entregues: 8/8</p>
+    <p class="pontos">Pontuação final: <span id="pontosFinaisTotais">0</span></p>
+    <button class="botaoJogo" id="btnMenuVitoriaFinal">MENU PRINCIPAL</button>
+  </div>
+
+  <div id="dicaMobile">Toque nos controles para jogar</div>
+  <div id="controlesTouch">
+    <div class="blocoMover">
+      <div></div><div class="btnTouch" id="btnFrente">▲</div><div></div>
+      <div class="btnTouch" id="btnEsq">◀</div><div class="btnTouch" id="btnTras">▼</div><div class="btnTouch" id="btnDir">▶</div>
+    </div>
+    <div class="ladoDir">
+      <div class="btnTouch redondo" id="btnDefender">🛡</div>
+      <div class="btnTouch redondo" id="btnSoco">👊</div>
+      <div class="btnTouch redondo" id="btnPular">⤴</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =====================================================================
+   🌟 ESTRELA DA MANHÃ — CAMINHO DO KARATÊ (versão 3D)
+   Three.js (WebGL) + JavaScript puro + Web Audio API + localStorage.
+   Arena circular 3D em terceira pessoa, combate estilo jogo de luta
+   (soco/chute/defesa/combo/contra-ataque), 6 inimigos + 2 chefes,
+   8 faixas (branca -> preta). Sem copiar conteúdo de nenhum outro jogo.
+   Tematicamente inspirado no espírito do Projeto Estrela da Manhã
+   (Lauro de Freitas, Bahia) — sem inventar fatos institucionais.
+===================================================================== */
+
+/* =====================================================================
+   SISTEMA: CONFIGURAÇÃO
+===================================================================== */
+const VIDAS_MAX = 3;
+const GRAVIDADE = 14;        // m/s² (queda)
+const VEL_JOGADOR = 4.6;     // m/s
+const VEL_PULO = 5.2;        // m/s inicial
+const RAIO_JOGADOR = 0.5;
+
+const teclas = {};
+function clamp(v,min,max){ return v<min?min:(v>max?max:v); }
+function agora(){ return performance.now(); }
+function distXZ(a,b){ const dx=a.x-b.x, dz=a.z-b.z; return Math.sqrt(dx*dx+dz*dz); }
+// menor diferença angular entre dois ângulos (radianos), sempre em [-PI,PI]
+function difAngular(a,b){ let d=(a-b)%(Math.PI*2); if(d>Math.PI) d-=Math.PI*2; if(d<-Math.PI) d+=Math.PI*2; return d; }
+
+/* =====================================================================
+   SISTEMA: FAIXAS (progressão)
+===================================================================== */
+const FAIXAS = [
+  {cor:0xf5f5f2, nome:'Faixa Branca',   tema:'O Primeiro Passo', comida:{emoji:'🍞', nome:'Pão'}},
+  {cor:0xffd93d, nome:'Faixa Amarela',  tema:'Disciplina',       comida:{emoji:'🍌', nome:'Banana'}},
+  {cor:0xe53935, nome:'Faixa Vermelha', tema:'Coragem',          comida:{emoji:'🍎', nome:'Maçã'}},
+  {cor:0xff8c3b, nome:'Faixa Laranja',  tema:'Superação',        comida:{emoji:'🥕', nome:'Cenoura'}},
+  {cor:0x4caf50, nome:'Faixa Verde',    tema:'Crescimento',      comida:{emoji:'🥦', nome:'Brócolis'}},
+  {cor:0x9b4dff, nome:'Faixa Roxa',     tema:'Determinação',     comida:{emoji:'🍇', nome:'Uvas'}},
+  {cor:0x7a4a2b, nome:'Faixa Marrom',   tema:'Preparação',       comida:{emoji:'🍲', nome:'Sopa Quente'}},
+  {cor:0x1c1c1c, nome:'Faixa Preta',    tema:'O Grande Desafio', comida:{emoji:'🍱', nome:'Cesta de Alimentos'}},
+];
+function corHexCss(hex){ return '#'+hex.toString(16).padStart(6,'0'); }
+const TOTAL_NIVEIS = 8;
+
+/* =====================================================================
+   SISTEMA: SAVE SYSTEM (localStorage)
+===================================================================== */
+const SaveSystem = (() => {
+  const CHAVE = 'estrelaManha_karate3d_progresso_v1';
+  function padrao(){ return { nivelDesbloqueado: 0, pontosPorNivel: new Array(TOTAL_NIVEIS).fill(0) }; }
+  function carregar(){
+    try{
+      const bruto = localStorage.getItem(CHAVE);
+      if(!bruto) return padrao();
+      const dados = JSON.parse(bruto);
+      if(typeof dados.nivelDesbloqueado!=='number') return padrao();
+      if(!Array.isArray(dados.pontosPorNivel)) dados.pontosPorNivel = new Array(TOTAL_NIVEIS).fill(0);
+      return dados;
+    }catch(e){ return padrao(); }
+  }
+  function salvar(dados){
+    try{ localStorage.setItem(CHAVE, JSON.stringify(dados)); }catch(e){}
+  }
+  return { carregar, salvar };
+})();
+let progresso = SaveSystem.carregar();
+
+/* =====================================================================
+   SISTEMA: ÁUDIO (Web Audio API — procedural, sem arquivos externos)
+===================================================================== */
+const AudioSys = (() => {
+  let ctxAudio = null;
+  function getCtx(){
+    if(!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctxAudio.state === 'suspended') ctxAudio.resume();
+    return ctxAudio;
+  }
+  function tom(freq, duracao, tipo='sine', volIni=0.16, atraso=0){
+    try{
+      const ac = getCtx();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = tipo;
+      osc.frequency.setValueAtTime(freq, ac.currentTime + atraso);
+      gain.gain.setValueAtTime(volIni, ac.currentTime + atraso);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + atraso + duracao);
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.start(ac.currentTime + atraso);
+      osc.stop(ac.currentTime + atraso + duracao);
+    }catch(e){}
+  }
+  function ruidoImpacto(duracao=0.08, vol=0.14){
+    try{
+      const ac = getCtx();
+      const bufferSize = Math.floor(ac.sampleRate*duracao);
+      const buffer = ac.createBuffer(1,bufferSize,ac.sampleRate);
+      const dados = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) dados[i] = (Math.random()*2-1)*(1-i/bufferSize);
+      const fonte = ac.createBufferSource();
+      fonte.buffer = buffer;
+      const gain = ac.createGain();
+      gain.gain.setValueAtTime(vol, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+duracao);
+      fonte.connect(gain); gain.connect(ac.destination);
+      fonte.start();
+    }catch(e){}
+  }
+  let ambiente = null;
+  return {
+    pular(){ tom(520,0.11,'square',0.14); tom(760,0.07,'square',0.07,0.03); },
+    aterrissar(){ tom(180,0.08,'sine',0.1); },
+    soco(){ tom(330,0.06,'sawtooth',0.13); },
+    socoForte(){ tom(260,0.09,'sawtooth',0.16); ruidoImpacto(0.05,0.1); },
+    contraataque(){ tom(180,0.05,'square',0.1); tom(520,0.14,'sawtooth',0.18,0.03); ruidoImpacto(0.08,0.14); },
+    bloqueio(){ tom(880,0.05,'square',0.09); },
+    impacto(){ ruidoImpacto(0.07,0.12); },
+    dano(){ tom(150,0.24,'sawtooth',0.17); },
+    morte(){ tom(180,0.3,'sawtooth',0.15); tom(90,0.4,'sawtooth',0.14,0.15); },
+    inimigoDerrotado(){ tom(500,0.1,'square',0.14); tom(260,0.12,'square',0.1,0.05); },
+    guardaQuebrada(){ tom(700,0.05,'square',0.12); tom(400,0.08,'square',0.1,0.04); },
+    arenaLimpa(){ tom(660,0.1,'sine',0.15); tom(880,0.14,'sine',0.13,0.08); tom(1100,0.18,'sine',0.11,0.16); },
+    novaFaixa(){ [523,659,784,1046].forEach((f,i)=> tom(f,0.2,'triangle',0.15,i*0.11)); },
+    chefeAlerta(){ tom(110,0.5,'sawtooth',0.18); tom(90,0.6,'sawtooth',0.14,0.2); },
+    chefeDerrotado(){ [200,300,450,600,900].forEach((f,i)=>tom(f,0.22,'sawtooth',0.15,i*0.09)); },
+    vitoria(){ [523,659,784,1046,1318].forEach((f,i)=> tom(f,0.22,'triangle',0.16,i*0.12)); },
+    gameOver(){ [300,260,220,160].forEach((f,i)=> tom(f,0.3,'sawtooth',0.15,i*0.18)); },
+    ambienteIniciar(cor){
+      this.ambienteParar();
+      try{
+        const ac = getCtx();
+        const osc1 = ac.createOscillator(); const osc2 = ac.createOscillator();
+        const gain = ac.createGain();
+        osc1.type='sine'; osc2.type='sine';
+        osc1.frequency.value = cor==='grave'?65:98;
+        osc2.frequency.value = (cor==='grave'?65:98)*1.5;
+        gain.gain.value = 0.018;
+        osc1.connect(gain); osc2.connect(gain); gain.connect(ac.destination);
+        osc1.start(); osc2.start();
+        ambiente = {osc1,osc2,gain};
+      }catch(e){}
+    },
+    ambienteParar(){
+      if(ambiente){
+        try{ ambiente.gain.gain.setTargetAtTime(0, getCtx().currentTime, 0.2); ambiente.osc1.stop(getCtx().currentTime+0.5); ambiente.osc2.stop(getCtx().currentTime+0.5); }catch(e){}
+        ambiente=null;
+      }
+    }
+  };
+})();
+
+/* =====================================================================
+   SISTEMA: HIT-STOP GLOBAL (congelamento breve no impacto)
+===================================================================== */
+const GameFeel = {
+  hitStopAte: 0,
+  congelar(ms){ this.hitStopAte = Math.max(this.hitStopAte, agora()+ms); },
+  get congelado(){ return agora() < this.hitStopAte; }
+};
+
+/* =====================================================================
+   SISTEMA: JANELAS DE ATAQUE (combos de karatê)
+===================================================================== */
+const COMBO_JANELA_MS = 480;
+const JANELAS_ATAQUE = {
+  soco1:{duracaoMs:230, alcance:1.6, dano:1, hitstop:40, shake:0.05},
+  soco2:{duracaoMs:260, alcance:1.7, dano:1, hitstop:50, shake:0.07},
+  soco3:{duracaoMs:360, alcance:1.9, dano:2, hitstop:80, shake:0.11},
+  contra:{duracaoMs:330, alcance:2.0, dano:2, hitstop:90, shake:0.14},
+};
+const ANGULO_GOLPE = Math.PI*0.42; // meio-ângulo do cone frontal de acerto (~75°)
+
+/* =====================================================================
+   SISTEMA: PARTÍCULAS 3D (pequenas esferas com brilho que desaparecem)
+===================================================================== */
+class SistemaParticulas{
+  constructor(scene){
+    this.scene = scene;
+    this.lista = [];
+    this._geo = new THREE.SphereGeometry(1,5,4);
+  }
+  emitir(pos, corHex, qtd=8, opts={}){
+    if(this.lista.length>140) return;
+    for(let i=0;i<qtd;i++){
+      const ang = Math.random()*Math.PI*2;
+      const incl = (Math.random()-0.5)*Math.PI*0.6;
+      const vel = (opts.vel||2)+Math.random()*(opts.velVar||2);
+      const tamanho = opts.tamanho||(0.05+Math.random()*0.06);
+      const mat = new THREE.MeshBasicMaterial({color:corHex, transparent:true, opacity:1});
+      const mesh = new THREE.Mesh(this._geo, mat);
+      mesh.scale.setScalar(tamanho);
+      mesh.position.copy(pos);
+      this.scene.add(mesh);
+      this.lista.push({
+        mesh, mat,
+        vx: Math.cos(ang)*Math.cos(incl)*vel,
+        vy: Math.sin(incl)*vel + (opts.subir||0),
+        vz: Math.sin(ang)*Math.cos(incl)*vel,
+        vida: (opts.vidaMs||600)+Math.random()*200,
+        vidaMax: (opts.vidaMs||600)+200,
+      });
+    }
+  }
+  atualizar(dtMs){
+    for(let i=this.lista.length-1;i>=0;i--){
+      const p = this.lista[i];
+      const dtS = dtMs/1000;
+      p.mesh.position.x += p.vx*dtS;
+      p.mesh.position.y += p.vy*dtS;
+      p.mesh.position.z += p.vz*dtS;
+      p.vy -= 4*dtS;
+      p.vida -= dtMs;
+      const alpha = Math.max(p.vida/p.vidaMax,0);
+      p.mat.opacity = alpha;
+      if(p.vida<=0){
+        this.scene.remove(p.mesh);
+        p.mat.dispose();
+        this.lista.splice(i,1);
+      }
+    }
+  }
+}
+
+/* =====================================================================
+   SISTEMA: TEXTURA DE EMOJI (usada para a comida coletável em 3D)
+===================================================================== */
+function criarSpriteEmoji(emoji, escala=1){
+  const tam = 128;
+  const c = document.createElement('canvas');
+  c.width=tam; c.height=tam;
+  const cx = c.getContext('2d');
+  cx.font = (tam*0.72)+'px sans-serif';
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(emoji, tam/2, tam/2+6);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:true});
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(escala,escala,escala);
+  return sprite;
+}
+
+/* =====================================================================
+   SISTEMA: CORPO 3D REUTILIZÁVEL (corpo/cabeça/braços/pernas/faixa)
+   Usado pelo jogador, pelos 6 inimigos e pelos 2 chefes — cada um
+   passa suas próprias cores e escala, criando silhuetas diferentes.
+===================================================================== */
+function construirCorpoHumanoide(opts={}){
+  const corCorpo = opts.corCorpo ?? 0xf2f2ee;
+  const corPele = opts.corPele ?? 0xe8b48c;
+  const corFaixa = opts.corFaixa ?? null;
+  const escala = opts.escala ?? 1;
+
+  const raiz = new THREE.Group();
+  const matCorpo = new THREE.MeshStandardMaterial({color:corCorpo, roughness:0.8});
+  const matPele = new THREE.MeshStandardMaterial({color:corPele, roughness:0.7});
+
+  // pernas (pivôs no quadril, caixa estende para baixo)
+  function criarMembro(largura,altura,profundidade,material,origemNoTopo){
+    const geo = new THREE.BoxGeometry(largura,altura,profundidade);
+    geo.translate(0, origemNoTopo? -altura/2 : altura/2, 0);
+    return new THREE.Mesh(geo, material);
+  }
+
+  const pivotPernaEsq = new THREE.Group(); pivotPernaEsq.position.set(-0.14,0.9,0);
+  const pernaEsq = criarMembro(0.17,0.9,0.17,matCorpo,true);
+  pivotPernaEsq.add(pernaEsq);
+  const pivotPernaDir = new THREE.Group(); pivotPernaDir.position.set(0.14,0.9,0);
+  const pernaDir = criarMembro(0.17,0.9,0.17,matCorpo,true);
+  pivotPernaDir.add(pernaDir);
+
+  const tronco = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.62,0.26), matCorpo);
+  tronco.position.set(0,1.21,0);
+
+  let faixaMesh = null;
+  if(corFaixa!=null){
+    faixaMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5,0.12,0.3),
+      new THREE.MeshStandardMaterial({color:corFaixa, roughness:0.6})
+    );
+    faixaMesh.position.set(0,1.0,0);
+  }
+
+  const pivotBracoEsq = new THREE.Group(); pivotBracoEsq.position.set(-0.3,1.46,0);
+  const bracoEsq = criarMembro(0.15,0.52,0.15,matCorpo,true);
+  pivotBracoEsq.add(bracoEsq);
+  const pivotBracoDir = new THREE.Group(); pivotBracoDir.position.set(0.3,1.46,0);
+  const bracoDir = criarMembro(0.15,0.52,0.15,matCorpo,true);
+  pivotBracoDir.add(bracoDir);
+
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.22,10,8), matPele);
+  cabeca.position.set(0,1.72,0);
+
+  const headband = new THREE.Mesh(
+    new THREE.BoxGeometry(0.46,0.08,0.46),
+    new THREE.MeshStandardMaterial({color:corFaixa ?? 0xffd93d})
+  );
+  headband.position.set(0,1.78,0);
+
+  raiz.add(pivotPernaEsq, pivotPernaDir, tronco, pivotBracoEsq, pivotBracoDir, cabeca, headband);
+  if(faixaMesh) raiz.add(faixaMesh);
+  raiz.scale.setScalar(escala);
+
+  return { raiz, pivotPernaEsq, pivotPernaDir, tronco, pivotBracoEsq, pivotBracoDir, cabeca, faixaMesh, headband, matCorpo, matPele };
+}
+
+function descartarGrupo(grupo){
+  grupo.traverse(obj=>{
+    if(obj.geometry) obj.geometry.dispose();
+    if(obj.material){
+      if(Array.isArray(obj.material)) obj.material.forEach(m=>m.dispose());
+      else obj.material.dispose();
+    }
+  });
+}
+
+/* =====================================================================
+   SISTEMA: COLISÃO (arco frontal de ataque em 3D)
+===================================================================== */
+function dentroDoConeDeAtaque(atacante, alvo, alcance){
+  const d = distXZ(atacante, alvo);
+  if(d> alcance) return false;
+  const anguloParaAlvo = Math.atan2(alvo.x-atacante.x, alvo.z-atacante.z);
+  const diff = Math.abs(difAngular(anguloParaAlvo, atacante.facingY));
+  return diff <= ANGULO_GOLPE;
+}
+
+/* =====================================================================
+   SISTEMA: JOGADOR 3D
+===================================================================== */
+class Jogador3D{
+  constructor(scene, faixaIndex){
+    this.faixaIndex = faixaIndex;
+    const corpo = construirCorpoHumanoide({corFaixa:FAIXAS[faixaIndex].cor});
+    this.corpo = corpo;
+    this.raiz = corpo.raiz;
+    scene.add(this.raiz);
+
+    this.x=0; this.y=0; this.z=0; this.facingY=0;
+    this.velY=0; this.noChao=true;
+    this.vidas=VIDAS_MAX; this.pontos=0;
+    this.invulneravelAte=0; this.travadoAte=0;
+    this.atacando=0; this.ataqueAte=0; this.tipoAtaque=null; this.jaApertouJ=false;
+    this.comboEstagio=0; this.comboJanelaAte=0;
+    this.bloqueando=false;
+    this.morto=false; this.vitoriaAtiva=false;
+    this.inimigosAtingidosNesteGolpe=new Set();
+    this.pulRecemPressionado=false;
+    this.anim=0;
+    this.squash=0;
+  }
+
+  posicionar(x,z,facing=0){ this.x=x; this.z=z; this.y=0; this.facingY=facing; }
+
+  get invulneravel(){ return agora() < this.invulneravelAte; }
+  get travado(){ return agora() < this.travadoAte; }
+  get atacandoAtivo(){ return this.tipoAtaque && agora()<this.ataqueAte; }
+  get raio(){ return RAIO_JOGADOR; }
+
+  atualizar(arena, dtMs){
+    const dtS = dtMs/1000;
+    this.anim += dtMs*0.01;
+    this.squash *= Math.pow(0.001,dtS);
+
+    if(this.vitoriaAtiva){
+      this._aplicarFisica(arena,dtS);
+      this._animar('vitoria',dtMs);
+      return;
+    }
+    if(this.travado){
+      this._aplicarFisica(arena,dtS);
+      this._animar(this.estado||'dano',dtMs);
+      return;
+    }
+
+    let mx=0, mz=0;
+    if(teclas['w']||teclas['arrowup']) mz -= 1;
+    if(teclas['s']||teclas['arrowdown']) mz += 1;
+    if(teclas['a']||teclas['arrowleft']) mx -= 1;
+    if(teclas['d']||teclas['arrowright']) mx += 1;
+
+    this.bloqueando = !!teclas['k'] && this.noChao && this.atacando<=0;
+
+    let movendo=false;
+    if((mx!==0||mz!==0) && !this.bloqueando){
+      const len = Math.sqrt(mx*mx+mz*mz);
+      mx/=len; mz/=len;
+      this.x += mx*VEL_JOGADOR*dtS;
+      this.z += mz*VEL_JOGADOR*dtS;
+      this.facingY = Math.atan2(mx,mz);
+      movendo=true;
+    }
+
+    // mantém o jogador dentro do raio da arena
+    const distCentro = Math.sqrt(this.x*this.x+this.z*this.z);
+    const limite = arena.raio - this.raio;
+    if(distCentro>limite){
+      const f = limite/distCentro;
+      this.x*=f; this.z*=f;
+    }
+
+    const pedirPulo = teclas[' ']||teclas['space'];
+    if(pedirPulo && this.noChao && !this.pulRecemPressionado && !this.bloqueando){
+      this.velY = VEL_PULO; this.noChao=false; this.squash=0.15;
+      AudioSys.pular();
+    }
+    this.pulRecemPressionado = !!pedirPulo;
+
+    // --- Combate ---
+    const pedirSoco = teclas['j'];
+    if(pedirSoco && this.atacando<=0 && !this.jaApertouJ){
+      this.jaApertouJ=true;
+      if(this.bloqueando || teclas['k']){
+        this.tipoAtaque='contra'; this.comboEstagio=0;
+      } else {
+        const dentroDaJanela = agora() < this.comboJanelaAte;
+        this.comboEstagio = dentroDaJanela ? (this.comboEstagio%3)+1 : 1;
+        this.tipoAtaque = 'soco'+this.comboEstagio;
+      }
+      const cfg = JANELAS_ATAQUE[this.tipoAtaque];
+      this.atacando = cfg.duracaoMs;
+      this.ataqueAte = agora()+cfg.duracaoMs;
+      this.comboJanelaAte = agora()+cfg.duracaoMs+COMBO_JANELA_MS;
+      this.inimigosAtingidosNesteGolpe.clear();
+      if(this.tipoAtaque==='contra') AudioSys.contraataque();
+      else if(this.tipoAtaque==='soco3') AudioSys.socoForte();
+      else AudioSys.soco();
+    }
+    if(!pedirSoco) this.jaApertouJ=false;
+    if(this.atacando>0){ this.atacando=Math.max(0,this.atacando-dtMs); if(this.atacando<=0) this.tipoAtaque=null; }
+
+    if(this.atacando>0) this.estado='atacando';
+    else if(this.bloqueando) this.estado='bloqueio';
+    else if(!this.noChao) this.estado = this.velY>0?'pulando':'caindo';
+    else if(movendo) this.estado='andando';
+    else this.estado='parado';
+
+    this._aplicarFisica(arena,dtS);
+    this._animar(this.estado,dtMs);
+  }
+
+  _aplicarFisica(arena,dtS){
+    const estavaNoChao = this.noChao;
+    this.velY -= GRAVIDADE*dtS;
+    this.y += this.velY*dtS;
+    if(this.y<=0){ this.y=0; this.velY=0; this.noChao=true; }
+    else this.noChao=false;
+    if(!estavaNoChao && this.noChao){ this.squash=-0.12; AudioSys.aterrissar(); }
+  }
+
+  // Dano em arena de luta: recuo (knockback) no lugar, nunca teleporte —
+  // numa arena fechada, voltar ao ponto de entrada a cada dano criava um
+  // loop impossível contra inimigos à distância (o jogador nunca chegava
+  // neles). Só perder a última vida interrompe o controle (Game Over).
+  receberDano(arena, origem){
+    if(this.invulneravel || this.travado || this.vitoriaAtiva) return;
+    this.vidas--;
+    AudioSys.dano();
+    GameFeel.congelar(40);
+    if(this.vidas<=0){
+      this.vidas=0; this.estado='morte'; this.travadoAte=agora()+99999;
+      this.morto=true; this.velY=0;
+      AudioSys.morte();
+      return;
+    }
+    let dx,dz;
+    if(origem){
+      const d = distXZ(this,origem) || 1;
+      dx=(this.x-origem.x)/d; dz=(this.z-origem.z)/d;
+    } else {
+      dx=-Math.sin(this.facingY); dz=-Math.cos(this.facingY);
+    }
+    this.x += dx*1.1; this.z += dz*1.1;
+    const distCentro = Math.sqrt(this.x*this.x+this.z*this.z);
+    const limite = arena.raio - this.raio;
+    if(distCentro>limite){ const f=limite/distCentro; this.x*=f; this.z*=f; }
+    this.estado='dano';
+    this.travadoAte = agora()+230;
+    this.invulneravelAte = agora()+1000;
+  }
+
+  // Nega dano se o jogador estiver bloqueando de frente pro atacante.
+  receberDanoComBloqueio(arena, origemAtaque){
+    if(this.bloqueando){
+      const anguloParaOrigem = Math.atan2(origemAtaque.x-this.x, origemAtaque.z-this.z);
+      const diff = Math.abs(difAngular(anguloParaOrigem, this.facingY));
+      if(diff <= ANGULO_GOLPE){
+        AudioSys.bloqueio();
+        return;
+      }
+    }
+    this.receberDano(arena, origemAtaque);
+  }
+
+  atingirVitoria(){
+    if(this.vitoriaAtiva) return;
+    this.vitoriaAtiva=true;
+    AudioSys.vitoria();
+  }
+
+  _animar(estado, dtMs){
+    const c = this.corpo;
+    const t = this.anim;
+    let pernaAng=0, bracoAng=0, inclinacao=0;
+    switch(estado){
+      case 'andando': pernaAng=Math.sin(t*6)*0.5; bracoAng=Math.sin(t*6+Math.PI)*0.4; break;
+      case 'pulando': pernaAng=-0.3; bracoAng=-0.6; break;
+      case 'caindo': pernaAng=0.3; bracoAng=0.3; break;
+      case 'bloqueio': inclinacao=-0.05; break;
+      case 'dano': inclinacao=-0.2; break;
+      case 'morte': inclinacao=Math.PI*0.4; break;
+      case 'vitoria': bracoAng=-1.4+Math.sin(t*2)*0.15; break;
+      default: pernaAng=Math.sin(t*1.2)*0.04; bracoAng=Math.sin(t*1.2)*0.04;
+    }
+    c.pivotPernaEsq.rotation.x = pernaAng;
+    c.pivotPernaDir.rotation.x = -pernaAng;
+    c.pivotBracoEsq.rotation.x = -bracoAng*0.6;
+    c.raiz.rotation.x = inclinacao;
+
+    let braçoDirAng = bracoAng;
+    let perna3 = false;
+    if(estado==='atacando'){
+      const cfg = JANELAS_ATAQUE[this.tipoAtaque];
+      const progresso = clamp(1-(this.atacando/cfg.duracaoMs),0,1);
+      if(this.tipoAtaque==='soco3') perna3=true;
+      else braçoDirAng = -Math.sin(progresso*Math.PI)*2.0;
+    } else if(estado==='bloqueio'){
+      braçoDirAng = -1.1;
+      c.pivotBracoEsq.rotation.x = -1.0;
+    }
+    if(!perna3){
+      c.pivotBracoDir.rotation.x = braçoDirAng;
+      c.pivotPernaDir.rotation.x = pernaAng? -pernaAng : 0;
+    } else {
+      const cfg = JANELAS_ATAQUE.soco3;
+      const progresso = clamp(1-(this.atacando/cfg.duracaoMs),0,1);
+      c.pivotPernaDir.rotation.x = -Math.sin(progresso*Math.PI)*1.6;
+    }
+
+    const esc = 1+this.squash;
+    c.raiz.scale.set(1/Math.sqrt(esc), esc, 1/Math.sqrt(esc));
+
+    this.raiz.position.set(this.x, this.y, this.z);
+    this.raiz.rotation.y = this.facingY;
+    this.raiz.visible = !(this.invulneravel && Math.floor((this.invulneravelAte-agora())/100)%2===0);
+  }
+}
+
+/* =====================================================================
+   SISTEMA: INIMIGOS (6 arquétipos originais, adaptados ao 3D)
+===================================================================== */
+class InimigoBase3D{
+  constructor(scene, opts){
+    this.scene = scene;
+    this.vida = opts.vida ?? 1;
+    this.vivo = true;
+    this.x = opts.x; this.z = opts.z; this.y=0;
+    this.facingY = opts.facingY ?? Math.PI;
+    this.corpo = construirCorpoHumanoide(opts.corpoOpts||{});
+    this.raiz = this.corpo.raiz;
+    scene.add(this.raiz);
+    this.anim = Math.random()*10;
+    this.flashAte = 0;
+  }
+  get rect(){ return {x:this.x, z:this.z}; }
+  piscarDano(){
+    this.flashAte = agora()+140;
+    [this.corpo.matCorpo, this.corpo.matPele].forEach(m=>{ m._corOriginal = m._corOriginal ?? m.color.getHex(); });
+  }
+  _aplicarFlash(){
+    const flash = agora()<this.flashAte;
+    [this.corpo.matCorpo, this.corpo.matPele].forEach(m=>{
+      m.color.setHex(flash? 0xffffff : m._corOriginal);
+    });
+  }
+  receberAtaque(dano){
+    this.vida -= dano;
+    this.piscarDano();
+    if(this.vida<=0){
+      this.vivo=false;
+      this.scene.remove(this.raiz);
+      descartarGrupo(this.raiz);
+      AudioSys.inimigoDerrotado();
+    }
+    return this.vivo===false;
+  }
+  _sincronizarTransform(){
+    this.raiz.position.set(this.x,this.y,this.z);
+    this.raiz.rotation.y = this.facingY;
+    this._aplicarFlash();
+  }
+}
+
+// 1) PATRULHEIRO — anda de um lado a outro de um ponto, dano por contato, 1 golpe derrota.
+class InimigoPatrulheiro3D extends InimigoBase3D{
+  constructor(scene,x,z,raioPatrulha,dificuldade=1){
+    super(scene,{x,z,vida:1,corpoOpts:{corCorpo:0x5b4b8a,corPele:0x8577c4}});
+    this.centroX=x; this.centroZ=z; this.raioPatrulha=raioPatrulha;
+    this.velBase=1.0*dificuldade; this.anguloPatrulha=Math.random()*Math.PI*2;
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    const dtS=dtMs/1000;
+    this.anim+=dtMs*0.003;
+    this.anguloPatrulha += this.velBase*dtS*0.6;
+    this.x = this.centroX + Math.cos(this.anguloPatrulha)*this.raioPatrulha;
+    this.z = this.centroZ + Math.sin(this.anguloPatrulha)*this.raioPatrulha;
+    const prox = {x:this.centroX + Math.cos(this.anguloPatrulha+0.1)*this.raioPatrulha, z:this.centroZ + Math.sin(this.anguloPatrulha+0.1)*this.raioPatrulha};
+    this.facingY = Math.atan2(prox.x-this.x, prox.z-this.z);
+    this.y = 0.03*Math.abs(Math.sin(this.anim*6));
+    this._sincronizarTransform();
+  }
+}
+
+// 2) CORREDOR — idle e dispara investida rápida quando o jogador se aproxima.
+class InimigoCorredor3D extends InimigoBase3D{
+  constructor(scene,x,z,dificuldade=1){
+    super(scene,{x,z,vida:2,corpoOpts:{corCorpo:0xd94f4f,corPele:0xffffff,escala:0.95}});
+    this.xBase=x; this.zBase=z;
+    this.estado='idle'; this.timer=500+Math.random()*500; this.dificuldade=dificuldade;
+    this.raioDeteccao=4.2;
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    this.anim+=dtMs*0.004;
+    this.timer-=dtMs;
+    const dist = distXZ(this,jogador);
+    if(this.estado==='idle'){
+      this.facingY += Math.sin(this.anim)*0.002;
+      if(dist<this.raioDeteccao && this.timer<=0){
+        this.estado='alerta'; this.timer=260;
+        this.dirX=(jogador.x-this.x)/(dist||1); this.dirZ=(jogador.z-this.z)/(dist||1);
+        this.facingY = Math.atan2(this.dirX,this.dirZ);
+      }
+    } else if(this.estado==='alerta'){
+      if(this.timer<=0){ this.estado='dash'; this.timer=420; }
+    } else if(this.estado==='dash'){
+      this.x += this.dirX*4.6*this.dificuldade*(dtMs/1000);
+      this.z += this.dirZ*4.6*this.dificuldade*(dtMs/1000);
+      if(this.timer<=0){ this.estado='pausa'; this.timer=650; }
+    } else if(this.estado==='pausa'){
+      if(this.timer<=0){ this.estado='idle'; this.timer=800+Math.random()*600; }
+    }
+    this._sincronizarTransform();
+  }
+}
+
+// 3) PESADO — lento, resistente (3 golpes), avança sempre na direção do jogador.
+class InimigoPesado3D extends InimigoBase3D{
+  constructor(scene,x,z,dificuldade=1){
+    super(scene,{x,z,vida:3,corpoOpts:{corCorpo:0x6b5238,corPele:0xcaa86b,escala:1.25}});
+    this.velBase=0.5*dificuldade;
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    this.anim+=dtMs*0.002;
+    const d = distXZ(this,jogador);
+    if(d>1.2){
+      const dx=(jogador.x-this.x)/d, dz=(jogador.z-this.z)/d;
+      this.x += dx*this.velBase*(dtMs/1000);
+      this.z += dz*this.velBase*(dtMs/1000);
+      this.facingY = Math.atan2(dx,dz);
+    }
+    this._sincronizarTransform();
+  }
+}
+
+// 4) DEFENSOR — bloqueia o primeiro golpe (guarda), fica vulnerável por uma janela curta.
+class InimigoDefensor3D extends InimigoBase3D{
+  constructor(scene,x,z,dificuldade=1){
+    super(scene,{x,z,vida:2,corpoOpts:{corCorpo:0x3d5e78,corPele:0xffffff,escala:1.05}});
+    this.guarda=true; this.janelaVulneravelAte=0;
+    this.escudo = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.5,0.4), new THREE.MeshStandardMaterial({color:0x9fb8c9,transparent:true,opacity:0.85}));
+    this.escudo.position.set(0.32,1.3,0);
+    this.raiz.add(this.escudo);
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    const d = distXZ(this,jogador);
+    this.facingY = Math.atan2(jogador.x-this.x, jogador.z-this.z);
+    if(!this.guarda && agora()>this.janelaVulneravelAte) this.guarda=true;
+    this.escudo.visible = this.guarda;
+    this._sincronizarTransform();
+  }
+  receberAtaque(dano){
+    if(this.guarda){
+      this.guarda=false; this.janelaVulneravelAte=agora()+1100;
+      AudioSys.guardaQuebrada();
+      return false;
+    }
+    return super.receberAtaque(dano);
+  }
+}
+
+// 5) ATIRADOR — parado, arremessa projéteis quando o jogador se aproxima.
+class InimigoAtirador3D extends InimigoBase3D{
+  constructor(scene,x,z,dificuldade=1){
+    super(scene,{x,z,vida:2,corpoOpts:{corCorpo:0x57a34c,corPele:0x8a5a34,escala:1}});
+    this.raioDeteccao=6.5; this.cooldown=400; this.dificuldade=dificuldade;
+    this.projeteis=[];
+    this._matProjetil = new THREE.MeshStandardMaterial({color:0x6b4a2a});
+    this._geoProjetil = new THREE.SphereGeometry(0.14,8,6);
+  }
+  atualizar(dtMs,jogador){
+    const dtS=dtMs/1000;
+    for(let i=this.projeteis.length-1;i>=0;i--){
+      const p=this.projeteis[i];
+      p.vy -= GRAVIDADE*0.4*dtS;
+      p.x+=p.vx*dtS; p.y+=p.vy*dtS; p.z+=p.vz*dtS;
+      p.mesh.position.set(p.x,p.y,p.z);
+      if(p.y<-1){ this.scene.remove(p.mesh); this.projeteis.splice(i,1); }
+    }
+    if(!this.vivo) return;
+    this.anim+=dtMs*0.003;
+    this.cooldown-=dtMs;
+    const d = distXZ(this,jogador);
+    this.facingY = Math.atan2(jogador.x-this.x, jogador.z-this.z);
+    if(d<this.raioDeteccao && this.cooldown<=0){
+      this.cooldown = 1500/this.dificuldade;
+      const dx=(jogador.x-this.x)/d, dz=(jogador.z-this.z)/d;
+      const mesh = new THREE.Mesh(this._geoProjetil, this._matProjetil);
+      const py=this.y+1.1;
+      mesh.position.set(this.x,py,this.z);
+      this.scene.add(mesh);
+      this.projeteis.push({x:this.x,y:py,z:this.z,vx:dx*3.2,vy:2.6,vz:dz*3.2,mesh,raio:0.18});
+    }
+    this._sincronizarTransform();
+  }
+}
+
+// 6) VOADOR — plana em padrão circular no ar e mergulha periodicamente sobre o jogador.
+class InimigoVoador3D extends InimigoBase3D{
+  constructor(scene,x,z,alturaBase,dificuldade=1){
+    super(scene,{x,z,vida:2,corpoOpts:{corCorpo:0x3d8bff,corPele:0xffffff,escala:0.85}});
+    this.xBase=x; this.zBase=z; this.alturaBase=alturaBase; this.y=alturaBase;
+    this.anguloOrbita=Math.random()*Math.PI*2; this.raioOrbita=1.6;
+    this.estado='patrulha'; this.timer=1000+Math.random()*700; this.dificuldade=dificuldade;
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    const dtS=dtMs/1000;
+    this.anim+=dtMs*0.003;
+    this.timer-=dtMs;
+    if(this.estado==='patrulha'){
+      this.anguloOrbita += 0.9*this.dificuldade*dtS;
+      this.x = this.xBase+Math.cos(this.anguloOrbita)*this.raioOrbita;
+      this.z = this.zBase+Math.sin(this.anguloOrbita)*this.raioOrbita;
+      this.y = this.alturaBase+Math.sin(this.anim*2)*0.2;
+      if(this.timer<=0 && distXZ(this,jogador)<2.6){ this.estado='mergulho'; this.timer=600; }
+    } else if(this.estado==='mergulho'){
+      this.y -= 2.4*this.dificuldade*dtS;
+      if(this.timer<=0 || this.y<0.2){ this.estado='subindo'; this.timer=700; }
+    } else if(this.estado==='subindo'){
+      this.y += 1.8*dtS;
+      if(this.y>=this.alturaBase || this.timer<=0){ this.y=this.alturaBase; this.estado='patrulha'; this.timer=1400+Math.random()*700; }
+    }
+    this.facingY += 0.01;
+    this._sincronizarTransform();
+  }
+}
+
+/* =====================================================================
+   SISTEMA: CHEFES (BOSS) — adaptados ao 3D
+===================================================================== */
+class ChefeBase3D{
+  constructor(scene, opts){
+    this.scene=scene;
+    this.vidaMax=opts.vidaMax; this.vida=this.vidaMax; this.vivo=true;
+    this.nome=opts.nome;
+    this.x=opts.x; this.z=opts.z; this.y=0; this.facingY=Math.PI;
+    this.corpo = construirCorpoHumanoide(opts.corpoOpts||{});
+    this.raiz = this.corpo.raiz;
+    scene.add(this.raiz);
+    this.estado='idle'; this.timer=1000; this.anim=0; this.flashAte=0;
+    this.vulneravel=false;
+  }
+  get rect(){ return {x:this.x,z:this.z}; }
+  piscarDano(){ this.flashAte=agora()+140; [this.corpo.matCorpo,this.corpo.matPele].forEach(m=>{ m._corOriginal=m._corOriginal??m.color.getHex(); }); }
+  _aplicarFlash(){ const flash=agora()<this.flashAte; [this.corpo.matCorpo,this.corpo.matPele].forEach(m=>m.color.setHex(flash?0xffffff:m._corOriginal)); }
+  _sincronizarTransform(){ this.raiz.position.set(this.x,this.y,this.z); this.raiz.rotation.y=this.facingY; this._aplicarFlash(); }
+  receberAtaque(dano){
+    if(!this.vulneravel){ AudioSys.bloqueio(); return false; }
+    this.vida-=dano; this.piscarDano();
+    if(this.vida<=0){
+      this.vida=0; this.vivo=false;
+      this.scene.remove(this.raiz); descartarGrupo(this.raiz);
+      AudioSys.chefeDerrotado();
+    } else {
+      this.estado='idle'; this.timer=600; this.vulneravel=false;
+      AudioSys.guardaQuebrada();
+    }
+    return this.vivo===false;
+  }
+}
+
+// CHEFE INTERMEDIÁRIO — "O Rival": duelo direto de karatecas.
+class ChefeRival3D extends ChefeBase3D{
+  constructor(scene,x,z){
+    super(scene,{x,z,vidaMax:10,nome:'O RIVAL',corpoOpts:{corCorpo:0xc0392b,corPele:0xe8b48c,corFaixa:0x1c1c1c,escala:1.15}});
+    this.golpeAlcance=2.0;
+  }
+  atualizar(dtMs,jogador){
+    if(!this.vivo) return;
+    this.anim+=dtMs*0.004;
+    this.timer-=dtMs;
+    this.facingY = Math.atan2(jogador.x-this.x, jogador.z-this.z);
+    const d = distXZ(this,jogador);
+    if(this.estado==='idle'){
+      if(d>1.8){ this.x += Math.sin(this.facingY)*1.4*(dtMs/1000); this.z += Math.cos(this.facingY)*1.4*(dtMs/1000); }
+      if(this.timer<=0){
+        this.estado = d<1.8?'golpe':'avanco';
+        this.timer = this.estado==='golpe'?300:700;
+        if(this.estado==='golpe') this.vulneravel=false;
+      }
+    } else if(this.estado==='avanco'){
+      this.x += Math.sin(this.facingY)*2.6*(dtMs/1000); this.z += Math.cos(this.facingY)*2.6*(dtMs/1000);
+      if(this.timer<=0||d<1.8){ this.estado='golpe'; this.timer=300; }
+    } else if(this.estado==='golpe'){
+      if(this.timer<=0){ this.estado='vulneravel'; this.timer=900; this.vulneravel=true; }
+    } else if(this.estado==='vulneravel'){
+      if(this.timer<=0){ this.vulneravel=false; this.estado='idle'; this.timer=900+Math.random()*500; }
+    }
+    this._sincronizarTransform();
+  }
+}
+
+// CHEFE FINAL — "Monstro da Fome": 2 fases, ataque de arremesso, janela de vulnerabilidade.
+class ChefeFinal3D extends ChefeBase3D{
+  constructor(scene,x,z){
+    super(scene,{x,z,vidaMax:30,nome:'MONSTRO DA FOME',corpoOpts:{corCorpo:0x4a5a3a,corPele:0xcaa86b,escala:1.8}});
+    this.fase2=false;
+    this.projeteis=[];
+    this.golpeAlcance=2.8;
+    this._matProjetil = new THREE.MeshStandardMaterial({color:0x785028});
+    this._geoProjetil = new THREE.SphereGeometry(0.22,8,6);
+  }
+  atualizar(dtMs,jogador){
+    const dtS=dtMs/1000;
+    for(let i=this.projeteis.length-1;i>=0;i--){
+      const p=this.projeteis[i];
+      p.x+=p.vx*dtS; p.z+=p.vz*dtS;
+      p.mesh.position.set(p.x,p.y,p.z);
+      p.vidaMs-=dtMs;
+      if(p.vidaMs<=0){ this.scene.remove(p.mesh); this.projeteis.splice(i,1); }
+    }
+    if(!this.vivo) return;
+    if(!this.fase2 && this.vida<=this.vidaMax*0.5){ this.fase2=true; AudioSys.chefeAlerta(); this.corpo.matCorpo.color.setHex(0x3a1f14); this.corpo.matCorpo._corOriginal=0x3a1f14; }
+    this.anim += (this.fase2?0.006:0.004)*dtMs;
+    this.timer-=dtMs;
+    this.facingY = Math.atan2(jogador.x-this.x, jogador.z-this.z);
+    const d = distXZ(this,jogador);
+
+    if(this.estado==='idle'){
+      if(this.timer<=0){
+        const opcoes = this.fase2? ['avanco','golpe','varredura','avanco','golpe'] : ['avanco','golpe'];
+        this.estado = opcoes[Math.floor(Math.random()*opcoes.length)];
+        if(this.estado==='golpe'){ this.timer=400; this.vulneravel=false; }
+        else if(this.estado==='avanco'){ this.timer=760; }
+        else if(this.estado==='varredura'){ this.timer=480; this.vulneravel=false; this._tiroFeito=false; }
+      }
+    } else if(this.estado==='avanco'){
+      const v=2.2*(this.fase2?1.4:1);
+      this.x += Math.sin(this.facingY)*v*dtS; this.z += Math.cos(this.facingY)*v*dtS;
+      if(this.timer<=0||d<2.2){ this.estado='golpe'; this.timer=400; this.vulneravel=false; }
+    } else if(this.estado==='golpe'){
+      if(this.timer<=0){ this.estado='vulneravel'; this.timer=this.fase2?700:1000; this.vulneravel=true; }
+    } else if(this.estado==='varredura'){
+      if(!this._tiroFeito && this.timer<=240){
+        this._tiroFeito=true;
+        const dx=Math.sin(this.facingY), dz=Math.cos(this.facingY);
+        const py=this.y+1.6;
+        const mesh=new THREE.Mesh(this._geoProjetil,this._matProjetil);
+        mesh.position.set(this.x,py,this.z);
+        this.scene.add(mesh);
+        this.projeteis.push({x:this.x,y:py,z:this.z,vx:dx*4.4,vz:dz*4.4,mesh,raio:0.26,vidaMs:2000});
+      }
+      if(this.timer<=0){ this.estado='vulneravel'; this.timer=this.fase2?700:1000; this.vulneravel=true; }
+    } else if(this.estado==='vulneravel'){
+      if(this.timer<=0){ this.vulneravel=false; this.estado='idle'; this.timer=900+Math.random()*500; }
+    }
+    this._sincronizarTransform();
+  }
+  receberAtaque(dano){
+    const resultado = super.receberAtaque(dano);
+    if(this.vulneravel || resultado) GameFeel.congelar(this.fase2?70:50);
+    return resultado;
+  }
+}
+
+/* =====================================================================
+   SISTEMA: CÂMERA (terceira pessoa, segue o jogador)
+===================================================================== */
+class CameraSeguidora{
+  constructor(camera){ this.camera=camera; this.alvo=new THREE.Vector3(); this.abaloAte=0; }
+  atualizar(jogador, dtS){
+    const distancia=4.4, altura=2.3;
+    const atrasAng = jogador.facingY+Math.PI;
+    const alvoX = jogador.x + Math.sin(atrasAng)*distancia;
+    const alvoZ = jogador.z + Math.cos(atrasAng)*distancia;
+    const alvoY = jogador.y+altura;
+    const suavizacao = clamp(5*dtS,0,1);
+    this.camera.position.x += (alvoX-this.camera.position.x)*suavizacao;
+    this.camera.position.y += (alvoY-this.camera.position.y)*suavizacao;
+    this.camera.position.z += (alvoZ-this.camera.position.z)*suavizacao;
+    let offX=0, offY=0;
+    if(agora()<this.abaloAte){
+      const t=(this.abaloAte-agora())/this.abaloDuracao;
+      offX=(Math.random()*2-1)*this.abaloForca*t;
+      offY=(Math.random()*2-1)*this.abaloForca*t*0.6;
+    }
+    this.camera.lookAt(jogador.x+offX, jogador.y+1.3+offY, jogador.z);
+  }
+  abalar(forca,duracaoMs){ this.abaloForca=Math.max(this.abaloForca||0,forca); this.abaloDuracao=duracaoMs; this.abaloAte=agora()+duracaoMs; }
+}
+
+/* =====================================================================
+   SISTEMA: ARENA (construção da cena 3D de cada nível)
+===================================================================== */
+const TEMA_ARENA = [
+  {chao:0x6fbf5e, pilar:0x8a5a34, ceu:0x7ec8f2}, // branca - gramado
+  {chao:0xd9c27a, pilar:0x8a5a34, ceu:0x8ecbf2}, // amarela - terreiro
+  {chao:0xb23a3a, pilar:0x5b3a2a, ceu:0x7a4a4a}, // vermelha - floresta ao entardecer
+  {chao:0xd98a3b, pilar:0x7a4a2b, ceu:0x8ecbf2}, // laranja - urbano
+  {chao:0x4caf78, pilar:0x5b3a2a, ceu:0x6fd0d8}, // verde - costeiro
+  {chao:0x6a4d9b, pilar:0x3a2a4d, ceu:0x4a3a6b}, // roxa - treinamento
+  {chao:0x7a5a3a, pilar:0x4a3a2a, ceu:0x6a5a4a}, // marrom - montanha
+  {chao:0x2a2a2a, pilar:0x1c1c1c, ceu:0x241b33}, // preta - arena final
+];
+
+class Arena{
+  constructor(scene, indice){
+    this.scene = scene;
+    this.indice = indice;
+    this.faixa = FAIXAS[indice];
+    this.tema = TEMA_ARENA[indice];
+    this.raio = 7.5 + indice*0.4;
+    this.dificuldade = 1 + indice*0.12;
+    this.grupo = new THREE.Group();
+    scene.add(this.grupo);
+    this.inimigos = [];
+    this.chefe = null;
+    this._construirPiso();
+    this._construirPilares();
+    this.montar();
+  }
+
+  _construirPiso(){
+    const chao = new THREE.Mesh(
+      new THREE.CylinderGeometry(this.raio,this.raio,0.2,28),
+      new THREE.MeshStandardMaterial({color:this.tema.chao, roughness:0.9})
+    );
+    chao.position.y=-0.1;
+    this.grupo.add(chao);
+    for(let r=2;r<this.raio;r+=2){
+      const anel = new THREE.Mesh(
+        new THREE.RingGeometry(r-0.03,r+0.03,40),
+        new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.12,side:THREE.DoubleSide})
+      );
+      anel.rotation.x=-Math.PI/2; anel.position.y=0.005;
+      this.grupo.add(anel);
+    }
+  }
+
+  _construirPilares(){
+    const n = 8+this.indice;
+    const matPilar = new THREE.MeshStandardMaterial({color:this.tema.pilar, roughness:0.85});
+    for(let i=0;i<n;i++){
+      const ang = (i/n)*Math.PI*2;
+      const px = Math.cos(ang)*(this.raio+0.6), pz=Math.sin(ang)*(this.raio+0.6);
+      const altura = 2.4+Math.random()*0.6;
+      const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,altura,10), matPilar);
+      pilar.position.set(px,altura/2,pz);
+      this.grupo.add(pilar);
+      const topo = new THREE.Mesh(new THREE.ConeGeometry(0.42,0.5,10), matPilar);
+      topo.position.set(px,altura+0.25,pz);
+      this.grupo.add(topo);
+    }
+  }
+
+  // helper usado pelas fases para posicionar inimigos num ângulo da arena
+  pontoNaArena(anguloGraus, fracaoRaio=0.6){
+    const ang = anguloGraus*Math.PI/180;
+    return { x: Math.cos(ang)*this.raio*fracaoRaio, z: Math.sin(ang)*this.raio*fracaoRaio };
+  }
+
+  montar(){ /* sobrescrito por cada nível */ }
+
+  get inimigosVivos(){ return this.inimigos.filter(i=>i.vivo); }
+  get limpa(){ return this.inimigosVivos.length===0 && (!this.chefe || !this.chefe.vivo); }
+
+  atualizar(jogador, dtMs){
+    this.inimigos.forEach(i=>i.vivo && i.atualizar(dtMs,jogador));
+    if(this.chefe && this.chefe.vivo) this.chefe.atualizar(dtMs,jogador);
+  }
+
+  destruir(){
+    this.scene.remove(this.grupo);
+    descartarGrupo(this.grupo);
+    this.inimigos.forEach(i=>{ if(i.vivo){ this.scene.remove(i.raiz); descartarGrupo(i.raiz); } });
+    if(this.chefe && this.chefe.vivo){ this.scene.remove(this.chefe.raiz); descartarGrupo(this.chefe.raiz); }
+  }
+}
+
+// ARENA 1 — FAIXA BRANCA — "O Primeiro Passo"
+class Arena1 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,120,240].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoPatrulheiro3D(this.scene,p.x,p.z,1.6,d)); });
+}}
+// ARENA 2 — FAIXA AMARELA — "Disciplina"
+class Arena2 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,90,180,270].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoPatrulheiro3D(this.scene,p.x,p.z,1.8,d)); });
+  const p=this.pontoNaArena(45); this.inimigos.push(new InimigoCorredor3D(this.scene,p.x,p.z,d));
+}}
+// ARENA 3 — FAIXA VERMELHA — "Coragem"
+class Arena3 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [30,150,270].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoCorredor3D(this.scene,p.x,p.z,d)); });
+  const a=this.pontoNaArena(0,0.8); this.inimigos.push(new InimigoAtirador3D(this.scene,a.x,a.z,d));
+}}
+// ARENA 4 — FAIXA LARANJA — "Superação"
+class Arena4 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,180].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoAtirador3D(this.scene,p.x,p.z,d)); });
+  [90,270].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoVoador3D(this.scene,p.x,p.z,1.6,d)); });
+  const c=this.pontoNaArena(45); this.inimigos.push(new InimigoCorredor3D(this.scene,c.x,c.z,d));
+}}
+// ARENA 5 — FAIXA VERDE — "Crescimento"
+class Arena5 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,72,144,216,288].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoPatrulheiro3D(this.scene,p.x,p.z,2,d)); });
+  const v=this.pontoNaArena(40,0.5); this.inimigos.push(new InimigoVoador3D(this.scene,v.x,v.z,1.8,d));
+  const def=this.pontoNaArena(220,0.4); this.inimigos.push(new InimigoDefensor3D(this.scene,def.x,def.z,d));
+}}
+// ARENA 6 — FAIXA ROXA — "Determinação" + CHEFE INTERMEDIÁRIO
+class Arena6 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,120,240].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoPesado3D(this.scene,p.x,p.z,d)); });
+  [60,300].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoDefensor3D(this.scene,p.x,p.z,d)); });
+  this.chefe = new ChefeRival3D(this.scene,0,0);
+}}
+// ARENA 7 — FAIXA MARROM — "Preparação"
+class Arena7 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,60,180,240].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoPesado3D(this.scene,p.x,p.z,d)); });
+  [100,280].forEach(ang=>{ const p=this.pontoNaArena(ang); this.inimigos.push(new InimigoVoador3D(this.scene,p.x,p.z,1.8,d)); });
+  const at=this.pontoNaArena(320,0.45); this.inimigos.push(new InimigoAtirador3D(this.scene,at.x,at.z,d));
+}}
+// ARENA 8 — FAIXA PRETA — "O Grande Desafio" + CHEFE FINAL
+class Arena8 extends Arena{ montar(){
+  const d=this.dificuldade;
+  [0,51,102,153,204,255,306].forEach(ang=>{ const p=this.pontoNaArena(ang);
+    const r = Math.random();
+    if(r<0.34) this.inimigos.push(new InimigoPesado3D(this.scene,p.x,p.z,d));
+    else if(r<0.67) this.inimigos.push(new InimigoCorredor3D(this.scene,p.x,p.z,d));
+    else this.inimigos.push(new InimigoDefensor3D(this.scene,p.x,p.z,d));
+  });
+  this.chefe = new ChefeFinal3D(this.scene,0,0);
+}}
+const CLASSES_ARENA = [Arena1,Arena2,Arena3,Arena4,Arena5,Arena6,Arena7,Arena8];
+
+/* =====================================================================
+   SISTEMA: HUD
+===================================================================== */
+function atualizarHUD(jogador,nivelIndice,arena){
+  const vidasBox=document.getElementById('vidasBox');
+  vidasBox.innerHTML='';
+  for(let i=0;i<VIDAS_MAX;i++){
+    const s=document.createElement('span'); s.textContent='❤️';
+    if(i>=jogador.vidas) s.classList.add('vazio');
+    vidasBox.appendChild(s);
+  }
+  document.getElementById('pontosValor').textContent=jogador.pontos;
+  const faixa=FAIXAS[jogador.faixaIndex];
+  document.getElementById('faixaIcone').style.background=corHexCss(faixa.cor);
+  document.getElementById('faixaNome').textContent=faixa.nome.replace('Faixa ','');
+  document.getElementById('hudNivelNum').textContent=nivelIndice+1;
+  document.getElementById('hudNivelTema').textContent=faixa.tema;
+  if(arena) document.getElementById('hudInimigosValor').textContent = arena.inimigosVivos.length + (arena.chefe&&arena.chefe.vivo?1:0);
+}
+function atualizarBarraChefe(chefe){
+  const box=document.getElementById('barraChefeBox');
+  if(!chefe || !chefe.vivo){ box.classList.remove('ativa'); return; }
+  box.classList.add('ativa');
+  document.getElementById('barraChefeNome').textContent=chefe.nome;
+  document.getElementById('barraChefeVida').style.width = Math.max(0,(chefe.vida/chefe.vidaMax)*100)+'%';
+}
+function trocarTela(idAtiva){
+  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
+  if(idAtiva) document.getElementById(idAtiva).classList.add('ativa');
+}
+
+/* =====================================================================
+   SISTEMA: GAME (orquestrador, cena 3D, estados, progressão)
+===================================================================== */
+class Game{
+  constructor(scene, camera){
+    this.scene=scene; this.camera=camera;
+    this.cameraCtrl = new CameraSeguidora(camera);
+    this.particulas = new SistemaParticulas(scene);
+    this.tempo=0;
+    this.estadoTela='titulo';
+    this.nivelIndice=0;
+    this.spriteComida=null;
+    this.montarMenuSelecao();
+  }
+
+  iniciarNivel(indice){
+    if(this.arena) this.arena.destruir();
+    if(this.jogador) { this.scene.remove(this.jogador.raiz); descartarGrupo(this.jogador.raiz); }
+    this.nivelIndice=indice;
+    this.arena = new (CLASSES_ARENA[indice])(this.scene, indice);
+    this.jogador = new Jogador3D(this.scene, indice);
+    this.jogador.posicionar(0, this.arena.raio*0.75, Math.PI);
+    this.jogador.pontos = progresso.pontosPorNivel[indice]||0;
+    this.timerVitoria=0; this.timerMorte=0;
+    this.chefeAvisado=false;
+    atualizarHUD(this.jogador,indice,this.arena);
+    atualizarBarraChefe(null);
+    AudioSys.ambienteIniciar(indice%2===0?'grave':'agudo');
+    trocarTela(null);
+    this.estadoTela='jogando';
+  }
+
+  montarMenuSelecao(){
+    const grade=document.getElementById('gradeNiveis');
+    grade.innerHTML='';
+    for(let i=0;i<TOTAL_NIVEIS;i++){
+      const btn=document.createElement('button');
+      btn.className='botaoNivel';
+      btn.style.background=corHexCss(FAIXAS[i].cor);
+      btn.style.color = (i===0||i===1) ? '#1a1a1a' : '#fff';
+      const bloqueado = i>progresso.nivelDesbloqueado;
+      btn.disabled = bloqueado;
+      btn.innerHTML = `<span class="num">${i+1}</span><span>${bloqueado?'🔒':FAIXAS[i].nome.replace('Faixa ','')}</span>`;
+      btn.addEventListener('click', ()=>{ if(!bloqueado) this.iniciarNivel(i); });
+      grade.appendChild(btn);
+    }
+  }
+
+  atualizar(dtMs){
+    this.tempo+=dtMs;
+    if(this.estadoTela!=='jogando') return;
+    if(GameFeel.congelado) return;
+    const j=this.jogador, a=this.arena;
+    j.atualizar(a,dtMs);
+    a.atualizar(j,dtMs);
+    this.particulas.atualizar(dtMs);
+    this.cameraCtrl.atualizar(j, dtMs/1000);
+
+    // combate: jogador x inimigos comuns
+    a.inimigos.forEach(ini=>{
+      if(!ini.vivo) return;
+      const atingidoAgora = j.atacandoAtivo && !j.inimigosAtingidosNesteGolpe.has(ini) && dentroDoConeDeAtaque(j, ini, JANELAS_ATAQUE[j.tipoAtaque].alcance);
+      if(atingidoAgora){
+        j.inimigosAtingidosNesteGolpe.add(ini);
+        const cfg=JANELAS_ATAQUE[j.tipoAtaque];
+        const derrotado = ini.receberAtaque(cfg.dano);
+        j.pontos += derrotado? 120 : 15;
+        this.particulas.emitir({x:ini.x,y:ini.y+1,z:ini.z}, 0xffffff, 8, {vel:2,vidaMs:300});
+        this.cameraCtrl.abalar(cfg.shake, cfg.hitstop);
+        GameFeel.congelar(cfg.hitstop);
+        AudioSys.impacto();
+      } else if(distXZ(j,ini) < j.raio+0.35){
+        j.receberDanoComBloqueio(a, ini);
+      }
+      if(ini.projeteis){
+        ini.projeteis.forEach(p=>{
+          if(!j.invulneravel && distXZ(j,p)<j.raio+p.raio && Math.abs((j.y+1)-p.y)<1){
+            j.receberDanoComBloqueio(a,p); p.y=-999;
+          }
+        });
+      }
+    });
+
+    // chefe
+    if(a.chefe){
+      if(!this.chefeAvisado && distXZ(j,a.chefe)<8){ this.chefeAvisado=true; AudioSys.chefeAlerta(); }
+      atualizarBarraChefe(a.chefe.vivo? a.chefe : null);
+      if(a.chefe.vivo){
+        const atingidoChefe = j.atacandoAtivo && !j.inimigosAtingidosNesteGolpe.has(a.chefe) && dentroDoConeDeAtaque(j, a.chefe, JANELAS_ATAQUE[j.tipoAtaque].alcance);
+        if(atingidoChefe){
+          j.inimigosAtingidosNesteGolpe.add(a.chefe);
+          const cfg=JANELAS_ATAQUE[j.tipoAtaque];
+          const derrotado = a.chefe.receberAtaque(cfg.dano);
+          j.pontos += derrotado?1000:10;
+          this.particulas.emitir({x:a.chefe.x,y:a.chefe.y+1.4,z:a.chefe.z}, 0xffd93d, 10, {vel:2.5,vidaMs:320});
+          this.cameraCtrl.abalar(cfg.shake+0.05, cfg.hitstop);
+          GameFeel.congelar(cfg.hitstop);
+          AudioSys.impacto();
+        } else if((a.chefe.estado==='golpe'||a.chefe.estado==='varredura') && distXZ(j,a.chefe)<a.chefe.golpeAlcance){
+          j.receberDano(a, a.chefe);
+          this.cameraCtrl.abalar(0.18,120);
+        }
+        if(a.chefe.projeteis){
+          a.chefe.projeteis.forEach(p=>{
+            if(!j.invulneravel && distXZ(j,p)<j.raio+p.raio){ j.receberDano(a,p); p.vidaMs=0; }
+          });
+        }
+      }
+    }
+
+    // vitória: arena limpa (inimigos + chefe derrotados)
+    if(!j.vitoriaAtiva && a.limpa){
+      j.atingirVitoria();
+      this.particulas.emitir({x:j.x,y:j.y+1.7,z:j.z}, 0xffe27a, 26, {vel:2.6,vidaMs:900,subir:1});
+      this.spriteComida = criarSpriteEmoji(FAIXAS[this.nivelIndice].comida.emoji, 0.8);
+      this.scene.add(this.spriteComida);
+    }
+    if(j.vitoriaAtiva){
+      this.timerVitoria+=dtMs;
+      if(this.spriteComida){
+        const subida = Math.min(this.timerVitoria/350,1);
+        this.spriteComida.position.set(j.x, j.y+2.1+subida*0.5+Math.sin(this.timerVitoria*0.006)*0.08, j.z);
+      }
+      if(this.timerVitoria>1600) this.concluirNivel();
+    }
+
+    if(j.morto){
+      this.timerMorte+=dtMs;
+      if(this.timerMorte>1200) this.mostrarGameOver();
+    } else this.timerMorte=0;
+
+    atualizarHUD(j,this.nivelIndice,a);
+  }
+
+  concluirNivel(){
+    this.estadoTela='transicao';
+    AudioSys.ambienteParar();
+    const idx=this.nivelIndice;
+    progresso.pontosPorNivel[idx] = Math.max(progresso.pontosPorNivel[idx]||0, this.jogador.pontos);
+    const ultimoNivel = idx===TOTAL_NIVEIS-1;
+    if(!ultimoNivel && progresso.nivelDesbloqueado<=idx) progresso.nivelDesbloqueado = idx+1;
+    SaveSystem.salvar(progresso);
+    this.montarMenuSelecao();
+
+    if(ultimoNivel){
+      AudioSys.vitoria();
+      document.getElementById('pontosFinaisTotais').textContent = progresso.pontosPorNivel.reduce((a,b)=>a+b,0);
+      trocarTela('telaVitoriaFinal');
+      return;
+    }
+
+    AudioSys.novaFaixa();
+    document.getElementById('transicaoTema').textContent = `Arena "${FAIXAS[idx].tema}" vencida`;
+    const comida = FAIXAS[idx].comida;
+    document.getElementById('transicaoComida').textContent = `${comida.emoji} ${comida.nome} coletado(a)!`;
+    document.getElementById('transicaoPontos').textContent = this.jogador.pontos;
+    document.getElementById('transicaoFaixaCor').style.background = corHexCss(FAIXAS[idx+1].cor);
+    document.getElementById('transicaoFaixaNome').textContent = `🥋 ${FAIXAS[idx+1].nome.toUpperCase()} DESBLOQUEADA`;
+    trocarTela('telaTransicao');
+  }
+
+  mostrarGameOver(){
+    this.estadoTela='gameover';
+    AudioSys.ambienteParar();
+    AudioSys.gameOver();
+    trocarTela('telaGameOver');
+  }
+
+  desenhar(renderer){
+    renderer.render(this.scene, this.camera);
+  }
+}
+
+/* =====================================================================
+   SISTEMA: CENA 3D (luzes, céu, chão distante)
+===================================================================== */
+function criarCena(){
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x7ec8f2);
+  scene.fog = new THREE.Fog(0x8ecbf2, 14, 34);
+
+  const ambiente = new THREE.HemisphereLight(0xffffff, 0x4a3a2a, 0.9);
+  scene.add(ambiente);
+  const sol = new THREE.DirectionalLight(0xfff4d6, 1.0);
+  sol.position.set(8,14,6);
+  scene.add(sol);
+
+  return scene;
+}
+
+/* =====================================================================
+   SISTEMA: ENTRADA (teclado + touch + pausa)
+===================================================================== */
+window.addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  teclas[k]=true;
+  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  if(k==='escape' && jogo.estadoTela==='jogando'){
+    jogo.estadoTela='pausado'; AudioSys.ambienteParar(); trocarTela('telaPausa');
+  }
+});
+window.addEventListener('keyup', e=>{ teclas[e.key.toLowerCase()]=false; });
+
+function configurarBotaoTouch(id,tecla){
+  const el=document.getElementById(id);
+  const ligar=ev=>{ ev.preventDefault(); teclas[tecla]=true; };
+  const desligar=ev=>{ ev.preventDefault(); teclas[tecla]=false; };
+  el.addEventListener('touchstart',ligar,{passive:false});
+  el.addEventListener('touchend',desligar,{passive:false});
+  el.addEventListener('touchcancel',desligar,{passive:false});
+  el.addEventListener('mousedown',ligar);
+  el.addEventListener('mouseup',desligar);
+  el.addEventListener('mouseleave',desligar);
+}
+configurarBotaoTouch('btnFrente','w');
+configurarBotaoTouch('btnTras','s');
+configurarBotaoTouch('btnEsq','a');
+configurarBotaoTouch('btnDir','d');
+configurarBotaoTouch('btnPular',' ');
+configurarBotaoTouch('btnSoco','j');
+configurarBotaoTouch('btnDefender','k');
+if('ontouchstart' in window) document.getElementById('controlesTouch').classList.add('ativo');
+else document.getElementById('dicaMobile').style.display='none';
+
+/* =====================================================================
+   SISTEMA: INICIALIZAÇÃO 3D + LOOP PRINCIPAL
+===================================================================== */
+const canvas3d = document.getElementById('canvas3d');
+let renderer=null, camera=null, jogo=null;
+try{
+  renderer = new THREE.WebGLRenderer({canvas:canvas3d, antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera = new THREE.PerspectiveCamera(62, window.innerWidth/window.innerHeight, 0.1, 100);
+  const scene = criarCena();
+  jogo = new Game(scene, camera);
+}catch(e){
+  document.getElementById('avisoWebgl').textContent = 'Não foi possível iniciar o WebGL neste navegador: '+e.message;
+}
+
+window.addEventListener('resize', ()=>{
+  if(!renderer||!camera) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+let ultimoTempo=null;
+function loop(timestamp){
+  if(ultimoTempo===null) ultimoTempo=timestamp;
+  const deltaMs = clamp(timestamp-ultimoTempo, 0, 42);
+  ultimoTempo = timestamp;
+  if(jogo){
+    jogo.atualizar(deltaMs);
+    if(renderer) jogo.desenhar(renderer);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* =====================================================================
+   SISTEMA: MENUS (wiring dos botões)
+===================================================================== */
+document.getElementById('btnJogar').addEventListener('click', ()=>{
+  jogo.iniciarNivel(clamp(progresso.nivelDesbloqueado,0,TOTAL_NIVEIS-1));
+});
+document.getElementById('btnAbrirSelecao').addEventListener('click', ()=>{ jogo.montarMenuSelecao(); trocarTela('telaSelecao'); });
+document.getElementById('btnVoltarSelecao').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+document.getElementById('btnAbrirComoJogar').addEventListener('click', ()=>{ trocarTela('telaComoJogar'); });
+document.getElementById('btnVoltarComoJogar').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+document.getElementById('btnAbrirCreditos').addEventListener('click', ()=>{ trocarTela('telaCreditos'); });
+document.getElementById('btnVoltarCreditos').addEventListener('click', ()=>{ trocarTela('telaTitulo'); });
+
+document.getElementById('btnContinuarPausa').addEventListener('click', ()=>{
+  jogo.estadoTela='jogando'; trocarTela(null);
+  AudioSys.ambienteIniciar(jogo.nivelIndice%2===0?'grave':'agudo');
+});
+document.getElementById('btnMenuPausa').addEventListener('click', ()=>{
+  jogo.estadoTela='titulo'; AudioSys.ambienteParar(); trocarTela('telaTitulo');
+});
+
+document.getElementById('btnProximoNivel').addEventListener('click', ()=>{
+  const prox = jogo.nivelIndice+1;
+  if(prox<TOTAL_NIVEIS) jogo.iniciarNivel(prox);
+  else { jogo.estadoTela='titulo'; trocarTela('telaTitulo'); }
+});
+document.getElementById('btnMenuTransicao').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); });
+
+document.getElementById('btnTentarNovamente').addEventListener('click', ()=>{ jogo.iniciarNivel(jogo.nivelIndice); });
+document.getElementById('btnMenuGameOver').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); });
+
+document.getElementById('btnMenuVitoriaFinal').addEventListener('click', ()=>{ jogo.estadoTela='titulo'; trocarTela('telaTitulo'); jogo.montarMenuSelecao(); });
+
+/* =====================================================================
+   PROGRESSION — resumo:
+   Cada Arena* reaproveita o motor comum (classe Arena). Ao limpar uma
+   arena (derrotar todos os inimigos + chefe, se houver), o jogador
+   coleta o alimento daquele nível e desbloqueia a próxima faixa via
+   localStorage (SaveSystem). Arena 6 tem chefe intermediário
+   (ChefeRival3D) e Arena 8 tem o chefe final (ChefeFinal3D, 2 fases).
+===================================================================== */
+</script>
+</body>
+</html>
