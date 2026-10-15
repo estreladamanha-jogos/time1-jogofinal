@@ -50,7 +50,7 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 
 <div class="col"><button id="cont" style="display:none">CONTINUAR</button><button id="go">COMEÇAR</button><button class="s" id="b1">COMO JOGAR</button><button class="s" id="b2">CRÉDITOS</button></div></div></div>
 <div class="ov" id="pick"><div class="pnl"><h2>ESCOLHA SEU PERSONAGEM</h2><div class="row"><button id="pf">KARATECA<br>(FEMININO)</button><button id="pm">KARATECO<br>(MASCULINO)</button></div><button class="s" id="vp">VOLTAR</button></div></div>
-<div class="ov" id="como"><div class="pnl"><h2>COMO JOGAR</h2><div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">C</span> BLOQUEAR / CONTRA-ATAQUE<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR<br><span class="k">P</span> / <span class="k">ESC</span> PAUSAR</div><button id="v1">VOLTAR</button></div></div>
+<div class="ov" id="como"><div class="pnl"><h2>COMO JOGAR</h2><div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR<br><span class="k">P</span> / <span class="k">ESC</span> PAUSAR</div><button id="v1">VOLTAR</button></div></div>
 <div class="ov" id="creds"><div class="pnl"><h2>CRÉDITOS</h2><div>Jogo educativo inspirado no Projeto Estrela da Manhã, Lauro de Freitas - BA.<br>Personagens e história fictícios, feitos para este jogo.<br>Criado com Claude.</div><button id="v2">VOLTAR</button></div></div>
 <div class="ov" id="trans"><div class="pnl"><h2 id="tt"></h2><div id="mapbox"></div><div id="tx2"></div><button id="nx">ENTRAR NA FASE</button></div></div>
 <div class="ov" id="done"><div class="pnl"><h2>MISSÃO CUMPRIDA!</h2><div id="dtx"></div><div class="row"><button id="dn">PRÓXIMA FASE</button><button class="s" id="dr">REFAZER FASE</button></div></div></div>
@@ -58,7 +58,7 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div class="row"><button id="bc">CONTINUAR</button><button class="s" id="br">REINICIAR FASE</button><button class="s" id="bm">MENU PRINCIPAL</button></div>
 <div style="font-size:9px"><span class="k">←→</span> andar <span class="k">␣</span> pular <span class="k">Z</span> atacar <span class="k">X</span> esquivar</div></div></div>
 <div class="ov" id="help"><div class="pnl"><h2>COMO JOGAR</h2>
-<div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">C</span> BLOQUEAR / CONTRA-ATAQUE<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR</div>
+<div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR</div>
 <div id="hobj" style="color:#ffd23f"></div><div id="hdica"></div><div style="font-size:9px">Toque ou aperte Esc / P para voltar</div></div></div>
 <div class="ov" id="over"><div class="pnl"><h1 style="color:#e63946">VOCÊ CAIU...</h1><div>A disciplina do karatê ensina a levantar!<br>(você perde metade das moedas)</div>
 <div class="row"><button id="ro">REINICIAR FASE</button><button class="s" id="mo">MENU</button></div></div></div>
@@ -71,7 +71,6 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div class="tb" id="tu" style="right:calc(env(safe-area-inset-right,0px) + 70px);bottom:calc(env(safe-area-inset-bottom,0px) + 100px)">⬆</div>
 <div class="tb" id="ta" style="right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">⚔</div>
 <div class="tb" id="td" style="right:calc(env(safe-area-inset-right,0px) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">💨</div>
-<div class="tb" id="tb" style="right:calc(env(safe-area-inset-right,0px) + 208px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);font-size:22px">🛡</div>
 </div>
 <script>
 const W=640,H=360,GY=300,$=id=>document.getElementById(id);
@@ -92,7 +91,7 @@ const LV=[
 {n:'Amarela',world:'Vila da Aurora',abi:'CHUTE RÁPIDO',obi:'#ffd23f',len:1000,goal:'kill',need:3,foe:'thief',dica:'Use o ataque durante o movimento para acelerar o combo.',npc:'Voluntário: Precisamos levar alimentos às crianças do projeto.',shop:500},
 {n:'Vermelha',world:'Caminho das Águas',abi:'ESQUIVA OFENSIVA',obi:'#e63946',len:1700,goal:'gate',dica:'Ataque logo após a esquiva para atravessar grupos.',npc:'Criança: Cuidado, a caverna é escura e cheia de ninjas!'},
 {n:'Laranja',world:'Caminho das Águas',abi:'ATAQUE AÉREO',obi:'#ff8c42',len:1500,goal:'sword',dica:'Há 3 espadas escondidas. Procure desvios, caixas e plataformas.',npc:'Aluno: Dizem que há espadas escondidas por aqui...'},
-{n:'Verde',world:'Caminho das Águas',abi:'CONTRA-ATAQUE',obi:'#4caf50',len:1300,goal:'kill',need:8,any:1,dica:'Segure C para bloquear. Toque J durante a defesa para contra-atacar.',npc:'Rival: Você não passará pela minha praça!'},
+{n:'Verde',world:'Caminho das Águas',abi:'CONTRA-ATAQUE',obi:'#4caf50',len:1300,goal:'kill',need:8,any:1,dica:'Encadeie ataques rápidos para derrotar o grupo de uma vez.',npc:'Rival: Você não passará pela minha praça!'},
 {n:'Roxa',world:'Território da Fome',abi:'KIAI AVANÇADO',obi:'#9b5de5',len:1800,goal:'gate',dica:'Carregue o KIAI para quebrar guardas e abrir caminho.',npc:'Guardião: A noite esconde perigos. Resista!',shop:450},
 {n:'Marrom',world:'Território da Fome',abi:'MAESTRIA DA ESPADA',obi:'#6b4226',len:1000,goal:'time',dica:'Sua espada dura mais e o combo avança mais rápido.',npc:'Criança: Obrigado por ajudar o projeto!',shop:500},
 {n:'Cinza',world:'Território da Fome',abi:'GOLPE GIRATÓRIO',obi:'#9e9e9e',len:1400,goal:'kill',need:7,any:1,dica:'Combine socos e contra-ataques para lidar com vários inimigos de uma vez.',npc:'Monge: Poucos chegam tão longe. Mostre sua disciplina.',shop:480},
@@ -114,9 +113,9 @@ const WLK=i=>{const s=Math.sin(i/6*6.283);return[9+s*10,-Math.max(0,s)*8,-9-s*10
 const COL={thief:{gi:'#3b3452',obi:'#222',skin:'#d9a273',hair:'#111'},ninja:{gi:'#101014',obi:'#333',skin:'#101014',hair:'#101014',foot:'#101014'},samurai:{gi:'#c62828',pant:'#111',obi:'#111',skin:'#e0a375',hair:'#111'},boss:{gi:'#26102e',obi:'#111',skin:'#4b3a52',hair:'#111'},npc:{gi:'#78909c',obi:'#555',skin:'#e0a375',hair:'#444'}};
 /* ---------- estado ---------- */
 let st='title',lv=0,LEN=1600,P,E=[],items=[],proj=[],parts=[],fx=[],dmgN=[],cam=0,msg='',msgT=0,coins=0,tTotal=0,swordsGot=0,kills=0,swordFound=0,surv=0,freeze=0,shake=0,flash=0,spawnT=0,endT=0,kiaiT=0,shopCd=0,shop=null,bossRef=null,br=1,lastT=performance.now(),pa=0,pd=0;
-const K={l:0,r:0,u:0,a:0,x:0,b:0};
+const K={l:0,r:0,u:0,a:0,x:0};
 const say=(s,t=2500)=>{msg=s;msgT=t};
-const newP=()=>({x:60,y:GY,vx:0,vy:0,dir:1,hp:3,mx:3,inv:0,atk:null,q:0,roll:0,rollCd:0,hurt:0,dead:0,sw:null,t:0,hold:0,chg:0,trail:0,kcd:0,block:0,counter:0,special:0,secret:0});
+const newP=()=>({x:60,y:GY,vx:0,vy:0,dir:1,hp:3,mx:3,inv:0,atk:null,q:0,roll:0,rollCd:0,hurt:0,dead:0,sw:null,t:0,hold:0,chg:0,trail:0,kcd:0,special:0,secret:0});
 var vidas=3,obs=[],foodN=0,foodAll=0,fgot={},combo=0,comboT=0;
 const OB=[['spk'],['spk','fall'],['fall','spk'],['fire','spk'],['spk','fire'],['fall','fire'],['spk','fall'],['fire','fall','spk'],['fire','spk','fall'],['spk','fire','fall']];
 function mkObs(i){obs=[];const n=i===LV.length-1?3:Math.min(3+i*2,12),t=OB[i];for(let k=0;k<n;k++){const x=380+(LEN-620)*(k+.5)/n+rnd(-30,30);if(shop&&Math.abs(x-shop.x)<60)continue;obs.push({t:t[k%t.length],x,ph:rnd(0,2600)})}}
@@ -211,7 +210,7 @@ const ABIL=[
  'Chute rápido: o 3º golpe ganha alcance e empurrão.',
  'Esquiva ofensiva: ataque durante a esquiva para sair batendo.',
  'Ataque aéreo: ataque no ar causa dano extra.',
- 'Contra-ataque: C + J rebate ataques e quebra guarda.',
+ 'Enfrente múltiplos rivais na praça usando seus golpes.',
  'KIAI avançado: área maior e quebra de defesa.',
  'Maestria da espada: espada dura mais e combos causam mais impacto.',
  'Golpe giratório: encadeie socos e contra-ataques contra vários rivais.',
@@ -259,8 +258,8 @@ function doHit(a){const A=AT[a.n];let dmg=A.d+(P.sw?P.sw.b:0)+(lv>>1);if(lv===1&
 E.forEach(e=>{if(e.dead)return;const dx=(e.x-P.x)*P.dir;if(dx<(a.n==='kiai'?-30:-8)||dx>A.r+e.w||Math.abs(e.y-P.y)>55)return;if(hitE(e,dmg,A))any=1});
 proj=proj.filter(p=>{if(p.sh&&(p.x-P.x)*P.dir>-8&&(p.x-P.x)*P.dir<A.r+10){spark(p.x,p.y,'#ddd',8);num(p.x,p.y-10,'REBATEU','#9cf');SFX.hit();combo++;comboT=1500;return false}return true});
 if(any){freeze=a.n==='soco1'||a.n==='soco2'?40:80;shake=a.n==='kiai'?7:3;if(P.sw){P.sw.dur--;if(P.sw.dur<=0){say('A espada quebrou!');SFX.brk();spark(P.x+P.dir*20,GY-30,P.sw.c,14);P.sw=null}}}}
-function hurt(d,fx_){if(P.inv>0||P.roll>0||P.dead||endT)return;if(P.block&&lv>=4){spark(P.x+P.dir*18,GY-28,'#9cf',10);num(P.x,GY-60,'BLOQUEOU!','#9cf');freeze=35;shake=2;if(P.counter>0){startAtk('soco3');say('CONTRA PERFEITO!',900)}return;}P.hp-=1;P.inv=1500;combo=0;P.hurt=300;P.vx=(P.x<fx_?-1:1)*4;P.vy=-3;shake=6;freeze=70;P.atk=null;spark(P.x,GY-25,'#f55',8);if(P.hp<=0){P.dead=1;P.hp=0;SFX.hurt()}else{SFX.life();SFX.hurt()}}
-function startAtk(n){P.atk={n,f:0,t:0,did:0};P.q=0;P.counter=0;if(P.sw)P.trail=120;if(n==='kiai'){P.kcd=4000;SFX.kiai();fx.push({x:P.x+P.dir*20,l:0,d:P.dir});fx.push({x:P.x+P.dir*20,l:120,d:P.dir});flash=100;kiaiT=400;shake=Math.max(shake,5);spark(P.x,GY-30,'#ffd23f',18);spark(P.x,GY-30,'#ff5252',10)}else SFX.swing()}
+function hurt(d,fx_){if(P.inv>0||P.roll>0||P.dead||endT)return;P.hp-=1;P.inv=1500;combo=0;P.hurt=300;P.vx=(P.x<fx_?-1:1)*4;P.vy=-3;shake=6;freeze=70;P.atk=null;spark(P.x,GY-25,'#f55',8);if(P.hp<=0){P.dead=1;P.hp=0;SFX.hurt()}else{SFX.life();SFX.hurt()}}
+function startAtk(n){P.atk={n,f:0,t:0,did:0};P.q=0;if(P.sw)P.trail=120;if(n==='kiai'){P.kcd=4000;SFX.kiai();fx.push({x:P.x+P.dir*20,l:0,d:P.dir});fx.push({x:P.x+P.dir*20,l:120,d:P.dir});flash=100;kiaiT=400;shake=Math.max(shake,5);spark(P.x,GY-30,'#ffd23f',18);spark(P.x,GY-30,'#ff5252',10)}else SFX.swing()}
 function press(){
 if(P.hurt>0)return;
 if(P.roll>0){
@@ -268,15 +267,12 @@ if(P.roll>0){
  return;
 }
 if(shop&&Math.abs(P.x-shop.x)<45&&coins>=50&&shopCd<=0&&!P.sw){shopCd=700;coins-=50;if(Math.random()<.7)equip('wak');else{say('A espada foi longe... tente de novo.');num(shop.x,GY-60,'escapou!','#bbb')}return}
-if(P.block&&lv>=4){P.counter=300;startAtk('soco3');say('CONTRA-ATAQUE!',900);return}
 if(!P.atk)startAtk(P.y<GY?'aereo':'soco1');else P.q=1}
 /* ---------- atualização ---------- */
 function updP(k,dt){
 if(P.dead){P.dead+=dt;P.vx*=Math.pow(.9,k);P.x+=P.vx*k;if(P.dead>1500&&st==='play'){st='over';show('over');SFX.over();}return}
 P.t+=dt;P.kcd=Math.max(0,P.kcd-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.rollCd=Math.max(0,P.rollCd-dt);P.trail=Math.max(0,P.trail-dt);shopCd=Math.max(0,shopCd-dt);
 const gr=P.y>=GY;
-P.block=(K.b&&P.hurt<=0&&P.roll<=0&&gr)?1:0;P.counter=Math.max(0,P.counter-dt);
-if(P.block){P.vx*=Math.pow(.65,k);P.atk=null;P.q=0;}
 if(pa){pa=0;press()}
 if(pd){pd=0;if(P.rollCd<=0&&(!P.atk||P.atk.f>=AT[P.atk.n].h)&&P.hurt<=0&&gr){P.atk=null;P.q=0;P.roll=300;P.rollCd=700;SFX.swing()}}
 if(K.a&&!P.chg&&P.hold&&performance.now()-P.hold>500&&P.hurt<=0&&P.roll<=0&&P.kcd<=0){P.chg=1;startAtk('kiai')}
@@ -342,7 +338,7 @@ function tx(s,x,y,c='#fff',al='left',sz=11){cx.font=sz+"px 'Press Start 2P',mono
 const HR=['0110110','1111111','1111111','0111110','0011100','0001000'];
 const heart=(x,y,c)=>HR.forEach((r,j)=>{for(let i=0;i<7;i++)if(r[i]==='1'){cx.fillStyle=c;cx.fillRect(x+i*3,y+j*3,3,3)}});
 function pPose(){const t=performance.now();if(P.dead)return DEAD[P.dead>400?1:0];if(P.hurt>0)return HURT[P.hurt>150?0:1];if(P.roll>0)return ROLL[P.roll>150?0:1];
-if(P.block)return [9,0,-9,0,-2,-24,10,-38,-8,0];if(P.atk){const a=PS[P.atk.n];return a[Math.min(P.atk.f,a.length-1)]}if(P.y<GY)return JUMP;if(Math.abs(P.vx)>.3)return WLK(Math.floor(P.t/90)%6);return IDL(Math.floor(t/200)%4)}
+if(P.atk){const a=PS[P.atk.n];return a[Math.min(P.atk.f,a.length-1)]}if(P.y<GY)return JUMP;if(Math.abs(P.vx)>.3)return WLK(Math.floor(P.t/90)%6);return IDL(Math.floor(t/200)%4)}
 function ePose(e){const t=performance.now();if(e.type==='boss'){if(e.st==='wind'||e.st==='slam'||e.st==='wave'||e.st==='sum')return e.stT<300?[10,0,-10,0,16,-58,6,-54,0,0]:[12,0,-10,0,30,-12,26,-14,6,0];return Math.abs(e.kb)>0?GU:IDL(Math.floor(t/250)%4)}
 if(e.type==='samurai'){if(e.st==='wind')return PS.soco3[0];if(e.st==='hit')return PS.soco3[2]}
 return Math.abs(P.x-e.x)>8&&e.type!=='ninja'||e.type==='ninja'?WLK(Math.floor(t/110)%6):IDL(0)}
@@ -402,7 +398,7 @@ cx.fillStyle='#000';cx.fillRect(8,110,64,8);cx.strokeStyle='rgba(255,255,255,.35
 if(P.sw){const f=P.sw.dur/P.sw.max;cx.strokeStyle=P.sw.c;cx.lineWidth=3;cx.beginPath();cx.moveTo(8,86);cx.lineTo(22,74);cx.stroke();cx.fillStyle='#000';cx.fillRect(28,74,72,10);cx.strokeStyle='rgba(255,255,255,.3)';cx.lineWidth=1;cx.strokeRect(28.5,74.5,71,9);cx.fillStyle=`rgb(${255*(1-f)|0},${200*f+40|0},50)`;cx.fillRect(30,76,68*f,6);tx(P.sw.n,8,100,'#fff','left',11)}
 tx(obj(),W/2,24,'#fff','center');
 tx(`Fase ${lv+1}/${LV.length}`,W-98,24,'#fff','right');tx('Comida '+foodN+'/3',W-98,64,'#8bc34a','right');
-if(P.block)tx('GUARD',W/2,82,'#9cf','center',10);if(P.secret)tx('Segredos '+P.secret,W-98,82,'#ffd23f','right',8);
+if(P.secret)tx('Segredos '+P.secret,W-98,82,'#ffd23f','right',8);
 if(bossRef&&bossRef.hp>0&&!bossRef.dead){const vul=bossRef.vul>0;cx.fillStyle='#000';cx.fillRect(199,33,242,12);cx.strokeStyle=vul?`rgba(255,210,63,${.6+.4*Math.sin(performance.now()/90)})`:'rgba(255,255,255,.3)';cx.lineWidth=1;cx.strokeRect(199.5,33.5,241,11);cx.fillStyle='#e63946';cx.fillRect(202,36,236*bossRef.hp/bossRef.mx,6);cx.fillStyle='rgba(255,255,255,.25)';cx.fillRect(202,36,236*bossRef.hp/bossRef.mx,2);tx(vul?'VULNERÁVEL!':'MONSTRO DA FOME',W/2,60,vul?'#ffd23f':'#fff','center')}
 if(combo>=2){const pop=11+clamp((comboT-1300)/200*6,0,6);tx('COMBO x'+combo,8,140,'#ff8c42','left',pop)}if(msgT>0)tx(msg,W/2,110,'#ffd23f','center');
 if(kiaiT>0)tx('気合! KIAI!',W/2,H/2,'#ff5252','center',16+Math.sin(kiaiT/40)*4);
@@ -446,12 +442,12 @@ $('bc').onclick=resume;$('br').onclick=()=>startLv(lv);$('bm').onclick=menu;$('n
 addEventListener('blur',()=>{for(const k in K)K[k]=0;if(!isTouch)pauseOn()});
 document.addEventListener('visibilitychange',()=>{for(const k in K)K[k]=0;if(document.hidden)pauseOn();if(AC&&AC.state!=='running')AC.resume()});
 /* ---------- entrada ---------- */
-const MAP={arrowleft:'l',a:'l',arrowright:'r',d:'r',arrowup:'u',w:'u',' ':'u',z:'a',j:'a',x:'x',shift:'x',c:'b'};
+const MAP={arrowleft:'l',a:'l',arrowright:'r',d:'r',arrowup:'u',w:'u',' ':'u',z:'a',j:'a',x:'x',shift:'x'};
 function dn(c){if(AC&&AC.state==='suspended')AC.resume();if(c==='a'&&!K.a){pa=1;if(P)P.hold=performance.now()}if(c==='x'&&!K.x)pd=1;K[c]=1}
 function up(c){K[c]=0;if(c==='a'&&P){P.chg=0;P.hold=0}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='p'||k==='escape'){if(!e.repeat)tgl();return}const c=MAP[k];if(c){e.preventDefault();dn(c)}});
 addEventListener('keyup',e=>{const c=MAP[e.key.toLowerCase()];if(c)up(c)});
-[['tl','l'],['tr','r'],['tu','u'],['ta','a'],['td','x'],['tb','b']].forEach(([id,c])=>{const el=$(id);
+[['tl','l'],['tr','r'],['tu','u'],['ta','a'],['td','x']].forEach(([id,c])=>{const el=$(id);
 el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();try{el.setPointerCapture(e.pointerId)}catch(_){}el.classList.add('on');dn(c)});
 ['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,e=>{e.preventDefault();el.classList.remove('on');up(c)}));
 el.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()})});
