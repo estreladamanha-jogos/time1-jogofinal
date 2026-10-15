@@ -33,6 +33,11 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 #cred{height:60px;overflow:hidden;width:320px}#cred div{animation:rol 14s linear infinite}
 @keyframes rol{from{transform:translateY(60px)}to{transform:translateY(-140px)}}
 #touch{position:fixed;inset:0;pointer-events:none;display:none;z-index:5}
+#rotateWarn{position:fixed;inset:0;z-index:50;display:none;background:rgba(5,5,12,.96);color:#ffd23f;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:20px;font-family:'Press Start 2P',monospace;font-size:12px;line-height:1.8}
+#rotateWarn .ph{width:40px;height:70px;border:4px solid #ffd23f;border-radius:8px;position:relative;animation:rotph 2.4s ease-in-out infinite}
+#rotateWarn .ph::after{content:'';position:absolute;left:50%;bottom:7px;width:8px;height:8px;border-radius:50%;background:#ffd23f;transform:translateX(-50%)}
+@keyframes rotph{0%,15%{transform:rotate(0deg)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){#rotateWarn{display:flex}}
 .tb{position:absolute;pointer-events:auto;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:26px}
 .tb.on{background:rgba(255,210,63,.55)}
 
@@ -68,6 +73,7 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div class="tb" id="ta" style="right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">⚔</div>
 <div class="tb" id="td" style="right:calc(env(safe-area-inset-right,0px) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">💨</div>
 </div>
+<div id="rotateWarn"><div class="ph"></div><div>GIRE O CELULAR<br>PARA JOGAR</div></div>
 <script>
 /* ===== ATALHO DE TESTE — SÓ PARA DESENVOLVIMENTO, NÃO É OPÇÃO DO JOGADOR =====
    Troque o número abaixo (de 1 a 8) e clique em COMEÇAR pra pular direto pro mundo escolhido:
@@ -461,7 +467,13 @@ el.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()})});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;let muted=0;$('mb').onclick=e=>{e.stopPropagation();muted=!muted;$('mb').textContent=muted?'🔇':'🔊'};
 const isTouch=matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints>0&&!matchMedia('(hover:hover)').matches);let tShown=0;
-function loop(now){const dt=Math.min(now-lastT,50);lastT=now;if(st==='play')update(dt);else pa=pd=0;draw();
-const s=isTouch&&st==='play'?1:0;if(s!==tShown){tShown=s;$('touch').style.display=s?'block':'none'}requestAnimationFrame(loop)}
+/* ---------- aviso de girar o celular (retrato) ---------- */
+const portraitMQ=matchMedia('(orientation:portrait) and (pointer:coarse)');
+let isPortrait=portraitMQ.matches;
+function onOrient(e){isPortrait=e.matches;if(isPortrait){for(const k in K)K[k]=0;pa=pd=0}}
+if(portraitMQ.addEventListener)portraitMQ.addEventListener('change',onOrient);else if(portraitMQ.addListener)portraitMQ.addListener(onOrient);
+addEventListener('resize',()=>{isPortrait=portraitMQ.matches});
+function loop(now){const dt=Math.min(now-lastT,50);lastT=now;if(st==='play'&&!isPortrait)update(dt);else pa=pd=0;draw();
+const s=isTouch&&st==='play'&&!isPortrait?1:0;if(s!==tShown){tShown=s;$('touch').style.display=s?'block':'none'}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 </script></body></html>
