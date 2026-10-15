@@ -98,12 +98,12 @@ const SFX={hit:()=>tone(160,.08),swing:()=>tone(300,.06,'triangle'),jump:()=>ton
 /* ---------- dados ---------- */
 const LV=[
 {n:'Branca',world:'Vila da Aurora',abi:'COMBO BÁSICO',obi:'#f0f0f0',len:1600,goal:'gate',dica:'Explore a vila e aprenda o combo de 3 golpes.',npc:'Mestre: A força não está no golpe. Está na disciplina.'},
-{n:'Amarela',world:'Vila da Aurora',abi:'CHUTE RÁPIDO',obi:'#ffd23f',len:1000,goal:'kill',need:3,foe:'thief',dica:'Use o ataque durante o movimento para acelerar o combo.',npc:'Voluntário: Precisamos levar alimentos às crianças do projeto.',shop:500},
+{n:'Amarela',world:'Vila da Aurora',abi:'CHUTE RÁPIDO',obi:'#ffd23f',len:1000,goal:'kill',need:3,foe:'thief',dica:'O 3º golpe do combo causa dano extra nesta faixa.',npc:'Voluntário: Precisamos levar alimentos às crianças do projeto.',shop:500},
 {n:'Vermelha',world:'Caminho das Águas',abi:'ESQUIVA OFENSIVA',obi:'#e63946',len:1700,goal:'gate',dica:'Ataque logo após a esquiva para atravessar grupos.',npc:'Criança: Cuidado, a caverna é escura e cheia de ninjas!'},
 {n:'Laranja',world:'Caminho das Águas',abi:'ATAQUE AÉREO',obi:'#ff8c42',len:1500,goal:'sword',dica:'Há 3 espadas escondidas. Procure desvios, caixas e plataformas.',npc:'Aluno: Dizem que há espadas escondidas por aqui...'},
-{n:'Verde',world:'Caminho das Águas',abi:'CONTRA-ATAQUE',obi:'#4caf50',len:1300,goal:'kill',need:8,any:1,dica:'Encadeie ataques rápidos para derrotar o grupo de uma vez.',npc:'Rival: Você não passará pela minha praça!'},
+{n:'Verde',world:'Caminho das Águas',abi:'COMBATE EM GRUPO',obi:'#4caf50',len:1300,goal:'kill',need:8,any:1,dica:'Encadeie ataques rápidos para derrotar o grupo de uma vez.',npc:'Rival: Você não passará pela minha praça!'},
 {n:'Roxa',world:'Território da Fome',abi:'KIAI AVANÇADO',obi:'#9b5de5',len:1800,goal:'gate',dica:'Carregue o KIAI para quebrar guardas e abrir caminho.',npc:'Guardião: A noite esconde perigos. Resista!',shop:450},
-{n:'Marrom',world:'Território da Fome',abi:'MAESTRIA DA ESPADA',obi:'#6b4226',len:1000,goal:'time',dica:'Sua espada dura mais e o combo avança mais rápido.',npc:'Criança: Obrigado por ajudar o projeto!',shop:500},
+{n:'Marrom',world:'Território da Fome',abi:'MAESTRIA DA ESPADA',obi:'#6b4226',len:1000,goal:'time',dica:'Lutar com a espada equipada causa dano extra nesta faixa.',npc:'Criança: Obrigado por ajudar o projeto!',shop:500},
 {n:'Preta',world:'Território da Fome',abi:'TÉCNICA FINAL',obi:'#1b1b1b',len:760,goal:'boss',dica:'Use seu combo e o KIAI no momento certo.',npc:'Mestre: Agora mostre tudo o que aprendeu.'}];
 const SW={wak:{n:'Wakizashi',b:1,d:15,c:'#cfd8dc'},kat:{n:'Katana',b:2,d:25,c:'#e0e0ff'},nod:{n:'Nodachi',b:3,d:20,c:'#ffd9a0'},sag:{n:'Katana Sagrada',b:4,d:30,c:'#ffd23f'}};
 const AT={soco1:{fr:[70,70,90],h:1,d:1,r:32,k:3},soco2:{fr:[70,70,90],h:1,d:1,r:34,k:3},soco3:{fr:[70,70,70,90],h:2,d:2,r:38,k:6},aereo:{fr:[70,130,90],h:1,d:2,r:34,k:4},kiai:{fr:[90,90,110,90,90],h:2,d:4,r:75,k:8}};
@@ -213,12 +213,12 @@ cx.restore()}
 /* ---------- progressão por faixa ---------- */
 const ABIL=[
  'Combo básico: 3 golpes encadeados.',
- 'Chute rápido: o 3º golpe ganha alcance e empurrão.',
+ 'Chute rápido: o 3º golpe do combo causa dano extra.',
  'Esquiva ofensiva: ataque durante a esquiva para sair batendo.',
  'Ataque aéreo: ataque no ar causa dano extra.',
  'Enfrente múltiplos rivais na praça usando seus golpes.',
  'KIAI avançado: área maior e quebra de defesa.',
- 'Maestria da espada: espada dura mais e combos causam mais impacto.',
+ 'Maestria da espada: combos com a espada equipada causam mais impacto.',
  'Técnica final: KIAI totalmente carregado causa dano máximo ao chefe.'
 ];
 function showAbility(){
