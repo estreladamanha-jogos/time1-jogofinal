@@ -69,6 +69,14 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div class="tb" id="td" style="right:calc(env(safe-area-inset-right,0px) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">💨</div>
 </div>
 <script>
+/* ===== ATALHO DE TESTE — SÓ PARA DESENVOLVIMENTO, NÃO É OPÇÃO DO JOGADOR =====
+   Troque o número abaixo (de 1 a 8) e clique em COMEÇAR pra pular direto pro mundo escolhido:
+   1=Brasil(Branca) 2=Peru(Amarela) 3=Egito(Vermelha) 4=Índia(Laranja) 5=Grécia(Verde) 6=China(Roxa) 7=Tailândia(Marrom) 8=Japão(Preta)
+   As faixas Cinza e Dourada (entre Marrom e Preta) continuam existindo normalmente no jogo — elas
+   ainda não têm um mundo/país associado, então não entram nesse atalho de 1 a 8.
+   Deixe em 1 para o jogo começar do jeito normal (comportamento padrão, sem nenhuma mudança). */
+const MUNDO_INICIAL=1;
+const MUNDOS_DEV=['Branca','Amarela','Vermelha','Laranja','Verde','Roxa','Marrom','Preta'];
 const W=640,H=360,GY=300,$=id=>document.getElementById(id);
 const cv=$('c'),cx=cv.getContext('2d');cx.imageSmoothingEnabled=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a);
@@ -423,7 +431,10 @@ const run=n=>{const u=a===b?1:clamp((n-t0-400)/2200,0,1),e=u*u*(3-2*u),[x,y]=a==
 mk.setAttribute('transform',`translate(${x} ${y+14-(mv?Math.abs(sn)*3:0)}) scale(1.3)`);if(mv){l1.setAttribute('x',-3+sn*3);l2.setAttribute('x',1-sn*3)}
 if(u>=1)$('mkb').setAttribute('fill',LV[b].obi);else window.mapRaf=requestAnimationFrame(run)};
 window.mapRaf=requestAnimationFrame(run)}
-function start(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();coins=0;tTotal=0;swordsGot=0;vidas=3;foodAll=0;fgot={};P=null;lv=0;E=[];items=[];proj=[];parts=[];fx=[];dmgN=[];shop=null;bossRef=null;cam=0;st='trans';mapShow(0,0,'SUA JORNADA COMEÇA!')}
+function start(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();coins=0;tTotal=0;swordsGot=0;vidas=3;foodAll=0;fgot={};P=null;lv=0;E=[];items=[];proj=[];parts=[];fx=[];dmgN=[];shop=null;bossRef=null;cam=0;st='trans';
+const mi=clamp(Math.round(MUNDO_INICIAL),1,8);
+if(mi>1){const alvo=LV.findIndex(l=>l.n===MUNDOS_DEV[mi-1]);mapShow(alvo,alvo,'MODO DE TESTE: MUNDO '+mi+' ('+MUNDOS_DEV[mi-1].toUpperCase()+')')}
+else mapShow(0,0,'SUA JORNADA COMEÇA!')}
 $('dn').onclick=()=>{st='trans';mapShow(lv,lv+1,'FAIXA '+LV[lv+1].n.toUpperCase()+' CONQUISTADA!')};$('dr').onclick=()=>startLv(lv);$('b2').onclick=()=>show('creds');$('v2').onclick=()=>menu();
 const SV='estrelaManha.v2';
 function save(n){try{localStorage.setItem(SV,JSON.stringify({lv:n,coins,foodAll,swordsGot,t:tTotal,vidas,fg:fgot,gen}))}catch(e){}}
