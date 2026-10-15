@@ -22,8 +22,8 @@ button{font:inherit;font-size:11px;background:linear-gradient(#f0556a,var(--rd) 
 button:hover{transform:translateY(-1px)}
 button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000,inset 0 2px 0 rgba(255,255,255,.3)}
 button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
-#hb,#mb,#pb{position:absolute;top:6px;width:28px;height:28px;border-radius:50%;padding:0;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.6);box-shadow:none;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center}
-#pb{right:6px}#hb{right:38px}#mb{right:70px}
+#hb,#mb,#pb{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);width:44px;height:44px;border-radius:50%;padding:0;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.6);box-shadow:none;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:6}
+#pb{right:calc(env(safe-area-inset-right,0px) + 8px)}#hb{right:calc(env(safe-area-inset-right,0px) + 62px)}#mb{right:calc(env(safe-area-inset-right,0px) + 116px)}
 .tb{touch-action:none;-webkit-touch-callout:none}
 .col{display:flex;flex-direction:column;gap:10px;align-items:center}
 #trans{background:linear-gradient(#27406e,#6a4a8a 60%,#c46a4a)}#mapbox{position:relative;width:600px;height:150px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
@@ -38,7 +38,7 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 #rotateWarn .ph::after{content:'';position:absolute;left:50%;bottom:7px;width:8px;height:8px;border-radius:50%;background:#ffd23f;transform:translateX(-50%)}
 @keyframes rotph{0%,15%{transform:rotate(0deg)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (pointer:coarse){#rotateWarn{display:flex}}
-.tb{position:absolute;pointer-events:auto;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:26px}
+.tb{position:absolute;pointer-events:auto;width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:24px}
 .tb.on{background:rgba(255,210,63,.55)}
 
 /* upgrades: faixa/abilidade + exploração */
@@ -67,11 +67,11 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div id="cred"><div>CRÉDITOS<br>Jogo educativo<br>Projeto Estrela da Manhã<br>Lauro de Freitas - Bahia<br>Feito com Claude<br>Obrigado por jogar!</div></div><button id="mw">MENU PRINCIPAL</button></div></div>
 </div>
 <div id="touch">
-<div class="tb" id="tl" style="left:calc(env(safe-area-inset-left,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">◀</div>
-<div class="tb" id="tr" style="left:calc(env(safe-area-inset-left,0px) + 96px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">▶</div>
-<div class="tb" id="tu" style="right:calc(env(safe-area-inset-right,0px) + 70px);bottom:calc(env(safe-area-inset-bottom,0px) + 100px)">⬆</div>
-<div class="tb" id="ta" style="right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">⚔</div>
-<div class="tb" id="td" style="right:calc(env(safe-area-inset-right,0px) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)">💨</div>
+<div class="tb" id="tl" style="left:calc(env(safe-area-inset-left,0px) + 16px);bottom:calc(env(safe-area-inset-bottom,0px) + 36px)">◀</div>
+<div class="tb" id="tr" style="left:calc(env(safe-area-inset-left,0px) + 94px);bottom:calc(env(safe-area-inset-bottom,0px) + 36px)">▶</div>
+<div class="tb" id="tu" style="right:calc(env(safe-area-inset-right,0px) + 54px);bottom:calc(env(safe-area-inset-bottom,0px) + 118px)">⬆</div>
+<div class="tb" id="ta" style="right:calc(env(safe-area-inset-right,0px) + 16px);bottom:calc(env(safe-area-inset-bottom,0px) + 36px)">⚔</div>
+<div class="tb" id="td" style="right:calc(env(safe-area-inset-right,0px) + 94px);bottom:calc(env(safe-area-inset-bottom,0px) + 36px)">💨</div>
 </div>
 <div id="rotateWarn"><div class="ph"></div><div>GIRE O CELULAR<br>PARA JOGAR</div></div>
 <script>
