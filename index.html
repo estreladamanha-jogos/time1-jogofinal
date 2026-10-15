@@ -237,11 +237,11 @@ shop=i<LV.length-1?{x:LV[i].shop||260}:null;foodN=0;mkObs(i);showAbility();
 if(i===0||i===2||i===4||i===6){secretChest(Math.floor(LEN*.62));secretChest(Math.floor(LEN*.88));}
 foodStep=0;if(LV[i].goal!=='time')[.25,.5,.75].forEach((f,k)=>items.push({k:'food',id:k,x:LEN*f,y:GY-(k===1?78:14),life:1e9}));
 if(i===0)for(let j=0;j<6;j++)spawnE('thief',420+j*190);
-if(i===2)for(let j=0;j<8;j++)spawnE(['thief','ninja'][j%2],400+j*150);if(i===5)for(let j=0;j<9;j++)spawnE(['samurai','ninja','thief'][j%3],400+j*150);if(i===3){for(let j=0;j<4;j++)spawnE('thief',350+j*330);for(let j=0;j<3;j++)spawnE('ninja',600+j*350);[380,820,1280].forEach(x=>items.push({k:'sword',t:'nod',x,y:GY-10,life:1e9,hid:1}))}
+if(i===2)for(let j=0;j<8;j++)spawnE(['thief','ninja'][j%2],400+j*150);if(i===5)for(let j=0;j<9;j++)spawnE(['samurai','ninja','thief'][j%3],400+j*150);if(i===3){for(let j=0;j<4;j++)spawnE('thief',350+j*330);for(let j=0;j<3;j++)spawnE('ninja',600+j*350);[{x:450,y:GY-78},{x:900,y:GY-10},{x:1350,y:GY-10}].forEach(p=>items.push({k:'sword',t:'nod',x:p.x,y:p.y,life:1e9,hid:1}))}
 if(i===LV.length-1){bossRef=spawnE('boss',560);const rd=Math.min(12,Math.floor(foodAll/2));bossRef.mx-=rd;bossRef.hp=bossRef.mx}
 st='play';show(null);say(i===LV.length-1&&foodAll>=2?'A comida que você coletou enfraqueceu o Monstro!':LV[i].npc,3200)}
 function show(id){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'));if(id)$(id).classList.add('on')}
-const obj=()=>{const g=LV[lv].goal;return g==='gate'?'Chegue ao portão':g==='kill'?`${LV[lv].any?'Inimigos':'Ninjas'} derrotados: ${kills}/${LV[lv].need}`:g==='sword'?`Espadas escondidas: ${swordFound}/3`:g==='time'?`Sobreviva: ${Math.max(0,60-Math.floor(surv/1000))}s`:'Derrote o Monstro da Fome'};
+const obj=()=>{const g=LV[lv].goal;return g==='gate'?'Chegue ao portão':g==='kill'?`${LV[lv].any?'Inimigos':'Ninjas'} derrotados: ${kills}/${LV[lv].need}`:g==='sword'?(swordFound>=3?'Todas as espadas encontradas!':`Faltam ${3-swordFound} espada${3-swordFound>1?'s':''}. Procure no alto, perto de caixas e perto do fim.`):g==='time'?`Sobreviva: ${Math.max(0,60-Math.floor(surv/1000))}s`:'Derrote o Monstro da Fome'};
 /* ---------- combate ---------- */
 function spark(x,y,c,n){for(let i=0;i<n;i++){const a=rnd(0,6.28),f=rnd(1,4);parts.push({x,y,vx:Math.cos(a)*f,vy:Math.sin(a)*f-1.5,l:1,c,s:rnd(3,6)})}if(parts.length>80)parts.splice(0,parts.length-80)}
 const num=(x,y,t,c='#ff3b3b')=>dmgN.push({x,y,t:''+t,l:800,c});
