@@ -266,7 +266,7 @@ if(P.roll>0){
  if(lv>=2){P.roll=0;P.rollCd=500;startAtk(P.y<GY?'aereo':'soco1');say('ESQUIVA OFENSIVA!',900);spark(P.x+P.dir*14,GY-25,'#ffd23f',6);}
  return;
 }
-if(shop&&Math.abs(P.x-shop.x)<45&&coins>=50&&shopCd<=0&&!P.sw){shopCd=700;coins-=50;if(Math.random()<.7)equip('wak');else{say('A espada foi longe... tente de novo.');num(shop.x,GY-60,'escapou!','#bbb')}return}
+if(shop&&Math.abs(P.x-shop.x)<45&&coins>=50&&shopCd<=0&&!P.sw){shopCd=700;coins-=50;if(Math.random()<.7)equip('wak');else{coins+=50;say('A espada foi longe... tente de novo.');num(shop.x,GY-60,'escapou!','#bbb')}return}
 if(!P.atk)startAtk(P.y<GY?'aereo':'soco1');else P.q=1}
 /* ---------- atualização ---------- */
 function updP(k,dt){
