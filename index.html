@@ -45,7 +45,7 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div id="abilityBanner"></div>
 <button id="hb">?</button><button id="mb">🔊</button><button id="pb">II</button>
 <div class="ov on" id="title"><div class="pnl"><h1>ESTRELA DA MANHÃ:<br>O CAMINHO DO KARATÊ</h1>
-<div>Uma jornada 2D pixel art inspirada no Projeto Estrela da Manhã, em Lauro de Freitas, Bahia.<br>10 faixas • 3 mundos • combate • exploração • habilidades.</div>
+<div>Uma jornada 2D pixel art inspirada no Projeto Estrela da Manhã, em Lauro de Freitas, Bahia.<br>8 faixas • 3 mundos • combate • exploração • habilidades.</div>
 
 <div class="col"><button id="cont" style="display:none">CONTINUAR</button><button id="go">COMEÇAR</button><button class="s" id="b2">CRÉDITOS</button></div></div></div>
 <div class="ov" id="pick"><div class="pnl"><h2>ESCOLHA SEU PERSONAGEM</h2><div class="row"><button id="pf">KARATECA<br>(FEMININO)</button><button id="pm">KARATECO<br>(MASCULINO)</button></div><button class="s" id="vp">VOLTAR</button></div></div>
@@ -98,9 +98,7 @@ const LV=[
 {n:'Verde',world:'Caminho das Águas',abi:'CONTRA-ATAQUE',obi:'#4caf50',len:1300,goal:'kill',need:8,any:1,dica:'Encadeie ataques rápidos para derrotar o grupo de uma vez.',npc:'Rival: Você não passará pela minha praça!'},
 {n:'Roxa',world:'Território da Fome',abi:'KIAI AVANÇADO',obi:'#9b5de5',len:1800,goal:'gate',dica:'Carregue o KIAI para quebrar guardas e abrir caminho.',npc:'Guardião: A noite esconde perigos. Resista!',shop:450},
 {n:'Marrom',world:'Território da Fome',abi:'MAESTRIA DA ESPADA',obi:'#6b4226',len:1000,goal:'time',dica:'Sua espada dura mais e o combo avança mais rápido.',npc:'Criança: Obrigado por ajudar o projeto!',shop:500},
-{n:'Cinza',world:'Território da Fome',abi:'GOLPE GIRATÓRIO',obi:'#9e9e9e',len:1400,goal:'kill',need:7,any:1,dica:'Combine socos e contra-ataques para lidar com vários inimigos de uma vez.',npc:'Monge: Poucos chegam tão longe. Mostre sua disciplina.',shop:480},
-{n:'Dourada',world:'Território da Fome',abi:'FÚRIA DO KIAI',obi:'#c9a227',len:1300,goal:'time',dica:'Sobreviva usando o KIAI para abrir espaço entre os ataques.',npc:'Ancião: A fome é grande, mas sua força é maior.'},
-{n:'Preta',world:'Território da Fome',abi:'TÉCNICA FINAL',obi:'#1b1b1b',len:760,goal:'boss',dica:'Use bloqueio, contra-ataque e KIAI no momento certo.',npc:'Mestre: Agora mostre tudo o que aprendeu.'}];
+{n:'Preta',world:'Território da Fome',abi:'TÉCNICA FINAL',obi:'#1b1b1b',len:760,goal:'boss',dica:'Use seu combo e o KIAI no momento certo.',npc:'Mestre: Agora mostre tudo o que aprendeu.'}];
 const SW={wak:{n:'Wakizashi',b:1,d:15,c:'#cfd8dc'},kat:{n:'Katana',b:2,d:25,c:'#e0e0ff'},nod:{n:'Nodachi',b:3,d:20,c:'#ffd9a0'},sag:{n:'Katana Sagrada',b:4,d:30,c:'#ffd23f'}};
 const AT={soco1:{fr:[70,70,90],h:1,d:1,r:32,k:3},soco2:{fr:[70,70,90],h:1,d:1,r:34,k:3},soco3:{fr:[70,70,70,90],h:2,d:2,r:38,k:6},aereo:{fr:[70,130,90],h:1,d:2,r:34,k:4},kiai:{fr:[90,90,110,90,90],h:2,d:4,r:75,k:8}};
 const CH={soco1:'soco2',soco2:'soco3'};
@@ -121,7 +119,7 @@ const K={l:0,r:0,u:0,a:0,x:0};
 const say=(s,t=2500)=>{msg=s;msgT=t};
 const newP=()=>({x:60,y:GY,vx:0,vy:0,dir:1,hp:3,mx:3,inv:0,atk:null,q:0,roll:0,rollCd:0,hurt:0,dead:0,sw:null,t:0,hold:0,chg:0,trail:0,kcd:0,special:0,secret:0});
 var vidas=3,obs=[],foodN=0,foodAll=0,fgot={},combo=0,comboT=0;
-const OB=[['spk'],['spk','fall'],['fall','spk'],['fire','spk'],['spk','fire'],['fall','fire'],['spk','fall'],['fire','fall','spk'],['fire','spk','fall'],['spk','fire','fall']];
+const OB=[['spk'],['spk','fall'],['fall','spk'],['fire','spk'],['spk','fire'],['fall','fire'],['spk','fall'],['spk','fire','fall']];
 function mkObs(i){obs=[];const n=i===LV.length-1?3:Math.min(3+i*2,12),t=OB[i];for(let k=0;k<n;k++){const x=380+(LEN-620)*(k+.5)/n+rnd(-30,30);if(shop&&Math.abs(x-shop.x)<60)continue;obs.push({t:t[k%t.length],x,ph:rnd(0,2600)})}}
 function obsUpd(){if(P.dead)return;const now=performance.now();obs.forEach(o=>{
 if(o.t==='spk'){if(P.y>GY-10&&Math.abs(P.x-o.x)<14)hurt(10,o.x)}
@@ -146,7 +144,7 @@ bx.fillStyle=n?'#e8eef7':'#fff6c9';bx.beginPath();bx.arc(sunX,sunY,n?12:18,0,7);
 const cloudCol=`rgba(${255*(.5+.5*s.br)|0},${250*(.4+.6*s.br)|0},${255*(.45+.55*s.br)|0},${clamp(.2+.55*s.br,.12,.8)})`;
 clouds.forEach(cl=>{const cx2=((cl.x+performance.now()/900*cl.sp)%(W+160))-80;bx.fillStyle=cloudCol;[[-18,0,16],[0,-6,20],[20,0,15],[38,2,11]].forEach(([dx,dy,r])=>{bx.beginPath();bx.ellipse(cx2+dx*cl.s,cl.y+dy*cl.s,r*cl.s,r*cl.s*.62,0,0,7);bx.fill()})});
 [[.65,200,90],[.8,150,70]].forEach(([al,w,h],j)=>{bx.fillStyle=`rgba(${30*s.br+20|0},${25*s.br+15|0},${55*s.br+40|0},${al})`;bx.beginPath();bx.moveTo(0,GY);for(let x=0;x<=W+w;x+=w){bx.lineTo(x-j*60,GY-h*(.6+.4*Math.sin(x*.02+j)));bx.lineTo(x+w/2-j*60,GY-h*.35)}bx.lineTo(W,GY);bx.fill()});
-bx.fillStyle=`rgba(20,0,30,${[0,.05,.55,.05,.12,.25,.35,.4,.3,.6][lv]})`;bx.fillRect(0,0,W,H);bgAt=performance.now();bgLv=lv}
+bx.fillStyle=`rgba(20,0,30,${[0,.05,.55,.05,.12,.25,.35,.6][lv]})`;bx.fillRect(0,0,W,H);bgAt=performance.now();bgLv=lv}
 const sh=h=>{const f=.35+.65*br,n=parseInt(h.slice(1),16);return`rgb(${(n>>16)*f|0},${(n>>8&255)*f|0},${(n&255)*f|0})`};
 let sbot=[200,200,200];
 const SHP={
@@ -176,8 +174,6 @@ const TH2=[
 {b:[['mt',180,'#8b5a5a','#000',.12],['pil',150,'#9e8f84','#7a6a60',.4],['flag',210,'#000','#c62828',.6]],f:['rock',380,'#1b1112',1.35]},
 {b:[['bld',100,'#2b2540','#000',.12],['bld',130,'#352f52','#000',.35],['bld',170,'#3f3860','#000',.6]],f:['rock',300,'#0e0b18',1.35]},
 {b:[['mt',180,'#5a6f8a','#000',.12],['ship',260,'#4e342e','#d7ccc8',.3],['dock',150,'#5d4037','#8d6e63',.6]],f:['crate',300,'#2b1d16',1.35]},
-{b:[['mt',180,'#6f6f6f','#000',.12],['pil',160,'#5a5a5a','#8a8a8a',.4],['flag',200,'#222','#9e9e9e',.6]],f:['rock',280,'#1a1a1a',1.35]},
-{b:[['mt',180,'#8a7a3a','#000',.12],['bld',140,'#6b5a1a','#000',.4],['flag',220,'#4a3a0a','#c9a227',.6]],f:['crate',300,'#2a1e08',1.35]},
 {b:[['spike',140,'#2a1a30','#000',.12],['dead',110,'#1c1020','#000',.35],['spike',160,'#150b1a','#000',.6]],f:['rock',260,'#05030a',1.35]}];
 function lay(a,y){const[s,sp,c,c2,f]=a,o=Math.round(cam)*f;for(let x=Math.floor(o/sp)*sp-sp;x<o+W+2*sp;x+=sp){const i=Math.round(x/sp);if(f>=.5&&s!=='wall'){cx.fillStyle='rgba(0,0,0,.28)';cx.beginPath();cx.ellipse(x-o+28,y+2,38,5,0,0,7);cx.fill()}SHP[s](x-o,i,sh(c),y,sh(c2))}}
 function back(){TH2[lv].b.forEach((a,k)=>{lay(a,GY);if(k<2&&lv!==2){cx.fillStyle=`rgba(${sbot.join(',')},${k?.12:.28})`;cx.fillRect(0,GY-170,W,170)}})}
@@ -217,8 +213,6 @@ const ABIL=[
  'Enfrente múltiplos rivais na praça usando seus golpes.',
  'KIAI avançado: área maior e quebra de defesa.',
  'Maestria da espada: espada dura mais e combos causam mais impacto.',
- 'Golpe giratório: encadeie socos e contra-ataques contra vários rivais.',
- 'Fúria do KIAI: use a técnica para abrir espaço durante a sobrevivência.',
  'Técnica final: KIAI totalmente carregado causa dano máximo ao chefe.'
 ];
 function showAbility(){
@@ -234,7 +228,7 @@ function secretChest(x){
 function spawnE(type,x){if(x==null){const side=P.x<LEN/2?1:-1;x=clamp(P.x+side*rnd(300,380),30,LEN-30)}const b={thief:[3,8,1],ninja:[4,8,1],samurai:[6,10,1.2],boss:[40,30,2.5]}[type],hp=Math.ceil(b[0]*(type==='boss'?1:1+lv*.22));const e={type,x,y:GY,hp,mx:hp,w:b[1],sc:b[2],dir:-1,fl:0,dead:0,st:'idle',stT:0,cd:rnd(500,1400),vul:0,flee:0,kb:0,hits:0,hx:x,pd:1,did:0,stolen:0};E.push(e);return e}
 function startLv(i){cancelAnimationFrame(window.mapRaf);lv=i;LEN=LV[i].len;checkpointX=LEN/2;const old=P;P=newP();if(old&&old.sw)P.sw=old.sw;E=[];items=[];proj=[];parts=[];fx=[];dmgN=[];kills=0;swordFound=0;surv=0;endT=0;cam=0;bossRef=null;spawnT=800;shopCd=0;bgLv=-1;
 shop=i<LV.length-1?{x:LV[i].shop||260}:null;foodN=0;mkObs(i);showAbility();
-if(i===0||i===2||i===4||i===6||i===8){secretChest(Math.floor(LEN*.62));secretChest(Math.floor(LEN*.88));}
+if(i===0||i===2||i===4||i===6){secretChest(Math.floor(LEN*.62));secretChest(Math.floor(LEN*.88));}
 [.25,.5,.75].forEach((f,k)=>items.push({k:'food',id:k,x:LEN*f,y:GY-(k===1?78:14),life:1e9}));
 if(i===0)for(let j=0;j<6;j++)spawnE('thief',420+j*190);
 if(i===2)for(let j=0;j<8;j++)spawnE(['thief','ninja'][j%2],400+j*150);if(i===5)for(let j=0;j<9;j++)spawnE(['samurai','ninja','thief'][j%3],400+j*150);if(i===3){for(let j=0;j<4;j++)spawnE('thief',350+j*330);for(let j=0;j<3;j++)spawnE('ninja',600+j*350);[380,820,1280].forEach(x=>items.push({k:'sword',t:'nod',x,y:GY-10,life:1e9,hid:1}))}
@@ -357,8 +351,8 @@ cx.save();if(shake>.3&&!RM)cx.translate((Math.random()-.5)*shake,(Math.random()-
 cx.drawImage(bg,0,0);
 const cm=Math.round(cam);
 if(st!=='title'){
-back();const T=[0,1,1,1,1,3,1,1,1,1][lv],c=['#3f8f4a','#8d6e63','#6d4c41','#d9772b','#8b1a2b','#37474f','#4e342e','#757575','#8a6a1a','#2a1030'][lv];
-const wt=lv===1||lv===6;if(wt){cx.fillStyle=sh('#2a5d8f');cx.fillRect(0,GY+26,W,40)}const GC=[['#5d4037','#8bc34a'],['#5d4037','#8bc34a'],['#2b2330','#4a3d52'],['#5d4037','#c0a060'],['#4a3a3a','#9e9e9e'],['#263238','#546e7a'],['#3e2723','#8d6e63'],['#4a4a4a','#9e9e9e'],['#4a3a1a','#c9a227'],['#1a0a1a','#5a2a4a']][lv];const gh=wt?26:60,gg=cx.createLinearGradient(0,GY,0,GY+gh);gg.addColorStop(0,sh(GC[1]));gg.addColorStop(.12,sh(GC[0]));gg.addColorStop(1,sh(GC[0]));cx.fillStyle=gg;cx.fillRect(0,GY,W,gh);cx.fillStyle=sh(GC[1]);cx.fillRect(0,GY,W,4);cx.fillStyle=`rgba(255,255,255,${.12+.1*br})`;cx.fillRect(0,GY,W,1);
+back();const T=[0,1,1,1,1,3,1,1][lv],c=['#3f8f4a','#8d6e63','#6d4c41','#d9772b','#8b1a2b','#37474f','#4e342e','#2a1030'][lv];
+const wt=lv===1||lv===6;if(wt){cx.fillStyle=sh('#2a5d8f');cx.fillRect(0,GY+26,W,40)}const GC=[['#5d4037','#8bc34a'],['#5d4037','#8bc34a'],['#2b2330','#4a3d52'],['#5d4037','#c0a060'],['#4a3a3a','#9e9e9e'],['#263238','#546e7a'],['#3e2723','#8d6e63'],['#1a0a1a','#5a2a4a']][lv];const gh=wt?26:60,gg=cx.createLinearGradient(0,GY,0,GY+gh);gg.addColorStop(0,sh(GC[1]));gg.addColorStop(.12,sh(GC[0]));gg.addColorStop(1,sh(GC[0]));cx.fillStyle=gg;cx.fillRect(0,GY,W,gh);cx.fillStyle=sh(GC[1]);cx.fillRect(0,GY,W,4);cx.fillStyle=`rgba(255,255,255,${.12+.1*br})`;cx.fillRect(0,GY,W,1);
 for(let x=-(cm%64);x<W;x+=64){const px=((x+cm)/64|0);cx.fillStyle=`rgba(0,0,0,${.08+(px&1)*.05})`;cx.fillRect(x,GY+5,64,gh-5)}
 if(lv===LV.length-1){cx.fillStyle='rgba(10,5,15,.4)';for(let i=0;i<3;i++)cx.fillRect(0,GY-24-i*16,W,10);cx.fillStyle='rgba(255,90,40,.6)';for(let i=0;i<10;i++)cx.fillRect(((i*73-cm*.4+performance.now()/30)%(W+40)+W+40)%(W+40)-20,GY-10-((performance.now()/15+i*37)%80),2,2)}cx.fillStyle='rgba(0,0,0,.18)';for(let x=-(cm%48);x<W;x+=48)cx.fillRect(x,GY+16,18,2);
 if(LV[lv].goal==='gate'){const gx=LEN-40-cm;cx.fillStyle=sh('#c0392b');cx.fillRect(gx,GY-70,6,70);cx.fillRect(gx+44,GY-70,6,70);cx.fillRect(gx-8,GY-76,66,8);cx.fillRect(gx-4,GY-62,58,5)}
@@ -417,9 +411,9 @@ if(kiaiT>0)tx('気合! KIAI!',W/2,H/2,'#ff5252','center',16+Math.sin(kiaiT/40)*4
 function pauseOn(help){if(st!=='play')return;st=help?'help':'pause';if(help){$('hobj').textContent='Objetivo: '+obj();$('hdica').textContent=LV[lv].dica}else{$('pinfo').innerHTML=`Personagem: ${gen==='f'?'Karateca':'Karateco'}<br>Fase ${lv+1}/${LV.length} - Faixa ${LV[lv].n}<br>${obj()}<br>Corações: ${P.hp}/3 | Moedas: ${coins}<br>Espada: ${P.sw?P.sw.n+' '+P.sw.dur+'/'+P.sw.max:'nenhuma'}<br>Habilidade: ${LV[lv].abi}<br>Segredos: ${P.secret}`}show(help?'help':'pause')}
 function resume(){if(st==='pause'||st==='help'){st='play';show(null);lastT=performance.now();pa=pd=0}}
 const tgl=()=>st==='play'?pauseOn():resume();
-const VIL=['Vila do Dojo','Cachoeira do Despertar','Caverna Sombria','Mercado Agitado','Praça do Rival','Telhados dos Guardiões','Docas ao Entardecer','Vale Cinzento','Templo Dourado','Covil do Monstro'];let mapTo=0;
+const VIL=['Vila do Dojo','Cachoeira do Despertar','Caverna Sombria','Mercado Agitado','Praça do Rival','Telhados dos Guardiões','Docas ao Entardecer','Covil do Monstro'];let mapTo=0;
 function mapShow(a,b,t){mapTo=b;const SPAN=512,pt=i=>[44+i*(SPAN/(LV.length-1)),i%2?42:104];
-const ICO=['<rect x="-14" y="-14" width="28" height="14" fill="#a1887f"/><polygon points="-20,-14 0,-27 20,-14" fill="#c0392b"/><polygon points="-14,-24 0,-38 14,-24" fill="#c0392b"/>','<polygon points="-20,0 -9,-34 9,-34 20,0" fill="#6d7b80"/><rect x="-3" y="-34" width="6" height="34" fill="#bfe6ff"/><ellipse rx="14" ry="3" fill="#dff"/>','<path d="M-22,0 L-15,-24 L0,-32 L15,-24 L22,0Z" fill="#555"/><path d="M-10,0 Q0,-26 10,0Z" fill="#111"/>','<polygon points="-19,-14 -9,-27 1,-14" fill="#e63946"/><polygon points="1,-14 10,-27 19,-14" fill="#ff8c42"/><rect x="-17" y="-14" width="34" height="14" fill="#8d6e63"/>','<rect x="-18" y="-34" width="36" height="5" fill="#c62828"/><rect x="-13" y="-27" width="26" height="3" fill="#c62828"/><rect x="-13" y="-27" width="4" height="27" fill="#c62828"/><rect x="9" y="-27" width="4" height="27" fill="#c62828"/>','<rect x="-20" y="-26" width="12" height="26" fill="#3f3860"/><rect x="-5" y="-36" width="12" height="36" fill="#352f52"/><rect x="9" y="-20" width="11" height="20" fill="#2b2540"/><rect x="-3" y="-30" width="3" height="3" fill="#ffeb99"/><rect x="-16" y="-20" width="3" height="3" fill="#ffeb99"/>','<rect x="-22" y="-4" width="44" height="4" fill="#5d4037"/><rect x="-1" y="-36" width="2" height="32" fill="#4e342e"/><polygon points="1,-34 18,-12 1,-12" fill="#eee"/><path d="M-14,-4 Q0,6 14,-4Z" fill="#6d4c41"/>','<rect x="-16" y="-34" width="32" height="6" fill="#9e9e9e"/><rect x="-10" y="-28" width="4" height="28" fill="#757575"/><rect x="6" y="-28" width="4" height="28" fill="#757575"/>','<polygon points="-18,-14 0,-30 18,-14" fill="#c9a227"/><rect x="-14" y="-14" width="28" height="14" fill="#8a6a1a"/><rect x="-3" y="-34" width="6" height="6" fill="#ffd23f"/>','<polygon points="-20,0 -16,-32 -7,-20 0,-40 7,-20 16,-32 20,0" fill="#2a1030"/><circle cx="-4" cy="-14" r="2.5" fill="#f33"/><circle cx="4" cy="-14" r="2.5" fill="#f33"/>'];
+const ICO=['<rect x="-14" y="-14" width="28" height="14" fill="#a1887f"/><polygon points="-20,-14 0,-27 20,-14" fill="#c0392b"/><polygon points="-14,-24 0,-38 14,-24" fill="#c0392b"/>','<polygon points="-20,0 -9,-34 9,-34 20,0" fill="#6d7b80"/><rect x="-3" y="-34" width="6" height="34" fill="#bfe6ff"/><ellipse rx="14" ry="3" fill="#dff"/>','<path d="M-22,0 L-15,-24 L0,-32 L15,-24 L22,0Z" fill="#555"/><path d="M-10,0 Q0,-26 10,0Z" fill="#111"/>','<polygon points="-19,-14 -9,-27 1,-14" fill="#e63946"/><polygon points="1,-14 10,-27 19,-14" fill="#ff8c42"/><rect x="-17" y="-14" width="34" height="14" fill="#8d6e63"/>','<rect x="-18" y="-34" width="36" height="5" fill="#c62828"/><rect x="-13" y="-27" width="26" height="3" fill="#c62828"/><rect x="-13" y="-27" width="4" height="27" fill="#c62828"/><rect x="9" y="-27" width="4" height="27" fill="#c62828"/>','<rect x="-20" y="-26" width="12" height="26" fill="#3f3860"/><rect x="-5" y="-36" width="12" height="36" fill="#352f52"/><rect x="9" y="-20" width="11" height="20" fill="#2b2540"/><rect x="-3" y="-30" width="3" height="3" fill="#ffeb99"/><rect x="-16" y="-20" width="3" height="3" fill="#ffeb99"/>','<rect x="-22" y="-4" width="44" height="4" fill="#5d4037"/><rect x="-1" y="-36" width="2" height="32" fill="#4e342e"/><polygon points="1,-34 18,-12 1,-12" fill="#eee"/><path d="M-14,-4 Q0,6 14,-4Z" fill="#6d4c41"/>','<polygon points="-20,0 -16,-32 -7,-20 0,-40 7,-20 16,-32 20,0" fill="#2a1030"/><circle cx="-4" cy="-14" r="2.5" fill="#f33"/><circle cx="4" cy="-14" r="2.5" fill="#f33"/>'];
 const bz=(i,u)=>{const[x0,y0]=pt(i),[x1,y1]=pt(i+1),xm=(x0+x1)/2,v=1-u;return[v*v*v*x0+3*v*v*u*xm+3*v*u*u*xm+u*u*u*x1,v*v*v*y0+3*v*v*u*y0+3*v*u*u*y1+u*u*u*y1]};
 let d='M'+pt(0).join(' ');for(let i=0;i<LV.length-1;i++){const[x0,y0]=pt(i),[x1,y1]=pt(i+1),m=(x0+x1)/2;d+=` C${m} ${y0} ${m} ${y1} ${x1} ${y1}`}
 let h=`<svg width="600" height="150" viewBox="0 0 600 150"><defs><linearGradient id="sg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#8ed0ff"/><stop offset=".4" stop-color="#ffb870"/><stop offset=".75" stop-color="#5b3f7a"/><stop offset="1" stop-color="#150a1c"/></linearGradient></defs><rect width="600" height="150" rx="10" fill="url(#sg)" stroke="#000" stroke-width="4"/><circle cx="60" cy="24" r="12" fill="#fff6c9"/><circle cx="560" cy="24" r="9" fill="#e8eef7"/><path d="M0,150 L0,96 Q70,60 140,100 T290,92 T440,100 T600,80 L600,150Z" fill="rgba(0,0,0,.3)"/><path d="M0,150 L0,120 Q100,98 200,122 T400,118 T600,112 L600,150Z" fill="rgba(0,0,0,.4)"/><path d="${d}" fill="none" stroke="#3b2a1e" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#d9b77a" stroke-width="5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff3c9" stroke-width="1.5" stroke-dasharray="5 6"/>`;
