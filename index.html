@@ -48,18 +48,15 @@ button.s{background:linear-gradient(#6a6a6a,#4a4a4a 55%,#333)}
 <div class="ov on" id="title"><div class="pnl"><h1>ESTRELA DA MANHÃ:<br>O CAMINHO DO KARATÊ</h1>
 <div>Uma jornada 2D pixel art inspirada no Projeto Estrela da Manhã, em Lauro de Freitas, Bahia.<br>10 faixas • 3 mundos • combate • exploração • habilidades.</div>
 
-<div class="col"><button id="cont" style="display:none">CONTINUAR</button><button id="go">COMEÇAR</button><button class="s" id="b1">COMO JOGAR</button><button class="s" id="b2">CRÉDITOS</button></div></div></div>
+<div class="col"><button id="cont" style="display:none">CONTINUAR</button><button id="go">COMEÇAR</button><button class="s" id="b2">CRÉDITOS</button></div></div></div>
 <div class="ov" id="pick"><div class="pnl"><h2>ESCOLHA SEU PERSONAGEM</h2><div class="row"><button id="pf">KARATECA<br>(FEMININO)</button><button id="pm">KARATECO<br>(MASCULINO)</button></div><button class="s" id="vp">VOLTAR</button></div></div>
-<div class="ov" id="como"><div class="pnl"><h2>COMO JOGAR</h2><div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR<br><span class="k">P</span> / <span class="k">ESC</span> PAUSAR</div><button id="v1">VOLTAR</button></div></div>
 <div class="ov" id="creds"><div class="pnl"><h2>CRÉDITOS</h2><div>Jogo educativo inspirado no Projeto Estrela da Manhã, Lauro de Freitas - BA.<br>Personagens e história fictícios, feitos para este jogo.<br>Criado com Claude.</div><button id="v2">VOLTAR</button></div></div>
 <div class="ov" id="trans"><div class="pnl"><h2 id="tt"></h2><div id="mapbox"></div><div id="tx2"></div><button id="nx">ENTRAR NA FASE</button></div></div>
 <div class="ov" id="done"><div class="pnl"><h2>MISSÃO CUMPRIDA!</h2><div id="dtx"></div><div class="row"><button id="dn">PRÓXIMA FASE</button><button class="s" id="dr">REFAZER FASE</button></div></div></div>
 <div class="ov" id="pause"><div class="pnl"><h2>PAUSADO</h2><div id="pinfo"></div>
-<div class="row"><button id="bc">CONTINUAR</button><button class="s" id="br">REINICIAR FASE</button><button class="s" id="bm">MENU PRINCIPAL</button></div>
-<div style="font-size:9px"><span class="k">←→</span> andar <span class="k">␣</span> pular <span class="k">Z</span> atacar <span class="k">X</span> esquivar</div></div></div>
-<div class="ov" id="help"><div class="pnl"><h2>COMO JOGAR</h2>
-<div><span class="k">← →</span> / <span class="k">A D</span> ANDAR<br><span class="k">ESPAÇO</span> / <span class="k">↑</span> PULAR<br><span class="k">Z</span> / <span class="k">J</span> ATACAR (combo)<br><span class="k">X</span> / <span class="k">SHIFT</span> ESQUIVAR</div>
-<div id="hobj" style="color:#ffd23f"></div><div id="hdica"></div><div style="font-size:9px">Toque ou aperte Esc / P para voltar</div></div></div>
+<div class="row"><button id="bc">CONTINUAR</button><button class="s" id="br">REINICIAR FASE</button><button class="s" id="bm">MENU PRINCIPAL</button></div></div></div>
+<div class="ov" id="help"><div class="pnl">
+<div id="hobj" style="color:#ffd23f"></div><div id="hdica"></div><div style="font-size:9px">Toque para continuar.</div></div></div>
 <div class="ov" id="over"><div class="pnl"><h1 style="color:#e63946">VOCÊ CAIU...</h1><div>A disciplina do karatê ensina a levantar!<br>(você perde metade das moedas)</div>
 <div class="row"><button id="ro">REINICIAR FASE</button><button class="s" id="mo">MENU</button></div></div></div>
 <div class="ov" id="win"><div class="pnl"><h1>VITÓRIA!</h1><div>Você derrotou o Monstro da Fome. Nenhuma criança ficará com fome!</div><div id="wst"></div>
@@ -422,7 +419,7 @@ mk.setAttribute('transform',`translate(${x} ${y+14-(mv?Math.abs(sn)*3:0)}) scale
 if(u>=1)$('mkb').setAttribute('fill',LV[b].obi);else window.mapRaf=requestAnimationFrame(run)};
 window.mapRaf=requestAnimationFrame(run)}
 function start(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();coins=0;tTotal=0;swordsGot=0;vidas=3;foodAll=0;fgot={};P=null;lv=0;E=[];items=[];proj=[];parts=[];fx=[];dmgN=[];shop=null;bossRef=null;cam=0;st='trans';mapShow(0,0,'SUA JORNADA COMEÇA!')}
-$('dn').onclick=()=>{st='trans';mapShow(lv,lv+1,'FAIXA '+LV[lv+1].n.toUpperCase()+' CONQUISTADA!')};$('dr').onclick=()=>startLv(lv);$('b1').onclick=()=>show('como');$('b2').onclick=()=>show('creds');$('v1').onclick=()=>menu();$('v2').onclick=()=>menu();
+$('dn').onclick=()=>{st='trans';mapShow(lv,lv+1,'FAIXA '+LV[lv+1].n.toUpperCase()+' CONQUISTADA!')};$('dr').onclick=()=>startLv(lv);$('b2').onclick=()=>show('creds');$('v2').onclick=()=>menu();
 const SV='estrelaManha.v2';
 function save(n){try{localStorage.setItem(SV,JSON.stringify({lv:n,coins,foodAll,swordsGot,t:tTotal,vidas,fg:fgot,gen}))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem(SV))}catch(e){return null}}
