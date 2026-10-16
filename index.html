@@ -123,7 +123,7 @@ const COL={thief:{gi:'#3b3452',obi:'#222',skin:'#d9a273',hair:'#111'},ninja:{gi:
 let st='title',lv=0,LEN=1600,P,E=[],items=[],proj=[],parts=[],fx=[],dmgN=[],cam=0,msg='',msgT=0,coins=0,tTotal=0,swordsGot=0,kills=0,swordFound=0,surv=0,freeze=0,shake=0,flash=0,spawnT=0,endT=0,kiaiT=0,shopCd=0,shop=null,bossRef=null,br=1,lastT=performance.now(),pa=0,pd=0,checkpointX=0;
 const K={l:0,r:0,u:0,a:0,x:0};
 const say=(s,t=2500)=>{msg=s;msgT=t};
-const newP=()=>({x:60,y:GY,vx:0,vy:0,dir:1,hp:3,mx:3,inv:0,atk:null,q:0,roll:0,rollCd:0,hurt:0,dead:0,sw:null,t:0,hold:0,chg:0,trail:0,kcd:0,special:0,secret:0});
+const newP=()=>({x:60,y:GY,vx:0,vy:0,dir:1,hp:3,mx:3,inv:0,atk:null,q:0,roll:0,rollCd:0,rollCdMax:0,hurt:0,dead:0,sw:null,t:0,hold:0,chg:0,trail:0,kcd:0,special:0,secret:0});
 var vidas=3,obs=[],foodN=0,foodAll=0,fgot={},combo=0,comboT=0,foodStep=0;
 const OB=[['spk'],['spk','fall'],['fall','spk'],['fire','spk'],['spk','fire'],['fall','fire'],['spk','fall'],['spk','fire','fall']];
 function mkObs(i){obs=[];const n=i===LV.length-1?3:Math.min(3+i*2,12),t=OB[i];for(let k=0;k<n;k++){const x=380+(LEN-620)*(k+.5)/n+rnd(-30,30);if(shop&&Math.abs(x-shop.x)<60)continue;obs.push({t:t[k%t.length],x,ph:rnd(0,2600)})}}
@@ -267,7 +267,7 @@ function startAtk(n){P.atk={n,f:0,t:0,did:0};P.q=0;if(P.sw)P.trail=120;if(n==='k
 function press(){
 if(P.hurt>0)return;
 if(P.roll>0){
- if(lv>=2){P.roll=0;P.rollCd=500;startAtk(P.y<GY?'aereo':'soco1');say('ESQUIVA OFENSIVA!',900);spark(P.x+P.dir*14,GY-25,'#ffd23f',6);}
+ if(lv>=2){P.roll=0;P.rollCd=500;P.rollCdMax=500;startAtk(P.y<GY?'aereo':'soco1');say('ESQUIVA OFENSIVA!',900);spark(P.x+P.dir*14,GY-25,'#ffd23f',6);}
  return;
 }
 if(shop&&Math.abs(P.x-shop.x)<45&&coins>=50&&shopCd<=0&&!P.sw){shopCd=700;coins-=50;if(Math.random()<.7)equip('wak');else{coins+=50;say('A espada foi longe... tente de novo.');num(shop.x,GY-60,'escapou!','#bbb')}return}
@@ -281,7 +281,7 @@ else{st='over';show('over');SFX.over();}
 P.t+=dt;P.kcd=Math.max(0,P.kcd-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.rollCd=Math.max(0,P.rollCd-dt);P.trail=Math.max(0,P.trail-dt);shopCd=Math.max(0,shopCd-dt);
 const gr=P.y>=GY;
 if(pa){pa=0;press()}
-if(pd){pd=0;if(P.rollCd<=0&&(!P.atk||P.atk.f>=AT[P.atk.n].h)&&P.hurt<=0&&gr){P.atk=null;P.q=0;P.roll=300;P.rollCd=700;SFX.swing()}}
+if(pd){pd=0;if(P.rollCd<=0&&(!P.atk||P.atk.f>=AT[P.atk.n].h)&&P.hurt<=0&&gr){P.atk=null;P.q=0;P.roll=300;P.rollCd=700;P.rollCdMax=700;SFX.swing()}}
 if(K.a&&!P.chg&&P.hold&&performance.now()-P.hold>500&&P.hurt<=0&&P.roll<=0&&P.kcd<=0){P.chg=1;startAtk('kiai')}
 if(P.roll>0){P.roll-=dt;P.vx=P.dir*5.2}
 else if(P.hurt<=0){const a=K.r-K.l;if(a&&!P.atk)P.dir=a;P.vx+=a*.7*(P.atk?.3:1)*k;P.vx*=Math.pow(.82,k);if(K.u&&gr){P.vy=-8.2;SFX.jump();spark(P.x-P.dir*3,GY-1,'#d8cba8',4)}}
@@ -408,6 +408,7 @@ for(let i=0;i<3;i++)kicon(104+i*11,8,i<vidas?'#ffd23f':'#4a3a1a');
 cx.fillStyle='#000';cx.fillRect(8,32,26,12);cx.fillStyle=LV[lv].obi;cx.fillRect(10,34,22,8);cx.strokeStyle='rgba(255,255,255,.4)';cx.lineWidth=1;cx.strokeRect(10.5,34.5,21,7);tx('Faixa '+LV[lv].n,40,43);
 cx.fillStyle='rgba(184,134,11,.3)';cx.beginPath();cx.arc(15,58,8,0,7);cx.fill();cx.fillStyle='#b8860b';cx.beginPath();cx.arc(15,58,6,0,7);cx.fill();cx.fillStyle='#ffd23f';cx.beginPath();cx.arc(15,58,4,0,7);cx.fill();cx.fillStyle='rgba(255,255,255,.6)';cx.fillRect(13,55,1,1);tx('x'+coins,28,63,'#ffd23f');
 cx.fillStyle='#000';cx.fillRect(8,110,64,8);cx.strokeStyle='rgba(255,255,255,.35)';cx.strokeRect(8.5,110.5,63,7);const kf=1-P.kcd/4000;cx.fillStyle=P.kcd>0?'#777':`rgb(255,${80+Math.sin(performance.now()/120)*40|0},82)`;cx.fillRect(9,111,62*kf,6);if(P.kcd<=0){cx.fillStyle='rgba(255,210,63,.5)';cx.fillRect(9,111,62,2)}tx('気合',74,118,P.kcd<=0?'#ffd23f':'#fff','left',9);
+cx.fillStyle='#000';cx.fillRect(8,96,64,8);cx.strokeStyle='rgba(255,255,255,.35)';cx.strokeRect(8.5,96.5,63,7);const rf=P.rollCdMax>0?clamp(1-P.rollCd/P.rollCdMax,0,1):1;cx.fillStyle=P.rollCd>0?'#777':'#4fc3f7';cx.fillRect(9,97,62*rf,6);if(P.rollCd<=0){cx.fillStyle='rgba(79,195,247,.5)';cx.fillRect(9,97,62,2)}tx('esquiva',74,104,P.rollCd<=0?'#4fc3f7':'#fff','left',9);
 if(P.sw){const f=P.sw.dur/P.sw.max;cx.strokeStyle=P.sw.c;cx.lineWidth=3;cx.beginPath();cx.moveTo(8,86);cx.lineTo(22,74);cx.stroke();cx.fillStyle='#000';cx.fillRect(28,74,72,10);cx.strokeStyle='rgba(255,255,255,.3)';cx.lineWidth=1;cx.strokeRect(28.5,74.5,71,9);cx.fillStyle=`rgb(${255*(1-f)|0},${200*f+40|0},50)`;cx.fillRect(30,76,68*f,6);tx(P.sw.n,8,100,'#fff','left',11)}
 tx(obj(),W/2,24,'#fff','center');
 tx(`Fase ${lv+1}/${LV.length}`,W-98,24,'#fff','right');tx('Comida '+foodN+'/3',W-98,64,'#8bc34a','right');
