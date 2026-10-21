@@ -930,51 +930,66 @@ function construirBambuzal() {
 
 // --- VILAREJO (centro de serviços; sem inimigos) ---
 const CASAS = [
-  { id: 'dojo',       mapa: 'vilarejo', x: 5,  y: 3,  w: 4, d: 3, H: 30, tel: '#b8453a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Dojo',        alvo: 'dojo' },
-  { id: 'biblioteca', mapa: 'vilarejo', x: 12, y: 3,  w: 3, d: 3, H: 30, tel: '#3f6fb0', par: ['#e9dcc0', '#d6c6a4'], nome: 'Biblioteca',  alvo: 'biblioteca' },
-  { id: 'arena',      mapa: 'vilarejo', x: 19, y: 3,  w: 5, d: 3, H: 28, tel: '#8e44ad', par: ['#e0d0b0', '#cdbd9a'], nome: 'Arena Marcial', alvo: 'arena' },
-  { id: 'hospedaria', mapa: 'vilarejo', x: 7,  y: 17, w: 3, d: 3, H: 30, tel: '#2f8f5a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Hospedaria',  alvo: 'hospedaria' },
-  { id: 'cha',        mapa: 'vilarejo', x: 17, y: 17, w: 3, d: 3, H: 28, tel: '#c9892f', par: ['#e9dcc0', '#d6c6a4'], palha: true, nome: 'Casa de Chá', alvo: 'casa_cha' },
-  { id: 'oficina',    mapa: 'vilarejo', x: 22, y: 17, w: 3, d: 3, H: 28, tel: '#6b5b4a', par: ['#d9cdb0', '#c4b896'], palha: true, nome: '', fechada: 'Oficina de artesãos: fechada por enquanto (em breve).' },
+  { id: 'dojo',       mapa: 'vilarejo', x: 5,  y: 4,  w: 4, d: 3, H: 30, tel: '#b8453a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Dojo',        alvo: 'dojo' },
+  { id: 'biblioteca', mapa: 'vilarejo', x: 20, y: 4,  w: 3, d: 3, H: 30, tel: '#3f6fb0', par: ['#e9dcc0', '#d6c6a4'], nome: 'Biblioteca',  alvo: 'biblioteca' },
+  { id: 'arena',      mapa: 'vilarejo', x: 36, y: 4,  w: 5, d: 3, H: 28, tel: '#8e44ad', par: ['#e0d0b0', '#cdbd9a'], nome: 'Arena Marcial', alvo: 'arena' },
+  { id: 'hospedaria', mapa: 'vilarejo', x: 6,  y: 29, w: 3, d: 3, H: 30, tel: '#2f8f5a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Hospedaria',  alvo: 'hospedaria' },
+  { id: 'cha',        mapa: 'vilarejo', x: 16, y: 29, w: 3, d: 3, H: 28, tel: '#c9892f', par: ['#e9dcc0', '#d6c6a4'], palha: true, nome: 'Casa de Chá', alvo: 'casa_cha' },
+  { id: 'oficina',    mapa: 'vilarejo', x: 37, y: 29, w: 3, d: 3, H: 28, tel: '#6b5b4a', par: ['#d9cdb0', '#c4b896'], palha: true, nome: '', fechada: 'Oficina de artesãos: fechada por enquanto (em breve).' },
   { id: 'flor_de_liz', mapa: 'cerejeiras', x: 19, y: 15, w: 3, d: 3, H: 26, tel: '#d8608f', par: ['#f4e8ec', '#e2d2d8'], nome: 'Flor de Liz', alvo: 'flor_de_liz' },
   { id: 'meditacao',  mapa: 'templos', x: 19, y: 3, w: 3, d: 3, H: 30, tel: '#a63a3a', par: ['#e6dcc6', '#d2c7ac'], tiers: 3, nome: 'Templo de Meditação', alvo: 'meditacao' },
-  { id: 'salao',      mapa: 'gt_patio', x: 12, y: 2, w: 6, d: 4, H: 36, tel: '#d4a020', par: ['#ece2cc', '#d8cdb2'], nome: 'Salão de Graduação', alvo: 'salao',
+  { id: 'salao',      mapa: 'gt_patio', x: 17, y: 2, w: 6, d: 4, H: 36, tel: '#d4a020', par: ['#ece2cc', '#d8cdb2'], nome: 'Salão de Graduação', alvo: 'salao',
     req: { faixa: 2, msg: 'O salão de graduação recebe quem tem faixa laranja ou superior.' } },
-  { id: 'arena_mestres', mapa: 'gt_patio', x: 5, y: 5, w: 5, d: 4, H: 34, tel: '#b8453a', par: ['#ece2cc', '#d8cdb2'], nome: 'Arena dos Grandes Mestres', alvo: 'arena_mestres',
+  { id: 'arena_mestres', mapa: 'gt_patio', x: 3, y: 6, w: 5, d: 4, H: 34, tel: '#b8453a', par: ['#ece2cc', '#d8cdb2'], nome: 'Arena dos Grandes Mestres', alvo: 'arena_mestres',
     req: { faixa: 3, msg: 'Só faixas verdes ou superiores entram na arena dos grandes mestres.' } },
-  { id: 'arquivo',    mapa: 'gt_patio', x: 20, y: 5, w: 4, d: 4, H: 34, tel: '#3f6fb0', par: ['#ece2cc', '#d8cdb2'], nome: 'Arquivo de Técnicas', alvo: 'arquivo',
+  { id: 'arquivo',    mapa: 'gt_patio', x: 32, y: 6, w: 4, d: 4, H: 34, tel: '#3f6fb0', par: ['#ece2cc', '#d8cdb2'], nome: 'Arquivo de Técnicas', alvo: 'arquivo',
     req: { faixa: 1, msg: 'O arquivo abre a partir da faixa amarela.' } }
 ];
 
+// casas de moradores (só enfeite, sem porta pra entrar) dentro do vilarejo
+const CASAS_DECO = [
+  { x: 4, y: 13, w: 3, d: 3, H: 26, tel: '#6b5b4a', par: ['#d9cdb0', '#c4b896'], palha: true, var: 1 },
+  { x: 12, y: 14, w: 3, d: 2, H: 24, tel: '#3f6fb0', par: ['#e9dcc0', '#d6c6a4'], var: 2 },
+  { x: 33, y: 13, w: 3, d: 3, H: 28, tel: '#2f8f5a', par: ['#e9dcc0', '#d6c6a4'], var: 3 },
+  { x: 41, y: 14, w: 3, d: 2, H: 24, tel: '#c9892f', par: ['#e9dcc0', '#d6c6a4'], palha: true, var: 4 },
+  { x: 30, y: 23, w: 3, d: 2, H: 24, tel: '#8a7a5a', par: ['#d9cdb0', '#c4b896'], palha: true, var: 5 },
+  { x: 41, y: 23, w: 3, d: 3, H: 26, tel: '#b8453a', par: ['#ece2cc', '#d8cdb2'], var: 6 },
+  { x: 28, y: 29, w: 3, d: 2, H: 24, tel: '#8e44ad', par: ['#e9dcc0', '#d6c6a4'], var: 7 },
+  { x: 4, y: 22, w: 2, d: 2, H: 22, tel: '#7a6a4a', par: ['#d9cdb0', '#c4b896'], palha: true, var: 8 }
+];
 function colocarCasa(m, c) {
   for (let j = c.y; j < c.y + c.d; j++) for (let i = c.x; i < c.x + c.w; i++) m.bloq[j][i] = true;
-  m.objs.push({ tipo: 'casa', x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01 });
+  m.objs.push({ tipo: 'casa', x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
   if (c.alvo) m.exits.push({ x: c.x + c.w / 2 - .5, y: c.y + c.d + .05, w: 1, h: .6, alvo: c.alvo, nome: c.nome, req: c.req });
-  else placa(m, c.x + c.w / 2 - 1.5, c.y + c.d + .5, c.fechada);
+  else if (c.fechada) placa(m, c.x + c.w / 2 - 1.5, c.y + c.d + .5, c.fechada);
 }
 function construirVilarejo() {
-  const W = 32, H = 26, m = novoMapa('vilarejo', 'Vilarejo', W, H, false), rnd = mulberry32(21), res = [];
-  trilha(m, 19, 12, 30, 12); trilha(m, 0, 12, 11, 12); trilha(m, 15, 7, 15, 9); trilha(m, 4, 6, 25, 6);
-  trilha(m, 15, 16, 15, 20); trilha(m, 5, 20, 24, 20); trilha(m, 26, 6, 26, 0);
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (Math.hypot(i + .5 - 15.5, j + .5 - 12.5) < 4.2) m.tiles[j][i] = T.PEDRA;
+  // 48x40: prédios com interação bem afastados uns dos outros; casas de moradores no meio
+  const W = 48, H = 40, m = novoMapa('vilarejo', 'Vilarejo', W, H, false), rnd = mulberry32(21), res = [];
+  trilha(m, 0, 20, 47, 20); trilha(m, 4, 8, 44, 8); trilha(m, 4, 33, 44, 33);          // rua principal, rua de cima e rua de baixo
+  trilha(m, 24, 8, 24, 33); trilha(m, 42, 0, 42, 8);                                     // rua do meio e saída para o Outono
+  [[5, 16, 5, 20], [13, 16, 13, 20], [34, 16, 34, 20], [42, 16, 42, 20], [31, 25, 31, 21], [42, 26, 42, 33], [29, 31, 29, 33], [4, 24, 4, 33]].forEach(t => trilha(m, t[0], t[1], t[2], t[3]));
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (Math.hypot(i + .5 - 24.5, j + .5 - 20.5) < 5.2) m.tiles[j][i] = T.PEDRA;
   CASAS.filter(c => c.mapa === 'vilarejo').forEach(c => colocarCasa(m, c));
-  m.exits.push({ x: 31.1, y: 11, w: .9, h: 3, alvo: 'bambuzal', sx: 1.8, sy: 14, nome: 'Bambuzal' });
-  m.exits.push({ x: 0, y: 12, w: .9, h: 2, alvo: 'cerejeiras', sx: 26.2, sy: 13.9, nome: 'Caminhos das Cerejeiras' });
-  m.exits.push({ x: 26, y: 0, w: 2, h: .9, alvo: 'outono', sx: 15.5, sy: 25.6, nome: 'Floresta do Outono' });
-  m.spawn = { x: 15.5, y: 14.8 };
-  m.objs.push({ tipo: 'fonte', x: 15.5, y: 12.5, r: .9, spr: SPR.fonte });
-  [[12.5, 9.5], [18.5, 9.5], [12.5, 15.5], [18.5, 15.5]].forEach(([x, y]) => m.objs.push({ tipo: 'lanterna', x, y, r: .15, spr: SPR.lanterna }));
-  [[12, 12.5], [19, 12.5]].forEach(([x, y]) => m.objs.push({ tipo: 'banco', x, y, r: .5, spr: SPR.banco }));
-  placa(m, 2.5, 11.2, '← Caminhos das Cerejeiras.');
-  placa(m, 24.8, 4.6, '↑ Floresta do Outono.');
-  placa(m, 28.5, 10.8, 'Leste → Bambuzal. Lá há lutadores rebeldes. Treine antes!');
-  npc(m, { nome: 'Aldeã Mei', x: 11.2, y: 10.4, dir: 2, pal: PAL_MEI, fala: 'mei' });
-  npc(m, { nome: 'Aldeão Jun', x: 21.5, y: 14.8, dir: 3, pal: PAL_JUN, fala: 'jun' });
-  res.push({ x: 11.2, y: 10.4, r: 1 }, { x: 21.5, y: 14.8, r: 1 }, { x: 15.5, y: 14.8, r: 1.5 });
+  CASAS_DECO.forEach(c => { colocarCasa(m, Object.assign({ deco: true }, c)); res.push({ x: c.x + c.w / 2, y: c.y + c.d / 2, r: Math.max(c.w, c.d) / 2 + 1.2 }); });
+  CASAS.filter(c => c.mapa === 'vilarejo').forEach(c => res.push({ x: c.x + c.w / 2, y: c.y + c.d + 1, r: 2 }));   // frente das portas livre
+  m.exits.push({ x: 47.1, y: 19, w: .9, h: 3, alvo: 'bambuzal', sx: 1.8, sy: 14, nome: 'Bambuzal' });
+  m.exits.push({ x: 0, y: 20, w: .9, h: 2, alvo: 'cerejeiras', sx: 26.2, sy: 13.9, nome: 'Caminhos das Cerejeiras' });
+  m.exits.push({ x: 42, y: 0, w: 2, h: .9, alvo: 'outono', sx: 15.5, sy: 25.6, nome: 'Floresta do Outono' });
+  m.spawn = { x: 24.5, y: 24.6 };
+  m.objs.push({ tipo: 'fonte', x: 24.5, y: 20.5, r: .9, spr: SPR.fonte });
+  [[20.5, 16.5], [28.5, 16.5], [20.5, 24.5], [28.5, 24.5], [9, 9.6], [30, 9.6], [9, 32.4], [33, 32.4]].forEach(([x, y]) => m.objs.push({ tipo: 'lanterna', x, y, r: .15, spr: SPR.lanterna }));
+  [[21, 18.2], [28, 23]].forEach(([x, y]) => m.objs.push({ tipo: 'banco', x, y, r: .5, spr: SPR.banco }));
+  placa(m, 3, 18.6, '← Caminhos das Cerejeiras.');
+  placa(m, 45, 4.5, '↑ Floresta do Outono.');
+  placa(m, 44.5, 18.4, 'Leste → Bambuzal. Lá há lutadores rebeldes. Treine antes!');
+  npc(m, { nome: 'Aldeã Mei', x: 19.4, y: 15.6, dir: 2, pal: PAL_MEI, fala: 'mei' });
+  npc(m, { nome: 'Aldeão Jun', x: 30.2, y: 18.6, dir: 3, pal: PAL_JUN, fala: 'jun' });
+  res.push({ x: 19.4, y: 15.6, r: 1 }, { x: 30.2, y: 18.6, r: 1 }, { x: 24.5, y: 24.6, r: 1.5 });
   bambusBorda(m, rnd, res);
-  espalhar(m, rnd, res, 14, .38, () => ({ tipo: 'arbusto', spr: SPR.arbusto[Math.floor(rnd() * 2)] }));
-  espalhar(m, rnd, res, 6, .42, () => ({ tipo: 'pedra', spr: SPR.pedra[Math.floor(rnd() * 2)] }));
-  floresChao(m, rnd, 60);
+  espalhar(m, rnd, res, 24, .38, () => ({ tipo: 'arbusto', spr: SPR.arbusto[Math.floor(rnd() * 2)] }));
+  espalhar(m, rnd, res, 10, .42, () => ({ tipo: 'pedra', spr: SPR.pedra[Math.floor(rnd() * 2)] }));
+  floresChao(m, rnd, 130);
   return m;
 }
 
@@ -1216,22 +1231,28 @@ const CFG = {
   },
   // Grande Templo: pátio principal (as outras áreas são interiores liberados por faixa)
   gt_patio: () => {
+    // 40x34: os três prédios ficam bem separados (o resto do pátio foi deslocado +5, +2)
+    const D = (x, y) => [x + 5, y + 2];
     const fixos = [['torii', 15, 28.2], ['estatua', 9, 16], ['estatua', 21, 16], ['cerejeira', 4, 21], ['cerejeira', 26, 21], ['cerejeira', 6.8, 23.4], ['cerejeira', 23.2, 23.4]];
     [14, 20, 25].forEach(y => { fixos.push(['coluna', 12.5, y]); fixos.push(['coluna', 17.5, y]); });
     [17, 22.5].forEach(y => { fixos.push(['lanternaPedra', 12.5, y]); fixos.push(['lanternaPedra', 17.5, y]); });
+    fixos.forEach(f => { [f[1], f[2]] = D(f[1], f[2]); });
+    fixos.push(['lanternaPedra', 4, 11.4], ['lanternaPedra', 7, 11.4], ['lanternaPedra', 18.6, 7.4], ['lanternaPedra', 21.4, 7.4], ['lanternaPedra', 32.4, 11.4], ['lanternaPedra', 35.6, 11.4],
+      ['cerejeira', 12.5, 5], ['cerejeira', 27.5, 5], ['cerejeira', 2.5, 30], ['cerejeira', 37.5, 30], ['estandarte', 11, 9], ['estandarte', 29, 9]);
+    const N = n => Object.assign(n, { x: n.x + 5, y: n.y + 2 });
     return {
-      id: 'gt_patio', nome: 'Grande Templo • Pátio', w: 30, h: 30, seed: 91, base: T.LAJE, spawn: [15, 27.2],
-      areas: [{ tipo: T.GRAMA, c: [4, 21, 4.2, 4.2] }, { tipo: T.GRAMA, c: [26, 21, 4.2, 4.2] }],
+      id: 'gt_patio', nome: 'Grande Templo • Pátio', w: 40, h: 34, seed: 91, base: T.LAJE, spawn: [20, 31],
+      areas: [{ tipo: T.GRAMA, c: [9, 23, 4.2, 4.2] }, { tipo: T.GRAMA, c: [31, 23, 4.2, 4.2] }],
       casas: ['salao', 'arena_mestres', 'arquivo'],
       saidas: [
-        { x: 13, y: 29.1, w: 4, h: .9, alvo: 'tangerinas', sx: 15, sy: 2.6, nome: 'Floresta das Tangerinas' },
-        { x: 29.1, y: 14, w: .9, h: 3, alvo: 'jardins', sx: 2.8, sy: 10.2, nome: 'Jardins de Meditação' }
+        { x: 18, y: 33.1, w: 4, h: .9, alvo: 'tangerinas', sx: 15, sy: 2.6, nome: 'Floresta das Tangerinas' },
+        { x: 39.1, y: 16, w: .9, h: 3, alvo: 'jardins', sx: 2.8, sy: 10.2, nome: 'Jardins de Meditação' }
       ],
-      fixos, npcs: [{ nome: 'Rita', x: 15, y: 16, dir: 2, pal: PAL_RITA, fala: 'rita' },
-        { nome: 'Ayame', x: 20.5, y: 12.6, dir: 3, pal: PAL_NPC.ayame, fala: 'ayame' }, { nome: 'Luiza', x: 9.4, y: 12.6, dir: 1, pal: PAL_NPC.luiza, fala: 'luiza' },
-        { nome: 'Lucas', x: 9.2, y: 22.2, dir: 1, pal: PAL_NPC.lucas, fala: 'lucas' }, { nome: 'Levi', x: 21, y: 21.6, dir: 3, pal: PAL_NPC.levi, fala: 'levi' },
-        { nome: 'Maya', x: 22.6, y: 19.2, dir: 3, pal: PAL_NPC.maya, fala: 'maya' }],
-      placas: [[12.6, 26.6, 'Grande Templo das Artes Marciais. Cada área abre conforme a sua faixa.']],
+      fixos, npcs: [N({ nome: 'Rita', x: 15, y: 16, dir: 2, pal: PAL_RITA, fala: 'rita' }),
+        N({ nome: 'Ayame', x: 20.5, y: 12.6, dir: 3, pal: PAL_NPC.ayame, fala: 'ayame' }), N({ nome: 'Luiza', x: 9.4, y: 12.6, dir: 1, pal: PAL_NPC.luiza, fala: 'luiza' }),
+        N({ nome: 'Lucas', x: 9.2, y: 22.2, dir: 1, pal: PAL_NPC.lucas, fala: 'lucas' }), N({ nome: 'Levi', x: 21, y: 21.6, dir: 3, pal: PAL_NPC.levi, fala: 'levi' }),
+        N({ nome: 'Maya', x: 22.6, y: 19.2, dir: 3, pal: PAL_NPC.maya, fala: 'maya' })],
+      placas: [[17.6, 28.6, 'Grande Templo das Artes Marciais. Cada área abre conforme a sua faixa.']],
       borda: 'cerejeira', bordaPasso: .9, flores: 0,
       amb: { cores: ['#ffc0d6', '#ffffff'], kx: .5, ky: .5, t: 2 }
     };
@@ -1312,7 +1333,7 @@ const LIGACOES = [
 // Regras de decoração/inimigos das regiões que não usam a tabela CFG
 const REGRAS_EXTRA = {
   bambuzal: { nome: 'Bambuzal', base: T.GRAMA, tam: [26, 26], spawn: [3.5, 13.5], borda: 'bambu', grupos: [['bambu', 16, .16, 3, 7]], espalhar: [['pedra', 10], ['arbusto', 14], ['toco', 4]], flores: 70, inimigos: [['bandido'], ['bandido'], ['bandido'], ['bandido'], ['bandido'], ['veterano']] },
-  vilarejo: { nome: 'Vilarejo', base: T.GRAMA, tam: [32, 26], spawn: [15.5, 14.8], borda: 'bambu', espalhar: [['arbusto', 14], ['pedra', 6], ['arvore', 4]], flores: 60, inimigos: [] }
+  vilarejo: { nome: 'Vilarejo', base: T.GRAMA, tam: [48, 40], spawn: [24.5, 24.6], borda: 'bambu', espalhar: [['arbusto', 14], ['pedra', 6], ['arvore', 4]], flores: 60, inimigos: [] }
 };
 const SEM_INIMIGOS = { vilarejo: 1, gt_patio: 1, jardins: 1 };
 const DECOR_EXTRA = {
@@ -1571,16 +1592,27 @@ function construirMundo() {
       reservar(M, x, y, 4.2); k++;
     }
   }
-  // vilarejo maior: casas de moradores nas partes novas (fechadas)
-  { const R = M.cel[CELULA.vilarejo[1]][CELULA.vilarejo[0]], cores = ['#b8453a', '#3f6fb0', '#2f8f5a', '#c9892f', '#8e44ad', '#6b5b4a'];
-    for (let k = 0, t = 0; k < 8 && t < 300; t++) {
-      const x = Math.floor(R.x0 + 4 + rnd() * (RW - 10)), y = Math.floor(R.y0 + 4 + rnd() * (RW - 10)), n = R.nucleo;
-      if (!(x + 5 < n[0] || x - 2 > n[2] || y + 6 < n[1] || y - 2 > n[3])) continue;
-      let ok = true; for (let j = y - 1; j < y + 5 && ok; j++) for (let i = x - 1; i < x + 4 && ok; i++) if (M.tiles[j][i] !== T.GRAMA || M.bloq[j][i] || reservado(M, i + .5, j + .5, .5)) ok = false;
-      if (!ok) continue;
-      const c = { x, y, w: 3, d: 3, H: 26 + (k % 3) * 2, tel: cores[k % cores.length], par: ['#e9dcc0', '#d6c6a4'], palha: k % 3 === 1, fechada: 'Casa de moradores do vilarejo.' };
-      colocarCasa(M, c); reservar(M, x + 1.5, y + 1.5, 3.2);
-      caminhoL(M, [[x + 1, y + 3.6], [x + 1, y + 5]], T.TERRA); k++;
+  // casas de moradores espalhadas pelo mundo (só enfeite); ficam longe dos prédios com interação
+  { const QTD = { vilarejo: 14, cerejeiras: 5, tangerinas: 4, outono: 4, bambuzal: 4, cachoeira: 3, templos: 2 };
+    const CORES = { vilarejo: ['#b8453a', '#3f6fb0', '#2f8f5a', '#c9892f', '#8e44ad', '#6b5b4a'], cerejeiras: ['#d8608f', '#b8453a', '#8a7a5a'], tangerinas: ['#c9892f', '#e07a2a', '#6b5b4a'],
+      outono: ['#a8432a', '#7a4a2a', '#c9892f'], bambuzal: ['#2f8f5a', '#6b5b4a', '#3f6fb0'], cachoeira: ['#3f8fb0', '#6b5b4a'], templos: ['#a63a3a', '#6b5b4a'] };
+    const casas = () => M.objs.filter(o => o.tipo === 'casa');
+    let vv = 20;
+    for (const id of Object.keys(QTD)) {
+      if (!CELULA[id]) continue;
+      const R = M.cel[CELULA[id][1]][CELULA[id][0]], cores = CORES[id];
+      for (let k = 0, t = 0; k < QTD[id] && t < 500; t++) {
+        const cw = 2 + Math.floor(rnd() * 3) % 3, cd = 2 + Math.floor(rnd() * 2), x = Math.floor(R.x0 + 4 + rnd() * (RW - 8 - cw)), y = Math.floor(R.y0 + 4 + rnd() * (RW - 9 - cd)), n = R.nucleo;
+        if (!(x + cw + 2 < n[0] || x - 2 > n[2] || y + cd + 3 < n[1] || y - 2 > n[3])) continue;
+        let ok = true; for (let j = y - 1; j < y + cd + 3 && ok; j++) for (let i = x - 1; i < x + cw + 1 && ok; i++) if (M.tiles[j][i] !== R.base || M.bloq[j][i] || reservado(M, i + .5, j + .5, .5)) ok = false;
+        if (!ok) continue;
+        const cx = x + cw / 2, cy = y + cd / 2;
+        if (casas().some(o => Math.hypot(o.x - cx, o.y - cy) < (o.deco ? 5.5 : 9))) continue;   // casas não grudam (e ficam bem longe das que têm porta)
+        if (M.exits.some(e => Math.hypot(e.x - cx, e.y - cy) < 8)) continue;
+        const palha = rnd() < .45, c = { x, y, w: cw, d: cd, H: 22 + Math.floor(rnd() * 4) * 2 + cw, tel: cores[k % cores.length], par: palha ? ['#d9cdb0', '#c4b896'] : ['#e9dcc0', '#d6c6a4'], palha, var: vv++, deco: true };
+        colocarCasa(M, c); reservar(M, cx, cy, Math.max(cw, cd) / 2 + 2.2);
+        caminhoL(M, [[x + cw / 2 - .5, y + cd + .2], [x + cw / 2 - .5, y + cd + 1.6]], id === 'templos' ? T.LAJE : T.TERRA); k++;
+      }
     }
   }
   prepararChunks(M);
@@ -4716,13 +4748,83 @@ const SP = {
     g.strokeStyle = 'rgba(120,90,30,.6)'; g.lineWidth = .6; [21, 27].forEach(y => { g.beginPath(); g.moveTo(6, y); g.lineTo(22, y); g.stroke(); });
     risco(g, 6, 15, 22, 15, 1.4, '#a8341f'); risco(g, 6, 33, 22, 33, 1.4, '#a8341f');
   }),
-  boneco: () => hi(34, 54, 17, 48, g => {
-    sombraSuave(g, 18, 48, 10, 3, .35); madeira(g, 14, 14, 5, 34, '#8a5a30', 1.4);
-    retR(g, 6, 16, 22, 18, 4); contorno(g, lin(g, 6, 0, 28, 0, ['#f0dd96', '#d6c27a', '#a58f46']), .9, '#5e4a1c');
-    g.strokeStyle = 'rgba(110,85,30,.6)'; g.lineWidth = .7; [22, 27].forEach(y => { g.beginPath(); g.moveTo(6, y); g.lineTo(28, y); g.stroke(); });
-    g.beginPath(); g.arc(17, 8, 7, 0, TAU); contorno(g, lin(g, 10, 0, 24, 0, ['#f6d4b0', '#e0b890', '#bf9068']), .9, '#6b4423');
-    risco(g, 13, 7, 15.5, 7, 1.3, OL); risco(g, 19, 7, 21.5, 7, 1.3, OL);
-    retR(g, 9, 1.6, 16, 3.4, 1.6); contorno(g, '#d0382c', .7, '#601410');
+  boneco: () => hi(48, 70, 24, 63, g => {                          // boneco de treino: poste, palha amarrada, almofada com alvo, braços e cabeça de couro
+    const r = mul(4242);
+    const esf = (x, y, rr, c) => { const gr = g.createRadialGradient(x - rr * .35, y - rr * .4, rr * .1, x, y, rr); gr.addColorStop(0, cla(c, .45)); gr.addColorStop(.55, c); gr.addColorStop(1, esc(c, .5)); g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fillStyle = gr; g.fill(); };
+    sombraSuave(g, 26, 63, 15, 4.4, .45);
+    // base de pedra redonda (com textura e musgo)
+    g.beginPath(); g.ellipse(24, 61, 11.5, 4.2, 0, 0, TAU); g.fillStyle = '#4a4656'; g.fill();
+    g.beginPath(); g.moveTo(12.5, 57.6); g.lineTo(12.5, 61); g.ellipse(24, 61, 11.5, 4.2, 0, Math.PI, 0, true); g.lineTo(35.5, 57.6); g.closePath();
+    g.fillStyle = lin(g, 12, 0, 36, 0, ['#9a95a6', '#bdb8c6', '#8a8598', '#5c586c']); g.fill();
+    g.beginPath(); g.ellipse(24, 57.6, 11.5, 4.2, 0, 0, TAU); g.fillStyle = lin(g, 0, 53, 0, 62, ['#d6d2de', '#aaa6b8']); g.fill(); g.lineWidth = .6; g.strokeStyle = '#45415a'; g.stroke();
+    g.save(); g.beginPath(); g.ellipse(24, 59, 11.5, 5.8, 0, 0, TAU); g.clip(); texPedraSobre(g, 12, 53, 24, 12, 77, true); g.restore();
+    // pés de madeira em cruz (cunhas que seguram o poste)
+    [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sy]) => { g.beginPath(); g.moveTo(24 + sx * 2.4, 57 + sy * .6); g.lineTo(24 + sx * 8, 57.6 + sy * 2.2); g.lineTo(24 + sx * 8, 56.2 + sy * 2.2); g.lineTo(24 + sx * 2.4, 51.5 + sy * .4); g.closePath(); contorno(g, lin(g, 24, 51, 24 + sx * 8, 58, ['#a8723c', '#7a4a22', '#4e2c14']), .5, '#2e1a0c'); });
+    // poste (cilindro de madeira com veios e cintas de ferro)
+    const posteX = 21.2, posteW = 5.6;
+    g.fillStyle = lin(g, posteX, 0, posteX + posteW, 0, ['#4a2c14', '#9a6636', '#c08850', '#7a4a22', '#3a200e']); g.fillRect(posteX, 12, posteW, 46);
+    g.save(); g.beginPath(); g.rect(posteX, 12, posteW, 46); g.clip(); g.strokeStyle = 'rgba(40,20,8,.45)'; g.lineWidth = .35;
+    for (let k = 0; k < 5; k++) { const x = posteX + .6 + k * 1.1; g.beginPath(); g.moveTo(x, 12); for (let y = 12; y <= 58; y += 4) g.lineTo(x + Math.sin(y * .3 + k) * .4, y); g.stroke(); }
+    g.beginPath(); g.ellipse(posteX + 2.4, 47, .9, 1.6, 0, 0, TAU); g.strokeStyle = 'rgba(40,20,8,.6)'; g.stroke(); g.restore();   // nó da madeira
+    [53, 44.5].forEach(y => { g.fillStyle = lin(g, posteX - .4, 0, posteX + posteW + .4, 0, ['#2a2832', '#6e6a7c', '#3a3844', '#1a1820']); g.fillRect(posteX - .4, y, posteW + .8, 1.8); g.fillStyle = '#b8b4c4'; g.fillRect(posteX + .8, y + .6, .7, .6); g.fillRect(posteX + 3.6, y + .6, .7, .6); });
+    // perna de madeira (pino baixo para chutes)
+    const pino = (x0, y0, x1, y1, esp) => { risco(g, x0, y0, x1, y1, esp + 1.2, '#2e1a0c'); risco(g, x0, y0, x1, y1, esp, '#8a5a2e'); risco(g, x0, y0 - esp * .25, x1, y1 - esp * .25, esp * .35, '#c99560'); };
+    pino(26, 41, 34, 44.5, 2.6);
+    g.beginPath(); g.ellipse(34.6, 44.7, 1.9, 1.7, 0, 0, TAU); contorno(g, lin(g, 33, 43, 36, 46, ['#e6cf86', '#b8954a']), .5, '#5e4a1c');   // ponta enrolada em palha
+    // braços (pinos de madeira com ponta de palha amarrada)
+    const braco = (x0, y0, x1, y1) => { pino(x0, y0, x1, y1, 2.8); esf(x1, y1, 2.3, '#d8bc6a'); g.save(); g.beginPath(); g.arc(x1, y1, 2.3, 0, TAU); g.clip(); g.strokeStyle = 'rgba(110,80,30,.55)'; g.lineWidth = .3; for (let k = -3; k <= 3; k++) { g.beginPath(); g.moveTo(x1 + k * .7, y1 - 3); g.lineTo(x1 + k * .7 + .5, y1 + 3); g.stroke(); } g.restore(); risco(g, x1 - 2, y1 + .2, x1 + 2, y1 - .2, .6, '#7a2a1a'); };
+    braco(15, 25, 5, 21.5); braco(33, 25, 43, 21.5);
+    // tronco: feixe de palha (cilindro)
+    const tx = 12.5, tw = 23, ty = 17.5, th = 22;
+    const corpo = () => { g.beginPath(); g.moveTo(tx + 2, ty); g.quadraticCurveTo(tx - 1.2, ty + th / 2, tx + 1.4, ty + th); g.lineTo(tx + tw - 1.4, ty + th); g.quadraticCurveTo(tx + tw + 1.2, ty + th / 2, tx + tw - 2, ty); g.closePath(); };
+    corpo(); g.fillStyle = lin(g, tx, 0, tx + tw, 0, ['#6e521c', '#c9a24e', '#f0d88a', '#d8b862', '#a07c34', '#5a4214']); g.fill();
+    g.save(); corpo(); g.clip();
+    for (let k = 0; k < 230; k++) { const x = tx + r() * tw, y = ty + r() * th, len = 1.5 + r() * 3.5; risco(g, x, y, x + (r() - .5) * .6, y + len, .3, r() < .5 ? 'rgba(255,240,180,.55)' : 'rgba(90,64,20,.45)'); }   // fios de palha
+    const gAO = g.createLinearGradient(0, ty, 0, ty + 5); gAO.addColorStop(0, 'rgba(40,24,6,.55)'); gAO.addColorStop(1, 'rgba(40,24,6,0)'); g.fillStyle = gAO; g.fillRect(tx - 2, ty, tw + 4, 5);   // sombra da cabeça
+    g.restore();
+    corpo(); g.lineWidth = .7; g.strokeStyle = '#4e3a12'; g.stroke();
+    // cordas amarrando a palha (curvas = volume)
+    [ty + 2.2, ty + th - 2.2].forEach(y => {
+      g.beginPath(); g.moveTo(tx + .2, y - 1); g.quadraticCurveTo(tx + tw / 2, y + 1.6, tx + tw - .2, y - 1); g.lineWidth = 2.2; g.strokeStyle = '#5a2e14'; g.stroke();
+      g.lineWidth = 1.3; g.strokeStyle = '#a8603a'; g.stroke();
+      for (let k = 0; k < 10; k++) { const t = (k + .5) / 10, x = tx + .2 + (tw - .4) * t, yy = y - 1 + 2.6 * 2 * t * (1 - t) * 1.6 / 1.3; risco(g, x - .5, yy - .8, x + .5, yy + .8, .35, 'rgba(40,16,6,.8)'); }
+    });
+    // pontas de palha soltas saindo em cima e embaixo
+    for (let k = 0; k < 14; k++) { const x = tx + 2 + r() * (tw - 4), up = k < 7; risco(g, x, up ? ty + .5 : ty + th - .5, x + (r() - .5) * 2.4, up ? ty - 1.5 - r() * 2 : ty + th + 1 + r() * 2, .35, r() < .5 ? '#f4e2a0' : '#a8843c'); }
+    // almofada de lona costurada com alvo vermelho
+    retR(g, 16.2, 22.2, 15.6, 13.2, 2.6); contorno(g, lin(g, 16, 22, 32, 36, ['#f6eedc', '#e2d4b2', '#b8a882']), .6, '#6b5a3a');
+    g.save(); retR(g, 16.2, 22.2, 15.6, 13.2, 2.6); g.clip();
+    for (let k = 0; k < 90; k++) { g.fillStyle = r() < .5 ? 'rgba(120,100,60,.18)' : 'rgba(255,255,240,.3)'; g.fillRect(16 + r() * 16, 22 + r() * 14, .5, .5); }   // trama da lona
+    g.beginPath(); g.ellipse(27.5, 33, 4, 2, -.3, 0, TAU); g.fillStyle = 'rgba(110,80,40,.18)'; g.fill();   // mancha de uso
+    g.restore();
+    g.setLineDash([.9, .7]); retR(g, 17.2, 23.2, 13.6, 11.2, 2); g.lineWidth = .4; g.strokeStyle = '#7a5a3a'; g.stroke(); g.setLineDash([]);   // costura
+    [[4.3, '#c42a22'], [3.1, '#f6eedc'], [1.7, '#c42a22']].forEach(([rr, c]) => { g.beginPath(); g.arc(24, 28.8, rr, 0, TAU); g.fillStyle = c; g.fill(); });
+    g.beginPath(); g.arc(24, 28.8, 4.3, 0, TAU); g.lineWidth = .4; g.strokeStyle = '#6a120e'; g.stroke();
+    g.beginPath(); g.arc(23.2, 28, .6, 0, TAU); g.fillStyle = 'rgba(255,220,210,.7)'; g.fill();
+    [[19, 25.5, 21.5, 27.5], [27, 33.2, 29.4, 31.5], [26.5, 24.4, 28.2, 25.6]].forEach(([a, b, c2, d2]) => risco(g, a, b, c2, d2, .35, 'rgba(90,60,30,.6)'));   // arranhões de golpes
+    retR(g, 18.2, 31.8, 3.4, 2.8, .4); contorno(g, '#7a5a8a', .3, '#3a2a40'); g.setLineDash([.5, .5]); retR(g, 18.5, 32.1, 2.8, 2.2, .3); g.lineWidth = .25; g.strokeStyle = '#e8d8f0'; g.stroke(); g.setLineDash([]);   // remendo
+    // pescoço de corda
+    for (let k = 0; k < 4; k++) { g.beginPath(); g.ellipse(24, 16.6 - k * .9, 3.3, .9, 0, 0, TAU); g.fillStyle = k % 2 ? '#a8603a' : '#7a3e1e'; g.fill(); }
+    // cabeça de couro estofada
+    esf(24, 9.4, 7.4, '#c99a62');
+    g.save(); g.beginPath(); g.arc(24, 9.4, 7.4, 0, TAU); g.clip(); g.strokeStyle = 'rgba(90,56,24,.22)'; g.lineWidth = .3;
+    for (let k = -8; k <= 8; k += 1.2) { g.beginPath(); g.moveTo(16, 9.4 + k); g.lineTo(32, 9.4 + k + 1); g.stroke(); g.beginPath(); g.moveTo(24 + k, 1); g.lineTo(24 + k + .6, 18); g.stroke(); }   // trama do couro
+    g.beginPath(); g.ellipse(27, 13.5, 6, 3, 0, 0, TAU); g.fillStyle = 'rgba(40,20,10,.25)'; g.fill();
+    g.restore();
+    g.beginPath(); g.arc(24, 9.4, 7.4, 0, TAU); g.lineWidth = .7; g.strokeStyle = '#4e3018'; g.stroke();
+    g.beginPath(); g.moveTo(24.6, 2.1); g.quadraticCurveTo(26.2, 9.4, 24.6, 16.7); g.lineWidth = .5; g.strokeStyle = '#6b4423'; g.stroke();   // costura central
+    for (let k = 0; k < 7; k++) { const y = 3.2 + k * 2, x = 24.6 + Math.sin((y - 2.1) / 14.6 * Math.PI) * 1.2; risco(g, x - .9, y, x + .9, y + .3, .35, '#f0e0c0'); }
+    // olhos pintados e boca costurada
+    [[20.4, 10.4], [27.6, 10.4]].forEach(([x, y], k) => { g.beginPath(); g.ellipse(x, y, 1.15, 1.4, 0, 0, TAU); g.fillStyle = '#1a1210'; g.fill(); g.beginPath(); g.arc(x - .35, y - .45, .38, 0, TAU); g.fillStyle = '#fff'; g.fill(); risco(g, x - 1.5, y - 2.6 + (k ? 0 : .6), x + 1.5, y - 2.6 + (k ? .6 : 0), .6, '#2a1810'); });
+    risco(g, 21.8, 14, 26.2, 14, .45, '#3a2010'); [22.5, 24, 25.5].forEach(x => risco(g, x, 13.3, x, 14.7, .35, '#3a2010'));
+    // faixa vermelha (hachimaki) com nó e pontas voando
+    g.beginPath(); g.moveTo(16.8, 6.2); g.quadraticCurveTo(24, 8.4, 31.2, 6.2); g.lineTo(31.4, 8.4); g.quadraticCurveTo(24, 10.6, 16.6, 8.4); g.closePath(); contorno(g, lin(g, 0, 6, 0, 10, ['#ff5a48', '#d0382c', '#8a1a14']), .45, '#4a0c08');
+    risco(g, 18, 7, 30, 7, .35, 'rgba(255,200,190,.6)');
+    g.beginPath(); g.ellipse(31.6, 7.2, 1.5, 1.3, 0, 0, TAU); contorno(g, '#b82a20', .4, '#4a0c08');
+    g.beginPath(); g.moveTo(32.4, 6.6); g.quadraticCurveTo(36.5, 4.5, 40, 6.4); g.lineTo(39.4, 7.8); g.quadraticCurveTo(36.2, 6.4, 32.6, 8); g.closePath(); contorno(g, lin(g, 32, 5, 40, 8, ['#e8473b', '#a82820']), .4, '#4a0c08');
+    g.beginPath(); g.moveTo(32.4, 7.8); g.quadraticCurveTo(36, 9.6, 38.6, 12.2); g.lineTo(37.4, 12.8); g.quadraticCurveTo(35, 10.4, 32, 8.8); g.closePath(); contorno(g, lin(g, 32, 8, 38, 13, ['#d0382c', '#8a1a14']), .4, '#4a0c08');
+    // brilho de luz (sol vindo da esquerda)
+    g.save(); g.globalCompositeOperation = 'lighter'; brilho(g, 19, 6, 5, '#fff2c8', .18); brilho(g, 17, 26, 6, '#fff2c8', .12); g.restore();
   }),
   papel: () => hi(24, 22, 12, 16, g => {
     sombraSuave(g, 12, 16, 6, 2, .3);
@@ -4944,7 +5046,7 @@ const cacheCasa = {};
 function casaSpr(w, d, H, tel, par, op) {
   op = op || {};
   const palha = !!op.palha, nT = palha ? 1 : (op.tiers || (w * d >= 12 ? 2 : 1));
-  const chave = [w, d, H, tel, par[0], nT, palha].join('|');
+  const chave = [w, d, H, tel, par[0], nT, palha, op.var || 0].join('|');
   if (cacheCasa[chave]) return cacheCasa[chave];
   // --- planta: cada andar tem um retângulo (r), o beiral (ext) e o topo do telhado (inn) ---
   const ZB = palha ? 4 : 6, PB = .18, niveis = [];
@@ -4966,8 +5068,9 @@ function casaSpr(w, d, H, tel, par, op) {
   const minY = Math.min(-(w + d) * 4 - zMax, -(w + d + 1.2) * 8 - niveis[0].zE - 12) - 6, M = 8;
   const ax = (w + 1.4) * 16 + M, ay = -minY + M, cwid = (w + d + 2.8) * 16 + 2 * M, ch = ay + 20 + M;
   const luzes = [];                                                 // lanternas (pra brilho piscando e luz do modo gótico)
+  const fumaca = [];
   const s = hi(cwid, ch, ax, ay, g => {
-    g.translate(ax, ay); luzes.length = 0;
+    g.translate(ax, ay); luzes.length = 0; fumaca.length = 0;
     const rnd = mul(w * 131 + d * 17 + H + nT * 7);
     const P = (i, j, zz) => [(i - j) * 16, (i + j) * 8 - zz];
     const fecha = pts => { g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); };
@@ -5113,6 +5216,98 @@ function casaSpr(w, d, H, tel, par, op) {
     // ===== paredes do térreo =====
     naFace('j', 0, 0, ZB, () => parede(16 * w, H, par[0], porta, 0));
     naFace('i', 0, 0, ZB, () => parede(16 * d, H, par[1], (L, Hh) => janelas(L, Hh), .2));
+
+    // ===== MUITOS DETALHES NAS PAREDES: desgaste, rachaduras, trepadeira, amuletos e coisas penduradas =====
+    const rd = mul(w * 977 + d * 131 + H * 17 + (op.var || 0) * 7919 + (palha ? 3 : 0) + nT * 5);
+    const esf = (x, y, rr, c) => { const gr = g.createRadialGradient(x - rr * .35, y - rr * .4, rr * .1, x, y, rr); gr.addColorStop(0, cla(c, .45)); gr.addColorStop(.55, c); gr.addColorStop(1, esc(c, .5)); g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fillStyle = gr; g.fill(); };
+    const folhaH = (x, y, s) => { g.beginPath(); g.ellipse(x, y, s * 1.15, s * .8, rd() * 3, 0, TAU); g.fillStyle = ['#3f7a2e', '#5a9a3a', '#2f5f24', '#77b04a'][Math.floor(rd() * 4)]; g.fill(); g.beginPath(); g.ellipse(x - .3 * s, y - .3 * s, s * .45, s * .3, 0, 0, TAU); g.fillStyle = 'rgba(220,255,170,.35)'; g.fill(); };
+    const hera = (u, alt) => {                                        // trepadeira subindo do chão
+      let x = u, y = 0; const pts = [[x, y]];
+      for (let s2 = 0; s2 < 10; s2++) { x += (rd() - .5) * 2.6; y -= alt / 10; pts.push([x, y]); }
+      linhaPts(pts); g.strokeStyle = '#4a3a20'; g.lineWidth = .7; g.stroke();
+      for (let b = 0; b < 3; b++) { const p0 = pts[3 + b * 2]; risco(g, p0[0], p0[1], p0[0] + (rd() < .5 ? -1 : 1) * (2 + rd() * 3), p0[1] - 2 - rd() * 2, .45, '#4a3a20'); }
+      pts.forEach(([px, py], k) => { for (let f = 0; f < 4 - k * .25; f++) folhaH(px + (rd() - .5) * 5.5, py + (rd() - .5) * 3, .9 + rd() * 1.1); });
+    };
+    const livres = (L, ocup) => { const out = []; let u = 2; ocup.slice().sort((a, b) => a[0] - b[0]).forEach(([a, b]) => { if (a - u > 4) out.push([u, a]); u = Math.max(u, b); }); if (L - 2 - u > 4) out.push([u, L - 2]); return out; };
+    const desgaste = (L, Hh, fl) => {
+      g.save(); g.beginPath(); g.rect(0, -Hh, L, Hh); g.clip();
+      for (let k = 0; k < L / 4; k++) { const x = rd() * L, len = 5 + rd() * 13, ww = .7 + rd() * 1.8, gr = g.createLinearGradient(0, -Hh + 4, 0, -Hh + 4 + len); gr.addColorStop(0, 'rgba(60,48,40,.22)'); gr.addColorStop(1, 'rgba(60,48,40,0)'); g.fillStyle = gr; g.fillRect(x, -Hh + 4, ww, len); }   // escorridos de chuva
+      const gb = g.createLinearGradient(0, -7, 0, 0); gb.addColorStop(0, 'rgba(70,90,40,0)'); gb.addColorStop(1, 'rgba(46,70,28,.4)'); g.fillStyle = gb; g.fillRect(0, -7, L, 7);   // umidade e musgo no pé
+      fl.forEach(([u0, u1]) => {
+        for (let k = 0; k < 1 + (u1 - u0) / 12; k++) { let x = u0 + rd() * (u1 - u0), y = -Hh * (.3 + rd() * .4); g.beginPath(); g.moveTo(x, y); for (let s2 = 0; s2 < 4; s2++) { x += (rd() - .5) * 3; y += 1 + rd() * 2.2; g.lineTo(x, y); } g.strokeStyle = 'rgba(60,46,36,.55)'; g.lineWidth = .45; g.stroke(); }   // rachaduras
+        if (palha || rd() < .55) {                                  // reboco caído mostrando o trançado de bambu
+          const x = u0 + 3 + rd() * Math.max(1, u1 - u0 - 6), y = -Hh * (.35 + rd() * .3), rx = 2 + rd() * 1.8, ry = 1.5 + rd() * 1.1;
+          g.save(); g.beginPath(); g.ellipse(x, y, rx, ry, rd() - .5, 0, TAU); g.fillStyle = '#7a5a36'; g.fill(); g.clip();
+          g.strokeStyle = 'rgba(200,170,110,.85)'; g.lineWidth = .55; for (let a = -4; a <= 4; a += 1.4) { g.beginPath(); g.moveTo(x + a, y - ry); g.lineTo(x + a, y + ry); g.stroke(); }
+          g.strokeStyle = 'rgba(50,34,18,.8)'; g.lineWidth = .4; for (let a = -3; a <= 3; a += 1.2) { g.beginPath(); g.moveTo(x - rx, y + a); g.lineTo(x + rx, y + a); g.stroke(); }
+          g.restore(); g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.strokeStyle = 'rgba(255,250,235,.55)'; g.lineWidth = .45; g.stroke();
+        }
+      });
+      g.restore();
+    };
+    const ofuda = (x, y) => { g.fillStyle = '#f6efe0'; g.fillRect(x - 1.1, y, 2.2, 6.2); g.fillStyle = '#c42a22'; g.fillRect(x - .7, y + .5, 1.4, 1.2); g.strokeStyle = '#2a1810'; g.lineWidth = .3; g.beginPath(); g.moveTo(x, y + 2.2); g.lineTo(x, y + 5.6); g.moveTo(x - .6, y + 3.2); g.lineTo(x + .6, y + 3.4); g.moveTo(x - .5, y + 4.5); g.lineTo(x + .5, y + 4.2); g.stroke(); };
+    const shimenawa = (x0, x1, y) => {                              // corda sagrada com papéis em zigue-zague
+      g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + 3.2, x1, y); g.lineWidth = 2.6; g.strokeStyle = '#8a6a2a'; g.stroke(); g.lineWidth = 1.8; g.strokeStyle = '#d8b862'; g.stroke();
+      for (let k = 0; k < 12; k++) { const t = (k + .5) / 12, x = x0 + (x1 - x0) * t, yy = y + 3.2 * 2 * t * (1 - t) * 1.0; risco(g, x - .6, yy - .9, x + .6, yy + .9, .4, 'rgba(90,64,20,.8)'); }
+      [.25, .5, .75].forEach(t => { const x = x0 + (x1 - x0) * t, yy = y + 3.2 * 2 * t * (1 - t) + 1; g.beginPath(); g.moveTo(x - .8, yy); g.lineTo(x + .8, yy); g.lineTo(x + .1, yy + 1.6); g.lineTo(x + .9, yy + 1.6); g.lineTo(x + .1, yy + 3.4); g.lineTo(x + .9, yy + 3.4); g.lineTo(x - .4, yy + 5); g.lineTo(x - .9, yy + 3.4); g.lineTo(x - .1, yy + 3.4); g.lineTo(x - .9, yy + 1.6); g.closePath(); g.fillStyle = '#fbf8f0'; g.fill(); g.lineWidth = .25; g.strokeStyle = '#9a9488'; g.stroke(); });
+    };
+    const hoshigaki = (x, y) => { risco(g, x, y, x, y + 15, .3, '#5a3a1a'); for (let k = 0; k < 6; k++) { esf(x + (k % 2 ? .5 : -.5), y + 2 + k * 2.3, 1.05, '#e8701a'); risco(g, x - .2, y + 1 + k * 2.3, x + .2, y + 1.1 + k * 2.3, .4, '#3a5a1a'); } };   // caquis secando
+    const mino = (x, y) => {                                         // capa de palha pendurada
+      risco(g, x, y - 1, x, y + 1, .7, '#3a2010');
+      g.beginPath(); g.moveTo(x - 1.5, y + 1); g.lineTo(x + 1.5, y + 1); g.lineTo(x + 4.5, y + 13); g.quadraticCurveTo(x, y + 14.5, x - 4.5, y + 13); g.closePath(); g.fillStyle = lin(g, x - 4, 0, x + 4, 0, ['#8a6a30', '#c9a85a', '#7a5a24']); g.fill();
+      g.save(); g.clip(); for (let k = 0; k < 40; k++) { const xx = x - 4.5 + rd() * 9, yy = y + 1 + rd() * 13; risco(g, xx, yy, xx + (xx - x) * .15, yy + 2.5, .3, rd() < .5 ? 'rgba(255,230,160,.6)' : 'rgba(70,50,16,.6)'); } g.restore();
+      risco(g, x - 2.6, y + 6, x + 2.6, y + 6, .5, '#5a3a14');
+    };
+    const chapeu = (x, y) => { g.beginPath(); g.moveTo(x - 4.6, y + 2.4); g.lineTo(x, y - 2); g.lineTo(x + 4.6, y + 2.4); g.quadraticCurveTo(x, y + 3.6, x - 4.6, y + 2.4); g.fillStyle = lin(g, x - 4, 0, x + 4, 0, ['#e6cf86', '#c9a85a', '#8a6a30']); g.fill(); g.strokeStyle = 'rgba(80,56,18,.6)'; g.lineWidth = .3; for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(x - 4.6 * k / 4, y + 2.4 * k / 4 - (1 - k / 4) * 0); g.quadraticCurveTo(x, y - 2 + 4.4 * k / 4 + .6, x + 4.6 * k / 4, y + 2.4 * k / 4); g.stroke(); } };
+    const wagasa = (x, y, cor) => { g.beginPath(); g.moveTo(x - 1.4, y); g.lineTo(x + 1.4, y); g.lineTo(x + .5, y + 14); g.lineTo(x - .5, y + 14); g.closePath(); g.fillStyle = lin(g, x - 1.4, 0, x + 1.4, 0, [cla(cor, .3), cor, esc(cor, .55)]); g.fill(); for (let k = 0; k < 4; k++) risco(g, x - 1.2 + k * .8, y + .4, x - .3 + k * .2, y + 13.6, .2, rgba(esc(cor, .4), .6)); risco(g, x, y + 14, x, y + 17, .6, '#3a2010'); risco(g, x, y - 1.2, x, y, .7, '#3a2010'); };
+    const placaV = (x, y) => { retR(g, x - 2, y, 4, 11, .5); contorno(g, lin(g, x - 2, 0, x + 2, 0, ['#e6c690', '#b88a50']), .4, '#4a2e14'); g.strokeStyle = '#2a1810'; g.lineWidth = .45; [2, 4.8, 7.6].forEach(o => { g.beginPath(); g.moveTo(x - .9, y + o); g.lineTo(x + .9, y + o); g.moveTo(x, y + o - .7); g.lineTo(x, y + o + 1.6); g.stroke(); }); };
+    const ferramenta = (x, y, tipo) => {
+      if (tipo === 0) { risco(g, x, y, x + 1.5, y + 13, .9, '#8a5a2e'); g.beginPath(); g.moveTo(x + 1.4, y + 12.4); g.lineTo(x + 4.6, y + 12); g.lineTo(x + 4.2, y + 14.4); g.lineTo(x + 1.6, y + 14); g.closePath(); g.fillStyle = lin(g, 0, y + 12, 0, y + 14, ['#c8c6d0', '#6a6878']); g.fill(); }   // enxada
+      else if (tipo === 1) { risco(g, x, y + 1, x, y + 8, .9, '#8a5a2e'); g.beginPath(); g.arc(x + 2.2, y + 1.4, 2.4, Math.PI, Math.PI * 1.9); g.lineWidth = .9; g.strokeStyle = '#a8a6b4'; g.stroke(); }   // foice
+      else { g.beginPath(); g.ellipse(x, y + 4, 3.2, 3.4, 0, 0, TAU); g.fillStyle = '#b08a4a'; g.fill(); g.save(); g.clip(); g.strokeStyle = 'rgba(70,46,16,.7)'; g.lineWidth = .3; for (let a = -4; a <= 4; a += 1.1) { g.beginPath(); g.moveTo(x - 4, y + 4 + a - 2); g.lineTo(x + 4, y + 4 + a + 2); g.stroke(); g.beginPath(); g.moveTo(x - 4, y + 4 + a + 2); g.lineTo(x + 4, y + 4 + a - 2); g.stroke(); } g.restore(); risco(g, x - 2.6, y + 1.8, x + 2.6, y + 1.8, .6, '#6b4423'); risco(g, x, y - .6, x, y + 1.4, .4, '#3a2010'); }   // cesto pendurado
+    };
+    const alho = (x, y) => { risco(g, x, y, x, y + 4, .35, '#7a6a3a'); [[0, 5.4], [-1.2, 6.6], [1.2, 6.6], [0, 7.8]].forEach(([dx, dy]) => esf(x + dx, y + dy, 1.1, '#efe6d0')); };
+    // porta (parede da esquerda)
+    naFace('j', 0, 0, ZB, () => {
+      const L = 16 * w, Hh = H, cx = L / 2, dh = Math.min(21, Hh - 8), fl = livres(L, [[cx - 15.5, cx + 15.5]]);
+      desgaste(L, Hh, fl);
+      ofuda(cx - 9.6, -dh + 2.5); if (rd() < .6) ofuda(cx + 9.6, -dh + 3);
+      if (!palha) shimenawa(cx - 9, cx + 9, -dh - 3.6);
+      fl.forEach(([u0, u1], k) => {
+        const m = (u0 + u1) / 2, op2 = Math.floor(rd() * 4);
+        if (palha) { if (op2 === 0) hoshigaki(m - 2, -Hh + 5); else if (op2 === 1) mino(m, -Hh + 6); else if (op2 === 2) { hoshigaki(m - 3, -Hh + 5); chapeu(m + 3, -Hh + 9); } else { chapeu(m, -Hh + 9); alho(m + 3.5, -Hh + 6); } }
+        else { if (op2 === 0) placaV(m, -Hh + 6); else if (op2 === 1) wagasa(m, -Hh + 6, ['#c42a22', '#2c4f8a', '#2f7a6a'][Math.floor(rd() * 3)]); else if (op2 === 2) { placaV(m - 2.5, -Hh + 6); ofuda(m + 2.5, -Hh + 8); } else alho(m, -Hh + 6); }
+      });
+      if (rd() < .7) hera(rd() < .5 ? 1.5 : L - 1.5, Hh * (.55 + rd() * .4));
+    });
+    // janelas (parede da direita)
+    naFace('i', 0, 0, ZB, () => {
+      const L = 16 * d, Hh = H, n = L >= 60 ? 2 : 1, ocup = [];
+      for (let k = 0; k < n; k++) { const cx = L * (k + .5) / n; ocup.push([cx - 9.5, cx + 9.5]); }
+      const fl = livres(L, ocup); desgaste(L, Hh, fl);
+      for (let k = 0; k < n; k++) {
+        const cx = L * (k + .5) / n, ww = 15, y0 = -Hh + 7, hh = Hh - 18;
+        if (rd() < .55) {                                             // persiana de bambu (sudare) meio abaixada
+          const bh = hh * (.35 + rd() * .3);
+          g.fillStyle = lin(g, 0, y0, 0, y0 + bh, ['#d8bc7a', '#b8964e']); g.fillRect(cx - ww / 2 - .6, y0 - .4, ww + 1.2, bh);
+          g.strokeStyle = 'rgba(90,64,24,.55)'; g.lineWidth = .3; for (let y = y0 + .6; y < y0 + bh; y += .9) { g.beginPath(); g.moveTo(cx - ww / 2 - .6, y); g.lineTo(cx + ww / 2 + .6, y); g.stroke(); }
+          g.fillStyle = '#8a6a2a'; g.fillRect(cx - ww / 2 - 1, y0 - 1, ww + 2, 1.1); [-ww / 4, ww / 4].forEach(o => risco(g, cx + o, y0 - .6, cx + o, y0 + bh + .6, .35, '#c42a22'));
+        }
+        // floreira embaixo da janela
+        const fy = y0 + hh + 1.6, fw = ww + 4;
+        madeira(g, cx - fw / 2, fy, fw, 2.8, '#8a5a30', .5);
+        for (let f = 0; f < 9; f++) { const x = cx - fw / 2 + 1 + f * (fw - 2) / 8; folhaH(x, fy - .6, 1); }
+        for (let f = 0; f < 7; f++) { const x = cx - fw / 2 + 1.5 + rd() * (fw - 3), y = fy - 1.2 - rd() * 1.6; g.beginPath(); g.arc(x, y, .75, 0, TAU); g.fillStyle = ['#ff6a8a', '#ffd84a', '#ffffff', '#e8473b', '#c9a0ff'][Math.floor(rd() * 5)]; g.fill(); g.beginPath(); g.arc(x, y, .28, 0, TAU); g.fillStyle = '#ffe9a0'; g.fill(); }
+      }
+      fl.forEach(([u0, u1]) => {
+        const m = (u0 + u1) / 2, op2 = Math.floor(rd() * 4);
+        if (op2 === 0) { ferramenta(m - 2.5, -Hh + 6, 0); ferramenta(m + 1.5, -Hh + 7, 1); }
+        else if (op2 === 1) ferramenta(m, -Hh + 7, 2);
+        else if (op2 === 2) { alho(m - 2, -Hh + 6); alho(m + 1.6, -Hh + 6.5); }
+        else if (palha) hoshigaki(m, -Hh + 5); else placaV(m, -Hh + 6);
+      });
+      if (rd() < .5) hera(L - 1.5, Hh * (.4 + rd() * .5));
+    });
     pendentes.forEach(([lado, u, v, len]) => { const o = P(0, 0, ZB); lanternaPend(o[0] - u, o[1] - u / 2 + v, len * .35, 2.8, palha ? '#f4e2b0' : '#e8473b'); });
 
     // ===== telhados =====
@@ -5181,8 +5376,8 @@ function casaSpr(w, d, H, tel, par, op) {
       naFace('j', r2.i1, r2.j1, z0, () => { parede(Lj, Hh, par[0], (L, h) => janelas(L, h, true), 0, true); bal(Lj); });
       naFace('i', r2.i1, r2.j1, z0, () => { parede(Li, Hh, par[1], (L, h) => janelas(L, h, true), .2, true); bal(Li); });
     };
-    let ult = null;
-    niveis.forEach(nv => { ult = telhado(nv); if (!nv.ult) andar(nv); });
+    let ult = null; const tels = [];
+    niveis.forEach(nv => { ult = telhado(nv); tels.push(ult); if (!nv.ult) andar(nv); });
     // lanterna grande na quina da frente do primeiro beiral
     { const q = P(niveis[0].ext.i1 - .12, niveis[0].ext.j1 - .12, niveis[0].zE + niveis[0].lift * .7); lanternaPend(q[0], q[1] + 1, 5, palha ? 2.6 : 3.2, palha ? '#f4e2b0' : '#e8473b'); }
     // ===== cumeeira / ponta =====
@@ -5209,9 +5404,75 @@ function casaSpr(w, d, H, tel, par, op) {
         const m = [(e0[0] + e1[0]) / 2, (e0[1] + e1[1]) / 2]; g.beginPath(); g.arc(m[0], m[1] - 2.6, 1.5, 0, TAU); contorno(g, OURO, .45, '#5a4010'); brilho(g, m[0], m[1] - 2.6, 4, '#ffe0a0', .5);
       }
     }
+    // ===== TELHADO VIVO: telhas quebradas, plantinhas, gato e passarinhos =====
+    tels.forEach((tl, k) => {
+      [tl.faces[2], tl.faces[3]].forEach(F => {
+        for (let q = 0; q < (palha ? 5 : 3); q++) {
+          const p = tl.pt(F, .1 + rd() * .8, .1 + rd() * .6);
+          if (palha) { for (let b = 0; b < 5; b++) risco(g, p[0] + (b - 2) * .6, p[1], p[0] + (b - 2) * 1.1 + (rd() - .5), p[1] - 2 - rd() * 2, .45, rd() < .5 ? '#5f9a3e' : '#8fc45a'); if (rd() < .4) { g.beginPath(); g.arc(p[0], p[1] - 3.4, .8, 0, TAU); g.fillStyle = '#fff6c0'; g.fill(); } }
+          else if (rd() < .6) { g.beginPath(); g.moveTo(p[0] - 1.6, p[1]); g.lineTo(p[0] + 1.2, p[1] - .8); g.lineTo(p[0] + 1.6, p[1] + .9); g.lineTo(p[0] - 1, p[1] + 1.4); g.closePath(); g.fillStyle = 'rgba(30,20,30,.6)'; g.fill(); risco(g, p[0] - 1.4, p[1] - .2, p[0] + 1.1, p[1] - 1, .35, rgba(cla(tel, .4), .8)); }
+          else { for (let b = 0; b < 4; b++) risco(g, p[0] + (b - 1.5) * .7, p[1], p[0] + (b - 1.5) * 1.1, p[1] - 1.6 - rd() * 1.6, .4, '#6fa048'); }
+        }
+      });
+    });
+    if (rd() < .5) {                                                 // gato tomando sol no beiral
+      const tl = tels[0], p = tl.pt(tl.faces[3], .25 + rd() * .5, .3), c = ['#e8913a', '#2a2430', '#f4efe6', '#8a7a6a'][Math.floor(rd() * 4)], x = p[0], y = p[1];
+      sombraSuave(g, x + 1, y + .5, 4, 1.2, .35);
+      g.beginPath(); g.ellipse(x, y - 2.4, 3.2, 2.4, 0, 0, TAU); g.fillStyle = c; g.fill();
+      g.beginPath(); g.arc(x + 2.6, y - 5, 1.9, 0, TAU); g.fill();
+      [[1.4, 2], [3.6, 2.2]].forEach(([a, b2]) => { g.beginPath(); g.moveTo(x + a - .8, y - 5 - 1); g.lineTo(x + a, y - 5 - b2 - .8); g.lineTo(x + a + .8, y - 5 - 1); g.closePath(); g.fill(); });
+      g.beginPath(); g.moveTo(x - 3, y - 1.4); g.quadraticCurveTo(x - 6, y - .5, x - 5.4, y - 4); g.lineWidth = 1; g.strokeStyle = c; g.stroke();
+      g.beginPath(); g.ellipse(x - .6, y - 3.4, 1.8, 1, 0, 0, TAU); g.fillStyle = 'rgba(255,255,240,.3)'; g.fill();
+      risco(g, x + 2, y - 5, x + 2.8, y - 5, .3, '#1a1210'); risco(g, x + 3.4, y - 5, x + 4.1, y - 5, .3, '#1a1210');
+    }
+    if (rd() < .6) {                                                 // passarinhos na cumeeira
+      const Ii = topo.inn, a = P(Ii.i0, Ii.j0, topo.zT + 1.6), b = P(Ii.i1, Ii.j1, topo.zT + 1.6);
+      for (let k = 0; k < 1 + Math.floor(rd() * 2); k++) {
+        const t = .25 + rd() * .5, x = a[0] + (b[0] - a[0]) * t + k * 3, y = a[1] + (b[1] - a[1]) * t + k * 1.5 - 1.2;
+        g.beginPath(); g.ellipse(x, y, 1.6, 1.1, -.2, 0, TAU); g.fillStyle = '#7a5a3a'; g.fill();
+        g.beginPath(); g.arc(x + 1.3, y - .9, .8, 0, TAU); g.fill(); g.beginPath(); g.ellipse(x + .3, y + .3, .9, .5, 0, 0, TAU); g.fillStyle = '#e6dcc6'; g.fill();
+        g.beginPath(); g.moveTo(x + 2, y - 1); g.lineTo(x + 2.8, y - .8); g.lineTo(x + 2, y - .6); g.fillStyle = '#e0a030'; g.fill(); risco(g, x - 1.4, y - .2, x - 2.8, y - 1, .6, '#5a3a24');
+      }
+    }
+    // ===== corrente de chuva (kusari-doi) com bacia de pedra na quina esquerda =====
+    { const e = niveis[0].ext, top = P(e.i0 + .2, e.j1 - .2, niveis[0].zE), base = P(e.i0 + .2, e.j1 - .2, 0);
+      const cor = palha ? '#8a6a3a' : '#4f9a8a';
+      for (let y = top[1] + 1.5; y < base[1] - 3; y += 1.6) { g.beginPath(); g.ellipse(top[0], y, .55, .8, 0, 0, TAU); g.lineWidth = .45; g.strokeStyle = cor; g.stroke(); }
+      g.beginPath(); g.ellipse(base[0], base[1] - 1.4, 3, 1.4, 0, 0, TAU); g.fillStyle = '#8a8698'; g.fill(); g.beginPath(); g.ellipse(base[0], base[1] - 1.9, 2.3, .9, 0, 0, TAU); g.fillStyle = '#5fa0c0'; g.fill(); g.beginPath(); g.ellipse(base[0] - .5, base[1] - 2.1, .9, .3, 0, 0, TAU); g.fillStyle = 'rgba(255,255,255,.6)'; g.fill(); }
+    // ===== objetos no chão em volta da casa =====
+    const PROP = {
+      vaso: (x, y) => { sombraSuave(g, x + .5, y, 3.4, 1.2, .35); g.beginPath(); g.moveTo(x - 2.4, y - 4.4); g.lineTo(x + 2.4, y - 4.4); g.lineTo(x + 1.7, y); g.lineTo(x - 1.7, y); g.closePath(); contorno(g, lin(g, x - 2.4, 0, x + 2.4, 0, ['#e09a6a', '#b4603a', '#7a3a22']), .45, '#4a2010'); g.fillStyle = '#5a2a14'; g.fillRect(x - 2.6, y - 5, 5.2, .8);
+        [[0, -7.2, 2.4], [-1.6, -6.2, 1.8], [1.7, -6.4, 1.9], [.3, -8.8, 1.6]].forEach(([dx, dy, rr]) => esf(x + dx, y + dy, rr, rd() < .3 ? '#3f7a2e' : '#4f9a3a'));
+        if (rd() < .6) for (let f = 0; f < 4; f++) { g.beginPath(); g.arc(x + (rd() - .5) * 4.4, y - 6 - rd() * 3.6, .6, 0, TAU); g.fillStyle = ['#ff6a8a', '#ffd84a', '#ffffff'][f % 3]; g.fill(); } },
+      bonsai: (x, y) => { sombraSuave(g, x + .5, y, 4, 1.2, .35); retR(g, x - 3.2, y - 2.2, 6.4, 2.2, .5); contorno(g, lin(g, 0, y - 2, 0, y, ['#4a6aa8', '#2c3f6a']), .4, '#1a2440'); g.beginPath(); g.moveTo(x - .4, y - 2.2); g.bezierCurveTo(x - 1.8, y - 4.5, x + 1.6, y - 5.5, x, y - 8); g.lineWidth = 1.1; g.strokeStyle = '#5a3a24'; g.stroke(); [[-2, -6, 2.4, 1.1], [1.8, -7.6, 2.2, 1], [0, -9.4, 1.8, .9]].forEach(([dx, dy, rx, ry]) => { g.beginPath(); g.ellipse(x + dx, y + dy, rx, ry, 0, 0, TAU); g.fillStyle = lin(g, 0, y + dy - ry, 0, y + dy + ry, ['#8fc45a', '#3f7a2e']); g.fill(); }); },
+      barril: (x, y) => { sombraSuave(g, x + .6, y, 3.6, 1.2, .38); g.fillStyle = lin(g, x - 2.7, 0, x + 2.7, 0, ['#5a3518', '#b07a44', '#8a5a2e', '#4a2a12']); g.fillRect(x - 2.7, y - 7, 5.4, 6.4); g.beginPath(); g.ellipse(x, y - .6, 2.7, 1, 0, 0, Math.PI); g.fill(); [-6, -3.6, -1.2].forEach(o => { g.fillStyle = '#2a2832'; g.fillRect(x - 2.8, y + o, 5.6, .6); }); g.beginPath(); g.ellipse(x, y - 7, 2.7, 1, 0, 0, TAU); g.fillStyle = '#c9925a'; g.fill(); g.lineWidth = .4; g.strokeStyle = '#4a2a12'; g.stroke(); risco(g, x - 1.6, y - 7, x + 1.6, y - 7, .3, '#7a4a22'); },
+      jarra: (x, y) => { sombraSuave(g, x + .6, y, 3.8, 1.2, .38); g.beginPath(); g.moveTo(x - 1.6, y - 6.6); g.bezierCurveTo(x - 4.4, y - 5.4, x - 3.6, y, x, y); g.bezierCurveTo(x + 3.6, y, x + 4.4, y - 5.4, x + 1.6, y - 6.6); g.closePath(); const gr = g.createRadialGradient(x - 1.2, y - 4.6, .3, x, y - 3, 4.6); gr.addColorStop(0, '#9a6a4a'); gr.addColorStop(.5, '#4a2a1e'); gr.addColorStop(1, '#1e1010'); g.fillStyle = gr; g.fill(); g.beginPath(); g.ellipse(x - 1.4, y - 4.4, .6, 1.2, -.3, 0, TAU); g.fillStyle = 'rgba(255,240,220,.5)'; g.fill(); g.beginPath(); g.ellipse(x, y - 6.8, 2.2, .8, 0, 0, TAU); g.fillStyle = '#b07a44'; g.fill(); g.lineWidth = .3; g.strokeStyle = '#4a2a12'; g.stroke(); risco(g, x + .4, y - 7, x + 3.6, y - 10.4, .5, '#c99560'); g.beginPath(); g.ellipse(x + .2, y - 6.9, .8, .4, 0, 0, TAU); g.fillStyle = '#8a5a2e'; g.fill(); },
+      lenha: (x, y) => { sombraSuave(g, x + .6, y, 5, 1.4, .38); g.fillStyle = '#5a3a1e'; g.fillRect(x - 4.4, y - 5.6, 7.2, 5.6); [[-3.2, -1.2], [-.8, -1.2], [1.6, -1.2], [-2, -3.4], [.4, -3.4], [-.8, -5.4]].forEach(([dx, dy]) => { g.beginPath(); g.arc(x + dx, y + dy, 1.2, 0, TAU); g.fillStyle = '#d8b07a'; g.fill(); g.lineWidth = .35; g.strokeStyle = '#6b4423'; g.stroke(); g.beginPath(); g.arc(x + dx, y + dy, .55, 0, TAU); g.strokeStyle = 'rgba(120,80,40,.6)'; g.lineWidth = .25; g.stroke(); }); },
+      sacos: (x, y) => { sombraSuave(g, x + .6, y, 4.6, 1.3, .38); [[-1.4, -1.6], [1.6, -1.8], [0, -4]].forEach(([dx, dy]) => { const cx = x + dx, cy = y + dy; g.beginPath(); g.ellipse(cx, cy, 2.6, 1.7, 0, 0, TAU); g.fillStyle = lin(g, 0, cy - 1.7, 0, cy + 1.7, ['#f0d88a', '#c9a24e', '#8a6a2a']); g.fill(); g.strokeStyle = 'rgba(90,64,20,.6)'; g.lineWidth = .25; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(cx + k * .9, cy - 1.6); g.lineTo(cx + k * .9, cy + 1.6); g.stroke(); } risco(g, cx - 1.6, cy - 1.3, cx - 1.6, cy + 1.3, .45, '#6b4423'); risco(g, cx + 1.6, cy - 1.3, cx + 1.6, cy + 1.3, .45, '#6b4423'); }); },
+      vassoura: (x, y) => { risco(g, x + 2.4, y - 13, x - .6, y - 3, .7, '#8a5a2e'); g.beginPath(); g.moveTo(x - 1.4, y - 3.6); g.lineTo(x + .4, y - 3.2); g.lineTo(x + 1, y); g.lineTo(x - 2.6, y); g.closePath(); g.fillStyle = lin(g, x - 2, 0, x + 1, 0, ['#c9a85a', '#8a6a30']); g.fill(); for (let k = 0; k < 6; k++) risco(g, x - 1.2 + k * .3, y - 3.4, x - 2.4 + k * .65, y, .2, 'rgba(70,50,16,.6)'); },
+      cesto: (x, y) => { sombraSuave(g, x + .5, y, 3.6, 1.2, .35); g.beginPath(); g.moveTo(x - 3, y - 3.4); g.lineTo(x + 3, y - 3.4); g.lineTo(x + 2.3, y); g.lineTo(x - 2.3, y); g.closePath(); g.fillStyle = '#b08a4a'; g.fill(); g.save(); g.clip(); g.strokeStyle = 'rgba(70,46,16,.7)'; g.lineWidth = .3; for (let a = -5; a <= 5; a += 1) { g.beginPath(); g.moveTo(x + a, y - 3.4); g.lineTo(x + a + 2, y); g.stroke(); } g.restore();
+        const qual = Math.floor(rd() * 3); for (let f = 0; f < 4; f++) { const fx = x - 1.8 + f * 1.2, fy = y - 3.8 - (f % 2) * .6; if (qual === 0) tangerina(g, fx, fy, 1.05, f + 1); else if (qual === 1) esf(fx, fy, 1.1, '#7ac04a'); else { g.beginPath(); g.ellipse(fx, fy, .6, 1.6, .4, 0, TAU); g.fillStyle = '#f4efe0'; g.fill(); risco(g, fx + .4, fy - 1.6, fx + 1, fy - 3, .5, '#5a9a3a'); } } },
+      caixas: (x, y) => { const cx2 = (bx, by, s) => { g.beginPath(); g.moveTo(bx - s, by - s * .5); g.lineTo(bx, by); g.lineTo(bx, by - s * 1.1); g.lineTo(bx - s, by - s * 1.6); g.closePath(); g.fillStyle = '#b07a44'; g.fill(); g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + s, by - s * .5); g.lineTo(bx + s, by - s * 1.6); g.lineTo(bx, by - s * 1.1); g.closePath(); g.fillStyle = '#8a5a2e'; g.fill(); g.beginPath(); g.moveTo(bx - s, by - s * 1.6); g.lineTo(bx, by - s * 1.1); g.lineTo(bx + s, by - s * 1.6); g.lineTo(bx, by - s * 2.1); g.closePath(); g.fillStyle = '#d09a5c'; g.fill(); g.strokeStyle = '#4a2a12'; g.lineWidth = .3; g.stroke(); risco(g, bx - s, by - s * 1.05, bx, by - s * .55, .3, '#5a3518'); risco(g, bx, by - s * .55, bx + s, by - s * 1.05, .3, '#4a2a12'); };
+        sombraSuave(g, x + .6, y, 4.6, 1.4, .38); cx2(x - 1, y, 2.6); if (rd() < .6) cx2(x - .6, y - 3.2, 1.9); },
+      pedrinhas: (x, y) => { [[-1.6, 0, 1.4], [.8, -.2, 1.1], [2, .3, .8]].forEach(([dx, dy, rr]) => { g.beginPath(); g.ellipse(x + dx, y + dy - rr * .4, rr, rr * .7, 0, 0, TAU); g.fillStyle = lin(g, 0, y - rr, 0, y + rr * .3, ['#d6d2de', '#8a8698']); g.fill(); }); },
+      tufo: (x, y) => { for (let b = 0; b < 7; b++) { const a = (b - 3) * .3; risco(g, x + (b - 3) * .5, y, x + Math.sin(a) * 4, y - 2.6 - rd() * 2.4, .45, ['#4f8a34', '#6fae48', '#8fcc5a'][b % 3]); } if (rd() < .5) { g.beginPath(); g.arc(x + .6, y - 4.2, .7, 0, TAU); g.fillStyle = ['#ffd84a', '#ffffff', '#ff8fb1'][Math.floor(rd() * 3)]; g.fill(); } },
+      geta: (x, y) => { [[-1.4, 0], [1, .4]].forEach(([dx, dy]) => { retR(g, x + dx - 1, y + dy - .9, 2, 1.1, .3); g.fillStyle = '#c99560'; g.fill(); risco(g, x + dx - .6, y + dy - .5, x + dx + .6, y + dy - .5, .35, '#c42a22'); }); }
+    };
+    const tiposP = palha ? ['lenha', 'sacos', 'jarra', 'barril', 'vassoura', 'vaso', 'cesto', 'tufo', 'tufo', 'caixas', 'pedrinhas']
+      : ['vaso', 'vaso', 'bonsai', 'barril', 'jarra', 'tufo', 'tufo', 'caixas', 'pedrinhas', 'vassoura', 'cesto'];
+    const props = [];
+    for (let i = -w + .45; i <= -.3; i += .48) { if (Math.abs(i - pc) < 1.05) continue; if (rd() < .62) props.push([i, PB + .28 + rd() * .1, tiposP[Math.floor(rd() * tiposP.length)]]); }
+    for (let j = -d + .45; j <= -.5; j += .48) { if (rd() < .62) props.push([PB + .28 + rd() * .1, j, tiposP[Math.floor(rd() * tiposP.length)]]); }
+    props.push([pc + .62, PB + .58, 'geta'], [-w - PB + .05, PB + .35, 'tufo'], [PB + .3, -d - PB + .1, 'tufo']);
+    props.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1])).forEach(([i, j, k]) => { const p = P(i, j, 0); PROP[k](p[0], p[1]); });
+    if (palha) { const Ii = topo.inn, e = P(Ii.i1, Ii.j1, topo.zT + 2); fumaca.push(e[0], e[1]); }   // fumaça sai pela cumeeira
   });
   // lanternas piscando (brilho que muda com o tempo, por cima do sprite)
   s.anim = (g, t) => {
+    if (fumaca.length) for (let k = 0; k < 7; k++) {                // fumaça subindo devagar (casas de palha)
+      const p = (t * .18 + k / 7) % 1, x = ax + fumaca[0] + Math.sin(p * 5 + k) * 2.2 + p * 10, y = ay + fumaca[1] - p * 34, r = 1.6 + p * 5.5, a = .32 * (1 - p) * Math.min(1, p * 6);
+      g.beginPath(); g.arc(x, y, r, 0, TAU); g.fillStyle = 'rgba(236,236,242,' + a + ')'; g.fill();
+    }
     if (!luzes.length) return;
     g.save(); g.globalCompositeOperation = 'lighter';
     luzes.forEach(([x, y, tam], k) => { const f = .75 + .15 * Math.sin(t * 7 + k * 2.1) + .1 * Math.sin(t * 17 + k); brilho(g, ax + x, ay + y, tam * 4.2 * f, '#ffa040', .28 * f); });
@@ -5468,9 +5729,11 @@ function desenharObj(o, sx, sy) {
       break;
     }
     case 'boneco': {
-      const ox = o.wob > 0 ? Math.round(Math.sin(o.wob * 50) * 2) : 0;
-      spr(o.spr, sx + ox, sy);
-      if (o.flash > 0) { ctx.globalAlpha = .6; R(ctx, Math.round(sx) - 8 + ox, Math.round(sy) - 28, 16, 14, '#fff'); ctx.globalAlpha = 1; }
+      const a = o.wob > 0 ? Math.sin(o.wob * 38) * .16 * Math.min(1, o.wob * 3) : 0;   // balança inclinando a partir da base
+      if (!o.spr.hi) { spr(o.spr, sx + Math.round(a * 12), sy); break; }
+      ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); ctx.transform(1, 0, -a, 1, 0, 0); spr(o.spr, 0, 0);
+      if (o.flash > 0) { ctx.globalAlpha = Math.min(.55, o.flash * 4); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, -33, 11, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+      ctx.restore();
       break;
     }
     case 'papel': {
@@ -6159,7 +6422,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { conversar, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { conversar, origemNucleo, atualizarAtivos, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
