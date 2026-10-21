@@ -2866,7 +2866,9 @@ function carregarMapa(id, sx, sy) {
   hudChave = '';
   if (jogoIniciado) autoSalvar('mapa');
 }
-const reqOk = r => (!r.nivel || estado.nivel >= r.nivel) && (r.faixa == null || estado.faixa >= r.faixa);
+// MODO DE TESTE: true = todos os portões, casas e passagens ficam abertos (sem exigir faixa/nível). Volte para false quando terminar os testes.
+const LIBERAR_TUDO_TESTE = true;
+const reqOk = r => LIBERAR_TUDO_TESTE || !r || ((!r.nivel || estado.nivel >= r.nivel) && (r.faixa == null || estado.faixa >= r.faixa));
 function irPara(id, sx, sy, cb) { fade = { f: 0, t: 0, id, sx, sy, cb }; }
 function tickFade(dt) {
   fade.t += dt;
@@ -4533,7 +4535,8 @@ function arvoreSpr(c1, c2, c3, tronCor, fruto, petalas) {
     g.lineCap = 'round'; risco(g, ax, ay - 34, ax - 12, ay - 46, 3.4, esc(tronCor, .4)); risco(g, ax, ay - 34, ax + 12, ay - 46, 3.4, esc(tronCor, .4)); risco(g, ax, ay - 34, ax - 11, ay - 45, 2.2, tronCor); risco(g, ax, ay - 34, ax + 11, ay - 45, 2.2, tronCor);
     bolhas(g, bo, c1, c2, c3);
 
-    if (fruto) [[-17, -42], [16, -40], [2, -54], [-9, -64], [13, -62], [-1, -36], [-23, -52], [8, -47], [-5, -50], [20, -55]].forEach(([x, y]) => {
+    if (fruto === '#f08a20') [[-17, -42], [16, -40], [2, -54], [-9, -64], [13, -62], [-1, -36], [-23, -52], [8, -47], [-5, -50], [20, -55], [-13, -47], [6, -66]].forEach(([x, y], k) => tangerina(g, ax + x, ay + y, 2.8 + (k % 3) * .25, k * 31 + 7));
+    else if (fruto) [[-17, -42], [16, -40], [2, -54], [-9, -64], [13, -62], [-1, -36], [-23, -52], [8, -47], [-5, -50], [20, -55]].forEach(([x, y]) => {
       const fx = ax + x, fy = ay + y;                                  // fruta: esfera brilhante com sombra, reflexo e folhinha
       g.beginPath(); g.ellipse(fx + .8, fy + 2.4, 2.4, 1, 0, 0, TAU); g.fillStyle = 'rgba(10,20,8,.35)'; g.fill();
       const gr = g.createRadialGradient(fx - 1, fy - 1.1, .2, fx, fy, 3.1); gr.addColorStop(0, cla(fruto, .55)); gr.addColorStop(.35, fruto); gr.addColorStop(1, esc(fruto, .45));
@@ -4674,6 +4677,33 @@ function madeira(g, x, y, w, h, c, r) {              // tábua com contorno, bri
   else for (let k = 1; k < 3; k++) { const yy = y + h * k / 3; g.beginPath(); g.moveTo(x, yy); g.bezierCurveTo(x + w * .35, yy + .5, x + w * .65, yy - .5, x + w, yy + .3); g.stroke(); }
   g.restore();
 }
+// textura de pedra por cima de uma forma já desenhada (use dentro de um clip): grão, manchas, rachaduras, lascas, líquen e musgo
+function texPedraSobre(g, x0, y0, w, h, seed, musgo) {
+  const r = mul(seed);
+  for (let k = 0; k < w * h * .5; k++) { const x = x0 + r() * w, y = y0 + r() * h, v = r(); g.fillStyle = v < .45 ? 'rgba(40,36,52,.22)' : v < .85 ? 'rgba(255,255,245,.2)' : 'rgba(120,110,90,.3)'; g.fillRect(x, y, v < .9 ? .7 : 1.2, v < .9 ? .7 : 1); }
+  for (let k = 0; k < w * h / 160; k++) { const x = x0 + r() * w, y = y0 + r() * h, rr = 1 + r() * 3; g.beginPath(); g.ellipse(x, y, rr, rr * .7, r() * 3, 0, TAU); g.fillStyle = r() < .5 ? 'rgba(60,54,70,.14)' : 'rgba(255,250,235,.12)'; g.fill(); }
+  for (let k = 0; k < 2 + w * h / 400; k++) {                         // rachaduras (escuro com borda clara)
+    let x = x0 + r() * w, y = y0 + r() * h; g.beginPath(); g.moveTo(x, y);
+    for (let s = 0; s < 4; s++) { x += (r() - .5) * 4; y += 1.5 + r() * 3; g.lineTo(x, y); }
+    g.strokeStyle = 'rgba(30,26,36,.55)'; g.lineWidth = .6; g.stroke(); g.translate(.5, 0); g.strokeStyle = 'rgba(255,255,240,.25)'; g.lineWidth = .35; g.stroke(); g.translate(-.5, 0);
+  }
+  for (let k = 0; k < w * h / 260; k++) { const x = x0 + r() * w, y = y0 + r() * h, rr = .8 + r() * 1.6; g.beginPath(); g.ellipse(x, y, rr, rr * .6, 0, 0, TAU); g.fillStyle = r() < .6 ? 'rgba(200,196,160,.4)' : 'rgba(150,170,110,.35)'; g.fill(); }   // líquen
+  if (musgo) for (let k = 0; k < w / 3; k++) { const x = x0 + r() * w, y = y0 + h * (.75 + r() * .25), rr = 1.2 + r() * 2.4; const gr = g.createRadialGradient(x - .4, y - .5, 0, x, y, rr); gr.addColorStop(0, '#a5d870'); gr.addColorStop(.5, '#5f9a3e'); gr.addColorStop(1, 'rgba(47,90,30,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); }
+}
+// tangerina com volume: sombra, casca com poros, brilho, cabinho e folha
+function tangerina(g, x, y, rr, seed) {
+  const r = mul(seed || Math.round(x * 13 + y * 7));
+  g.beginPath(); g.ellipse(x + rr * .3, y + rr * .95, rr * .95, rr * .38, 0, 0, TAU); g.fillStyle = 'rgba(20,14,6,.35)'; g.fill();
+  const gr = g.createRadialGradient(x - rr * .38, y - rr * .42, rr * .08, x, y, rr * 1.12); gr.addColorStop(0, '#ffd88a'); gr.addColorStop(.3, '#ffa232'); gr.addColorStop(.75, '#e8701a'); gr.addColorStop(1, '#9a3e08');
+  g.beginPath(); g.ellipse(x, y, rr, rr * .9, 0, 0, TAU); g.fillStyle = gr; g.fill();
+  g.save(); g.clip();
+  for (let k = 0; k < rr * rr * 2.2; k++) { const a = r() * TAU, d = Math.sqrt(r()) * rr; g.fillStyle = r() < .6 ? 'rgba(150,60,6,.35)' : 'rgba(255,230,170,.35)'; g.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d * .9, .45, .45); }   // poros da casca
+  g.restore();
+  g.beginPath(); g.ellipse(x - rr * .38, y - rr * .4, rr * .3, rr * .18, -.6, 0, TAU); g.fillStyle = 'rgba(255,250,230,.85)'; g.fill();
+  g.fillStyle = '#5a3a1a'; g.fillRect(x - .25, y - rr * .95, .5, rr * .3);
+  g.save(); g.translate(x + rr * .35, y - rr * .9); g.rotate(-.5); const fg = g.createLinearGradient(0, -1, 0, 1); fg.addColorStop(0, '#8fd45a'); fg.addColorStop(1, '#2f6a22');
+  g.beginPath(); g.moveTo(-rr * .1, 0); g.quadraticCurveTo(rr * .5, -rr * .45, rr * 1.1, 0); g.quadraticCurveTo(rr * .5, rr * .4, -rr * .1, 0); g.fillStyle = fg; g.fill(); g.restore();
+}
 const SP = {
   placa: () => hi(36, 46, 18, 40, g => {
     sombraSuave(g, 19, 40, 9, 3, .35); madeira(g, 15, 18, 5, 22, '#7a5230', 1);
@@ -4770,9 +4800,12 @@ const SP = {
   }),
   cesto: () => hi(30, 28, 15, 22, g => {
     sombraSuave(g, 16, 22, 10, 3, .3);
-    [[8, 9], [14, 6], [19, 9], [11, 11], [17, 12]].forEach(([x, y]) => { g.beginPath(); g.arc(x + 1, y + 1, 3.3, 0, TAU); contorno(g, lin(g, x - 2, y - 2, x + 4, y + 4, ['#ffb24a', '#f08a20', '#c8601a']), .7, '#6a2c0c'); g.beginPath(); g.arc(x, y, 1, 0, TAU); g.fillStyle = 'rgba(255,255,255,.6)'; g.fill(); });
-    g.beginPath(); g.moveTo(4, 12); g.lineTo(26, 12); g.lineTo(24, 22); g.quadraticCurveTo(15, 25, 6, 22); g.closePath(); contorno(g, lin(g, 4, 0, 26, 0, ['#d29a58', '#a9743b', '#7a5226']), .9, '#3e2610');
-    g.strokeStyle = 'rgba(70,40,15,.55)'; g.lineWidth = .5; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(4.5 + k * .3, 14 + k * 2.2); g.lineTo(25.5 - k * .3, 14 + k * 2.2); g.stroke(); } for (let k = 0; k < 6; k++) { g.beginPath(); g.moveTo(7 + k * 3.2, 12); g.lineTo(8 + k * 2.9, 23); g.stroke(); }
+    [[8, 9.5], [14, 7], [20, 9.5], [11, 11.5], [17, 12], [6, 12]].forEach(([x, y], k) => tangerina(g, x + 1, y + 1, 3.2, k * 17 + 3));
+    g.beginPath(); g.moveTo(4, 12); g.lineTo(26, 12); g.lineTo(24, 22); g.quadraticCurveTo(15, 25, 6, 22); g.closePath(); contorno(g, lin(g, 4, 0, 26, 0, ['#d29a58', '#a9743b', '#6a4420']), .9, '#3e2610');
+    g.save(); g.clip();                                                  // palha trançada: tiras que passam por cima e por baixo
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 8; col++) { const x = 4 + col * 3, y = 12 + row * 2.2, cima = (row + col) % 2; const gr = g.createLinearGradient(x, y, x, y + 2.2); gr.addColorStop(0, cima ? '#e8b878' : '#a8743c'); gr.addColorStop(1, cima ? '#a8743c' : '#6a4420'); g.fillStyle = gr; retR(g, x + .2, y + .2, 2.7, 1.9, .8); g.fill(); }
+    g.fillStyle = lin(g, 4, 0, 26, 0, [rgba('#fff2d0', .15), rgba('#000', 0), rgba('#140a04', .35)]); g.fillRect(3, 11, 24, 14); g.restore();
+    g.beginPath(); g.moveTo(4, 12); g.lineTo(26, 12); g.lineWidth = 1.6; g.strokeStyle = '#7a5226'; g.stroke(); g.beginPath(); g.moveTo(4, 11.4); g.lineTo(26, 11.4); g.lineWidth = .6; g.strokeStyle = '#e8b878'; g.stroke();
   }),
   cerca: () => hi(44, 32, 22, 26, g => {                          // cerca de bambu amarrada com corda preta
     sombraSuave(g, 23, 25, 18, 3, .34);
@@ -4801,13 +4834,20 @@ const SP = {
     retR(g, 20, 30.4, 12, 3.4, .8); contorno(g, '#6b4423', .6, '#2a160a');                                                 // caixa de oferendas
     [[11, 30], [41, 30]].forEach(([x, y]) => { retR(g, x - 1.2, y - 5, 2.4, 5, .5); contorno(g, '#f6ecc8', .5, '#6b5424'); g.beginPath(); g.ellipse(x, y - 6.4, 1, 1.8, 0, 0, TAU); g.fillStyle = '#ffb02e'; g.fill(); brilho(g, x, y - 6.4, 6, '#ffd070', .8); });   // velas
   }, { luz: { x: 0, y: -40, r: 22, c: '#ffc060' } }),
-  estatua: () => hi(40, 68, 20, 60, g => {
-    sombraSuave(g, 22, 60, 15, 4, .38); retR(g, 4, 48, 28, 12, 2); contorno(g, lin(g, 4, 0, 32, 0, ['#c2bfd0', '#9c98ac', '#7a768c']), 1, '#454260');
-    retR(g, 9, 20, 20, 30, 4); contorno(g, lin(g, 9, 0, 29, 0, ['#d8d5e4', '#b3afc4', '#8a869c']), 1, '#454260');
-    retR(g, 3, 22, 7, 20, 3); retR(g, 28, 22, 7, 20, 3); contorno(g, '#a9a5ba', .9, '#454260');
-    g.beginPath(); g.arc(19, 12, 8, 0, TAU); contorno(g, lin(g, 11, 0, 27, 0, ['#e2dfec', '#bcb8cc', '#8f8ba3']), 1, '#454260');
-    risco(g, 15, 11, 18, 11, 1.2, '#454260'); risco(g, 21, 11, 24, 11, 1.2, '#454260'); risco(g, 17, 25, 21, 25, 1, '#6a667e');
-    g.beginPath(); g.ellipse(14, 8, 3, 2, -.3, 0, TAU); g.fillStyle = 'rgba(255,255,255,.4)'; g.fill();
+  estatua: () => hi(40, 68, 20, 60, g => {                          // estátua de pedra (jizo) com babador vermelho, musgo e desgaste
+    sombraSuave(g, 22, 60, 15, 4, .42);
+    const pedra = (c, cam, x0, y0, w, h, seed, musgo) => { g.save(); cam(); g.fillStyle = lin(g, x0, y0, x0 + w, y0 + h, [cla(c, .3), c, esc(c, .6)]); g.fill(); g.clip(); texPedraSobre(g, x0, y0, w, h, seed, musgo); g.restore(); cam(); g.lineWidth = .9; g.strokeStyle = '#3a3846'; g.stroke(); };
+    pedra('#9a96a6', () => { g.beginPath(); g.moveTo(3, 52); g.lineTo(6, 48); g.lineTo(34, 48); g.lineTo(37, 52); g.lineTo(37, 60); g.lineTo(3, 60); g.closePath(); }, 3, 48, 34, 12, 11, true);      // pedestal
+    pedra('#aeaabb', () => { g.beginPath(); g.moveTo(8, 48); g.quadraticCurveTo(6, 32, 10, 22); g.quadraticCurveTo(20, 17, 30, 22); g.quadraticCurveTo(34, 32, 32, 48); g.closePath(); }, 6, 18, 28, 30, 12, true);   // corpo (manto)
+    g.strokeStyle = 'rgba(50,46,60,.45)'; g.lineWidth = .7; [[12, 26, 11, 46], [16, 25, 16, 47], [24, 25, 24, 47], [28, 26, 29, 46]].forEach(([x1, y1, x2, y2]) => { g.beginPath(); g.moveTo(x1, y1); g.quadraticCurveTo((x1 + x2) / 2 + 1, (y1 + y2) / 2, x2, y2); g.stroke(); });   // dobras do manto
+    g.beginPath(); g.moveTo(11, 23); g.quadraticCurveTo(20, 33, 29, 23); g.quadraticCurveTo(20, 27, 11, 23); g.closePath(); g.fillStyle = lin(g, 11, 23, 29, 30, ['#e04a3a', '#b02a20', '#7a1810']); g.fill();   // babador vermelho
+    g.beginPath(); g.moveTo(11, 23); g.quadraticCurveTo(20, 33, 29, 23); g.lineWidth = .7; g.strokeStyle = '#5a1008'; g.stroke();
+    pedra('#b8b4c4', () => { g.beginPath(); g.ellipse(17, 37, 3.4, 2.6, 0, 0, TAU); g.ellipse(23, 37, 3.4, 2.6, 0, 0, TAU); }, 13, 34, 14, 6, 13, false);                // mãos juntas
+    pedra('#bcb8c8', () => { g.beginPath(); g.arc(20, 13, 7.6, 0, TAU); }, 12, 5, 16, 16, 14, false);                                                                   // cabeça
+    g.strokeStyle = '#4a4656'; g.lineWidth = .9; g.beginPath(); g.arc(17, 13.4, 1.5, .2, Math.PI - .2); g.stroke(); g.beginPath(); g.arc(23, 13.4, 1.5, .2, Math.PI - .2); g.stroke();   // olhos fechados
+    g.beginPath(); g.arc(20, 16.6, 1.6, .3, Math.PI - .3); g.stroke(); g.fillStyle = 'rgba(60,56,70,.5)'; g.beginPath(); g.ellipse(20, 6.4, 1.6, 1, 0, 0, TAU); g.fill();
+    g.beginPath(); g.ellipse(15.6, 9, 2.6, 1.6, -.4, 0, TAU); g.fillStyle = 'rgba(255,255,250,.35)'; g.fill();
+    [[9, 44, 4], [30, 46, 3], [20, 20.4, 3]].forEach(([x, y, rr]) => { const gr = g.createRadialGradient(x, y, 0, x, y, rr); gr.addColorStop(0, '#9be27a'); gr.addColorStop(.6, '#5f9a3e'); gr.addColorStop(1, 'rgba(47,90,30,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); });
   }),
   corrimao: (eixoI) => hi(40, 30, 20, 24, g => {                    // corrimão vermelho de ponte (1 tile, ao longo do eixo i ou j)
     const s = eixoI ? 1 : -1, A = [20 - 8 * s, 20], B = [20 + 8 * s, 28];
@@ -4816,14 +4856,20 @@ const SP = {
     [[10.5, 2.2], [5.5, 1.6]].forEach(([h, w]) => { const a = at(0, h), b = at(1, h); risco(g, a[0], a[1], b[0], b[1], w + 1.4, '#4a1010'); risco(g, a[0], a[1], b[0], b[1], w, '#d63a2a'); risco(g, a[0], a[1] - .5, b[0], b[1] - .5, w * .35, 'rgba(255,210,180,.6)'); });
     [0, .5, 1].forEach(t => { const b = at(t, 0); retR(g, b[0] - 1.6, b[1] - 13, 3.2, 13, .8); contorno(g, lin(g, b[0] - 1.6, 0, b[0] + 1.6, 0, ['#ff6a4a', '#c8321f', '#8a1c14']), .7, '#4a1010'); g.beginPath(); g.arc(b[0], b[1] - 13.6, 1.7, 0, TAU); contorno(g, '#e0b44a', .5, '#6b5424'); });
   }),
-  cavernaBoca: () => hi(96, 74, 48, 62, g => {                     // entrada de caverna: rochas com musgo e boca escura
-    sombraSuave(g, 50, 62, 40, 9, .45);
-    const pedra = (cx, by, rx, ry, c) => { g.beginPath(); g.ellipse(cx, by - ry, rx, ry, 0, 0, TAU); contorno(g, lin(g, cx - rx, by - ry * 2, cx + rx, by, [cla(c, .3), c, esc(c, .6)]), 1.1, '#2e2a40'); g.beginPath(); g.ellipse(cx - rx * .3, by - ry * 1.6, rx * .45, ry * .3, -.3, 0, TAU); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); };
-    pedra(20, 62, 20, 18, '#7d7a92'); pedra(76, 62, 20, 17, '#76738c'); pedra(48, 40, 30, 22, '#8a87a0');
-    g.beginPath(); g.moveTo(30, 63); g.quadraticCurveTo(30, 30, 48, 28); g.quadraticCurveTo(66, 30, 66, 63); g.closePath();
-    const gr = g.createRadialGradient(48, 56, 2, 48, 50, 26); gr.addColorStop(0, '#000'); gr.addColorStop(.7, '#120e1e'); gr.addColorStop(1, '#2a2440'); g.fillStyle = gr; g.fill(); g.lineWidth = 1.2; g.strokeStyle = '#1a1626'; g.stroke();
-    [[22, 44, 10, 3], [70, 46, 9, 3], [44, 20, 14, 4], [56, 22, 8, 2.4]].forEach(([x, y, rx, ry]) => { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fillStyle = rgba('#6fa048', .9); g.fill(); g.beginPath(); g.ellipse(x - 1.5, y - .8, rx * .5, ry * .45, 0, 0, TAU); g.fillStyle = rgba('#a5d870', .7); g.fill(); });
-    [[36, 60], [60, 60]].forEach(([x, y]) => { brilho(g, x, y - 6, 6, '#7fd8ff', .5); });
+  cavernaBoca: () => hi(96, 78, 48, 64, g => {                     // entrada de caverna: rochedo facetado com musgo, boca funda e dentes de pedra
+    sombraSuave(g, 50, 64, 42, 10, .5);
+    rocha(g, 18, 64, 17, 11, '#8a8698', '#6a6680', '#b8b4c8', true); rocha(g, 78, 64, 18, 11, '#86829a', '#66627c', '#b4b0c4', true);
+    rocha(g, 48, 46, 30, 15, '#928ea4', '#6e6a84', '#c2bed2', true);
+    g.save(); g.beginPath(); g.moveTo(29, 65); g.quadraticCurveTo(28, 34, 48, 30); g.quadraticCurveTo(68, 34, 67, 65); g.closePath();
+    const gr = g.createRadialGradient(48, 58, 2, 48, 50, 30); gr.addColorStop(0, '#000000'); gr.addColorStop(.55, '#0c0918'); gr.addColorStop(.85, '#241e3a'); gr.addColorStop(1, '#3a3452'); g.fillStyle = gr; g.fill(); g.clip();
+    for (let k = 0; k < 9; k++) { const x = 32 + k * 4, h = 3 + (k * 5 % 4); g.beginPath(); g.moveTo(x - 2, 30); g.lineTo(x, 33 + h); g.lineTo(x + 2, 30); g.fillStyle = lin(g, x - 2, 0, x + 2, 0, ['#7a7690', '#4a465e']); g.fill(); }   // estalactites
+    [[38, 58, '#7fe0ff'], [57, 57, '#d08aff'], [47, 60, '#7fe0ff']].forEach(([x, y, c]) => { brilho(g, x, y - 3, 9, c, .55); g.beginPath(); g.moveTo(x - 2, y); g.lineTo(x, y - 6); g.lineTo(x + 2, y); g.fillStyle = c; g.fill(); });   // cristais lá dentro
+    g.restore();
+    g.beginPath(); g.moveTo(29, 65); g.quadraticCurveTo(28, 34, 48, 30); g.quadraticCurveTo(68, 34, 67, 65); g.lineWidth = 1.6; g.strokeStyle = '#2a2638'; g.stroke();
+    g.beginPath(); g.moveTo(31, 63); g.quadraticCurveTo(30, 37, 48, 33); g.lineWidth = .8; g.strokeStyle = 'rgba(220,216,240,.35)'; g.stroke();   // borda iluminada da boca
+    [[24, 64, 2.4], [70, 65, 2], [34, 66, 1.6], [62, 66, 1.4]].forEach(([x, y, rr]) => { const gs = g.createRadialGradient(x - .5, y - .6, 0, x, y, rr); gs.addColorStop(0, '#d8d4e4'); gs.addColorStop(1, '#4a465e'); g.fillStyle = gs; g.beginPath(); g.arc(x, y - rr * .4, rr, 0, TAU); g.fill(); });   // pedrinhas
+    [[44, 31, 7], [56, 33, 4], [18, 52, 4], [80, 52, 4]].forEach(([x, y, rr]) => { const gm = g.createRadialGradient(x - .6, y - .8, 0, x, y, rr); gm.addColorStop(0, '#b4e88a'); gm.addColorStop(.5, '#5f9a3e'); gm.addColorStop(1, 'rgba(47,90,30,0)'); g.fillStyle = gm; g.beginPath(); g.ellipse(x, y, rr, rr * .5, 0, 0, TAU); g.fill(); });   // musgo
+    g.strokeStyle = '#4f9a38'; g.lineWidth = .7; [[40, 31, 6], [53, 32, 8], [60, 34, 5]].forEach(([x, y, l]) => { g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 1, y + l * .5, x - .5, y + l); g.stroke(); });   // raízes penduradas
   }),
   torii: () => hi(96, 84, 48, 76, g => {                            // portal torii: kasagi curvo, nuki atravessando, corda shimenawa
     sombraSuave(g, 52, 76, 38, 6.4, .4);
@@ -4849,14 +4895,23 @@ const SP = {
     for (let k = 0; k < 24; k++) { const a = corda(k / 24), b = corda((k + 1) / 24); risco(g, a[0], a[1], b[0], b[1], 3.4, '#8a7038'); risco(g, a[0], a[1] - .6, b[0] - .6, b[1] + .6, 1.4, k % 2 ? '#e8d6a0' : '#c9b070'); }
     [.22, .5, .78].forEach(t => { const p = corda(t); g.beginPath(); g.moveTo(p[0] - 1, p[1] + 1.4); g.lineTo(p[0] + 1.6, p[1] + 3.4); g.lineTo(p[0] - 1, p[1] + 5.4); g.lineTo(p[0] + 1.6, p[1] + 7.4); g.lineTo(p[0] - .6, p[1] + 9.2); g.lineWidth = 1.5; g.strokeStyle = '#fdfdf6'; g.stroke(); g.lineWidth = .4; g.strokeStyle = '#9a9a9a'; g.stroke(); });
   }),
-  coluna: alt => hi(36, alt + 26, 18, alt + 20, g => {
-    const by = alt + 20, tp = alt > 30; sombraSuave(g, 20, by + 1, 14, 4, .36);
-    const pedra = (x, y, w, h, r, c) => { retR(g, x, y, w, h, r); contorno(g, lin(g, x, y, x + w, y, [cla(c, .3), c, esc(c, .75)]), 1, '#5a5444'); };
-    pedra(5, by - 8, 26, 8, 2, '#d2cbb8'); pedra(8, by - 8 - alt, 20, alt, 1.5, '#e2dccb');
-    g.save(); retR(g, 8, by - 8 - alt, 20, alt, 1.5); g.clip(); g.strokeStyle = 'rgba(110,100,80,.45)'; g.lineWidth = .6; for (let k = 1; k < 5; k++) { g.beginPath(); g.moveTo(8 + k * 4, by - 8 - alt); g.lineTo(8 + k * 4, by - 8); g.stroke(); } g.restore();
-    if (tp) { pedra(3, by - 16 - alt, 30, 8, 2, '#d2cbb8'); } else { g.fillStyle = '#9d9684'; g.beginPath(); g.moveTo(8, by - 8 - alt); g.lineTo(13, by - 12 - alt); g.lineTo(17, by - 8 - alt); g.lineTo(22, by - 11 - alt); g.lineTo(28, by - 8 - alt); g.fill(); g.lineWidth = .8; g.strokeStyle = '#5a5444'; g.stroke(); }
-    g.beginPath(); g.ellipse(14, by - 8 - alt * .3, 4, 1.8, .3, 0, TAU); g.fillStyle = 'rgba(110,170,80,.55)'; g.fill();
-  }),
+  coluna: alt => hi(36, alt + 26, 18, alt + 20, g => {               // coluna de pedra: cilindro com caneluras, desgaste, rachaduras e musgo
+    const by = alt + 20, tp = alt > 30, seed = alt * 7 + 3; sombraSuave(g, 20, by + 1, 14, 4, .42);
+    const cil = (x, y, w, h, c) => { const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, esc(c, .7)); gr.addColorStop(.25, cla(c, .35)); gr.addColorStop(.55, c); gr.addColorStop(1, esc(c, .48)); g.fillStyle = gr; g.fillRect(x, y, w, h); };
+    const bloco = (x, y, w, h, c) => { g.save(); retR(g, x, y, w, h, 1.6); g.clip(); cil(x, y, w, h, c); texPedraSobre(g, x, y, w, h, seed + x, false); g.restore(); retR(g, x, y, w, h, 1.6); g.lineWidth = .9; g.strokeStyle = '#4a4436'; g.stroke(); g.fillStyle = 'rgba(255,255,240,.35)'; g.fillRect(x + 1, y + .5, w - 2, .7); };
+    bloco(5, by - 8, 26, 8, '#cfc7b2');                                                                  // base
+    g.save();                                                                                             // fuste (corpo) da coluna
+    if (tp) g.beginPath(), g.rect(8, by - 8 - alt, 20, alt); else { g.beginPath(); g.moveTo(8, by - 8); g.lineTo(8, by - 8 - alt); g.lineTo(12, by - 13 - alt); g.lineTo(15, by - 8 - alt); g.lineTo(19, by - 12 - alt); g.lineTo(23, by - 9 - alt); g.lineTo(28, by - 14 - alt); g.lineTo(28, by - 8); g.closePath(); }
+    g.clip(); cil(8, by - 16 - alt, 20, alt + 8, '#e0d8c4');
+    for (let k = 1; k < 5; k++) { const x = 8 + k * 4; g.fillStyle = 'rgba(80,70,50,.32)'; g.fillRect(x - .6, by - 16 - alt, 1.2, alt + 8); g.fillStyle = 'rgba(255,255,240,.28)'; g.fillRect(x + .7, by - 16 - alt, .6, alt + 8); }   // caneluras
+    texPedraSobre(g, 8, by - 14 - alt, 20, alt + 6, seed, true);
+    g.restore();
+    g.lineWidth = .9; g.strokeStyle = '#4a4436'; g.strokeRect(8, by - 8 - alt + (tp ? 0 : 3), 20, alt - (tp ? 0 : 3));
+    if (tp) bloco(3, by - 16 - alt, 30, 8, '#cfc7b2');                                                 // capitel
+    else [[30, by - 1, 2.4], [6, by, 1.8], [33, by - 2, 1.4]].forEach(([x, y, rr]) => { const gr = g.createRadialGradient(x - .4, y - .5, 0, x, y, rr); gr.addColorStop(0, '#f0e8d6'); gr.addColorStop(1, '#8a826e'); g.fillStyle = gr; g.beginPath(); g.arc(x, y - rr * .5, rr, 0, TAU); g.fill(); });   // pedaços caídos
+    g.strokeStyle = '#4f9a38'; g.lineWidth = .8; g.beginPath(); g.moveTo(10, by - 8); g.bezierCurveTo(12, by - 8 - alt * .3, 8, by - 8 - alt * .5, 11, by - 8 - alt * .7); g.stroke();   // trepadeira
+    for (let k = 0; k < 6; k++) { const yy = by - 10 - k * alt * .1, xx = 10 + Math.sin(k * 1.7) * 1.5; g.beginPath(); g.ellipse(xx + (k % 2 ? 1.6 : -1.6), yy, 1.4, .7, k % 2 ? .5 : -.5, 0, TAU); g.fillStyle = k % 2 ? '#5fae45' : '#7fc24c'; g.fill(); }
+  })
 };
 
 /* ---------- cachoeira (animada todo quadro) ---------- */
