@@ -649,6 +649,7 @@ function trilha(m, x0, y0, x1, y1, tipo = T.TERRA) {               // caminho co
 }
 const novoBambu = (rnd, x, y) => ({ tipo: 'bambu', x, y, r: .16, spr: SPR.bambu[Math.floor(rnd() * SPR.bambu.length)] });
 function bambusBorda(m, rnd, res, passo = .55) {
+  if (SEM_BORDA) return;
   for (let k = 0; k < Math.max(m.w, m.h); k += passo) {
     [[k, .45 + rnd() * .4], [k, m.h - .45 - rnd() * .4], [.45 + rnd() * .4, k], [m.w - .45 - rnd() * .4, k]].forEach(([x, y]) => {
       if (x < m.w && y < m.h && livre(m, x, y, .16, .05, res, true)) m.objs.push(m.fazBorda ? m.fazBorda(rnd, x, y) : novoBambu(rnd, x, y));
@@ -1055,6 +1056,352 @@ const MAPAS = {
 };
 Object.keys(CFG).forEach(k => { MAPAS[k] = () => regiao(CFG[k]()); });
 
+/* =====================================================================
+   5b. MUNDO ABERTO: todas as regiões num mapa só, sem tela de transição.
+   Cada região tem 72x72 tiles. O desenho antigo de cada região fica no meio
+   ("núcleo") e o resto é criado em CHUNKS conforme o Akira anda.
+   ===================================================================== */
+const RW = 72;                                     // tamanho de cada região (tiles)
+const CHUNK = 24;                                  // chunk de objetos (cabe 3x3 em cada região)
+const FC = 8;                                      // pedaço de chão pré-desenhado (8x8 tiles)
+const GRADE_MUNDO = [                              // posição das regiões no mundo (coluna = eixo x, linha = eixo y)
+  ['gt_patio',   'jardins',  null],
+  ['tangerinas', 'outono',   'templos'],
+  ['cerejeiras', 'vilarejo', 'bambuzal'],
+  [null,         null,       'cachoeira']
+];
+// Ligações abertas entre regiões vizinhas (portões); req = exigência para passar
+const LIGACOES = [
+  ['vilarejo', 'bambuzal'], ['vilarejo', 'cerejeiras'], ['vilarejo', 'outono'], ['bambuzal', 'cachoeira'],
+  ['bambuzal', 'templos', { nivel: 2, msg: 'Os Templos Antigos são perigosos. Volte com nível 2.' }],
+  ['templos', 'outono', { faixa: 1, msg: 'O portão antigo só se abre para faixa amarela ou mais.' }],
+  ['cerejeiras', 'tangerinas'],
+  ['tangerinas', 'gt_patio', { nivel: 6, faixa: 2, msg: 'O Grande Templo só recebe quem tem faixa laranja e nível 6.' }],
+  ['gt_patio', 'jardins']
+];
+// Regras de decoração/inimigos das regiões que não usam a tabela CFG
+const REGRAS_EXTRA = {
+  bambuzal: { nome: 'Bambuzal', base: T.GRAMA, tam: [26, 26], spawn: [3.5, 13.5], borda: 'bambu', grupos: [['bambu', 16, .16, 3, 7]], espalhar: [['pedra', 10], ['arbusto', 14], ['toco', 4]], flores: 70, inimigos: [['bandido'], ['bandido'], ['bandido'], ['bandido'], ['bandido'], ['veterano']] },
+  vilarejo: { nome: 'Vilarejo', base: T.GRAMA, tam: [32, 26], spawn: [15.5, 14.8], borda: 'bambu', espalhar: [['arbusto', 14], ['pedra', 6], ['arvore', 4]], flores: 60, inimigos: [] }
+};
+const SEM_INIMIGOS = { vilarejo: 1, gt_patio: 1, jardins: 1 };
+const DECOR_EXTRA = { gt_patio: [['cerejeira', 8], ['lanternaPedra', 8], ['estatua', 2], ['coluna', 3]] };   // a região antiga não tinha decoração espalhada
+let SEM_BORDA = false;                             // enquanto monta o núcleo, não cerca a borda antiga
+const regraDe = id => REGRAS_EXTRA[id] || CFG[id]();
+const tamNucleo = id => { const r = regraDe(id); return r.tam || [r.w, r.h]; };
+const LAGOS = new Set();
+const CELULA = {};                                 // id da região -> [coluna, linha]
+GRADE_MUNDO.forEach((l, r) => l.forEach((id, c) => { if (id) CELULA[id] = [c, r]; }));
+// posição do núcleo (desenho original) dentro do mundo
+function origemNucleo(id) {
+  const [c, r] = CELULA[id], [w, h] = tamNucleo(id);
+  return [c * RW + Math.floor((RW - w) / 2), r * RW + Math.floor((RW - h) / 2)];
+}
+
+/* ---------- índice espacial (para checar espaço livre rápido em mapas enormes) ---------- */
+function indexar(m, o) { const k = (o.x >> 1) + (o.y >> 1) * 1024; let a = m.idx.get(k); if (!a) m.idx.set(k, a = []); a.push(o); }
+function reservar(m, x, y, r) {
+  const z = { x, y, r };
+  for (let cy = Math.floor((y - r) / 4); cy <= Math.floor((y + r) / 4); cy++) for (let cx = Math.floor((x - r) / 4); cx <= Math.floor((x + r) / 4); cx++) {
+    const k = cx + cy * 1024; let a = m.ridx.get(k); if (!a) m.ridx.set(k, a = []); a.push(z);
+  }
+}
+function reservado(m, x, y, r) {
+  const a = m.ridx.get(Math.floor(x / 4) + Math.floor(y / 4) * 1024); if (!a) return false;
+  for (const z of a) if (Math.hypot(x - z.x, y - z.y) < z.r + r) return true;
+  return false;
+}
+function livreG(m, x, y, r, gap, soBase, ignRes) {
+  const i = Math.floor(x), j = Math.floor(y);
+  if (i < 1 || j < 1 || i >= m.w - 1 || j >= m.h - 1) return false;
+  for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+    const t = m.tiles[j + dj][i + di];
+    if (m.bloq[j + dj][i + di]) return false;
+    if (t === m.baseEm(i + di, j + dj)) continue;
+    if (t === T.TERRA || t === T.AREIA || t === T.PONTE || t === T.PEDRA || t === T.LAJE || t === T.AGUA) { if (soBase || (di === 0 && dj === 0)) return false; }
+  }
+  if (soBase && m.tiles[j][i] !== m.baseEm(i, j)) return false;
+  if (!ignRes && reservado(m, x, y, r)) return false;
+  for (let cy = (y >> 1) - 1; cy <= (y >> 1) + 1; cy++) for (let cx = (x >> 1) - 1; cx <= (x >> 1) + 1; cx++) {
+    const a = m.idx.get(cx + cy * 1024); if (!a) continue;
+    for (const o of a) if (o.r > 0 && Math.hypot(x - o.x, y - o.y) < o.r + r + gap) return false;
+  }
+  return true;
+}
+
+/* ---------- caminho com 2 tiles de largura (em qualquer mapa) ---------- */
+function caminhoL(m, pts, tipo) { for (let k = 0; k < pts.length - 1; k++) trilha(m, Math.round(pts[k][0]), Math.round(pts[k][1]), Math.round(pts[k + 1][0]), Math.round(pts[k + 1][1]), tipo); }
+
+/* ---------- copia um mapa antigo (núcleo) pra dentro do mapa grande ---------- */
+function colarNucleo(M, n, ox, oy, regiaoId) {
+  for (let j = 0; j < n.h; j++) for (let i = 0; i < n.w; i++) { M.tiles[oy + j][ox + i] = n.tiles[j][i]; M.bloq[oy + j][ox + i] = n.bloq[j][i]; }
+  for (const o of n.objs) {
+    o.x += ox; o.y += oy; if (o.ax != null) { o.ax += ox; o.ay += oy; } if (o.dk != null) o.dk += ox + oy; o.casa0 = true;
+    M.objs.push(o);
+  }
+  for (const f of n.flores) M.floresN.push({ x: f.x + ox, y: f.y + oy, cor: f.cor });
+  return n.exits.map(e => Object.assign({}, e, { x: e.x + ox, y: e.y + oy, origem: regiaoId }));
+}
+
+/* ---------- objetos estáticos em chunks + lista "ativa" perto do Akira ---------- */
+const DINAMICOS = { inimigo: 1, npc: 1, boneco: 1, papel: 1 };
+function prepararChunks(M) {
+  M.chunks = new Map(); M.dyn = []; M.idx = new Map(); M.cAtual = null;
+  const tipoPorNome = {}; Object.keys(TIPOS_INIM).forEach(k => { tipoPorNome[TIPOS_INIM[k].nome] = k; });
+  for (const o of M.objs) {
+    if (DINAMICOS[o.tipo]) { o.home = [o.x, o.y]; if (o.tipo === 'inimigo' && !o.tipoInim) o.tipoInim = tipoPorNome[o.nome] || 'bandido'; M.dyn.push(o); }
+    else guardarEstatico(M, o);
+  }
+  M.objs = [];
+}
+function chunkDe(M, ci, cj) { const k = ci + ',' + cj; let c = M.chunks.get(k); if (!c) M.chunks.set(k, c = { objs: [], gerado: false, ci, cj }); return c; }
+function guardarEstatico(M, o) { chunkDe(M, Math.floor(o.x / CHUNK), Math.floor(o.y / CHUNK)).objs.push(o); indexar(M, o); }
+function atualizarAtivos(M, forcar) {
+  const ci = Math.floor(jog.x / CHUNK), cj = Math.floor(jog.y / CHUNK), k = ci + ',' + cj;
+  if (!forcar && !M.sujo && k === M.cAtual) return;
+  M.cAtual = k; M.sujo = false;
+  const lista = [];
+  for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+    const a = ci + di, b = cj + dj; if (a < 0 || b < 0 || a * CHUNK >= M.w || b * CHUNK >= M.h) continue;
+    const c = chunkDe(M, a, b); if (!c.gerado) gerarChunk(M, c);
+    for (const o of c.objs) lista.push(o);
+  }
+  const x0 = (ci - 1) * CHUNK, x1 = (ci + 2) * CHUNK, y0 = (cj - 1) * CHUNK, y1 = (cj + 2) * CHUNK;
+  for (const o of M.dyn) if (!o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0) && o.x >= x0 && o.x < x1 && o.y >= y0 && o.y < y1) lista.push(o);
+  M.objs = lista; M.arvores = lista.filter(o => o.spr && o.spr.copa);
+}
+function removerObj(M, o) { o.removido = true; M.objs = M.objs.filter(x => x !== o); }
+// inimigos derrotados voltam depois de um tempo (só longe do Akira)
+function renascerInimigos(M) {
+  for (const e of M.dyn) {
+    if (e.tipo !== 'inimigo' || e.vivo || e.t > 0) continue;
+    if (e.mortoEm == null) e.mortoEm = tempo;
+    if (tempo - e.mortoEm > 75 && Math.hypot(e.home[0] - jog.x, e.home[1] - jog.y) > 20) {
+      const n = novoInimigo(e.tipoInim || 'bandido', e.home[0], e.home[1]); Object.assign(e, n, { home: e.home, tipoInim: e.tipoInim, mortoEm: null }); M.sujo = true;
+    }
+  }
+}
+
+/* ---------- geração do conteúdo de um chunk (na hora em que ele aparece) ---------- */
+function gerarChunk(M, c) {
+  c.gerado = true;
+  const x0 = c.ci * CHUNK, y0 = c.cj * CHUNK, x1 = Math.min(M.w, x0 + CHUNK), y1 = Math.min(M.h, y0 + CHUNK);
+  const R = M.regiaoEm(x0 + 1, y0 + 1); if (!R || R.lago) return;
+  const rnd = mulberry32((c.ci * 92821 + c.cj * 68917 + M.semente) | 0);
+  const noNucleo = (x, y) => R.nucleo && x >= R.nucleo[0] - 1 && x < R.nucleo[2] + 1 && y >= R.nucleo[1] - 1 && y < R.nucleo[3] + 1;
+  const por = (k, x, y, ex) => guardarEstatico(M, mkObj(k, rnd, Object.assign({ x, y }, ex)));
+  // 1. cerca viva nas bordas da região (menos onde passa caminho)
+  if (R.borda) {
+    const passo = R.bordaPasso || .55, ed = [R.x0, R.y0, R.x1, R.y1];
+    const tenta = (x, y) => { if (x >= x0 && x < x1 && y >= y0 && y < y1 && !noNucleo(x, y) && livreG(M, x, y, .16, .05, true)) por(R.borda, x, y); };
+    for (let t = 0; t < CHUNK; t += passo) {
+      const xx = x0 + t, yy = y0 + t;
+      if (y0 === ed[1]) tenta(xx, ed[1] + .45 + rnd() * .5);
+      if (y1 === ed[3]) tenta(xx, ed[3] - .45 - rnd() * .5);
+      if (x0 === ed[0]) tenta(ed[0] + .45 + rnd() * .5, yy);
+      if (x1 === ed[2]) tenta(ed[2] - .45 - rnd() * .5, yy);
+    }
+  }
+  if (R.preencher) {                                                   // caverna: rocha maciça fora dos túneis (com cristais nas paredes)
+    for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
+      if (!M.bloq[j][i] || noNucleo(i + .5, j + .5)) continue;
+      let borda = false; for (let dj = -1; dj <= 1 && !borda; dj++) for (let di = -1; di <= 1; di++) { const b = M.bloq[j + dj]; if (b && b[i + di] === false) { borda = true; break; } }
+      const h = rnd(), k = borda && h < .08 ? 'cristal' : borda && h < .13 ? 'estalagmite' : 'rocha';
+      const o = mkObj(k, rnd, { x: i + .5 + (rnd() - .5) * .3, y: j + .5 + (rnd() - .5) * .3 }); o.r = 0; guardarEstatico(M, o);
+    }
+  }
+  const area = (x1 - x0) * (y1 - y0), fator = area / R.areaOrig * .85;
+  // 2. grupos (moitas de bambu, bosques)
+  (R.grupos || []).forEach(([k, n, r, a, b]) => {
+    let q = n * fator; q = Math.floor(q) + (rnd() < q % 1 ? 1 : 0);
+    for (let g = 0; g < q; g++) {
+      const cx = x0 + 1 + rnd() * (x1 - x0 - 2), cy = y0 + 1 + rnd() * (y1 - y0 - 2), alvo = a + Math.floor(rnd() * (b - a + 1));
+      if (noNucleo(cx, cy)) continue;
+      for (let t = 0, n2 = 0; t < alvo * 4 && n2 < alvo; t++) { const x = cx + (rnd() - .5) * 3.4, y = cy + (rnd() - .5) * 3.4; if (!noNucleo(x, y) && livreG(M, x, y, r, .18, true)) { por(k, x, y); n2++; } }
+    }
+  });
+  // 3. objetos espalhados (pedras, arbustos, árvores...)
+  (R.espalhar || []).forEach(([k, qq]) => {
+    let q = qq * fator; q = Math.floor(q) + (rnd() < q % 1 ? 1 : 0);
+    const r = (DEF_OBJ[k] && DEF_OBJ[k].r) || .3;
+    for (let n = 0, t = 0; n < q && t < q * 6 + 6; t++) { const x = x0 + .5 + rnd() * (x1 - x0 - 1), y = y0 + .5 + rnd() * (y1 - y0 - 1); if (!noNucleo(x, y) && livreG(M, x, y, r, .3, true)) { por(k, x, y); n++; } }
+  });
+  // 4. inimigos da região (aparecem nos chunks novos)
+  if (R.inimigos && R.inimigos.length && !SEM_INIMIGOS[R.id]) {
+    let q = R.inimigos.length * fator * .45; q = Math.floor(q) + (rnd() < q % 1 ? 1 : 0);
+    for (let n = 0, t = 0; n < q && t < 40; t++) {
+      const x = x0 + 1 + rnd() * (x1 - x0 - 2), y = y0 + 1 + rnd() * (y1 - y0 - 2);
+      if (noNucleo(x, y) || (!R.preencher && reservado(M, x, y, 1.5)) || (R.preencher && M.bloq[Math.floor(y)][Math.floor(x)]) || !livreG(M, x, y, .3, .3, false, R.preencher)) continue;
+      const tp = R.inimigos[Math.floor(rnd() * R.inimigos.length)][0], e = novoInimigo(tp, x, y);
+      e.home = [x, y]; e.tipoInim = tp; M.dyn.push(e); n++;
+    }
+  }
+}
+
+/* ---------- regiões do mundo: informação de cada célula ---------- */
+function infoRegiao(id, c, r) {
+  const g = regraDe(id), [nx, ny] = origemNucleo(id), [w, h] = tamNucleo(id);
+  return { id, nome: g.nome, base: g.base != null ? g.base : T.GRAMA, amb: g.amb || null, borda: g.borda || null, bordaPasso: g.bordaPasso, grupos: g.grupos, espalhar: (g.espalhar || []).concat(DECOR_EXTRA[id] || []),
+    inimigos: g.inimigos || [], flores: g.flores != null ? g.flores : 50, floresCores: g.floresCores, areaOrig: w * h,
+    x0: c * RW, y0: r * RW, x1: (c + 1) * RW, y1: (r + 1) * RW, nucleo: [nx, ny, nx + w, ny + h] };
+}
+const MUNDO_CACHE = { mundo: null, chaveM: '', caverna: null, chaveC: '' };
+function construirMundo() {
+  const NC = GRADE_MUNDO[0].length, NR = GRADE_MUNDO.length;
+  const M = novoMapa('mundo', 'Mundo', NC * RW, NR * RW, false, T.GRAMA);
+  M.grande = true; M.semente = 1234; M.floresN = []; M.portoes = []; M.ridx = new Map(); M.idx = new Map();
+  M.cel = GRADE_MUNDO.map((l, r) => l.map((id, c) => id ? infoRegiao(id, c, r) : { lago: true, nome: 'Lago', x0: c * RW, y0: r * RW, x1: (c + 1) * RW, y1: (r + 1) * RW }));
+  M.regiaoEm = (x, y) => { const r = M.cel[Math.floor(y / RW)]; return r ? r[Math.floor(x / RW)] : null; };
+  M.baseEm = (i, j) => { const R = M.regiaoEm(i, j); return R && !R.lago ? R.base : T.AGUA; };
+  // chão de cada região (lagos = água)
+  for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) M.tiles[j][i] = M.baseEm(i, j);
+  // núcleos: o desenho antigo de cada região, no meio da região nova
+  const saidasNucleo = [];
+  SEM_BORDA = true;
+  for (const id of Object.keys(CELULA)) {
+    const n = MAPAS_REGIAO[id](), [ox, oy] = origemNucleo(id);
+    saidasNucleo.push(...colarNucleo(M, n, ox, oy, id));
+    reservar(M, ox + n.spawn.x, oy + n.spawn.y, 2);
+  }
+  SEM_BORDA = false;
+  // saídas: portas de casas ficam; as que levavam a outra região viram caminhos até o portão
+  const portaoEm = (a, b) => {                                         // ponto do portão no meio da borda entre a e b
+    const [ca, ra] = CELULA[a], [cb, rb] = CELULA[b];
+    if (ra === rb) return { x: Math.max(ca, cb) * RW, y: ra * RW + RW / 2, eixo: 'x' };
+    return { x: ca * RW + RW / 2, y: Math.max(ra, rb) * RW, eixo: 'y' };
+  };
+  const ligado = (a, b) => LIGACOES.find(l => (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
+  const tipoCaminho = id => id === 'gt_patio' || id === 'jardins' ? T.LAJE : T.TERRA;
+  const feitos = new Set();
+  for (const e of saidasNucleo) {
+    if (!CELULA[e.alvo]) {                                             // porta de casa ou entrada da caverna: continua igual
+      if (e.alvo === 'cavernas') { M.objs.push({ tipo: 'cavernaBoca', x: e.x + e.w / 2, y: e.y + e.h / 2, r: 0, spr: SPR.cavernaBoca }); e.nome = e.nome || 'Cavernas'; }
+      M.exits.push(e); reservar(M, e.x + e.w / 2, e.y + e.h / 2, 2); continue;
+    }
+    const l = ligado(e.origem, e.alvo); if (!l) continue;               // ligação que não existe mais no mapa novo
+    const R = M.cel[CELULA[e.origem][1]][CELULA[e.origem][0]], p = portaoEm(e.origem, e.alvo), cx = e.x + e.w / 2 - .5, cy = e.y + e.h / 2 - .5;
+    const tp = tipoCaminho(e.origem);
+    if (p.eixo === 'x') { const lado = p.x === R.x0 ? R.x0 : R.x1 - 2, meio = lado === R.x0 ? R.x0 + 5 : R.x1 - 7; caminhoL(M, [[cx, cy], [meio, cy], [meio, p.y - 1], [lado, p.y - 1]], tp); }
+    else { const lado = p.y === R.y0 ? R.y0 : R.y1 - 2, meio = lado === R.y0 ? R.y0 + 5 : R.y1 - 7; caminhoL(M, [[cx, cy], [cx, meio], [p.x - 1, meio], [p.x - 1, lado]], tp); }
+    const chave = [e.origem, e.alvo].sort().join('|');
+    if (!feitos.has(chave)) {                                          // portão: lanternas dos lados e torii se tiver exigência
+      feitos.add(chave);
+      const req = l[2], nome = req ? (M.cel[CELULA[e.alvo][1]][CELULA[e.alvo][0]].nome + ' / ' + R.nome) : null;
+      if (p.eixo === 'x') {
+        M.portoes.push({ x: p.x - 1.2, y: p.y - 2.5, w: 2.4, h: 5, req, nome, a: e.origem, b: e.alvo });
+        [[p.x - .2, p.y - 2.4], [p.x - .2, p.y + 2.4]].forEach(([x, y]) => M.objs.push(mkObj('lanternaPedra', Math.random, { x, y })));
+        if (req) M.objs.push(mkObj('torii', Math.random, { x: p.x, y: p.y + .1 }));
+      } else {
+        M.portoes.push({ x: p.x - 2.5, y: p.y - 1.2, w: 5, h: 2.4, req, nome, a: e.origem, b: e.alvo });
+        [[p.x - 2.4, p.y - .2], [p.x + 2.4, p.y - .2]].forEach(([x, y]) => M.objs.push(mkObj('lanternaPedra', Math.random, { x, y })));
+        if (req) M.objs.push(mkObj('torii', Math.random, { x: p.x + .1, y: p.y }));
+      }
+      reservar(M, p.x, p.y, 4);
+    }
+  }
+  // caminhos ficam livres de mato
+  for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) { const t = M.tiles[j][i]; if (t === T.TERRA || t === T.LAJE) { if ((i + j) % 3 === 0) reservar(M, i + .5, j + .5, 1.2); } }
+  // pontos de interesse nas partes novas: lagoas, clareiras e santuários
+  const rnd = mulberry32(777);
+  for (const linha of M.cel) for (const R of linha) {
+    if (R.lago) continue;
+    const fora = (x, y, r) => { const n = R.nucleo; return x + r < n[0] - 2 || x - r > n[2] + 2 || y + r < n[1] - 2 || y - r > n[3] + 2; };
+    const dentro = (x, y, r) => x - r > R.x0 + 3 && x + r < R.x1 - 3 && y - r > R.y0 + 3 && y + r < R.y1 - 3;
+    const semCaminho = (x, y, r) => { for (let j = Math.floor(y - r - 1); j <= y + r + 1; j++) for (let i = Math.floor(x - r - 1); i <= x + r + 1; i++) { const t = M.tiles[j] && M.tiles[j][i]; if (t === T.TERRA || t === T.LAJE || t === T.PEDRA) return false; } return true; };
+    if (R.id !== 'gt_patio') for (let k = 0, t = 0; k < 3 && t < 60; t++) {           // lagoas com margem de areia
+      const rx = 2.5 + rnd() * 3, ry = 2 + rnd() * 2.4, x = R.x0 + rnd() * RW, y = R.y0 + rnd() * RW;
+      if (!fora(x, y, rx + 1) || !dentro(x, y, rx + 1) || !semCaminho(x, y, rx + 1) || reservado(M, x, y, Math.max(rx, ry) + 2)) continue;
+      for (let j = Math.floor(y - ry - 2); j <= y + ry + 2; j++) for (let i = Math.floor(x - rx - 2); i <= x + rx + 2; i++) {
+        const d = Math.pow((i + .5 - x) / rx, 2) + Math.pow((j + .5 - y) / ry, 2);
+        if (d < 1) M.tiles[j][i] = T.AGUA; else if (d < 1.7 && R.id !== 'cerejeiras') M.tiles[j][i] = T.AREIA;
+      }
+      reservar(M, x, y, Math.max(rx, ry) + 1.2); k++;
+    }
+    for (let k = 0, t = 0; k < 2 && t < 60; t++) {                     // clareira de pedra com santuário e lanternas
+      const x = R.x0 + rnd() * RW, y = R.y0 + rnd() * RW;
+      if (!fora(x, y, 4) || !dentro(x, y, 4) || !semCaminho(x, y, 3.5) || reservado(M, x, y, 4.5)) continue;
+      for (let j = Math.floor(y - 3); j <= y + 3; j++) for (let i = Math.floor(x - 3); i <= x + 3; i++) if (Math.hypot(i + .5 - x, j + .5 - y) < 3.1) M.tiles[j][i] = T.PEDRA;
+      M.objs.push(mkObj('altar', rnd, { x, y: y - 1.2 }), mkObj('lanternaPedra', rnd, { x: x - 1.8, y: y + .6 }), mkObj('lanternaPedra', rnd, { x: x + 1.8, y: y + .6 }));
+      if (rnd() < .5) M.objs.push(mkObj('meditar', rnd, { x, y: y + 1.4 }));
+      reservar(M, x, y, 4.2); k++;
+    }
+  }
+  // vilarejo maior: casas de moradores nas partes novas (fechadas)
+  { const R = M.cel[CELULA.vilarejo[1]][CELULA.vilarejo[0]], cores = ['#b8453a', '#3f6fb0', '#2f8f5a', '#c9892f', '#8e44ad', '#6b5b4a'];
+    for (let k = 0, t = 0; k < 8 && t < 300; t++) {
+      const x = Math.floor(R.x0 + 4 + rnd() * (RW - 10)), y = Math.floor(R.y0 + 4 + rnd() * (RW - 10)), n = R.nucleo;
+      if (!(x + 5 < n[0] || x - 2 > n[2] || y + 6 < n[1] || y - 2 > n[3])) continue;
+      let ok = true; for (let j = y - 1; j < y + 5 && ok; j++) for (let i = x - 1; i < x + 4 && ok; i++) if (M.tiles[j][i] !== T.GRAMA || M.bloq[j][i] || reservado(M, i + .5, j + .5, .5)) ok = false;
+      if (!ok) continue;
+      const c = { x, y, w: 3, d: 3, H: 26 + (k % 3) * 2, tel: cores[k % cores.length], par: ['#e9dcc0', '#d6c6a4'], palha: k % 3 === 1, fechada: 'Casa de moradores do vilarejo.' };
+      colocarCasa(M, c); reservar(M, x + 1.5, y + 1.5, 3.2);
+      caminhoL(M, [[x + 1, y + 3.6], [x + 1, y + 5]], T.TERRA); k++;
+    }
+  }
+  prepararChunks(M);
+  M.spawn = (() => { const [ox, oy] = origemNucleo('bambuzal'); return { x: ox + 3.5, y: oy + 13.5 }; })();
+  return M;
+}
+
+/* ---------- cavernas: mapa subterrâneo grande (o original fica no meio) ---------- */
+const CAV_TAM = 84;
+const origemCaverna = () => { const [w, h] = tamNucleo('cavernas'); return [Math.floor((CAV_TAM - w) / 2), Math.floor((CAV_TAM - h) / 2)]; };
+function construirCaverna() {
+  const g = CFG.cavernas(), M = novoMapa('caverna', 'Cavernas', CAV_TAM, CAV_TAM, false, T.CAVERNA);
+  M.grande = true; M.escuro = true; M.amb = g.amb; M.semente = 4321; M.floresN = []; M.portoes = []; M.ridx = new Map(); M.idx = new Map();
+  const [ox, oy] = origemCaverna(), [w, h] = tamNucleo('cavernas');
+  const R = { id: 'cavernas', nome: 'Cavernas', base: T.CAVERNA, amb: g.amb, borda: null, preencher: true, espalhar: [], inimigos: g.inimigos, flores: 0,
+    areaOrig: w * h, x0: 0, y0: 0, x1: CAV_TAM, y1: CAV_TAM, nucleo: [ox, oy, ox + w, oy + h] };
+  M.cel = [[R]]; M.regiaoEm = () => R; M.baseEm = () => T.CAVERNA;
+  SEM_BORDA = true; const n = MAPAS_REGIAO.cavernas(); SEM_BORDA = false;
+  const sai = colarNucleo(M, n, ox, oy, 'cavernas');
+  sai.forEach(e => { M.exits.push(e); reservar(M, e.x + e.w / 2, e.y + e.h / 2, 2.4); });
+  reservar(M, ox + n.spawn.x, oy + n.spawn.y, 2);
+  // salões novos ligados por túneis ao labirinto antigo (o resto vira rocha conforme os chunks aparecem)
+  const rnd = mulberry32(99), saloes = [];
+  for (let t = 0; saloes.length < 9 && t < 400; t++) {
+    const x = 6 + rnd() * (CAV_TAM - 12), y = 6 + rnd() * (CAV_TAM - 12), r = 3 + rnd() * 3;
+    if (x + r > ox - 2 && x - r < ox + w + 2 && y + r > oy - 2 && y - r < oy + h + 2) continue;
+    if (saloes.some(s => Math.hypot(s.x - x, s.y - y) < s.r + r + 6)) continue;
+    saloes.push({ x, y, r });
+  }
+  const entradasNucleo = [[ox + 9, oy + 16], [ox + 16, oy + 24], [ox + 23, oy + 13], [ox + 9, oy + 7], [ox + 23, oy + 24]];
+  const tunel = (a, b, r) => { const n2 = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / .7); for (let s = 0; s <= n2; s++) { const x = a[0] + (b[0] - a[0]) * s / n2, y = a[1] + (b[1] - a[1]) * s / n2 + Math.sin(s * .35) * .8; reservar(M, x, y, r); M.tunel.push([x, y, r]); } };
+  M.tunel = [];
+  saloes.forEach((s, k) => {
+    reservar(M, s.x, s.y, s.r); M.tunel.push([s.x, s.y, s.r]);
+    const alvo = k % 2 ? saloes[(k + 1) % saloes.length] : null, e = entradasNucleo[k % entradasNucleo.length];
+    tunel([s.x, s.y], alvo ? [alvo.x, alvo.y] : e, 1.5);
+    if (!alvo) { const ss = saloes[(k + 3) % saloes.length]; tunel([s.x, s.y], [ss.x, ss.y], 1.4); }
+    if (k % 3 === 0) M.tiles[Math.floor(s.y)][Math.floor(s.x)] = T.AGUA;        // poça no meio de alguns salões
+    if (k % 2 === 0) { const e2 = novoInimigo(k % 4 === 0 ? 'mestre' : 'veterano', s.x + 1.2, s.y + 1.2); M.objs.push(e2); }
+  });
+  // fora do labirinto antigo, tudo que não é túnel vira parede de rocha
+  for (let j = 0; j < CAV_TAM; j++) for (let i = 0; i < CAV_TAM; i++) {
+    if (i >= ox && i < ox + w && j >= oy && j < oy + h) continue;
+    if (!reservado(M, i + .5, j + .5, 0)) M.bloq[j][i] = true;
+  }
+  // abre a rocha antiga onde os túneis novos encostam no labirinto
+  M.objs = M.objs.filter(o => !((o.tipo === 'rocha' || o.tipo === 'estalagmite') && M.tunel.some(([x, y, r]) => Math.hypot(o.x - x, o.y - y) < r + .4)));
+  M.objs.forEach(o => { if (o.tipo === 'inimigo') o.tipoInim = o.nome === 'Mestre Rebelde' ? 'mestre' : o.nome === 'Bandido Veterano' ? 'veterano' : 'bandido'; });
+  prepararChunks(M);
+  M.spawn = { x: ox + n.spawn.x, y: oy + n.spawn.y };
+  return M;
+}
+const MAPAS_REGIAO = { bambuzal: construirBambuzal, vilarejo: construirVilarejo };
+Object.keys(CFG).forEach(k => { MAPAS_REGIAO[k] = () => regiao(CFG[k]()); });
+// Carrega qualquer lugar: região do mundo (coordenadas do desenho original), 'mundo'/'caverna' (coordenadas diretas) ou interior
+function resolverLugar(id, sx, sy) {
+  if (CELULA[id]) { const [ox, oy] = origemNucleo(id), sp = regraDe(id).spawn; return { m: obterMundo(), x: ox + (sx != null ? sx : sp[0]), y: oy + (sy != null ? sy : sp[1]) }; }
+  if (id === 'cavernas') { const [ox, oy] = origemCaverna(), sp = CFG.cavernas().spawn; return { m: obterCaverna(), x: ox + (sx != null ? sx : sp[0]), y: oy + (sy != null ? sy : sp[1]) }; }
+  if (id === 'mundo' || id === 'caverna') { const m = id === 'mundo' ? obterMundo() : obterCaverna(); return { m, x: sx != null ? sx : m.spawn.x, y: sy != null ? sy : m.spawn.y }; }
+  const m = MAPAS[id](); return { m, x: sx != null ? sx : m.spawn.x, y: sy != null ? sy : m.spawn.y };
+}
+const chaveMissoes = () => estado.missoes.papeis_perdidos + '|' + Object.keys(estado.coletados).length;
+function obterMundo() { const k = chaveMissoes(); if (!MUNDO_CACHE.mundo || MUNDO_CACHE.chaveM !== k) { MUNDO_CACHE.mundo = construirMundo(); MUNDO_CACHE.chaveM = k; } return MUNDO_CACHE.mundo; }
+function obterCaverna() { if (!MUNDO_CACHE.caverna) MUNDO_CACHE.caverna = construirCaverna(); return MUNDO_CACHE.caverna; }
+
+
 // Pré-desenha o chão inteiro do mapa numa imagem só (rápido e nítido)
 function paredeColunas(g, x1, y1, dx, n, cor, cor2) {
   const WH = 44;
@@ -1065,12 +1412,13 @@ function paredeColunas(g, x1, y1, dx, n, cor, cor2) {
   }
 }
 // Piso de castelo gótico: lajes de pedra com juntas e bisel nos tiles de pedra/piso/tatame + luar azulado em tudo
-function lajesGoticas(m, g, c) {
+function lajesGoticas(m, g, c, i0, j0, i1, j1, semDesl) {
   const PEDRAS = [T.PEDRA, T.PISO, T.TATAME, T.LAJE, T.TERRA, T.CAVERNA, T.PONTE];
+  const ox = semDesl ? 0 : m.ox, oy = semDesl ? 0 : m.oy;
   g.save(); g.lineCap = 'round';
-  for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) {
+  for (let j = j0 || 0; j < (j1 != null ? j1 : m.h); j++) for (let i = i0 || 0; i < (i1 != null ? i1 : m.w); i++) {
     const t = m.tiles[j][i]; if (!PEDRAS.includes(t)) continue;
-    const x = (i - j) * 16 - 16 + m.ox, y = (i + j) * 8 + m.oy, h = h2(i, j);
+    const x = (i - j) * 16 - 16 + ox, y = (i + j) * 8 + oy, h = h2(i, j);
     const L = (x0, y0, x1, y1, cor, w) => { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = w; g.strokeStyle = cor; g.stroke(); };
     g.save(); g.beginPath(); g.moveTo(x + 16, y); g.lineTo(x + 32, y + 8); g.lineTo(x + 16, y + 16); g.lineTo(x, y + 8); g.closePath(); g.clip();
     g.fillStyle = 'rgba(' + (30 + h * 30 | 0) + ',' + (34 + h * 24 | 0) + ',' + (70 + h * 30 | 0) + ',.30)'; g.fillRect(x, y, 32, 16);       // cada tile com um tom de pedra diferente
@@ -1081,7 +1429,7 @@ function lajesGoticas(m, g, c) {
     L(x + 16, y, x + 32, y + 8, 'rgba(8,6,24,.6)', .9); L(x + 16, y, x, y + 8, 'rgba(8,6,24,.6)', .9);
   }
   g.restore();
-  g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = m.interior ? 'rgba(40,24,70,.30)' : 'rgba(40,52,120,.34)'; g.fillRect(0, 0, c.width / SC, c.height / SC); g.restore();   // luar frio em tudo
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = m.interior ? 'rgba(40,24,70,.30)' : 'rgba(40,52,120,.34)'; g.fillRect(0, 0, c.width, c.height); g.restore();   // luar frio em tudo
 }
 // Grade de piso isométrico neon (estilo arcade SNK): linhas ciano, a cada 4 tiles uma linha magenta
 function gradeDoMapa(m) {
@@ -1100,7 +1448,79 @@ function gradeDoMapa(m) {
   if (PIX.on) pixelarCv(c);
   return c;
 }
+/* ---------- chão do mundo aberto em pedaços de 8x8 tiles (desenhados quando aparecem na tela) ---------- */
+function florzinha(g, x, y, cor) {
+  g.strokeStyle = '#3f8a35'; g.lineWidth = .6; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 3); g.stroke();
+  for (let p = 0; p < 5; p++) { g.beginPath(); g.arc(x + Math.cos(p * 1.2566) * 1.1, y - 3.6 + Math.sin(p * 1.2566) * 1.1, .9, 0, 6.3); g.fillStyle = cor; g.fill(); }
+  g.beginPath(); g.arc(x, y - 3.6, .6, 0, 6.3); g.fillStyle = '#ffb02e'; g.fill();
+}
+function chaoChunk(m, fi, fj) {
+  const key = fi + ',' + fj;
+  const i0 = fi * FC, j0 = fj * FC, i1 = Math.min(i0 + FC, m.w), j1 = Math.min(j0 + FC, m.h);
+  const bx0 = (i0 - (j1 - 1)) * 16 - 19, bx1 = ((i1 - 1) - j0) * 16 + 19, by0 = (i0 + j0) * 8 - 9, by1 = ((i1 - 1) + (j1 - 1)) * 8 + 19;
+  const c = document.createElement('canvas'); c.width = Math.ceil((bx1 - bx0) * SC); c.height = Math.ceil((by1 - by0) * SC);
+  const g = c.getContext('2d'); g.scale(SC, SC); g.translate(-bx0, -by0); g.lineJoin = 'round'; g.lineCap = 'round';
+  const get = (i, j) => (i < 0 || j < 0 || i >= m.w || j >= m.h) ? null : m.tiles[j][i];
+  const vizDe = (i, j, t) => (di, dj) => { const v = get(i + di, j + dj); return v == null ? t : v; };
+  const aguas = [];
+  for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+    const t = m.tiles[j][i], x = (i - j) * 16 - 16, y = (i + j) * 8, viz = vizDe(i, j, t);
+    if (t === T.AGUA) { Cen.aguaBase(g, i, j, x, y, viz); aguas.push([i, j]); } else Cen.ladrilho(g, t, i, j, x, y, viz);
+  }
+  for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) { const t = m.tiles[j][i]; if (t !== T.AGUA) Cen.bordaTile(g, t, i, j, (i - j) * 16 - 16, (i + j) * 8, vizDe(i, j, t)); }
+  // florzinhas: as do desenho original + as criadas pelo chunk (sempre iguais para o mesmo tile)
+  for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+    const R = m.regiaoEm(i, j); if (!R || R.lago || !R.flores || m.tiles[j][i] !== R.base) continue;
+    const n = R.nucleo; if (i >= n[0] && i < n[2] && j >= n[1] && j < n[3]) continue;
+    if (h2(i, j, 9) > R.flores / R.areaOrig * .9) continue;
+    const cores = R.floresCores || ['#ff8fb1', '#ffe45e', '#ffffff', '#c9a0ff'], [px, py] = iso(i + .2 + h2(i, j, 3) * .6, j + .2 + h2(i, j, 4) * .6);
+    florzinha(g, Math.round(px), Math.round(py), cores[Math.floor(h2(i, j, 5) * cores.length)]);
+  }
+  if (!m.floresIdx) { m.floresIdx = new Map(); for (const f of m.floresN) { const k = Math.floor(f.x / FC) + ',' + Math.floor(f.y / FC); if (!m.floresIdx.has(k)) m.floresIdx.set(k, []); m.floresIdx.get(k).push(f); } }
+  for (const f of (m.floresIdx.get(key) || [])) { const [px, py] = iso(f.x, f.y); florzinha(g, Math.round(px), Math.round(py), f.cor); }
+  if (GOT.on) lajesGoticas(m, g, c, i0, j0, i1, j1, true);
+  if (gradeNeon && PIX.on) {                                           // grade neon (visual retrô)
+    g.lineWidth = 1; g.lineCap = 'butt';
+    for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+      if (m.tiles[j][i] === T.AGUA) continue; const x = (i - j) * 16 - 16, y = (i + j) * 8;
+      g.strokeStyle = i % 4 === 0 ? 'rgba(255,90,220,.5)' : 'rgba(90,240,255,.3)'; g.beginPath(); g.moveTo(x + 16.5, y + .5); g.lineTo(x + 32.5, y + 8.5); g.stroke();
+      g.strokeStyle = j % 4 === 0 ? 'rgba(255,90,220,.5)' : 'rgba(90,240,255,.3)'; g.beginPath(); g.moveTo(x + 16.5, y + .5); g.lineTo(x + .5, y + 8.5); g.stroke();
+    }
+  }
+  if (PIX.on) pixelarCv(c);
+  const ch = { c, x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0, aguas };
+  m.fchunks.set(key, ch);
+  const lim = Math.max(24, Math.floor(26e6 / (c.width * c.height)));   // guarda só os mais recentes (memória)
+  while (m.fchunks.size > lim) m.fchunks.delete(m.fchunks.keys().next().value);
+  return ch;
+}
+function desenharChaoGrande(g, m, vx0, vx1, vy0, vy1) {
+  const it = (x, y) => [(x / 16 + y / 8) / 2, (y / 8 - x / 16) / 2];   // tela -> tile
+  const cs = [it(vx0, vy0), it(vx1, vy0), it(vx0, vy1), it(vx1, vy1)];
+  const fi0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[0])) / FC) - 1), fi1 = Math.min(Math.ceil(m.w / FC) - 1, Math.floor(Math.max(...cs.map(c => c[0])) / FC) + 1);
+  const fj0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[1])) / FC) - 1), fj1 = Math.min(Math.ceil(m.h / FC) - 1, Math.floor(Math.max(...cs.map(c => c[1])) / FC) + 1);
+  let novos = 0; const prim = !m.jaDesenhou; m.jaDesenhou = true;
+  for (let fj = fj0; fj <= fj1; fj++) for (let fi = fi0; fi <= fi1; fi++) {
+    const bx0 = (fi * FC - (fj * FC + FC - 1)) * 16 - 19, bx1 = ((fi * FC + FC - 1) - fj * FC) * 16 + 19, by0 = (fi * FC + fj * FC) * 8 - 9, by1 = (fi * FC + fj * FC + 2 * FC - 2) * 8 + 19;
+    if (bx1 < vx0 || bx0 > vx1 || by1 < vy0 || by0 > vy1 + 60) continue;
+    const key = fi + ',' + fj; let ch = m.fchunks.get(key);
+    if (ch) { m.fchunks.delete(key); m.fchunks.set(key, ch); }           // marca como usado agora
+    else if (prim || novos < 4) { ch = chaoChunk(m, fi, fj); novos++; }
+    if (!ch) continue;
+    g.drawImage(ch.c, ch.x, ch.y, ch.w, ch.h);
+    for (const [i, j] of ch.aguas) { const x = (i - j) * 16 - 16, y = (i + j) * 8; if (x > vx0 - 32 && x < vx1 && y > vy0 - 16 && y < vy1) Cen.aguaAnim(g, i, j, x, y, tempo); }
+  }
+}
+// muda o nome da região no HUD, as partículas do ambiente e salva ao trocar de região
+function atualizarRegiao() {
+  if (!mapa.grande || !mapa.regiaoEm) return;
+  const R = mapa.regiaoEm(jog.x, jog.y); if (!R || R === mapa.regAtual) return;
+  const primeira = !mapa.regAtual; mapa.regAtual = R;
+  mapa.nome = R.nome; mapa.amb = R.amb || null; hudChave = '';
+  if (!primeira) { aviso(R.nome); if (typeof autoSalvar === 'function') autoSalvar('regiao'); }
+}
 function prepararCache(m) {
+  if (m.grande) { m.fchunks = new Map(); m.cacheSC = SC; m.cache = null; m.grade = null; return; }
   const margem = m.interior ? 60 : 6;
   m.ox = m.h * 16; m.oy = margem;
   m.aguas = [];
@@ -1153,7 +1573,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyR' && e.shiftKey) reiniciar();
     if (e.code === 'KeyP' && e.shiftKey) exportarSprites();
     if (e.code === 'KeyB') alternarVisual();
-    if (e.code === 'KeyG') { gradeNeon = !gradeNeon; aviso(gradeNeon ? 'Grade neon: ligada' : 'Grade neon: desligada'); }
+    if (e.code === 'KeyG') { gradeNeon = !gradeNeon; if (mapa && mapa.grande) mapa.fchunks = new Map(); aviso(gradeNeon ? 'Grade neon: ligada' : 'Grade neon: desligada'); }
   }
   teclas[e.code] = true;
 });
@@ -1186,8 +1606,8 @@ document.querySelectorAll('.btn').forEach(b => {                       // botõe
    ===================================================================== */
 const canvas = document.getElementById('jogo'), ctx = canvas.getContext('2d');
 const PIX = { on: false }, GOT = { on: true };       // PIX = visual retrô KOF/SNK (pixel nítido); GOT = visual gótico (Castlevania); nenhum dos dois = anime HD
-let gradeNeon = true, MODO = 'gotico', fundoGot = null;
-try { MODO = localStorage.getItem('karate-visual') || 'gotico'; } catch (e) {}
+let gradeNeon = true, MODO = 'hd', fundoGot = null;
+try { MODO = localStorage.getItem('karate-visual2') || 'hd'; } catch (e) {}     // padrão: manhã (anime HD)
 const aplicarModo = () => { PIX.on = MODO === 'retro'; GOT.on = MODO === 'gotico'; };
 aplicarModo();
 let W = 480, H = 270, SC = 2, vinheta = null;      // SC = zoom do mundo pixelado; o canvas tem resolução cheia (Akira não é pixel art)
@@ -1207,8 +1627,8 @@ function redimensionar() {
 }
 function alternarVisual() {                                         // só muda o visual; a mecânica é a mesma
   MODO = MODO === 'gotico' ? 'retro' : MODO === 'retro' ? 'hd' : 'gotico'; aplicarModo();
-  try { localStorage.setItem('karate-visual', MODO); } catch (e) {}
-  SC = -1; redimensionar(); aviso(MODO === 'gotico' ? 'Visual: GÓTICO (Castlevania)' : MODO === 'retro' ? 'Visual: RETRÔ KOF (pixel art)' : 'Visual: ANIME HD');
+  try { localStorage.setItem('karate-visual2', MODO); } catch (e) {}
+  SC = -1; redimensionar(); aviso(MODO === 'gotico' ? 'Visual: GÓTICO (noite)' : MODO === 'retro' ? 'Visual: RETRÔ KOF (pixel art)' : 'Visual: ANIME HD (manhã)');
 }
 // Pixel art de verdade: borda dura (sem serrilhado suave), paleta reduzida e sombras tramadas (xadrez)
 function pixelarCv(c) {
@@ -1409,7 +1829,7 @@ function interagir() {
   const o = alvoInteracao(); if (!o) return;
   if (o.tipo === 'papel') {
     estado.inv.papel = nPapeis() + 1; estado.coletados[o.id] = true;
-    mapa.objs = mapa.objs.filter(x => x !== o);
+    if (mapa.grande) removerObj(mapa, o); else mapa.objs = mapa.objs.filter(x => x !== o);
     aviso('Papel encontrado! ' + nPapeis() + '/7' + (nPapeis() >= 7 ? ' — volte à biblioteca!' : '')); salvar(); return;
   }
   if (o.tipo === 'meditar') {
@@ -1685,8 +2105,10 @@ function atualizarInimigo(e, dt) {
    ===================================================================== */
 let fade = null;
 function carregarMapa(id, sx, sy) {
-  mapa = MAPAS[id](); prepararCache(mapa); mapa.arvores = mapa.objs.filter(o => o.spr && o.spr.copa);
-  jog.x = sx != null ? sx : mapa.spawn.x; jog.y = sy != null ? sy : mapa.spawn.y;
+  const L = resolverLugar(id, sx, sy);
+  mapa = L.m; jog.x = L.x; jog.y = L.y;
+  if (mapa.grande) { if (!mapa.fchunks || mapa.cacheSC !== SC) prepararCache(mapa); mapa.regAtual = null; atualizarAtivos(mapa, true); atualizarRegiao(); }
+  else { prepararCache(mapa); mapa.arvores = mapa.objs.filter(o => o.spr && o.spr.copa); }
   jog.est = 'livre'; jog.dir = 2; textos.length = 0; fagulhas.length = 0; aneis.length = 0; fx.length = 0; rastros.length = 0;
   jog.z = 0; jog.vz = 0; jog.ar = false; jog.vit = 0;
   const [px, py] = iso(jog.x, jog.y); camera.x = px; camera.y = py - 14;
@@ -1700,6 +2122,7 @@ function tickFade(dt) {
   else if (fade.f === 1 && fade.t >= .25) fade = null;
 }
 function reiniciar() {
+  MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null;
   estado = estadoInicial(); estado.hp = maxHp(); salvar();
   carregarMapa('bambuzal'); aviso('Progresso apagado!');
 }
@@ -1737,7 +2160,12 @@ function atualizar(dt0) {
     else if (joy.x || joy.y) { const l = Math.hypot(joy.x, joy.y); mag = Math.min(1, l); ix = joy.x / l; iy = joy.y / l; }
   }
   const dtM = dlg.ativo ? 0 : dt;                                      // mundo congela durante conversa
+  const antX = jog.x, antY = jog.y;
   atualizarJogador(dtM, ix, iy, mag, ctrl);
+  if (mapa.portoes) for (const p of mapa.portoes) {                    // portão trancado: não deixa passar
+    if (p.req && !reqOk(p.req) && jog.x > p.x && jog.x < p.x + p.w && jog.y > p.y && jog.y < p.y + p.h) { jog.x = antX; jog.y = antY; if (avisoT <= 0) aviso(p.req.msg); }
+  }
+  if (mapa.grande) { atualizarAtivos(mapa); atualizarRegiao(); if (Math.floor(tempo * 2) !== Math.floor((tempo - dt0) * 2)) renascerInimigos(mapa); }
 
   for (const o of mapa.objs) {
     if (o.tipo === 'inimigo') atualizarInimigo(o, dtM);
@@ -3538,6 +3966,15 @@ const SP = {
     [[10.5, 2.2], [5.5, 1.6]].forEach(([h, w]) => { const a = at(0, h), b = at(1, h); risco(g, a[0], a[1], b[0], b[1], w + 1.4, '#4a1010'); risco(g, a[0], a[1], b[0], b[1], w, '#d63a2a'); risco(g, a[0], a[1] - .5, b[0], b[1] - .5, w * .35, 'rgba(255,210,180,.6)'); });
     [0, .5, 1].forEach(t => { const b = at(t, 0); retR(g, b[0] - 1.6, b[1] - 13, 3.2, 13, .8); contorno(g, lin(g, b[0] - 1.6, 0, b[0] + 1.6, 0, ['#ff6a4a', '#c8321f', '#8a1c14']), .7, '#4a1010'); g.beginPath(); g.arc(b[0], b[1] - 13.6, 1.7, 0, TAU); contorno(g, '#e0b44a', .5, '#6b5424'); });
   }),
+  cavernaBoca: () => hi(96, 74, 48, 62, g => {                     // entrada de caverna: rochas com musgo e boca escura
+    sombraSuave(g, 50, 62, 40, 9, .45);
+    const pedra = (cx, by, rx, ry, c) => { g.beginPath(); g.ellipse(cx, by - ry, rx, ry, 0, 0, TAU); contorno(g, lin(g, cx - rx, by - ry * 2, cx + rx, by, [cla(c, .3), c, esc(c, .6)]), 1.1, '#2e2a40'); g.beginPath(); g.ellipse(cx - rx * .3, by - ry * 1.6, rx * .45, ry * .3, -.3, 0, TAU); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); };
+    pedra(20, 62, 20, 18, '#7d7a92'); pedra(76, 62, 20, 17, '#76738c'); pedra(48, 40, 30, 22, '#8a87a0');
+    g.beginPath(); g.moveTo(30, 63); g.quadraticCurveTo(30, 30, 48, 28); g.quadraticCurveTo(66, 30, 66, 63); g.closePath();
+    const gr = g.createRadialGradient(48, 56, 2, 48, 50, 26); gr.addColorStop(0, '#000'); gr.addColorStop(.7, '#120e1e'); gr.addColorStop(1, '#2a2440'); g.fillStyle = gr; g.fill(); g.lineWidth = 1.2; g.strokeStyle = '#1a1626'; g.stroke();
+    [[22, 44, 10, 3], [70, 46, 9, 3], [44, 20, 14, 4], [56, 22, 8, 2.4]].forEach(([x, y, rx, ry]) => { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fillStyle = rgba('#6fa048', .9); g.fill(); g.beginPath(); g.ellipse(x - 1.5, y - .8, rx * .5, ry * .45, 0, 0, TAU); g.fillStyle = rgba('#a5d870', .7); g.fill(); });
+    [[36, 60], [60, 60]].forEach(([x, y]) => { brilho(g, x, y - 6, 6, '#7fd8ff', .5); });
+  }),
   torii: () => hi(96, 84, 48, 76, g => {                            // portal torii: kasagi curvo, nuki atravessando, corda shimenawa
     sombraSuave(g, 52, 76, 38, 6.4, .4);
     const vermelho = (x, y, w0, w1, h) => {
@@ -3916,9 +4353,20 @@ function luzSolar(g, W, H, t) {
 }
 // luz do sol filtrada pela folhagem: manchas de luz quente que respiram + leve tom quente/frio na tela
 function atmosfera(g, W, H, t) {
-  g.save(); g.globalCompositeOperation = 'soft-light';
-  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, 'rgba(255,196,110,.38)'); gr.addColorStop(.55, 'rgba(255,230,190,.08)'); gr.addColorStop(1, 'rgba(40,70,140,.3)');
+  g.save(); g.globalCompositeOperation = 'soft-light';             // MANHÃ: sol baixo, dourado-rosado vindo do canto, sombras azuladas
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, 'rgba(255,180,130,.7)'); gr.addColorStop(.5, 'rgba(255,236,210,.16)'); gr.addColorStop(1, 'rgba(110,150,230,.4)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter';
+  const sol = g.createRadialGradient(W * .08, -H * .1, 0, W * .08, -H * .1, Math.max(W, H) * .75);            // brilho do sol nascendo
+  sol.addColorStop(0, 'rgba(255,214,160,.36)'); sol.addColorStop(.45, 'rgba(255,190,150,.07)'); sol.addColorStop(1, 'rgba(255,190,150,0)');
+  g.fillStyle = sol; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'source-over';
+  for (let k = 0; k < 5; k++) {                                     // névoa da manhã passando baixinho
+    const x = ((t * (4 + k * 1.3) + k * 260) % (W + 400)) - 200, y = H * (.55 + k * .09) + Math.sin(t * .2 + k) * 8, r = 120 + k * 30;
+    g.save(); g.translate(x, y); g.scale(2.4, .45);
+    const ng = g.createRadialGradient(0, 0, 0, 0, 0, r); ng.addColorStop(0, 'rgba(250,246,255,.12)'); ng.addColorStop(1, 'rgba(250,246,255,0)');
+    g.fillStyle = ng; g.fillRect(-r, -r, r * 2, r * 2); g.restore();
+  }
   g.globalCompositeOperation = 'lighter';
   for (let k = 0; k < 9; k++) {
     const x = ((k * 173.3 + Math.sin(t * .07 + k) * 26) % W + W) % W, y = ((k * 97.7 + Math.cos(t * .05 + k * 1.7) * 18) % H + H) % H;
@@ -3959,7 +4407,7 @@ function criarSprites(SPR) {
   SPR.estalagmite = estalagmiteSpr();
   for (const k of ['placa', 'makiwara', 'boneco', 'papel', 'lanterna', 'lanternaPedra', 'banco', 'fonte', 'estante', 'mesa', 'cama', 'almofada', 'cesto', 'cerca', 'altar', 'estatua', 'torii']) SPR[k] = SP[k]();
   SPR.coluna = SP.coluna(44); SPR.colunaQuebrada = SP.coluna(22);
-  SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false);
+  SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false); SPR.cavernaBoca = SP.cavernaBoca();
   SPR.cachoeira = { hi: true, dyn: cachoeiraDyn, w: 0, h: 0, ax: 0, ay: 0 };
 }
 
@@ -4121,8 +4569,9 @@ function renderizar(dt) {
   const vx0 = camera.x - W / 2 - 70, vx1 = camera.x + W / 2 + 70, vy0 = camera.y - H / 2 - 130, vy1 = camera.y + H / 2 + 90;
 
   // Camada 1: chão (imagem pronta) + água animada
-  g.drawImage(mapa.cache, -mapa.ox, -mapa.oy, mapa.cache.width / SC, mapa.cache.height / SC);
-  for (const [i, j] of mapa.aguas) {                                   // água viva: ondas, brilhos e faíscas
+  if (mapa.grande) desenharChaoGrande(g, mapa, vx0, vx1, vy0, vy1);
+  else g.drawImage(mapa.cache, -mapa.ox, -mapa.oy, mapa.cache.width / SC, mapa.cache.height / SC);
+  if (!mapa.grande) for (const [i, j] of mapa.aguas) {                 // água viva: ondas, brilhos e faíscas
     const x = (i - j) * 16 - 16, y = (i + j) * 8;
     if (x > vx0 && x < vx1 && y > vy0 && y < vy1) Cen.aguaAnim(g, i, j, x, y, tempo);
   }
@@ -4142,11 +4591,11 @@ function renderizar(dt) {
   }
 
   // Camada 2: objetos e personagens ordenados pelos PÉS (x + y)
-  const lista = mapa.objs.concat([jog]);
+  const lista = [jog];
+  for (const o of mapa.objs) { const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y); if (sx >= vx0 - (o.tipo === 'casa' ? 60 : 0) && sx <= vx1 + (o.tipo === 'casa' ? 60 : 0) && sy >= vy0 && sy <= vy1 + 120 + (o.tipo === 'casa' ? 140 : 0)) lista.push(o); }
   lista.sort((a, b) => (a.dk != null ? a.dk : a.x + a.y) - (b.dk != null ? b.dk : b.x + b.y));
   for (const o of lista) {
     const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y);
-    if (sx < vx0 || sx > vx1 || sy < vy0 || sy > vy1 + 120) continue;
     if (o.tipo === 'casa') spr(o.spr, sx, sy); else desenharObj(o, sx, sy);
   }
   if (GOT.on && !mapa.escuro) luzesGoticas(g, camTx, camTy);          // luz de tochas por cima de tudo (menos dos textos)
@@ -4161,6 +4610,11 @@ function renderizar(dt) {
 
   // Camada 3: avisos por cima de tudo
   g.textAlign = 'center';
+  for (const e of (mapa.portoes || [])) {                               // portões entre regiões
+    if (!e.nome) continue; const cx = e.x + e.w / 2, cy = e.y + e.h / 2; if (Math.hypot(cx - jog.x, cy - jog.y) > 4) continue;
+    const [sx, sy] = iso(cx, cy); g.font = 'bold 8px monospace'; const txt = (reqOk(e.req) ? '' : '🔒 ') + e.nome, w = g.measureText(txt).width + 8;
+    g.fillStyle = 'rgba(15,20,35,.85)'; g.fillRect(Math.round(sx - w / 2), Math.round(sy - 60), Math.round(w), 11); g.fillStyle = '#f4d03f'; g.fillText(txt, Math.round(sx), Math.round(sy - 52));
+  }
   for (const e of mapa.exits) {                                        // nome do lugar perto da porta
     if (!e.nome) continue;
     const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
@@ -4246,7 +4700,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T };                       // para testes no console
+window.AKIRA = { Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW } };                       // para testes no console
 
 Cen.setSC(() => SC);
 Cen.setPixel(c => { if (PIX.on) pixelarCv(c); });
