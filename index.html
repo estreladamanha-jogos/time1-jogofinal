@@ -85,7 +85,22 @@
     border-radius: 16px; font-weight: bold; font-size: 13px; pointer-events: none;
     text-align: center; max-width: 80vw;
   }
-  #dialogo[hidden], #aviso[hidden], #menu[hidden] { display: none; }
+  #dialogo[hidden], #aviso[hidden], #menu[hidden], #promo[hidden], #dlgOpcoes[hidden] { display: none; }
+  #dlgOpcoes { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  #dlgOpcoes button { font: inherit; font-weight: bold; padding: 6px 14px; border-radius: 4px; border: 2px solid #f4d03f; background: #1a2236; color: #fff; cursor: pointer; }
+  #dlgOpcoes button.sel, #dlgOpcoes button:hover { background: #f4d03f; color: #2a1f00; }
+
+  #salvando { position: fixed; right: 10px; top: 58px; z-index: 6; margin: 0; padding: 3px 9px; border-radius: 10px; background: rgba(10,16,30,.8); color: #bfe9ff; font-size: 11px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #salvando.on { opacity: 1; }
+  /* ===== Promoção de faixa ===== */
+  #promo { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; text-align: center; pointer-events: none; color: #fff; background: radial-gradient(circle, rgba(255,240,180,.35), rgba(0,0,0,.55)); }
+  #promo h2 { margin: 0; font: 900 clamp(28px, 7vw, 64px) 'Cinzel', serif; letter-spacing: 4px; color: #ffe27a; text-shadow: 0 3px 0 #6b4a00, 0 0 24px rgba(255,200,80,.9); }
+  #promo p { margin: 6px 0 0; font: 800 clamp(16px, 3.6vw, 28px) 'Cinzel', serif; text-shadow: 2px 2px 0 #000; }
+  #promo .promoFaixa { width: min(70vw, 460px); height: 26px; margin: 0 auto 14px; background: var(--faixa, #fff); border: 3px solid #000; box-shadow: 0 0 0 3px #fff, 0 0 30px var(--faixa, #fff); transform: skewX(-12deg); }
+  #promo.anima .promoFaixa { animation: faixaEntra .7s cubic-bezier(.2, 1.4, .4, 1) both; }
+  #promo.anima h2, #promo.anima p { animation: promoTexto .8s .25s both; }
+  @keyframes faixaEntra { from { transform: skewX(-12deg) scaleX(0); } to { transform: skewX(-12deg) scaleX(1); } }
+  @keyframes promoTexto { from { opacity: 0; transform: scale(1.6); } to { opacity: 1; transform: scale(1); } }
 
   /* ===== Menu (atributos, combos, itens, missões) ===== */
   #menu {
@@ -159,11 +174,14 @@
 <section id="dialogo" hidden>
   <h2 id="dlgNome"></h2>
   <p id="dlgTexto"></p>
+  <div id="dlgOpcoes" hidden></div>
   <small>Aperte E ou toque aqui para continuar</small>
 </section>
 
 <section id="menu" hidden></section>
 <p id="aviso" role="status" hidden></p>
+<p id="salvando" role="status" aria-live="polite"></p>
+<section id="promo" hidden><div class="promoFaixa"></div><h2>PROMOÇÃO!</h2><p id="promoNome"></p></section>
 
 <footer id="dica">
   WASD/Setas andar • J bater • K técnica de aura • Espaço esquivar • L defender<br>
@@ -575,7 +593,9 @@ function estadoInicial() {
     attr: { vit: 1, forca: 1, agi: 1, aur: 1, tec: 1 },
     hp: null, aura: 0, inv: {}, coletados: {},
     missoes: { papeis_perdidos: 'nao_iniciada' },
-    respawn: { mapa: 'bambuzal', x: 3.5, y: 13.5 }
+    respawn: { mapa: 'bambuzal', x: 3.5, y: 13.5 },
+    grad: { feitos: {}, cont: {}, aprovados: {}, historico: [] },      // graduação (treinos, exames aprovados, histórico)
+    local: null                                                        // onde o jogador estava (CONTINUAR volta aqui)
   };
 }
 let estado = estadoInicial();
@@ -586,17 +606,66 @@ const multDano = () => (1 + (estado.attr.forca - 1) * .15) * (1 + (estado.attr.t
 const xpProx = () => Math.round(30 * Math.pow(estado.nivel, 1.5));
 const nPapeis = () => estado.inv.papel || 0;
 
-const CHAVE_SAVE = 'karate-rpg-v2';
-function salvar() { try { localStorage.setItem(CHAVE_SAVE, JSON.stringify(estado)); } catch (e) {} }
-function carregarSave() {
+/* ---------- SALVAMENTO AUTOMÁTICO (local, neste navegador/aparelho) ----------
+   - valida tudo antes de carregar (dados quebrados ou antigos não travam o jogo)
+   - guarda uma cópia de segurança do último save bom
+   - nunca grava por cima de um save bom com dados incompletos */
+let jogoIniciado = true;                          // fica falso durante a abertura e o menu principal
+const CHAVE_SAVE = 'karate-rpg-v2', CHAVE_BAK = 'karate-rpg-v2-backup', VERSAO_SAVE = 3;
+const numOk = (v, a, b) => typeof v === 'number' && isFinite(v) && v >= a && v <= b;
+function lerJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+function validarSave(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
+  if (!numOk(d.nivel, 1, 999) || !numOk(d.xp, 0, 1e9) || !numOk(d.faixa, 0, FAIXAS.length - 1) || d.faixa % 1) return null;
+  const base = estadoInicial(), e = Object.assign(base, d);
+  e.attr = Object.assign(estadoInicial().attr, d.attr && typeof d.attr === 'object' ? d.attr : {});
+  for (const k in e.attr) if (!numOk(e.attr[k], 1, 999)) e.attr[k] = 1;
+  e.missoes = Object.assign(estadoInicial().missoes, d.missoes && typeof d.missoes === 'object' ? d.missoes : {});
+  e.inv = d.inv && typeof d.inv === 'object' ? d.inv : {}; e.coletados = d.coletados && typeof d.coletados === 'object' ? d.coletados : {};
+  ['pontos', 'vitorias', 'combo', 'aura'].forEach(k => { if (!numOk(e[k], 0, 1e9)) e[k] = 0; });
+  if (e.combo >= COMBOS.length) e.combo = 0;
+  if (!numOk(e.hp, 0, 1e6)) e.hp = null;
+  const lugarOk = l => l && typeof l.mapa === 'string' && (MAPAS[l.mapa] || CELULA[l.mapa] || l.mapa === 'mundo' || l.mapa === 'caverna' || l.mapa === 'cavernas') && numOk(l.x, -1, 1e4) && numOk(l.y, -1, 1e4);
+  if (!lugarOk(e.respawn)) e.respawn = estadoInicial().respawn;
+  if (!lugarOk(e.local)) e.local = null;
+  const g = d.grad && typeof d.grad === 'object' ? d.grad : {};
+  e.grad = { feitos: g.feitos && typeof g.feitos === 'object' ? g.feitos : {}, cont: g.cont && typeof g.cont === 'object' ? g.cont : {},
+    aprovados: g.aprovados && typeof g.aprovados === 'object' ? g.aprovados : {}, historico: Array.isArray(g.historico) ? g.historico : [] };
+  for (let k = 1; k <= e.faixa; k++) { const id = 'exame_' + ['branca', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta'][k]; if (!e.grad.aprovados[id]) e.grad.aprovados[id] = 1; }   // save antigo: faixas já conquistadas
+  return e;
+}
+const saveGuardado = () => validarSave(lerJSON(CHAVE_SAVE)) || validarSave(lerJSON(CHAVE_BAK));
+let ultimoSave = -99, saveAgendado = null;
+function salvar() {
+  if (!jogoIniciado) return;                                                   // menu/cutscene: não grava nada
+  if (mapa && !fade && !jog.morto && mapa.id) estado.local = { mapa: mapa.id, x: +jog.x.toFixed(2), y: +jog.y.toFixed(2) };
+  const dados = Object.assign({}, estado, { versao: VERSAO_SAVE, salvoEm: Date.now() });
+  if (!validarSave(JSON.parse(JSON.stringify(dados)))) return;                 // incompleto: não estraga o save bom
   try {
-    const d = JSON.parse(localStorage.getItem(CHAVE_SAVE) || 'null');
-    if (d) {
-      const base = estadoInicial();
-      estado = Object.assign(base, d, { attr: Object.assign(base.attr, d.attr), missoes: Object.assign(base.missoes, d.missoes) });
-    }
+    const atual = localStorage.getItem(CHAVE_SAVE);
+    if (atual && validarSave(lerJSON(CHAVE_SAVE))) localStorage.setItem(CHAVE_BAK, atual);
+    localStorage.setItem(CHAVE_SAVE, JSON.stringify(dados));
+    ultimoSave = performance.now(); indicadorSave();
   } catch (e) {}
+}
+// pedidos de salvamento seguidos viram um só (no máximo a cada 1,5 s)
+function autoSalvar(motivo, imediato) {
+  const falta = 1500 - (performance.now() - ultimoSave);
+  if (imediato || falta <= 0) { clearTimeout(saveAgendado); saveAgendado = null; salvar(); }
+  else if (!saveAgendado) saveAgendado = setTimeout(() => { saveAgendado = null; salvar(); }, falta);
+}
+function indicadorSave() {
+  const el = document.getElementById('salvando'); if (!el) return;
+  el.textContent = '💾 Salvando...'; el.className = 'on';
+  clearTimeout(indicadorSave.t1); clearTimeout(indicadorSave.t2);
+  indicadorSave.t1 = setTimeout(() => { el.textContent = '✔ Salvo'; }, 450);
+  indicadorSave.t2 = setTimeout(() => { el.className = ''; }, 1700);
+}
+function carregarSave() {
+  const d = saveGuardado();
+  estado = d || estadoInicial();
   if (estado.hp == null) estado.hp = maxHp();
+  return !!d;
 }
 
 const jog = {
@@ -793,7 +862,7 @@ function construirDojo() {
   prop(m, 'boneco', 3, 4.5, .3, { hp: 9999, wob: 0, alvo: true });
   prop(m, 'boneco', 7, 4.5, .3, { hp: 9999, wob: 0, alvo: true });
   prop(m, 'lanterna', 1.2, 1.2, .15); prop(m, 'lanterna', 8.8, 1.2, .15);
-  npc(m, { nome: 'Mestre Kenji', x: 5, y: 2.2, dir: 2, pal: PAL_KENJI, fala: 'kenji' });
+  npc(m, { nome: 'Mestre Kenji', x: 5, y: 2.2, dir: 2, pal: PAL_KENJI, fala: 'kenji', mestre: 'kenji' });
   return m;
 }
 function construirBiblioteca() {
@@ -1046,7 +1115,7 @@ function construirArenaMestres() {
 function construirSalao() {
   const m = interior('salao', 'Salão de Graduação', 12, 9, T.PISO, saidaDe('salao'));
   pm(m, 'altar', 6, 1.5); [[2.5, 3], [9.5, 3], [2.5, 6], [9.5, 6]].forEach(([x, y]) => pm(m, 'coluna', x, y));
-  npc(m, { nome: 'Mestre da Graduação', x: 6, y: 3.6, dir: 2, pal: PAL_KENJI, fala: 'kenji' });
+  npc(m, { nome: 'Mestre da Graduação', x: 6, y: 3.6, dir: 2, pal: PAL_KENJI, fala: 'kenji', mestre: 'graduacao' });
   return m;
 }
 const MAPAS = {
@@ -1676,27 +1745,43 @@ function andar(e, ix, iy, f, dt) {                                    // convert
    ===================================================================== */
 const $ = id => document.getElementById(id);
 const dlgEl = $('dialogo'), dlgNome = $('dlgNome'), dlgTexto = $('dlgTexto'), avisoEl = $('aviso'), menuEl = $('menu');
-const dlg = { ativo: false, linhas: [], i: 0, chars: 0, fim: null };
+const dlg = { ativo: false, linhas: [], i: 0, chars: 0, fim: null, opcoes: null, sel: 0 };
+const dlgOp = $('dlgOpcoes');
 let avisoT = 0, menuAberto = false, hudChave = '';
 
 function abrirDialogo(d) {
-  dlg.ativo = true; dlg.linhas = d.linhas; dlg.i = 0; dlg.chars = 0; dlg.fim = d.fim || null;
-  dlgNome.textContent = d.nome; dlgTexto.textContent = ''; dlgEl.hidden = false;
+  dlg.ativo = true; dlg.linhas = d.linhas; dlg.i = 0; dlg.chars = 0; dlg.fim = d.fim || null; dlg.opcoes = d.opcoes || null; dlg.sel = 0;
+  dlgNome.textContent = d.nome; dlgTexto.textContent = ''; dlgEl.hidden = false; dlgOp.innerHTML = ''; dlgOp.hidden = true;
+}
+const opcoesVisiveis = () => dlg.ativo && dlg.opcoes && dlg.i === dlg.linhas.length - 1 && dlg.chars >= dlg.linhas[dlg.i].length;
+function mostrarOpcoes() {
+  if (!opcoesVisiveis()) { dlgOp.hidden = true; return; }
+  dlgOp.hidden = false; dlgOp.innerHTML = dlg.opcoes.map((o, k) => `<button type="button" data-k="${k}" class="${k === dlg.sel ? 'sel' : ''}">${o.t}</button>`).join('');
+}
+function escolherOpcao(k) {
+  const o = dlg.opcoes[k]; dlg.ativo = false; dlgEl.hidden = true; dlg.opcoes = null; dlgOp.hidden = true;
+  if (o && o.f) o.f();
 }
 function avancarDialogo() {
-  if (dlg.chars < dlg.linhas[dlg.i].length) dlg.chars = dlg.linhas[dlg.i].length;
+  if (dlg.chars < dlg.linhas[dlg.i].length) { dlg.chars = dlg.linhas[dlg.i].length; dlgTexto.textContent = dlg.linhas[dlg.i]; mostrarOpcoes(); return; }
+  if (opcoesVisiveis()) { escolherOpcao(dlg.sel); return; }
   else {
     dlg.i++; dlg.chars = 0;
     if (dlg.i >= dlg.linhas.length) { dlg.ativo = false; dlgEl.hidden = true; if (dlg.fim) dlg.fim(); return; }
   }
   dlgTexto.textContent = dlg.linhas[dlg.i].slice(0, Math.floor(dlg.chars));
 }
-dlgEl.addEventListener('pointerdown', e => { e.preventDefault(); if (dlg.ativo) avancarDialogo(); });
+dlgEl.addEventListener('pointerdown', e => {
+  e.preventDefault(); if (!dlg.ativo) return;
+  const b = e.target.closest('button[data-k]'); if (b) { escolherOpcao(+b.dataset.k); return; }
+  if (!opcoesVisiveis()) avancarDialogo();
+});
 function aviso(txt) { avisoEl.textContent = txt; avisoEl.hidden = false; avisoT = 2.8; }
 
 function atualizarHud() {
   const q = estado.missoes.papeis_perdidos;
-  const txtM = q === 'em_andamento' ? 'Missão: Os papéis perdidos ' + nPapeis() + '/7' : q === 'concluida' ? 'Missão concluída ✔' : '';
+  let txtM = q === 'em_andamento' ? 'Missão: Os papéis perdidos ' + nPapeis() + '/7' : q === 'concluida' ? 'Missão concluída ✔' : '';
+  if (exameAtual) txtM = 'EXAME ' + GRADUACOES[exameAtual.ex.faixa].nome + ': ' + exameAtual.ops.filter(o => !o.vivo).length + '/' + exameAtual.ops.length + ' • ' + Math.max(0, Math.ceil(exameAtual.ex.tempo - exameAtual.t)) + 's';
   const chave = [estado.nivel, estado.xp, Math.round(estado.hp), Math.round(estado.aura), estado.faixa, estado.pontos, mapa.nome, txtM, estado.combo, maxHp(), maxAura()].join('|');
   if (chave === hudChave) return; hudChave = chave;
   const f = FAIXAS[estado.faixa];
@@ -1711,7 +1796,7 @@ function atualizarHud() {
 function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto; if (menuAberto) montarMenu(); }
 function montarMenu() {
   const e = estado, f = FAIXAS[e.faixa], q = e.missoes.papeis_perdidos;
-  let h = `<h2>Akira • Nv ${e.nivel} • Faixa ${f.nome}</h2><p>XP ${e.xp}/${xpProx()} • Vitórias ${e.vitorias} • Pontos livres: <b>${e.pontos}</b></p><h3>Atributos</h3>`;
+  let h = `<h2>Akira • Nv ${e.nivel} • Faixa ${f.nome}</h2><p>XP ${e.xp}/${xpProx()} • Vitórias ${e.vitorias} • Pontos livres: <b>${e.pontos}</b></p>` + painelGraduacao() + '<h3>Atributos</h3>';
   ATRIBUTOS.forEach(([id, nome, desc]) => { h += `<div>${nome}: <b>${e.attr[id]}</b> <button data-acao="attr" data-id="${id}" ${e.pontos < 1 ? 'disabled' : ''}>+</button> <small>${desc}</small></div>`; });
   h += '<h3>Combos (teclas 1 a 4)</h3>';
   COMBOS.forEach((c, i) => {
@@ -1781,16 +1866,7 @@ function falaDe(o) {
       return { nome: 'Davi', linhas: ['Obrigado de novo, Akira! Meus papéis estão salvos.'] };
     case 'pietra':
       return { nome: 'Pietra', linhas: ['Você? Lutador? Sinceramente, você é tão fraco que eu nem precisaria me esforçar para ganhar de você.'] };
-    case 'kenji': {
-      const prox = estado.faixa + 1;
-      if (prox >= FAIXAS.length) return { nome: o.nome, linhas: ['Você já é faixa preta. Por enquanto, não tenho mais nada para te ensinar.'] };
-      const rq = REQ_FAIXA[prox];
-      if (estado.nivel >= rq.n && estado.vitorias >= rq.v) return { nome: o.nome, linhas: ['Você treinou duro, Akira. Vou te entregar a faixa ' + FAIXAS[prox].nome + '!'],
-        fim: () => { estado.faixa = prox; aviso('Nova faixa: ' + FAIXAS[prox].nome + '!'); salvar(); } };
-      return { nome: o.nome, linhas: [
-        'Para a faixa ' + FAIXAS[prox].nome + ' você precisa de nível ' + rq.n + ' (você: ' + estado.nivel + ') e ' + rq.v + ' vitórias (você: ' + estado.vitorias + ').',
-        'Treine nos bonecos! J bate, K usa aura, Espaço esquiva, L defende. As teclas 1 a 4 trocam o combo.'] };
-    }
+    case 'kenji': return falaMestre(o);
     case 'hana':
       return { nome: 'Hospedeira Hana', linhas: ['Bem-vindo à hospedaria! Vou preparar uma cama para você descansar.'],
         fim: () => {
@@ -1812,6 +1888,152 @@ function falaDe(o) {
   }
   return { nome: o.nome || '???', linhas: [o.texto || '...'] };
 }
+
+
+/* =====================================================================
+   9b. SISTEMA DE GRADUAÇÃO (8 faixas). Promoção = TREINO + MISSÕES + EXAME.
+   Nada aqui dá faixa sozinho: XP, nível e vitórias só contam quando estão
+   configurados como requisito de treino. Tudo é configurável nestas tabelas.
+   ===================================================================== */
+// Tipos de requisito de treino aceitos:
+//   { tipo: 'nivel', valor }            nível mínimo do Akira
+//   { tipo: 'vitorias', valor }         combates vencidos
+//   { tipo: 'combo', combo }            completar o combo (índice em COMBOS) acertando um boneco de treino
+//   { tipo: 'contador', chave, valor }  contador registrado pelo jogo (ex.: 'defesa_perfeita')
+//   { tipo: 'objetivo', chave }         objetivo marcado pelo jogo (registrarObjetivo)
+// Missões: { id: 'id_da_missao' } -> precisa estar 'concluida' em estado.missoes
+// Os números de nível/vitórias abaixo vieram da tabela antiga do jogo (REQ_FAIXA). As listas de missões estão vazias até serem definidas.
+const GRADUACOES = FAIXAS.map((f, k) => ({
+  id: ['branca', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta'][k], nome: 'Faixa ' + f.nome, ordem: k + 1, cor: f.cor,
+  treinos: REQ_FAIXA[k] ? [
+    { id: 'nivel_' + k, tipo: 'nivel', valor: REQ_FAIXA[k].n, texto: 'Chegar ao nível ' + REQ_FAIXA[k].n },
+    { id: 'vitorias_' + k, tipo: 'vitorias', valor: REQ_FAIXA[k].v, texto: 'Vencer ' + REQ_FAIXA[k].v + ' combates' }] : [],
+  missoes: [],
+  exame: k ? 'exame_' + ['branca', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta'][k] : null,
+  recompensas: []                                          // ex.: [{ item: 'onigiri', qtd: 2 }] (vazio até ser definido)
+}));
+// Exames: mestre autorizado + etapas (luta contra examinadores) + tempo limite
+const EXAMES = {};
+[[1, 'kenji', ['bandido', 'bandido']], [2, 'kenji', ['bandido', 'bandido', 'bandido']], [3, 'graduacao', ['veterano', 'veterano']],
+ [4, 'graduacao', ['veterano', 'veterano', 'veterano']], [5, 'graduacao', ['mestre', 'veterano']], [6, 'graduacao', ['mestre', 'mestre']], [7, 'graduacao', ['mestre', 'mestre', 'mestre']]]
+  .forEach(([faixa, mestre, oponentes]) => { const id = GRADUACOES[faixa].exame; EXAMES[id] = { id, faixa, mestre, etapas: [{ tipo: 'luta', oponentes }], tempo: 120, novaTentativa: true }; });
+// Mestres e onde ficam (quem pode conduzir cada exame)
+const MESTRES = {
+  kenji:     { nome: 'Mestre Kenji', local: 'Dojo do Vilarejo' },
+  graduacao: { nome: 'Mestre da Graduação', local: 'Salão de Graduação, no Grande Templo' }
+};
+const ESTADOS_GRAD = ['BLOQUEADA', 'EM_PROGRESSO', 'PRONTA_PARA_EXAME', 'EXAME_EM_ANDAMENTO', 'APROVADA'];
+let exameAtual = null;                                     // exame acontecendo agora (não é salvo: se recarregar, volta ao estado anterior)
+
+function gradPadrao() { return { feitos: {}, cont: {}, aprovados: {}, historico: [] }; }
+function treinoOk(r) {
+  const G = estado.grad;
+  if (r.tipo === 'nivel') return estado.nivel >= r.valor;
+  if (r.tipo === 'vitorias') return estado.vitorias >= r.valor;
+  if (r.tipo === 'combo') return !!G.feitos['combo:' + r.combo];
+  if (r.tipo === 'contador') return (G.cont[r.chave] || 0) >= r.valor;
+  if (r.tipo === 'objetivo') return !!G.feitos[r.chave];
+  return false;
+}
+const missaoOk = r => estado.missoes[r.id] === 'concluida';
+const textoTreino = r => r.texto + (r.tipo === 'nivel' ? ' (você: ' + estado.nivel + ')' : r.tipo === 'vitorias' ? ' (você: ' + estado.vitorias + ')' : r.tipo === 'contador' ? ' (' + (estado.grad.cont[r.chave] || 0) + '/' + r.valor + ')' : '');
+function estadoGraduacao(k) {
+  if (k <= estado.faixa) return 'APROVADA';
+  if (k > estado.faixa + 1) return 'BLOQUEADA';
+  const G = GRADUACOES[k];
+  if (exameAtual && exameAtual.id === G.exame) return 'EXAME_EM_ANDAMENTO';
+  return G.treinos.every(treinoOk) && G.missoes.every(missaoOk) ? 'PRONTA_PARA_EXAME' : 'EM_PROGRESSO';
+}
+// registros de treino (só contam uma vez quando são objetivos únicos)
+function registrarObjetivo(chave) { if (!estado.grad.feitos[chave]) { estado.grad.feitos[chave] = true; autoSalvar('treino'); } }
+function contarTreino(chave) { estado.grad.cont[chave] = (estado.grad.cont[chave] || 0) + 1; }
+
+// conversa com um mestre
+function falaMestre(o) {
+  const mid = o.mestre, prox = estado.faixa + 1, nome = o.nome;
+  if (exameAtual) return { nome, linhas: ['O exame já começou! Concentre-se e derrote os examinadores.'] };
+  if (prox >= GRADUACOES.length) return { nome, linhas: ['Você já é faixa preta, Akira. A sequência de graduações está completa.', 'Continue treinando: o caminho do karatê não tem fim.'] };
+  const G = GRADUACOES[prox], ex = EXAMES[G.exame];
+  if (!ex || ex.mestre !== mid) {
+    const quem = ex && MESTRES[ex.mestre];
+    return { nome, linhas: ['Não sou eu quem conduz o exame da ' + G.nome + '.' + (quem ? ' Procure ' + quem.nome + ' (' + quem.local + ').' : ' Esse exame ainda não tem mestre definido.')] };
+  }
+  const pT = G.treinos.filter(r => !treinoOk(r)), pM = G.missoes.filter(r => !missaoOk(r));
+  if (pT.length || pM.length) {
+    const l = [];
+    if (pT.length) l.push('Você ainda precisa concluir seu treinamento para a ' + G.nome + ':', pT.map(textoTreino).join(' • '));
+    if (pM.length) l.push('Ainda existem missões necessárias para esta graduação: ' + pM.map(r => r.texto || r.id).join(' • '));
+    l.push('Veja os detalhes no menu (M), na parte de Graduação.');
+    return { nome, linhas: l };
+  }
+  const n = ex.etapas.reduce((s, e) => s + (e.oponentes ? e.oponentes.length : 0), 0);
+  return { nome, linhas: ['Você cumpriu os requisitos. Está pronto para o exame da ' + G.nome + '.', 'A prova: derrote ' + n + ' examinadores em até ' + ex.tempo + ' segundos, sem cair. Vamos começar?'],
+    opcoes: [{ t: 'Começar o exame', f: () => iniciarExame(ex.id, o) }, { t: 'Ainda não' }] };
+}
+function iniciarExame(id, mestre) {
+  const ex = EXAMES[id]; if (!ex || exameAtual || estado.faixa !== ex.faixa - 1 || estadoGraduacao(ex.faixa) !== 'PRONTA_PARA_EXAME') return;
+  const ops = [];
+  ex.etapas.forEach(et => (et.oponentes || []).forEach((tp, k) => {
+    const a = k / Math.max(1, et.oponentes.length) * 6.28, p = acharPerto(mapa, jog.x + Math.cos(a) * 2.2, jog.y + Math.sin(a) * 2.2, .3) || [jog.x + 1, jog.y + 1];
+    const e = novoInimigo(tp, p[0], p[1]); e.nome = 'Examinador'; e.examinador = true; e.est = 'persegue'; mapa.objs.push(e); ops.push(e);
+  }));
+  exameAtual = { id, ex, ops, t: 0, mapa: mapa, mestre };
+  aviso('EXAME da ' + GRADUACOES[ex.faixa].nome + ' começou! Derrote os examinadores.'); hudChave = '';
+}
+function tickExame(dt) {
+  if (!exameAtual) return;
+  const E = exameAtual; E.t += dt;
+  if (mapa !== E.mapa) { encerrarExame(false, 'Você saiu do local da prova.'); return; }
+  if (E.ops.every(o => !o.vivo)) { encerrarExame(true); return; }
+  if (E.t > E.ex.tempo) encerrarExame(false, 'O tempo acabou.');
+}
+function encerrarExame(passou, motivo) {
+  const E = exameAtual; if (!E) return; exameAtual = null;
+  E.mapa.objs = E.mapa.objs.filter(o => !o.examinador);
+  jog.morto = false; if (jog.est === 'ko') jog.est = 'livre';
+  if (passou) promover(E.ex);
+  else {
+    estado.hp = Math.max(estado.hp, Math.round(maxHp() * .3)); jog.iframes = 1.2;
+    abrirDialogo({ nome: E.mestre.nome, linhas: [(motivo ? motivo + ' ' : '') + 'Você não passou no exame. Continue treinando e tente novamente.'] });
+    autoSalvar('exame');
+  }
+  hudChave = '';
+}
+// promoção: acontece uma vez só, e só para a faixa seguinte
+function promover(ex) {
+  const k = ex.faixa;
+  if (estado.faixa !== k - 1 || estado.grad.aprovados[ex.id]) return;
+  estado.faixa = k; estado.grad.aprovados[ex.id] = Date.now();
+  estado.grad.historico.push({ faixa: GRADUACOES[k].id, em: new Date().toISOString() });
+  for (const r of GRADUACOES[k].recompensas) if (r.item) estado.inv[r.item] = (estado.inv[r.item] || 0) + (r.qtd || 1);
+  estado.hp = maxHp();
+  mostrarPromocao(GRADUACOES[k]);
+  const fim = k === GRADUACOES.length - 1 ? ' Você completou a sequência de graduações!' : '';
+  abrirDialogo({ nome: exameMestreNome(ex), linhas: ['Você foi aprovado! Sua nova graduação é ' + GRADUACOES[k].nome + '.' + fim] });
+  autoSalvar('promocao', true); hudChave = '';
+  if (typeof Som !== 'undefined') Som.efeito('promocao');
+}
+const exameMestreNome = ex => (MESTRES[ex.mestre] || {}).nome || 'Mestre';
+function mostrarPromocao(G) {
+  const el = $('promo'); if (!el) return;
+  el.style.setProperty('--faixa', G.cor); $('promoNome').textContent = G.nome.toUpperCase();
+  el.hidden = false; el.classList.remove('anima'); void el.offsetWidth; el.classList.add('anima');
+  clearTimeout(mostrarPromocao.t); mostrarPromocao.t = setTimeout(() => { el.hidden = true; }, 3600);
+}
+// painel de graduação (dentro do menu M)
+function painelGraduacao() {
+  const k = estado.faixa, G = GRADUACOES[k], P = GRADUACOES[k + 1];
+  let h = `<h3>Graduação</h3><p><span class="faixa-cor" style="--faixa:${G.cor}"></span> Atual: <b>${G.nome}</b></p>`;
+  if (!P) return h + '<p>Sequência completa: você é faixa preta! ✔</p>';
+  const ex = EXAMES[P.exame], st = estadoGraduacao(k + 1), m = ex && MESTRES[ex.mestre];
+  h += `<p><span class="faixa-cor" style="--faixa:${P.cor}"></span> Próxima: <b>${P.nome}</b> <small>(${st.replace(/_/g, ' ').toLowerCase()})</small></p>`;
+  h += '<p><small>Treinamento:</small></p>' + (P.treinos.length ? P.treinos.map(r => `<div>${treinoOk(r) ? '✔' : '✗'} ${textoTreino(r)}</div>`).join('') : '<div><small>Nenhum treino definido.</small></div>');
+  h += '<p><small>Missões:</small></p>' + (P.missoes.length ? P.missoes.map(r => `<div>${missaoOk(r) ? '✔' : '✗'} ${r.texto || r.id}</div>`).join('') : '<div><small>Nenhuma missão definida para esta faixa.</small></div>');
+  h += `<p><small>Exame:</small> ${st === 'PRONTA_PARA_EXAME' ? 'liberado — fale com o mestre' : st === 'EXAME_EM_ANDAMENTO' ? 'em andamento' : 'bloqueado até cumprir os requisitos'}</p>`;
+  h += `<p><small>Mestre responsável:</small> ${m ? m.nome + ' — ' + m.local : 'ainda não definido'}</p>`;
+  return h;
+}
+
 
 const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar' };
 function alvoInteracao() {
@@ -1898,7 +2120,7 @@ function iniciarAtaque(i, ix, iy) {
   if (i === 0) jog.cadeia = 0;
 }
 function golpear(tk) {
-  let acertou = false;
+  let acertou = false, boneco = false;
   const dano = Math.round(tk.dano * multDano() * (1 + jog.cadeia * .1));
   for (const o of mapa.objs) {
     if ((o.tipo !== 'inimigo' && !o.alvo) || o.vivo === false) continue;
@@ -1906,7 +2128,7 @@ function golpear(tk) {
     if (d > tk.alc + o.r) continue;                                    // acerto usa posições reais no mundo
     const ang = d < .001 ? 0 : Math.acos(clamp((vx * jog.fw.x + vy * jog.fw.y) / d, -1, 1)) * 180 / Math.PI;
     if (ang > tk.arco / 2) continue;
-    danoEm(o, dano, tk, vx / (d || 1), vy / (d || 1)); acertou = true;
+    danoEm(o, dano, tk, vx / (d || 1), vy / (d || 1)); acertou = true; if (o.alvo) boneco = true;
   }
   if (acertou) {
     jog.cadeia++;
@@ -1914,6 +2136,7 @@ function golpear(tk) {
     const seq = COMBOS[estado.combo].seq;
     if (jog.cadeia >= seq.length && jog.ci === seq.length - 1) {          // combo completo!
       estado.aura = Math.min(maxAura(), estado.aura + 12); popup(jog.x, jog.y, 'COMBO!', '#f4d03f');
+      if (boneco) registrarObjetivo('combo:' + estado.combo);           // treino: combo completo no boneco (conta uma vez)
     }
     hitstop = tk.quebra ? .08 : .05; shake = Math.max(shake, tk.quebra ? 5 : 3);
   } else jog.cadeia = 0;                                                // errou: sem aura e quebra a corrente
@@ -1952,7 +2175,7 @@ function danoJogador(dano, ox, oy) {
   const guarda = jog.est === 'livre' && teclas.KeyL;
   const d = Math.hypot(jog.x - ox, jog.y - oy) || 1;
   if (guarda && jog.defT < .18) {                                        // defesa perfeita: no tempo certo!
-    estado.aura = Math.min(maxAura(), estado.aura + 8); popup(jog.x, jog.y, 'PERFEITO!', '#9fe8ff');
+    estado.aura = Math.min(maxAura(), estado.aura + 8); popup(jog.x, jog.y, 'PERFEITO!', '#9fe8ff'); contarTreino('defesa_perfeita');
     fagulha(jog.x, jog.y, '#bff0ff', 10); jog.escudo = .25; jog.iframes = .3; hitstop = .06; shake = 3;
     for (const o of mapa.objs) if (o.tipo === 'inimigo' && o.x === ox && o.y === oy) { o.stun = .55; o.kx = -(jog.x - ox) / d * 5; o.ky = -(jog.y - oy) / d * 5; o.est = 'persegue'; }
     return;
@@ -1960,7 +2183,10 @@ function danoJogador(dano, ox, oy) {
   if (guarda) { jog.escudo = .2; dano = Math.ceil(dano * .25); estado.aura = Math.min(maxAura(), estado.aura + 2); fagulha(jog.x, jog.y, '#9fd8ff', 5); }
   else { jog.est = 'dano'; jog.z = 0; jog.ar = false; jog.t = .28; jog.kx = (jog.x - ox) / d * 4; jog.ky = (jog.y - oy) / d * 4; fagulha(jog.x, jog.y, '#ff6b5a', 6); }
   estado.hp -= dano; popup(jog.x, jog.y, '-' + dano, '#ff6b5a'); jog.flash = .15; shake = 4; hitstop = .04;
-  if (estado.hp <= 0) { estado.hp = 0; jog.morto = true; jog.est = 'ko'; jog.t = 0; }
+  if (estado.hp <= 0) {
+    if (exameAtual) { estado.hp = 1; encerrarExame(false, 'Você caiu durante a prova.'); return; }   // reprovação: não desmaia, não perde XP
+    estado.hp = 0; jog.morto = true; jog.est = 'ko'; jog.t = 0;
+  }
 }
 function aposDerrota() {                                                // perde 5% do progresso de XP e volta ao descanso
   estado.xp = Math.floor(estado.xp * .95); estado.hp = maxHp(); estado.aura = 0;
@@ -2113,6 +2339,7 @@ function carregarMapa(id, sx, sy) {
   jog.z = 0; jog.vz = 0; jog.ar = false; jog.vit = 0;
   const [px, py] = iso(jog.x, jog.y); camera.x = px; camera.y = py - 14;
   hudChave = '';
+  if (jogoIniciado) autoSalvar('mapa');
 }
 const reqOk = r => (!r.nivel || estado.nivel >= r.nivel) && (r.faixa == null || estado.faixa >= r.faixa);
 function irPara(id, sx, sy, cb) { fade = { f: 0, t: 0, id, sx, sy, cb }; }
@@ -2148,6 +2375,11 @@ function atualizar(dt0) {
   }
   if (dlg.ativo && dlg.chars < dlg.linhas[dlg.i].length) {
     dlg.chars += dt0 * 50; dlgTexto.textContent = dlg.linhas[dlg.i].slice(0, Math.floor(dlg.chars));
+    if (dlg.chars >= dlg.linhas[dlg.i].length) mostrarOpcoes();
+  }
+  if (opcoesVisiveis()) {                                               // escolher opção com setas / W S
+    const d = (pegou('ArrowDown') || pegou('KeyS') || pegou('ArrowRight') || pegou('KeyD') ? 1 : 0) - (pegou('ArrowUp') || pegou('KeyW') || pegou('ArrowLeft') || pegou('KeyA') ? 1 : 0);
+    if (d) { dlg.sel = (dlg.sel + d + dlg.opcoes.length) % dlg.opcoes.length; mostrarOpcoes(); }
   }
 
   // Entrada: vetor na TELA, diagonal normalizada (sem velocidade extra)
@@ -2173,6 +2405,7 @@ function atualizar(dt0) {
     else if (o.tipo === 'npc' && Math.hypot(o.x - jog.x, o.y - jog.y) < 3) { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); }
   }
   mapa.objs = mapa.objs.filter(o => !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0));
+  tickExame(dtM);
 
   for (const t of textos) t.t += dt0;
   for (const f of fagulhas) { f.t += dt0; f.x += f.vx * dt0; f.y += f.vy * dt0; f.vy += 120 * dt0; }
@@ -4700,7 +4933,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW } };                       // para testes no console
+window.AKIRA = { Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 Cen.setSC(() => SC);
 Cen.setPixel(c => { if (PIX.on) pixelarCv(c); });
