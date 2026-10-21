@@ -5016,27 +5016,118 @@ const SP = {
   })
 };
 
-/* ---------- cachoeira (animada todo quadro) ---------- */
+/* ---------- cachoeira (animada todo quadro, 100% em código) ----------
+   Camadas: paredão do fundo (fixo) → rio no topo → cortina de água → pedras dos lados (fixas) → espuma, respingos, névoa e arco-íris */
+let cachFundo = null, cachLados = null;
+function cachoeiraSprites() {
+  const PA = ['#8a90a6', '#666b82', '#b3b9cc'], PB = ['#6c7186', '#4f5368', '#959bb2'];
+  cachFundo = hi(84, 124, 42, 108, g => {                         // paredão de pedra atrás da água
+    g.translate(42, 108);
+    g.beginPath(); g.moveTo(-20, 0); g.lineTo(-19, -92); g.quadraticCurveTo(0, -100, 19, -92); g.lineTo(20, 0); g.closePath();
+    g.fillStyle = lin(g, -20, 0, 20, 0, ['#3a3d52', '#5a5f78', '#2c2e40']); g.fill();
+    g.save(); g.clip(); texPedraSobre(g, -20, -100, 40, 100, 913, true);
+    g.strokeStyle = 'rgba(20,22,34,.5)'; g.lineWidth = .8; for (let k = 1; k < 8; k++) { g.beginPath(); g.moveTo(-20, -k * 12); g.lineTo(20, -k * 12 + (k % 2 ? 3 : -2)); g.stroke(); }
+    g.restore();
+    // margem de grama e terra lá em cima, onde nasce o rio
+    g.beginPath(); g.ellipse(0, -96, 30, 9, 0, 0, TAU); g.fillStyle = lin(g, 0, -105, 0, -87, ['#8fd45a', '#5a9a3a', '#3f6a2a']); g.fill();
+    g.beginPath(); g.ellipse(0, -93, 30, 7, 0, 0, Math.PI); g.lineWidth = 1.4; g.strokeStyle = '#4a3a24'; g.stroke();
+    for (let k = 0; k < 26; k++) { const x = -28 + k * 2.2, y = -96 + Math.sin(k * 1.7) * 5; risco(g, x, y, x + Math.sin(k) * 1.4, y - 2.5 - (k % 3), .6, k % 2 ? '#a5e070' : '#6fae48'); }
+  });
+  cachLados = hi(100, 128, 50, 112, g => {                         // pilhas de pedras dos dois lados, com musgo, samambaias e raízes
+    g.translate(48, 108);
+    // paredão em camadas (estratos) de cada lado: borda de dentro irregular, ressaltos iluminados, rachaduras e musgo
+    const r = mul(5150);
+    const paredao = (s, pal) => {
+      let y = 0, k = 0;
+      while (y > -90) {
+        const h = 9 + r() * 8, y1 = Math.max(-92, y - h), xi = 12.5 + r() * 2.2, xo = 27 + r() * 5, inc = (r() - .5) * 2.5;
+        const pts = [[s * xi, y], [s * (xi + inc), y1 + 2.4], [s * (xi + 1.5 + inc), y1], [s * (xo - 1.5), y1 - .8], [s * xo, y1 + 2], [s * (xo + 1), y]];
+        poli(g, pts); g.fillStyle = lin(g, s * xi, 0, s * xo, 0, s < 0 ? [pal[1], pal[0], esc(pal[1], .7)] : [esc(pal[1], .8), pal[1], esc(pal[1], .6)]); g.fill();
+        g.save(); poli(g, pts); g.clip(); texPedraSobre(g, Math.min(s * xi, s * xo) - 2, y1 - 2, Math.abs(xo - xi) + 6, h + 4, 400 + k * 13 + (s > 0 ? 50 : 0), false);
+        g.fillStyle = lin(g, 0, y - 4, 0, y, ['rgba(10,8,20,0)', 'rgba(10,8,20,.4)']); g.fillRect(-40, y - 4, 80, 4);   // sombra embaixo de cada camada
+        for (let c = 0; c < 2; c++) { const cx = s * (xi + 3 + r() * (xo - xi - 6)); risco(g, cx, y1 + 2, cx + (r() - .5) * 2, y - 1, .5, 'rgba(25,24,40,.55)'); }
+        g.restore();
+        poli(g, [[s * (xi + 1.5 + inc), y1], [s * (xo - 1.5), y1 - .8], [s * xo, y1 + 2], [s * (xi + inc), y1 + 2.4]]); g.fillStyle = lin(g, 0, y1 - 1, 0, y1 + 2.4, [cla(pal[2], .3), pal[2]]); g.fill();   // ressalto de cima (pega luz)
+        if (r() < .7) { const mx = s * (xi + 2 + r() * (xo - xi - 6)), mw = 3 + r() * 5; g.beginPath(); g.ellipse(mx, y1 + .8, mw, 1.4, 0, 0, TAU); g.fillStyle = '#5f9a3e'; g.fill(); g.beginPath(); g.ellipse(mx - .6, y1 + .3, mw * .6, .7, 0, 0, TAU); g.fillStyle = '#9be27a'; g.fill(); for (let q = 0; q < 3; q++) risco(g, mx + (q - 1) * 1.6, y1 + 1.5, mx + (q - 1) * 1.8, y1 + 3.5 + r() * 2.5, .5, '#4f8a34'); }   // musgo pingando
+        poli(g, pts); g.lineWidth = .8; g.strokeStyle = '#2a2c40'; g.stroke();
+        y = y1; k++;
+      }
+    };
+    paredao(-1, PA); paredao(1, PB);
+    rocha(g, -27, 3, 9, 6, PA[0], PA[1], PA[2], true); rocha(g, -17, 4, 5, 3.5, PA[0], PA[1], PA[2], false);   // pedras soltas no pé
+    rocha(g, 28, 3, 10, 5.5, PB[0], PB[1], PB[2], true); rocha(g, 18, 4.5, 4.5, 3, PB[0], PB[1], PB[2], true);
+    rocha(g, -24, -86, 8, 4.5, PA[0], PA[1], PA[2], true); rocha(g, 25, -85, 7, 4, PB[0], PB[1], PB[2], true);   // pedras no topo
+    for (const s of [-1, 1]) {                                     // samambaias penduradas
+      [[15, -40], [16, -66], [18, -16]].forEach(([x, y], k) => {
+        for (let f = 0; f < 5; f++) { const a = (f - 2) * .35, L = 6 + (f % 2) * 2; g.beginPath(); g.moveTo(s * x, y); g.quadraticCurveTo(s * (x - Math.cos(a) * L * .5), y + Math.sin(a) * 3 + 2, s * (x - Math.cos(a) * L), y + L * .55 + f); g.lineWidth = 1.1; g.strokeStyle = f % 2 ? '#4f8a34' : '#6fae48'; g.stroke(); }
+      });
+      for (let k = 0; k < 8; k++) { const x = s * (14 + k * 2.4), y = -88 + Math.sin(k * 2.1) * 2; risco(g, x, y, x + s * 1.2, y - 3 - (k % 3), .7, k % 2 ? '#8fd45a' : '#5a9a3a'); }   // capim no topo
+      g.beginPath(); g.moveTo(s * 15, -76); g.bezierCurveTo(s * 13, -60, s * 16, -50, s * 14, -38); g.lineWidth = .8; g.strokeStyle = '#5a3a24'; g.stroke();   // raiz
+    }
+  });
+}
 function cachoeiraDyn(g, t) {
+  if (!cachFundo) cachoeiraSprites();
   g.lineCap = 'round'; g.lineJoin = 'round';
-  sombraSuave(g, 2, 2, 30, 6, .35);
-  const pedraLado = (x0, x1) => {
-    g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0, -84); g.quadraticCurveTo((x0 + x1) / 2, -90, x1, -80); g.lineTo(x1, 0); g.closePath();
-    contorno(g, lin(g, x0, 0, x1, 0, x0 < 0 ? ['#a4aabe', '#7f859b', '#5b6078'] : ['#8a90a6', '#666b82', '#484c62']), 1.1, '#2f3248');
-    g.save(); g.clip(); g.strokeStyle = 'rgba(40,44,70,.4)'; g.lineWidth = .7; for (let k = 1; k < 6; k++) { g.beginPath(); g.moveTo(x0, -k * 14); g.lineTo(x1, -k * 14 + (k % 2 ? 4 : -3)); g.stroke(); }
-    g.beginPath(); g.ellipse((x0 + x1) / 2, -80, Math.abs(x1 - x0) * .4, 4, 0, 0, TAU); g.fillStyle = '#6fbf4c'; g.fill(); g.restore();
-  };
-  pedraLado(-27, -12); pedraLado(12, 27);
-  g.save(); g.beginPath(); g.rect(-13, -84, 26, 84); g.clip();
-  g.fillStyle = lin(g, 0, -84, 0, 0, ['#d4f6ff', '#8fdcf0', '#4fb8dc']); g.fillRect(-13, -84, 26, 84);
-  for (let k = 0; k < 14; k++) {                              // fios de água descendo
-    const x = -11 + (k * 1.83) % 22, v = 30 + (k % 4) * 9, off = ((t * v + k * 13) % 100), y0 = -90 + off, len = 8 + (k % 3) * 6;
-    g.strokeStyle = 'rgba(255,255,255,' + (.5 + (k % 3) * .15) + ')'; g.lineWidth = .9 + (k % 2) * .5; g.beginPath(); g.moveTo(x + Math.sin(t * 2 + k) * .5, y0); g.lineTo(x + Math.sin(t * 2 + k) * .5, y0 + len); g.stroke();
-  }
+  sombraSuave(g, 2, 3, 36, 8, .35);
+  desenhaHi(g, cachFundo, 0, 0, t);
+  const TOP = -88, BX = 15;                                       // borda de onde a água cai e meia-largura embaixo
+  const larg = y => 12.5 + (y - TOP) / -TOP * (BX - 12.5);         // a cortina abre um pouco ao cair
+  // --- rio chegando na borda (linhas correndo em direção à queda) ---
+  g.save(); g.beginPath(); g.ellipse(0, TOP - 6, 12.5, 6.5, 0, 0, TAU); g.clip();
+  g.fillStyle = lin(g, 0, TOP - 13, 0, TOP, ['#2f8fb8', '#4fb8dc', '#8fdcf0']); g.fillRect(-14, TOP - 14, 28, 15);
+  for (let k = 0; k < 8; k++) { const p = (t * .9 + k / 8) % 1, y = TOP - 12 + p * 12, x = -9 + (k * 2.6) % 18; g.strokeStyle = 'rgba(255,255,255,' + (.25 + .5 * p) + ')'; g.lineWidth = .7; g.beginPath(); g.moveTo(x - 2, y); g.quadraticCurveTo(x, y + .8, x + 2.4, y); g.stroke(); }
   g.restore();
-  g.beginPath(); g.ellipse(0, 0, 26, 6, 0, 0, TAU); g.fillStyle = 'rgba(225,248,255,.85)'; g.fill();                 // piscina de espuma
-  for (let k = 0; k < 9; k++) { const p = (t * .6 + k / 9) % 1, x = (k - 4) * 4.5 + Math.sin(k * 3) * 2, y = -p * 22 - 2, r = 2 + p * 3.5; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fillStyle = 'rgba(240,252,255,' + (.55 * (1 - p)) + ')'; g.fill(); }  // névoa
-  for (let k = 0; k < 3; k++) { const p = (t * .5 + k / 3) % 1; g.beginPath(); g.ellipse(0, 0, 8 + p * 20, 2 + p * 5, 0, 0, TAU); g.strokeStyle = 'rgba(255,255,255,' + (.8 * (1 - p)) + ')'; g.lineWidth = .8; g.stroke(); }
+  // --- cortina de água ---
+  const forma = () => { g.beginPath(); g.moveTo(-12.5, TOP); g.quadraticCurveTo(0, TOP + 3, 12.5, TOP); g.lineTo(BX, 0); g.lineTo(-BX, 0); g.closePath(); };
+  g.save(); forma(); g.clip();
+  g.fillStyle = lin(g, 0, TOP, 0, 0, ['#e4fbff', '#9fe2f4', '#5cc0e2', '#3a9ec8', '#8fdcf0']); g.fillRect(-BX - 1, TOP, BX * 2 + 2, -TOP);
+  g.fillStyle = lin(g, -BX, 0, BX, 0, ['rgba(20,60,110,.35)', 'rgba(20,60,110,0)', 'rgba(255,255,255,.12)', 'rgba(20,60,110,.4)']); g.fillRect(-BX - 1, TOP, BX * 2 + 2, -TOP);   // volume (laterais mais escuras)
+  for (let k = 0; k < 5; k++) {                                   // faixas mais escuras descendo (dá sensação de velocidade)
+    const p = (t * .55 + k / 5) % 1, y = TOP + p * (-TOP + 20) - 20, gr = g.createLinearGradient(0, y, 0, y + 16);
+    gr.addColorStop(0, 'rgba(30,90,140,0)'); gr.addColorStop(.5, 'rgba(30,90,140,.22)'); gr.addColorStop(1, 'rgba(30,90,140,0)'); g.fillStyle = gr; g.fillRect(-BX, y, BX * 2, 16);
+  }
+  for (let k = 0; k < 34; k++) {                                  // fios brancos caindo em velocidades diferentes
+    const fx = ((k * 7.31) % 1) * 2 - 1, v = 70 + (k % 5) * 18, len = 7 + (k % 4) * 6, ph = (t * v + k * 37) % (-TOP + len + 10);
+    const y0 = TOP - len + ph, y1 = y0 + len, x0 = fx * larg(y0) * .92, x1 = fx * larg(y1) * .92, wob = Math.sin(t * 3 + k) * .4;
+    g.strokeStyle = 'rgba(255,255,255,' + (.35 + (k % 3) * .2) + ')'; g.lineWidth = .6 + (k % 3) * .45; g.beginPath(); g.moveTo(x0 + wob, y0); g.lineTo(x1 + wob, y1); g.stroke();
+  }
+  // borda de cima brilhando (a água dobra na pedra)
+  g.beginPath(); g.moveTo(-12.5, TOP + .5); g.quadraticCurveTo(0, TOP + 3.5, 12.5, TOP + .5); g.lineWidth = 2.4; g.strokeStyle = 'rgba(255,255,255,.75)'; g.stroke();
+  for (let k = 0; k < 4; k++) { const x = -10 + ((t * 9 + k * 6) % 20); g.beginPath(); g.arc(x, TOP + 1.6 + 1.2 * (1 - (x / 12.5) ** 2), .9, 0, TAU); g.fillStyle = 'rgba(255,255,255,.95)'; g.fill(); }
+  // brilhinhos do sol na água
+  for (let k = 0; k < 6; k++) { const s = Math.sin(t * 4 + k * 2.3); if (s < .7) continue; const x = Math.sin(k * 5.1) * 9, y = TOP + 10 + k * 12; g.fillStyle = 'rgba(255,255,255,' + (s - .7) * 3 + ')'; g.fillRect(x - 1.6, y - .25, 3.2, .5); g.fillRect(x - .25, y - 1.6, .5, 3.2); }
+  g.restore();
+  // fiozinhos de água escorrendo pelas pedras dos lados
+  for (const s of [-1, 1]) for (let k = 0; k < 2; k++) {
+    const x0 = s * (16 + k * 3), y0 = -70 + k * 22;
+    g.strokeStyle = 'rgba(200,240,255,.55)'; g.lineWidth = .7; g.beginPath(); g.moveTo(x0, y0); g.bezierCurveTo(x0 + s * 1, y0 + 6, x0 - s * 1, y0 + 12, x0, y0 + 18); g.stroke();
+    const p = (t * 1.3 + k * .5 + (s > 0 ? .25 : 0)) % 1; g.beginPath(); g.arc(x0 + s * .3, y0 + p * 18, .7, 0, TAU); g.fillStyle = 'rgba(255,255,255,.9)'; g.fill();
+  }
+  desenhaHi(g, cachLados, 0, 0, t);
+  // gotas que pulam da borda de cima
+  for (let k = 0; k < 8; k++) { const p = (t * .9 + k / 8) % 1, s = k % 2 ? 1 : -1, x = s * (11 + p * 6 + (k % 3)), y = TOP + 2 + p * p * 40; g.beginPath(); g.arc(x, y, .55 + (1 - p) * .4, 0, TAU); g.fillStyle = 'rgba(230,250,255,' + (.9 * (1 - p)) + ')'; g.fill(); }
+  // --- poço: anéis, espuma borbulhando, respingos ---
+  for (let k = 0; k < 4; k++) { const p = (t * .45 + k / 4) % 1; g.beginPath(); g.ellipse(0, 1, 12 + p * 24, 3 + p * 6, 0, 0, TAU); g.strokeStyle = 'rgba(255,255,255,' + (.7 * (1 - p)) + ')'; g.lineWidth = 1 - p * .6; g.stroke(); }
+  g.beginPath();
+  for (let k = 0; k <= 40; k++) { const a = k / 40 * TAU, rr = 1 + .12 * Math.sin(a * 5 + t * 6) + .08 * Math.sin(a * 9 - t * 9); const x = Math.cos(a) * 20 * rr, y = Math.sin(a) * 5 * rr; k ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath(); g.fillStyle = 'rgba(235,250,255,.9)'; g.fill();
+  for (let k = 0; k < 16; k++) {                                  // bolhas de espuma que nascem e somem
+    const p = (t * .8 + k / 16) % 1, a = k * 2.4, x = Math.cos(a) * (6 + p * 14), y = Math.sin(a) * (1.5 + p * 3.5) - 1, r = (1.2 + (k % 3) * .6) * (1 - p * .5);
+    g.beginPath(); g.arc(x, y, r, 0, TAU); g.fillStyle = 'rgba(255,255,255,' + (.85 * (1 - p)) + ')'; g.fill(); g.lineWidth = .3; g.strokeStyle = 'rgba(120,190,220,' + (.6 * (1 - p)) + ')'; g.stroke();
+  }
+  for (let k = 0; k < 14; k++) {                                  // respingos subindo e caindo (parábola)
+    const p = (t * 1.1 + k / 14) % 1, s = (k * 7 % 14) / 7 - 1, x = s * (4 + p * 14), y = -2 - (p * 18 - p * p * 18) * (1 + (k % 3) * .4);
+    g.beginPath(); g.arc(x, y, .5 + (k % 2) * .35, 0, TAU); g.fillStyle = 'rgba(255,255,255,' + (.95 * (1 - p)) + ')'; g.fill();
+  }
+  // --- névoa subindo e indo com o vento ---
+  for (let k = 0; k < 12; k++) {
+    const p = (t * .22 + k / 12) % 1, x = Math.sin(k * 3.7) * 12 + p * 14, y = -3 - p * 34, r = 4 + p * 9, a = .3 * (1 - p) * Math.min(1, p * 5);
+    const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(245,252,255,' + a + ')'); gr.addColorStop(1, 'rgba(245,252,255,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // --- arco-íris fraquinho na névoa (pulsa devagar) ---
+  const ai = .1 + .07 * Math.sin(t * .8);
+  ['#ff4a4a', '#ffa040', '#ffe45e', '#5fd46a', '#4aa8ff', '#9a6aff'].forEach((c, k) => { g.beginPath(); g.arc(4, 4, 24 - k * 1.3, Math.PI * 1.08, Math.PI * 1.62); g.lineWidth = 1.3; g.strokeStyle = rgba(c, ai); g.stroke(); });
 }
 
 /* ---------- TEMPLOS E CASAS ASIÁTICAS (base de pedra, pilares laqueados, telhados curvos em camadas, lanternas) ----------
