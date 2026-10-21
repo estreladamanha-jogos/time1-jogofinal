@@ -128,6 +128,35 @@
 
   #salvando { position: fixed; right: 10px; top: 58px; z-index: 6; margin: 0; padding: 3px 9px; border-radius: 10px; background: rgba(10,16,30,.8); color: #bfe9ff; font-size: 11px; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #salvando.on { opacity: 1; }
+  /* ===== Tela inicial (menu principal) ===== */
+  body.tela-titulo #hud, body.tela-titulo #dica, body.tela-titulo .btn, body.tela-titulo #joystick, body.tela-titulo #salvando, body.tela-titulo #aviso { display: none !important; }
+  #telaInicial { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; font-family: 'Pixelify Sans', monospace; color: #fff; text-align: center; }
+  #telaInicial[hidden], #telaInicial .tela[hidden], #somDica[hidden] { display: none; }
+  .tela { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; animation: telaEntra .5s ease-out both; }
+  @keyframes telaEntra { from { opacity: 0; transform: translateY(10px); } }
+  .logo { margin: 0; font: 900 clamp(56px, 15vw, 132px) 'Cinzel', serif; letter-spacing: .08em; line-height: 1;
+    background: linear-gradient(180deg, #fff6c8 0%, #ffd34a 45%, #e08a12 70%, #b0400e 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(3px 0 0 #2a0c06) drop-shadow(-3px 0 0 #2a0c06) drop-shadow(0 3px 0 #2a0c06) drop-shadow(0 -3px 0 #2a0c06) drop-shadow(0 8px 0 rgba(0,0,0,.45)); }
+  .sub { margin: 4px 0 18px; font: 600 clamp(15px, 3.4vw, 26px) 'Pixelify Sans', monospace; letter-spacing: .32em; color: #fff; text-shadow: 0 2px 0 #b8322a, 2px 2px 0 #2a0c06, 0 0 18px rgba(255,120,60,.6); }
+  .menuP { display: flex; flex-direction: column; gap: 10px; width: min(78vw, 300px); }
+  #telaInicial button { font: 600 18px 'Pixelify Sans', monospace; letter-spacing: .12em; padding: 10px 18px; color: #eaf6ff; background: linear-gradient(180deg, #1d2c48, #0f182a); border: 0; cursor: pointer;
+    box-shadow: 0 0 0 3px #0b1220, 0 0 0 5px #46d4ff, 0 0 0 7px #0b1220; transition: transform .08s, background .12s; outline: none; }
+  #telaInicial button.foco, #telaInicial button:hover, #telaInicial button:focus-visible { background: linear-gradient(180deg, #ffd56a, #f0a020); color: #1a1206; transform: scale(1.05); box-shadow: 0 0 0 3px #0b1220, 0 0 0 5px #fff3b0, 0 0 0 7px #0b1220, 0 0 18px rgba(255,200,80,.6); }
+  #telaInicial button:active { filter: brightness(.9); }
+  #telaInicial button:disabled { opacity: .4; cursor: default; filter: grayscale(1); transform: none; }
+  #somDica { margin-top: 14px; font-size: 13px; color: #fff; opacity: .85; text-shadow: 1px 1px 0 #000; animation: piscar 1.6s steps(2) infinite; }
+  @keyframes piscar { 50% { opacity: .35; } }
+  .painel { width: min(90vw, 460px); padding: 18px 22px; background: rgba(10,16,30,.94); box-shadow: 0 0 0 3px #0b1220, 0 0 0 5px #46d4ff, 0 0 0 7px #0b1220; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+  .painel h2 { margin: 0 0 4px; text-align: center; color: #ffd56a; letter-spacing: .15em; font-size: 22px; }
+  .painel p { margin: 0; font-size: 15px; line-height: 1.4; }
+  .painel label { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 15px; }
+  .painel label.caixa { justify-content: flex-start; }
+  .painel input[type=range] { width: 52%; accent-color: #46d4ff; }
+  .painel input.foco, .painel select.foco { outline: 2px solid #ffd56a; outline-offset: 2px; }
+  .painel select { font: inherit; background: #16243a; color: #fff; border: 2px solid #46d4ff; padding: 3px 6px; }
+  .painel .teclas { font-size: 12px; color: #9fb4d4; }
+  body.toque-sempre .btn, body.toque-sempre #joystick { display: block; }
+  body.toque-nunca .btn, body.toque-nunca #joystick { display: none !important; }
   /* ===== Promoção de faixa ===== */
   #promo { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; text-align: center; pointer-events: none; color: #fff; background: radial-gradient(circle, rgba(255,240,180,.35), rgba(0,0,0,.55)); }
   #promo h2 { margin: 0; font: 900 clamp(28px, 7vw, 64px) 'Cinzel', serif; letter-spacing: 4px; color: #ffe27a; text-shadow: 0 3px 0 #6b4a00, 0 0 24px rgba(255,200,80,.9); }
@@ -226,6 +255,42 @@
 <section id="menu" hidden></section>
 <p id="aviso" role="status" hidden></p>
 <p id="salvando" role="status" aria-live="polite"></p>
+<section id="telaInicial" hidden>
+  <div class="tela tela-principal">
+    <h1 class="logo">AKIRA</h1>
+    <p class="sub">A JORNADA DO KARATÊ</p>
+    <nav class="menuP">
+      <button type="button" data-a="continuar" id="btnContinuar">CONTINUAR</button>
+      <button type="button" data-a="novo">NOVO JOGO</button>
+      <button type="button" data-a="opcoes">OPÇÕES</button>
+      <button type="button" data-a="creditos">CRÉDITOS</button>
+    </nav>
+    <p id="somDica">🔈 Toque ou aperte uma tecla para ligar o som</p>
+  </div>
+  <div class="tela tela-confirma" hidden><div class="painel">
+    <h2>COMEÇAR UM NOVO JOGO?</h2><p>O progresso salvo neste navegador será substituído.</p>
+    <button type="button" data-a="novoSim">SIM, COMEÇAR DE NOVO</button><button type="button" data-a="novoNao">NÃO, VOLTAR</button>
+  </div></div>
+  <div class="tela tela-opcoes" hidden><div class="painel">
+    <h2>OPÇÕES</h2>
+    <label>Volume da música <input type="range" id="opMus" min="0" max="100"></label>
+    <label>Volume dos efeitos <input type="range" id="opSfx" min="0" max="100"></label>
+    <label class="caixa"><input type="checkbox" id="opMusOn"> Música ligada</label>
+    <label class="caixa"><input type="checkbox" id="opSfxOn"> Efeitos sonoros ligados</label>
+    <label>Controles de toque <select id="opToque"><option value="auto">Automático</option><option value="sempre">Sempre mostrar</option><option value="nunca">Esconder</option></select></label>
+    <p class="teclas">Teclado: WASD/Setas andar • J bater • K aura • Espaço esquivar • L defender • E interagir • M menu</p>
+    <button type="button" data-a="voltar">VOLTAR</button>
+  </div></div>
+  <div class="tela tela-creditos" hidden><div class="painel">
+    <h2>CRÉDITOS</h2>
+    <p><b>Akira: A Jornada do Karatê</b></p>
+    <p>Equipe: Time 1 — Estrela da Manhã Jogos</p>
+    <p>Personagens e retratos: Bíblia oficial de NPCs e splash arts da equipe</p>
+    <p>Tiles de referência do cenário: arte de referência da equipe</p>
+    <p>Código, cenário em pixel art, música e efeitos sonoros: gerados por código com ajuda do Claude (Anthropic)</p>
+    <button type="button" data-a="voltar">VOLTAR</button>
+  </div></div>
+</section>
 <section id="promo" hidden><div class="promoFaixa"></div><h2>PROMOÇÃO!</h2><p id="promoNome"></p></section>
 
 <footer id="dica">
@@ -1743,8 +1808,8 @@ const pegou = k => { const v = edge[k]; edge[k] = false; return !!v; };
 const joy = { x: 0, y: 0, id: null };
 const BLOQUEAR = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'];
 addEventListener('keydown', e => {
-  if (BLOQUEAR.includes(e.code)) e.preventDefault();
-  if (!e.repeat) {
+  if (BLOQUEAR.includes(e.code) && MODO_TELA === 'jogo') e.preventDefault();
+  if (!e.repeat && MODO_TELA === 'jogo') {
     edge[e.code] = true;
     if (e.code === 'KeyR' && e.shiftKey) reiniciar();
     if (e.code === 'KeyP' && e.shiftKey) exportarSprites();
@@ -2532,7 +2597,7 @@ function golpear(tk) {
     danoEm(o, dano, tk, vx / (d || 1), vy / (d || 1)); acertou = true; if (o.alvo) boneco = true;
   }
   if (acertou) {
-    jog.cadeia++;
+    jog.cadeia++; Som.efeito('golpe');
     estado.aura = Math.min(maxAura(), estado.aura + 4 * (1 + (estado.attr.aur - 1) * .08));
     const seq = COMBOS[estado.combo].seq;
     if (jog.cadeia >= seq.length && jog.ci === seq.length - 1) {          // combo completo!
@@ -3468,7 +3533,7 @@ function fazEstilo(c) {
   if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#222850', cabS: '#10142e', cabL: '#3f58b0', cabL2: '#8fa8f0' });
   return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura };
 }
-const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', externo: true, capa: '#8a1230', aura: true });
+const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: '#1c1c24', externo: true, capa: '#8a1230', aura: true });   // bandana preta na testa
 
 function traco(g, ax, ay, bx, by, w, cor) { g.strokeStyle = cor; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); }
 // Membro com contorno + sombra + luz (cel-shading)
@@ -4060,7 +4125,7 @@ function carregarExterno(urlPng, meta) {
 }
 function usarProcedural() { externo = null; limparCache(); }
 
-return { ANIM: AKIRA_ANIMATIONS, AK, quadro, limparCache, montarFolha, carregarExterno, usarProcedural, fazEstilo, ESTILO_AKIRA, externoAtivo: () => !!externo };
+return { ANIM: AKIRA_ANIMATIONS, AK, quadro, poseFrente: (g, o, est) => desenharFrente(g, pf(o), est), limparCache, montarFolha, carregarExterno, usarProcedural, fazEstilo, ESTILO_AKIRA, externoAtivo: () => !!externo };
 })();
 
 /* =====================================================================
@@ -5366,14 +5431,413 @@ function renderizar(dt) {
   if (jog.morto) { g.fillStyle = 'rgba(120,0,0,' + clamp(jog.t / 1.3 * .5, 0, .5) + ')'; g.fillRect(0, 0, W, H); }
 }
 
+
+/* =====================================================================
+   16. ÁUDIO (Web Audio): música do menu feita por código + efeitos.
+   Sem arquivo de música no projeto, a trilha é sintetizada: flauta de bambu
+   (melodia), cordas suaves (acordes) e percussão leve e espaçada.
+   Para usar uma faixa de verdade depois, coloque o caminho em MUSICA_MENU_ARQUIVO.
+   ===================================================================== */
+const MUSICA_MENU_ARQUIVO = null;                 // ex.: 'audio/menu.mp3' (deixe null enquanto não existir o arquivo)
+const CHAVE_OPCOES = 'karate-opcoes';
+const OPCOES = Object.assign({ musica: .6, sfx: .8, musicaOn: true, sfxOn: true, toque: 'auto' }, (() => { try { return JSON.parse(localStorage.getItem(CHAVE_OPCOES) || '{}') || {}; } catch (e) { return {}; } })());
+function salvarOpcoes() { try { localStorage.setItem(CHAVE_OPCOES, JSON.stringify(OPCOES)); } catch (e) {} Som.aplicar(); aplicarToque(); }
+const Som = (() => {
+  let ac = null, mestre, gMus, gSfx, ruido = null, timer = null, prox = 0, passo = 0, tocando = false, audioEl = null, gesto = false;
+  const BPM = 66, TEMPO = 60 / BPM / 2;                                  // colcheia
+  const ESCALA = [62, 64, 67, 69, 71, 74, 76, 79, 81];                   // escala "yo" (pentatônica japonesa) em ré
+  // melodia de 32 colcheias (0 = pausa): frases curtas com respiro, como uma shakuhachi
+  const MEL = [5, 0, 0, 4, 3, 0, 4, 0, 0, 0, 2, 0, 1, 0, 0, 0, 3, 0, 4, 5, 0, 0, 7, 0, 6, 0, 5, 0, 0, 0, 0, 0,
+               5, 0, 0, 6, 7, 0, 6, 0, 5, 0, 4, 0, 0, 3, 0, 0, 2, 0, 3, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+  const ACORDES = [[50, 57, 64], [48, 55, 64], [45, 52, 59], [47, 54, 62]];  // pad de cordas (4 compassos)
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  function iniciar(doGesto) {
+    if (doGesto) gesto = true;
+    if (!gesto) return false;                                           // espera o primeiro toque/tecla (regra dos navegadores)
+    try {
+      if (!ac) {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        mestre = ac.createGain(); mestre.connect(ac.destination);
+        gMus = ac.createGain(); gMus.connect(mestre); gSfx = ac.createGain(); gSfx.connect(mestre);
+        const n = ac.sampleRate, b = ac.createBuffer(1, n, n), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; ruido = b;
+        aplicar();
+      }
+      if (ac.state === 'suspended') ac.resume();
+      return true;
+    } catch (e) { return false; }                                        // sem áudio: o jogo segue normal
+  }
+  function aplicar() {
+    if (!ac) return;
+    gMus.gain.setTargetAtTime(OPCOES.musicaOn ? OPCOES.musica * .5 : 0, ac.currentTime, .05);
+    gSfx.gain.setTargetAtTime(OPCOES.sfxOn ? OPCOES.sfx * .6 : 0, ac.currentTime, .02);
+    if (audioEl) audioEl.volume = OPCOES.musicaOn ? OPCOES.musica : 0;
+  }
+  function env(g, t, a, s, r, v) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.setValueAtTime(v, t + a + s); g.gain.exponentialRampToValueAtTime(.0001, t + a + s + r); }
+  function flauta(n, t, dur) {                                           // seno + vibrato + sopro filtrado
+    const o = ac.createOscillator(), g = ac.createGain(), v = ac.createOscillator(), vg = ac.createGain(), f = ac.createBiquadFilter();
+    o.type = 'triangle'; o.frequency.value = hz(n); v.frequency.value = 5.2; vg.gain.value = hz(n) * .006;
+    v.connect(vg); vg.connect(o.frequency); f.type = 'lowpass'; f.frequency.value = 2400;
+    o.connect(f); f.connect(g); g.connect(gMus); env(g, t, .09, dur * .6, dur * .7, .16);
+    o.frequency.setValueAtTime(hz(n) * .985, t); o.frequency.linearRampToValueAtTime(hz(n), t + .12);   // "dobra" de entrada da nota
+    const s = ac.createBufferSource(), sf = ac.createBiquadFilter(), sg = ac.createGain(); s.buffer = ruido; sf.type = 'bandpass'; sf.frequency.value = hz(n) * 2; sf.Q.value = 6;
+    s.connect(sf); sf.connect(sg); sg.connect(gMus); env(sg, t, .05, dur * .3, dur * .4, .05);
+    [o, v, s].forEach(x => { x.start(t); x.stop(t + dur * 1.8 + .2); });
+  }
+  function cordas(notas, t, dur) {
+    notas.forEach((n, k) => [-.08, .08].forEach(dt => {
+      const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+      o.type = 'sawtooth'; o.frequency.value = hz(n); o.detune.value = dt * 100; f.type = 'lowpass'; f.frequency.value = 700 + k * 120;
+      o.connect(f); f.connect(g); g.connect(gMus); env(g, t, dur * .35, dur * .35, dur * .5, .022);
+      o.start(t); o.stop(t + dur * 1.3);
+    }));
+  }
+  function taiko(t, forte) {
+    const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+    o.frequency.setValueAtTime(forte ? 95 : 140, t); o.frequency.exponentialRampToValueAtTime(forte ? 48 : 80, t + .35);
+    o.connect(g); g.connect(gMus); env(g, t, .005, .02, forte ? .6 : .25, forte ? .35 : .12); o.start(t); o.stop(t + .8);
+  }
+  function madeira(t) { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = ruido; f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 9; s.connect(f); f.connect(g); g.connect(gMus); env(g, t, .002, .01, .08, .18); s.start(t); s.stop(t + .15); }
+  function agendar() {                                                   // agenda as notas com folga (não depende da taxa de quadros)
+    while (prox < ac.currentTime + .4) {
+      const k = passo % MEL.length, nota = MEL[k];
+      if (nota) { let d = 1; while (MEL[(k + d) % MEL.length] === 0 && d < 6) d++; flauta(ESCALA[nota], prox, TEMPO * d); }
+      if (k % 16 === 0) cordas(ACORDES[(passo / 16 | 0) % ACORDES.length], prox, TEMPO * 16);
+      if (k % 16 === 0) taiko(prox, true); else if (k % 16 === 11) taiko(prox, false);
+      if (k % 32 === 6 || k % 32 === 22) madeira(prox);
+      prox += TEMPO; passo++;
+    }
+  }
+  function tocarMusica() {
+    if (tocando || !iniciar()) return;
+    tocando = true;
+    if (MUSICA_MENU_ARQUIVO) {                                           // faixa de verdade, se existir
+      audioEl = new Audio(MUSICA_MENU_ARQUIVO); audioEl.loop = true; aplicar();
+      audioEl.play().catch(() => { audioEl = null; tocando = false; });
+      return;
+    }
+    gMus.gain.cancelScheduledValues(ac.currentTime); gMus.gain.setValueAtTime(0, ac.currentTime);
+    gMus.gain.linearRampToValueAtTime(OPCOES.musicaOn ? OPCOES.musica * .5 : 0, ac.currentTime + 3);   // entra suave
+    prox = ac.currentTime + .1; passo = 0; agendar(); timer = setInterval(agendar, 120);
+  }
+  function pararMusica() {
+    if (!tocando) return; tocando = false; clearInterval(timer); timer = null;
+    if (audioEl) { audioEl.pause(); audioEl = null; }
+    if (ac) { gMus.gain.cancelScheduledValues(ac.currentTime); gMus.gain.setTargetAtTime(0, ac.currentTime, .3); setTimeout(() => { if (!tocando) aplicar(); }, 1200); }
+  }
+  function efeito(nome) {
+    if (!ac || ac.state !== 'running' || !OPCOES.sfxOn) return;
+    const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.connect(g); g.connect(gSfx);
+    if (nome === 'letra') { o.type = 'square'; o.frequency.value = 880 + Math.random() * 60; env(g, t, .002, .01, .03, .035); }
+    else if (nome === 'menu') { o.type = 'triangle'; o.frequency.value = 660; env(g, t, .002, .02, .06, .12); }
+    else if (nome === 'confirma') { o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(1040, t + .09); env(g, t, .003, .05, .12, .16); }
+    else if (nome === 'impacto') { o.type = 'sine'; o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(40, t + .3); env(g, t, .002, .05, .35, .5); const s = ac.createBufferSource(), sg = ac.createGain(); s.buffer = ruido; s.connect(sg); sg.connect(gSfx); env(sg, t, .002, .03, .2, .35); s.start(t); s.stop(t + .3); }
+    else if (nome === 'golpe') { o.type = 'sine'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(70, t + .12); env(g, t, .002, .02, .1, .22); }
+    else if (nome === 'promocao') { o.type = 'triangle'; [0, .12, .24, .4].forEach((d, k) => o.frequency.setValueAtTime(hz([62, 67, 71, 74][k]), t + d)); env(g, t, .01, .5, .5, .2); }
+    else if (nome === 'salvo') { o.type = 'sine'; o.frequency.value = 1200; env(g, t, .005, .02, .1, .05); }
+    o.start(t); o.stop(t + 1.2);
+  }
+  document.addEventListener('visibilitychange', () => { if (!ac) return; if (document.hidden) ac.suspend(); else if (ac.state === 'suspended') ac.resume(); });
+  return { iniciar, aplicar, tocarMusica, pararMusica, efeito, ativo: () => !!ac && ac.state === 'running', ganhos: () => ac ? { musica: +gMus.gain.value.toFixed(3), sfx: +gSfx.gain.value.toFixed(3), estado: ac.state } : null };
+})();
+// controles de toque: automático (só em tela de toque), sempre ou nunca
+function aplicarToque() { document.body.classList.toggle('toque-sempre', OPCOES.toque === 'sempre'); document.body.classList.toggle('toque-nunca', OPCOES.toque === 'nunca'); }
+aplicarToque();
+
+/* =====================================================================
+   17. ABERTURA (cutscene ~8,8 s) — desenhada no MESMO loop do jogo.
+   Cena 1 meditação • 2 aproximação + porta abrindo com 3 silhuetas • 3 os olhos
+   • 4 contraplano: levanta e vira pra câmera • 5 soco na câmera + zoom + clarão
+   ===================================================================== */
+const Abertura = (() => {
+  const VW = 320, VH = 180, FIM = 8.8, IMPACTO = 8.0;
+  let t = 0, ativa = false, pulou = false, fundo = null, contra = null, fimCb = null, somImpacto = false;
+  const off = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x), lerp = (a, b, k) => a + (b - a) * k;
+  const fase = (a, b) => ease((t - a) / (b - a));
+  function px(g, x, y, w, h, c) { g.fillStyle = c; g.fillRect(x | 0, y | 0, w | 0, h | 0); }
+  // dojo visto de frente (pixel art: pintado 1:1 e ampliado sem borrar)
+  function pintarDojo(abrir) {
+    const c = off(VW, VH), g = c.getContext('2d');
+    const ceu = g.createLinearGradient(0, 40, 0, 130); ceu.addColorStop(0, '#ffe7b0'); ceu.addColorStop(1, '#fff7dc');
+    px(g, 0, 0, VW, VH, '#3a2618');
+    for (let x = 0; x < VW; x += 40) { px(g, x, 0, 40, 122, '#e9dcc0'); px(g, x, 0, 3, 122, '#6b4423'); }          // parede com reboco e pilares
+    px(g, 0, 0, VW, 14, '#5a3a1e'); px(g, 0, 14, VW, 2, '#8a5a30'); px(g, 0, 104, VW, 18, '#7a4a26');
+    for (let x = 0; x < VW; x += 6) px(g, x, 104, 1, 18, '#5a3418');
+    // porta de correr no meio (abre conforme "abrir")
+    const dx = 120, dw = 80, op = abrir * 38;
+    g.fillStyle = ceu; g.fillRect(dx, 26, dw, 78);
+    px(g, dx - 4, 22, dw + 8, 4, '#4a2e18'); px(g, dx - 4, 104, dw + 8, 3, '#4a2e18');
+    [[dx - op, 1], [dx + dw / 2 + op, -1]].forEach(([x]) => {
+      px(g, x, 26, dw / 2, 78, '#f4e8c8'); px(g, x, 26, dw / 2, 2, '#6b4423'); px(g, x, 102, dw / 2, 2, '#6b4423');
+      for (let k = 0; k <= 4; k++) px(g, x + k * dw / 8, 26, 1, 78, '#7a5230'); for (let k = 0; k <= 6; k++) px(g, x, 26 + k * 13, dw / 2, 1, '#7a5230');
+    });
+    // lanternas, pergaminhos e o kamidana em cima da porta
+    [[60, 50], [260, 50]].forEach(([x, y]) => { px(g, x - 7, y - 10, 14, 18, '#e8473b'); px(g, x - 5, y - 8, 10, 14, '#ff8a68'); px(g, x - 8, y - 12, 16, 3, '#2a1a10'); px(g, x - 8, y + 8, 16, 3, '#2a1a10'); px(g, x, y - 18, 1, 6, '#2a1a10'); });
+    [[22, 30], [282, 30]].forEach(([x, y]) => { px(g, x, y, 16, 56, '#f6ecc8'); px(g, x - 2, y - 2, 20, 3, '#5a3a1e'); px(g, x - 2, y + 56, 20, 3, '#5a3a1e'); for (let k = 0; k < 5; k++) px(g, x + 6 + (k % 2) * 2, y + 8 + k * 9, 4 - (k % 3), 5, '#1a1410'); });
+    px(g, 140, 15, 40, 6, '#6b4423'); px(g, 146, 9, 28, 6, '#8a5a30'); px(g, 158, 4, 4, 5, '#e0b44a');
+    // chão de tatame em perspectiva
+    for (let y = 122; y < VH; y++) { const k = (y - 122) / (VH - 122); px(g, 0, y, VW, 1, k % .2 < .03 ? '#6f7a3a' : y % 2 ? '#cfc982' : '#d9d28e'); }
+    for (let k = -6; k <= 6; k++) { g.strokeStyle = '#8a8a40'; g.lineWidth = 1; g.beginPath(); g.moveTo(160 + k * 18, 122); g.lineTo(160 + k * 60, VH); g.stroke(); }
+    return c;
+  }
+  function pintarContra() {                                             // o lado oposto do dojo (altar e pergaminho), visto da porta
+    const c = off(VW, VH), g = c.getContext('2d');
+    px(g, 0, 0, VW, VH, '#2a1a10');
+    for (let x = 0; x < VW; x += 40) { px(g, x, 0, 40, 122, '#ddd0b2'); px(g, x, 0, 3, 122, '#5a3a1e'); }
+    px(g, 0, 0, VW, 14, '#4a2e18'); px(g, 0, 104, VW, 18, '#6b4020');
+    px(g, 110, 22, 100, 82, '#c9b98e'); px(g, 106, 20, 108, 3, '#4a2e18'); px(g, 106, 102, 108, 4, '#4a2e18');   // tokonoma
+    px(g, 148, 26, 24, 64, '#f6ecc8'); px(g, 146, 24, 28, 3, '#5a3a1e'); px(g, 146, 90, 28, 3, '#5a3a1e');
+    g.fillStyle = '#c0392b'; g.beginPath(); g.arc(160, 48, 7, 0, 7); g.fill();                                   // círculo vermelho no pergaminho
+    for (let k = 0; k < 3; k++) px(g, 157 + (k % 2) * 3, 62 + k * 8, 6 - k, 5, '#1a1410');
+    px(g, 124, 92, 22, 10, '#6b4423'); px(g, 128, 86, 4, 6, '#f6ecc8'); px(g, 129, 82, 2, 4, '#ffb02e');           // velas
+    px(g, 174, 92, 22, 10, '#6b4423'); px(g, 188, 86, 4, 6, '#f6ecc8'); px(g, 189, 82, 2, 4, '#ffb02e');
+    [[56, 52], [264, 52]].forEach(([x, y]) => { px(g, x - 7, y - 10, 14, 18, '#e8473b'); px(g, x - 5, y - 8, 10, 14, '#ff8a68'); px(g, x - 8, y - 12, 16, 3, '#2a1a10'); px(g, x - 8, y + 8, 16, 3, '#2a1a10'); });
+    for (let y = 122; y < VH; y++) px(g, 0, y, VW, 1, y % 2 ? '#c7c17c' : '#d1ca86');
+    for (let k = -6; k <= 6; k++) { g.strokeStyle = '#87873e'; g.beginPath(); g.moveTo(160 + k * 18, 122); g.lineTo(160 + k * 60, VH); g.stroke(); }
+    return c;
+  }
+  // poses de frente (mesmo esqueleto do jogo)
+  const SENTADO = { lk: [18, 3], rk: [18, 3], la: [-15, 4], ra: [-15, 4], le: [12, 14], re: [12, 14], lh: [3, 9], rh: [3, 9], eye: 'closed', lean: 0, belt: 2 };
+  const EM_PE = { lk: [9, 24], rk: [9, 24], la: [5, 25], ra: [5, 25], le: [7, 15], re: [7, 15], lh: [-4, -14], rh: [-4, -14], eye: 'angry', brow: 1 };
+  const GUARDA = { lk: [12, 21], rk: [12, 21], la: [7, 23], ra: [7, 23], le: [7, 14], re: [7, 15], lh: [-4, -15], rh: [-4, -14], eye: 'angry', brow: 1, lean: 2 };
+  const PREP = { lk: [12, 21], rk: [12, 21], la: [7, 23], ra: [7, 23], re: [3, 18], rh: [-5, -9], lean: -3, brow: 1, hair: -3, belt: 6, eye: 'angry' };
+  const SOCO = { lk: [13, 20], rk: [13, 20], la: [7, 23], ra: [7, 23], re: [3, 5], rh: [-3, 2], rhs: 2.6, lean: 6, dx: 1, brow: 1, mouth: 'shout', hair: -10, belt: -8, eye: 'angry' };
+  function misturar(a, b, k) {
+    const r = {}; for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const x = a[key], y = b[key];
+      if (Array.isArray(x) || Array.isArray(y)) { const X = x || [0, 0], Y = y || [0, 0]; r[key] = [lerp(X[0], Y[0], k), lerp(X[1], Y[1], k)]; }
+      else if (typeof (x != null ? x : y) === 'number') r[key] = lerp(x || 0, y != null ? y : 0, k);
+      else r[key] = k < .5 ? (x != null ? x : y) : (y != null ? y : x);
+    }
+    return r;
+  }
+  function akira(g, pose, x, y, esc, costas) { g.save(); g.translate(x, y); g.scale(esc, esc); Akira.poseFrente(g, Object.assign({}, pose, { costas: costas ? 1 : 0 }), estiloAkira()); g.restore(); }
+  function silhueta(g, x, y, esc, f, k, vira) {                         // inimigo como sombra preta com olhos vermelhos
+    const q = Akira.quadro('idle', f % 6, 1.2, estiloPal(PAL_INIM), false), c = off(q.width, q.height), cg = c.getContext('2d');
+    cg.drawImage(q, 0, 0); cg.globalCompositeOperation = 'source-in'; cg.fillStyle = '#07040e'; cg.fillRect(0, 0, c.width, c.height);
+    g.save(); g.globalAlpha = k; g.translate(x, y); g.scale(vira ? -esc : esc, esc);
+    g.drawImage(c, -Akira.AK.OX * 1.2, -Akira.AK.OY * 1.2); g.restore();
+    if (k > .6 && Math.sin(t * 9 + x) > -.3) { const yo = y - 128 * esc * 1.2; px(g, x - 2, yo, 1.4, 1, '#ff2a3a'); px(g, x + 1, yo, 1.4, 1, '#ff2a3a'); }
+  }
+  function linhasVelocidade(g, cx, cy, forca, u) {                      // linhas de velocidade em pixel (u = tamanho do pixel na tela)
+    const q = Math.max(2, Math.round(u));
+    for (let k = 0; k < 46; k++) {
+      const a = k * 2.399 + Math.floor(t * 30) * .3, r0 = (60 + (k * 37 % 70)) * u, r1 = r0 + (30 + forca * 90) * u;
+      g.fillStyle = k % 3 ? 'rgba(255,255,255,.85)' : 'rgba(255,220,120,.9)';
+      for (let r = r0; r < r1; r += q * 1.5) g.fillRect(Math.round((cx + Math.cos(a) * r) / q) * q, Math.round((cy + Math.sin(a) * r) / q) * q, q, q);
+    }
+  }
+  function iniciar(cb) {
+    if (ativa) return;                                                   // evita duas aberturas ao mesmo tempo
+    ativa = true; t = 0; pulou = false; somImpacto = false; fimCb = cb; fundo = null; contra = pintarContra();
+  }
+  function pular() { if (ativa && t < IMPACTO) { t = IMPACTO; pulou = true; } }
+  function atualizar(dt) {
+    if (!ativa) return;
+    t += Math.min(dt, .05);
+    if (t >= IMPACTO && !somImpacto) { somImpacto = true; Som.efeito('impacto'); }
+    if (t >= FIM - .6 && fimCb) { const cb = fimCb; fimCb = null; cb(); }   // o menu aparece por trás do clarão
+    if (t >= FIM) ativa = false;
+  }
+  function desenhar(g, cw, ch) {
+    if (!ativa) return;
+    if (t >= FIM - .6) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(255,255,255,' + Math.max(0, (FIM - t) / .6) + ')'; g.fillRect(0, 0, cw, ch); g.restore(); return; }   // clarão some revelando o menu
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false;
+    g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch);
+    const k = Math.max(cw / VW, ch / VH), ox = (cw - VW * k) / 2, oy = (ch - VH * k) / 2;
+    let cam = { z: 1, x: 160, y: 90 }, shake = 0;
+    const face = [160, 122];
+    if (t < 5.3) {                                                      // cenas 1, 2 e 3 (frente do Akira, porta atrás)
+      const abrir = fase(2.6, 3.6);
+      if (!fundo || fundo.abr !== Math.round(abrir * 20)) { fundo = pintarDojo(Math.round(abrir * 20) / 20); fundo.abr = Math.round(abrir * 20); }
+      if (t > 2) { const z = fase(2, 4.2); cam = { z: lerp(1, 2.5, z), x: lerp(160, face[0], z), y: lerp(90, face[1] - 6, z) }; }
+      if (t > 4.2) { const z = fase(4.2, 5.3); cam = { z: lerp(2.5, 3.3, z), x: face[0], y: face[1] - 8 }; }
+      g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k, ch / 2 - cam.y * cam.z * k);
+      g.drawImage(fundo, 0, 0);
+      const sil = fase(3.1, 4.0);
+      if (sil > 0) [[136, 103], [160, 104], [184, 103]].forEach(([x, y], i) => silhueta(g, x, y, .13, Math.floor(t * 6) + i, sil, i === 2));
+      const resp = Math.sin(t * 2.2) * .6, olhos = t > 4.55 ? (t < 4.62 ? 'open' : 'angry') : 'closed';
+      g.imageSmoothingEnabled = true;
+      akira(g, Object.assign({}, SENTADO, { eye: olhos, brow: t > 4.55 ? 1 : 0, belt: 2 + resp * 2 }), 160, 150 + resp * .3, .62, false);
+      g.imageSmoothingEnabled = false;
+      if (t > 4.5 && t < 4.75) { g.fillStyle = 'rgba(255,255,255,' + (1 - (t - 4.5) / .25) * .7 + ')'; g.fillRect(150, 80, 20, 8); }      // brilho nos olhos
+    } else if (t < 6.9) {                                               // cena 4: contraplano
+      const sobe = fase(5.6, 6.4), vira = t > 6.45;
+      cam = { z: lerp(1.15, 1.35, fase(5.3, 6.9)), x: 160, y: 98 };
+      g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k, ch / 2 - cam.y * cam.z * k);
+      g.drawImage(contra, 0, 0);
+      for (let i = 0; i < 3; i++) {                                     // sombras compridas dos inimigos (atrás da câmera)
+        const bx = 110 + i * 50; g.fillStyle = 'rgba(6,3,14,.55)'; g.beginPath(); g.moveTo(bx - 14, VH + 4); g.lineTo(bx + 14, VH + 4); g.lineTo(bx + 6 + (i - 1) * 6, 128); g.lineTo(bx - 6 + (i - 1) * 6, 128); g.closePath(); g.fill();
+      }
+      g.imageSmoothingEnabled = true;
+      const pose = vira ? misturar(EM_PE, GUARDA, fase(6.5, 6.9)) : misturar(SENTADO, EM_PE, sobe);
+      const sq = vira && t < 6.55 ? .9 : 1;
+      g.save(); g.translate(160, 150); g.scale(sq > 0 ? 1 / sq : 1, sq); g.translate(-160, -150);
+      akira(g, pose, 160, 150, .6, !vira); g.restore();
+    } else {                                                            // cena 5: guarda, preparação e soco na câmera
+      const p1 = fase(6.9, 7.4), p2 = fase(7.4, 7.62), p3 = fase(7.62, 7.78);
+      const pose = t < 7.4 ? misturar(GUARDA, GUARDA, p1) : t < 7.62 ? misturar(GUARDA, PREP, p2) : misturar(PREP, SOCO, p3);
+      const zz = fase(7.66, 8.05), punho = [166, 106];
+      cam = { z: lerp(1.35, 5.2, zz * zz), x: lerp(160, punho[0], zz), y: lerp(98, punho[1], zz) };
+      if (t > 7.75 && t < 8.3) shake = (1 - (t - 7.75) / .55) * 6 * k;
+      g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k + (Math.random() - .5) * shake, ch / 2 - cam.y * cam.z * k + (Math.random() - .5) * shake);
+      g.drawImage(contra, 0, 0);
+      g.imageSmoothingEnabled = true; akira(g, pose, 160, 150, .6, false); g.imageSmoothingEnabled = false;
+      if (t > 7.6) { g.setTransform(1, 0, 0, 1, 0, 0); linhasVelocidade(g, cw / 2, ch / 2, fase(7.6, 8.1), k); }
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    // tarjas de cinema, fades e o clarão do impacto
+    const barra = ch * .09; g.fillStyle = '#000'; g.fillRect(0, 0, cw, barra); g.fillRect(0, ch - barra, cw, barra);
+    if (t < .7) { g.fillStyle = 'rgba(0,0,0,' + (1 - t / .7) + ')'; g.fillRect(0, 0, cw, ch); }
+    if (t > 5.22 && t < 5.36) { g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch); }                 // corte seco pro contraplano
+    if (t > 7.95) { const a = t < 8.15 ? (t - 7.95) / .2 : 1 - (t - 8.15) / (FIM - 8.15); g.fillStyle = 'rgba(255,255,255,' + Math.max(0, Math.min(1, a)) + ')'; g.fillRect(0, 0, cw, ch); }
+    if (t < IMPACTO) { g.font = Math.round(11 * Math.max(1, k / 3)) + 'px "Pixelify Sans", monospace'; g.fillStyle = 'rgba(255,255,255,.55)'; g.textAlign = 'right'; g.fillText(navigator.maxTouchPoints ? 'toque para pular' : 'ESC para pular', cw - 14, ch - barra / 2 + 4); }
+    g.restore();
+  }
+  return { iniciar, pular, atualizar, desenhar, ativa: () => ativa, tempo: () => t, pulou: () => pulou };
+})();
+
+/* =====================================================================
+   18. MENU PRINCIPAL: fundo panorâmico com as regiões + título + opções
+   ===================================================================== */
+const MenuP = (() => {
+  let ativo = false, sel = 0, tela = 'principal', confirmar = false, mx = 0, my = 0, t = 0;
+  const el = $('telaInicial'), botoes = () => [...el.querySelectorAll('.tela-' + tela + ' button:not([disabled]), .tela-' + tela + ' input, .tela-' + tela + ' select')];
+  const particulas = Array.from({ length: 40 }, (_, i) => ({ x: Math.random(), y: Math.random(), v: .02 + Math.random() * .03, r: Math.random() * 6, c: ['#ffc0d6', '#ff9fc0', '#e8742a', '#f0b03a', '#8fd45a', '#fff2f6'][i % 6], s: 1.4 + Math.random() * 1.2 }));
+  function abrir() {
+    ativo = true; tela = 'principal'; sel = 0; el.hidden = false; document.body.classList.add('tela-titulo');
+    $('btnContinuar').disabled = !saveGuardado();
+    mostrar('principal'); Som.tocarMusica();
+    $('somDica').hidden = Som.ativo();
+  }
+  function fechar() { ativo = false; el.hidden = true; document.body.classList.remove('tela-titulo'); Som.pararMusica(); }
+  function mostrar(qual) {
+    tela = qual; el.querySelectorAll('.tela').forEach(s => { s.hidden = !s.classList.contains('tela-' + qual); });
+    sel = 0; focar();
+  }
+  function focar() { const b = botoes(); b.forEach((x, k) => x.classList.toggle('foco', k === sel)); if (b[sel]) b[sel].focus({ preventScroll: true }); }
+  function acao(a) {
+    Som.efeito('confirma');
+    if (a === 'continuar') { if (!saveGuardado()) return; fechar(); comecarJogo(false); }
+    else if (a === 'novo') { if (saveGuardado()) mostrar('confirma'); else { fechar(); comecarJogo(true); } }
+    else if (a === 'novoSim') { fechar(); comecarJogo(true); }
+    else if (a === 'opcoes') { lerOpcoes(); mostrar('opcoes'); }
+    else if (a === 'creditos') mostrar('creditos');
+    else if (a === 'voltar' || a === 'novoNao') mostrar('principal');
+  }
+  function lerOpcoes() {
+    $('opMus').value = Math.round(OPCOES.musica * 100); $('opSfx').value = Math.round(OPCOES.sfx * 100);
+    $('opMusOn').checked = OPCOES.musicaOn; $('opSfxOn').checked = OPCOES.sfxOn; $('opToque').value = OPCOES.toque;
+  }
+  let apertado = null;                                                   // botão onde o dedo/mouse desceu (o clique vale mesmo se escorregar um pouco)
+  el.addEventListener('pointerdown', e => { apertado = e.target.closest('button[data-a]'); });
+  el.addEventListener('click', e => { const b = e.target.closest('button[data-a]') || apertado; apertado = null; if (b && !b.disabled) acao(b.dataset.a); });
+  el.addEventListener('input', e => {
+    const id = e.target.id;
+    if (id === 'opMus') OPCOES.musica = +e.target.value / 100; if (id === 'opSfx') { OPCOES.sfx = +e.target.value / 100; Som.efeito('menu'); }
+    if (id === 'opMusOn') OPCOES.musicaOn = e.target.checked; if (id === 'opSfxOn') OPCOES.sfxOn = e.target.checked; if (id === 'opToque') OPCOES.toque = e.target.value;
+    salvarOpcoes();
+  });
+  el.addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+  el.addEventListener('pointerover', e => { const b = e.target.closest('button'); if (!b) return; const k = botoes().indexOf(b); if (k >= 0 && k !== sel) { sel = k; focar(); Som.efeito('menu'); } });
+  addEventListener('keydown', e => {
+    if (!ativo) return;
+    const b = botoes(), slider = b[sel] && b[sel].type === 'range';
+    if (['ArrowDown', 'KeyS'].includes(e.code)) { sel = (sel + 1) % b.length; focar(); Som.efeito('menu'); e.preventDefault(); }
+    else if (['ArrowUp', 'KeyW'].includes(e.code)) { sel = (sel - 1 + b.length) % b.length; focar(); Som.efeito('menu'); e.preventDefault(); }
+    else if (['Enter', 'Space', 'KeyE', 'NumpadEnter'].includes(e.code) && b[sel] && !slider) { e.preventDefault(); if (b[sel].type === 'checkbox') { b[sel].checked = !b[sel].checked; b[sel].dispatchEvent(new Event('input', { bubbles: true })); } else b[sel].click(); }
+    else if (e.code === 'Escape' && tela !== 'principal') { e.preventDefault(); mostrar('principal'); }
+  });
+  // fundo: montagem panorâmica das regiões (sprites do próprio jogo), com camadas e movimento sutil
+  function desenhar(g, cw, ch, dt) {
+    t += dt;
+    const S = Math.max(1, Math.round(ch / 300)), W2 = cw / S, H2 = ch / S;
+    g.save(); g.setTransform(S, 0, 0, S, 0, 0); g.imageSmoothingEnabled = false;
+    const ceu = g.createLinearGradient(0, 0, 0, H2); ceu.addColorStop(0, '#9cc8ec'); ceu.addColorStop(.5, '#ffd9b8'); ceu.addColorStop(.75, '#ffe9c8'); ceu.addColorStop(1, '#bfe0a8');
+    g.fillStyle = ceu; g.fillRect(0, 0, W2, H2);
+    const sol = g.createRadialGradient(W2 * .2, H2 * .28, 0, W2 * .2, H2 * .28, H2 * .5); sol.addColorStop(0, 'rgba(255,244,210,.95)'); sol.addColorStop(.15, 'rgba(255,226,170,.6)'); sol.addColorStop(1, 'rgba(255,220,170,0)');
+    g.fillStyle = sol; g.fillRect(0, 0, W2, H2);
+    const par = f => [Math.round(mx * f * 30 + Math.sin(t * .15) * f * 6), Math.round(my * f * 10)];
+    // montanhas ao fundo
+    [[.42, '#9fb6d6', .2], [.52, '#88a6c8', .35]].forEach(([base, cor, f], n) => {
+      const [dx] = par(f); g.fillStyle = cor; g.beginPath(); g.moveTo(-40, H2);
+      for (let x = -40; x <= W2 + 40; x += 8) g.lineTo(x + dx, H2 * base - (Math.sin(x * .011 + n * 3) * 26 + Math.sin(x * .027 + n) * 12 + 22));
+      g.lineTo(W2 + 40, H2); g.fill();
+    });
+    // Grande Templo monumental no alto, no centro
+    { const [dx, dy] = par(.3), c = Cen.casaSpr(5, 5, 40, '#d4a020', ['#ece2cc', '#d8cdb2'], { tiers: 3 }); g.save(); g.translate(W2 / 2 + dx, H2 * .44 + dy); g.scale(1.25, 1.25); Cen.desenhaHi(g, c, 40, 40, t); g.restore(); }
+    // névoa entre as camadas
+    for (let k = 0; k < 4; k++) { const x = ((t * (6 + k * 2) + k * 300) % (W2 + 600)) - 300, y = H2 * (.5 + k * .06); const ng = g.createRadialGradient(x, y, 0, x, y, 200); ng.addColorStop(0, 'rgba(255,250,245,.32)'); ng.addColorStop(1, 'rgba(255,250,245,0)'); g.fillStyle = ng; g.fillRect(x - 200, y - 200, 400, 400); }
+    // faixa do meio: as regiões lado a lado
+    const chao = H2 * .8;
+    const [d2, e2] = par(.6);
+    g.save(); g.translate(d2, e2);
+    const col = f => W2 * f;
+    const spr = (s, x, y, k) => { g.save(); g.translate(x, y); g.scale(k, k); Cen.desenhaHi(g, s, 0, 0, t); g.restore(); };
+    // 1 bambuzal (esquerda)
+    [0, 14, 30, 46, 60].forEach((o, i) => spr(SPR.bambu[(i + 2) % SPR.bambu.length], col(.03) + o, chao + (i % 2) * 6, 1.25));
+    // 2 cachoeira sagrada
+    g.save(); g.translate(col(.17), chao - 4); g.scale(1.1, 1.1); Cen.desenhaHi(g, SPR.cachoeira, 0, 0, t); g.restore();
+    // 3 templos antigos: torii + colunas
+    spr(SPR.coluna, col(.27), chao + 2, 1); spr(SPR.torii, col(.31), chao + 8, 1); spr(SPR.colunaQuebrada, col(.355), chao + 4, 1);
+    // 4 cavernas: boca da caverna com cristais
+    spr(SPR.cavernaBoca, col(.43), chao + 6, 1.05); spr(SPR.cristal[0], col(.405), chao + 10, .7); spr(SPR.cristal[1], col(.46), chao + 12, .7);
+    // 5 floresta do outono
+    spr(SPR.arvoreOutono, col(.54), chao + 4, 1); spr(SPR.arvoreOutono, col(.6), chao + 12, .9);
+    // 6 caminhos das cerejeiras
+    spr(SPR.cerejeira, col(.67), chao + 2, 1.05); spr(SPR.lanternaPedra, col(.705), chao + 10, 1);
+    // 7 vilarejo
+    { const c1 = Cen.casaSpr(3, 3, 26, '#3f6fb0', ['#e9dcc0', '#d6c6a4']), c2 = Cen.casaSpr(3, 3, 26, '#c9892f', ['#e9dcc0', '#d6c6a4'], { palha: true });
+      g.save(); g.translate(col(.77), chao + 10); g.scale(.62, .62); Cen.desenhaHi(g, c1, 0, 0, t); g.restore(); g.save(); g.translate(col(.835), chao + 18); g.scale(.55, .55); Cen.desenhaHi(g, c2, 0, 0, t); g.restore(); }
+    // 8 floresta das tangerinas (direita)
+    spr(SPR.tangerineira, col(.92), chao + 6, 1); spr(SPR.tangerineira, col(.98), chao + 14, .95);
+    g.restore();
+    // primeiro plano: chão com os tiles do jogo + bambus emoldurando
+    const [d3] = par(1);
+    g.fillStyle = '#5fa24a'; g.fillRect(0, chao + 16, W2, H2 - chao);
+    if (TEX.pronto) { const pat = g.createPattern(TEX.v.grama1, 'repeat'); g.save(); g.translate(d3, 0); g.fillStyle = pat; g.fillRect(-d3, chao + 16, W2 + 40, H2 - chao); g.restore(); }
+    g.fillStyle = 'rgba(30,50,20,.25)'; g.fillRect(0, chao + 16, W2, 3);
+    [[-.01, 1.5], [.05, 1.3], [.95, 1.4], [1.0, 1.6]].forEach(([f, k], i) => spr(SPR.bambu[4 - (i % 2)], col(f) + d3, H2 + 6, k));
+    // pétalas e folhas caindo
+    particulas.forEach(p => { p.y += p.v * dt * 2; p.x += Math.sin(t + p.r) * .0006 + .0004; if (p.y > 1.05) { p.y = -.05; p.x = Math.random(); } if (p.x > 1.05) p.x = -.05;
+      g.fillStyle = p.c; g.fillRect(Math.round(p.x * W2), Math.round(p.y * H2), Math.ceil(p.s), Math.ceil(p.s * .7)); });
+    // escurece o meio pra o menu ficar legível
+    const vg = g.createRadialGradient(W2 / 2, H2 * .55, H2 * .1, W2 / 2, H2 * .55, Math.max(W2, H2) * .7); vg.addColorStop(0, 'rgba(10,14,30,.45)'); vg.addColorStop(1, 'rgba(10,14,30,.08)');
+    g.fillStyle = vg; g.fillRect(0, 0, W2, H2);
+    g.restore();
+  }
+  return { abrir, fechar, desenhar, ativo: () => ativo };
+})();
+
+/* ---------- sequência de início: abertura -> menu -> jogo (um loop só) ---------- */
+let MODO_TELA = 'abertura';                         // 'abertura' | 'menu' | 'jogo'
+function comecarJogo(novo) {
+  if (novo) { MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null; estado = estadoInicial(); estado.hp = maxHp(); }
+  else carregarSave();
+  for (const k in teclas) teclas[k] = false; edge = {};                  // nada de golpe "sobrando" do menu
+  jogoIniciado = true; MODO_TELA = 'jogo'; Akira.limparCache();
+  const L = (!novo && estado.local) || estado.respawn;
+  try { carregarMapa(L.mapa, L.x, L.y); } catch (e) { carregarMapa(estado.respawn.mapa, estado.respawn.x, estado.respawn.y); }
+  if (novo) autoSalvar('novo', true);
+  atualizarHud(); canvas.focus();
+}
+function irParaMenu() { MODO_TELA = 'menu'; MenuP.abrir(); }
+function pularAbertura(e) { if (MODO_TELA === 'abertura') { if (e && e.type === 'keydown' && e.code !== 'Escape') return; Abertura.pular(); } }
+addEventListener('keydown', pularAbertura);
+addEventListener('pointerdown', e => { if (MODO_TELA === 'abertura') pularAbertura(e); });
+// o navegador só deixa tocar som depois de um toque/tecla: liga aqui e começa a música se estiver no menu
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (Som.iniciar(true) && MODO_TELA === 'menu') { Som.tocarMusica(); $('somDica').hidden = true; } }, { passive: true }));
+
 /* =====================================================================
    15. LOOP PRINCIPAL E INÍCIO
    ===================================================================== */
 let ultimo = 0;
-function loop(agora) {
+function loop(agora) {                                                // um loop só: abertura, menu ou jogo
   const dt = Math.min(.05, (agora - ultimo) / 1000 || .016);
   ultimo = agora;
-  atualizar(dt); renderizar(dt);
+  if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
+  else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
+  else { atualizar(dt); renderizar(dt); }
   requestAnimationFrame(loop);
 }
 
@@ -5394,7 +5858,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { conversar, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { conversar, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
@@ -5444,8 +5908,10 @@ gerarSprites2();
 Cen.criarSprites(SPR);                                                // troca árvores, bambus, pedras, objetos e cachoeira pelos desenhos anime
 carregarSave();
 redimensionar();
-carregarMapa(estado.respawn.mapa, estado.respawn.x, estado.respawn.y);
-atualizarHud();
+// ?pular (ou karate-pular-intro=1 no localStorage) vai direto pro jogo — útil para testar
+let pularTudo = new URLSearchParams(location.search).has('pular'); try { pularTudo = pularTudo || localStorage.getItem('karate-pular-intro') === '1'; } catch (e) {}
+if (pularTudo) comecarJogo(false);
+else { jogoIniciado = false; MODO_TELA = 'abertura'; document.body.classList.add('tela-titulo'); Abertura.iniciar(irParaMenu); }
 canvas.focus();
 requestAnimationFrame(loop);
 
