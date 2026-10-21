@@ -1,0 +1,2220 @@
+{
+ "nome": "Tileset Karatê Isométrico (asiático)",
+ "grade": {
+  "tile_largura": 64,
+  "tile_altura": 32,
+  "celula": [
+   64,
+   64
+  ]
+ },
+ "convencao": "Projeção isométrica 2:1, grade de 64x32 px. Chão: PNG 64x64 com o losango 64x32 na metade de baixo (y 32 a 64). Objetos e construções: largura e altura múltiplas de 64, fundo transparente; ancora = pixel que encosta no chão. Tile (i, j) -> topo do losango na tela: x = (i - j) * 32, y = (i + j) * 16. Chão: desenhe em (x - 32, y - 32). Objeto de 1 tile: desenhe em (x - ancora[0], y + 16 - ancora[1]). Construção w x d: a âncora é o canto da frente; com o prédio ocupando i..i+w-1 e j..j+d-1, o canto fica em x = (i + w - j - d) * 32, y = (i + w + j + d) * 16.",
+ "categorias": {
+  "terrenos": [
+   {
+    "nome": "grama_1",
+    "arquivo": "terrenos/grama_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_2",
+    "arquivo": "terrenos/grama_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_3",
+    "arquivo": "terrenos/grama_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_4",
+    "arquivo": "terrenos/grama_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_1",
+    "arquivo": "terrenos/caminho_pedras_rio_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_2",
+    "arquivo": "terrenos/caminho_pedras_rio_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_3",
+    "arquivo": "terrenos/caminho_pedras_rio_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_4",
+    "arquivo": "terrenos/caminho_pedras_rio_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_1",
+    "arquivo": "terrenos/areia_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_2",
+    "arquivo": "terrenos/areia_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_3",
+    "arquivo": "terrenos/areia_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_4",
+    "arquivo": "terrenos/areia_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_1",
+    "arquivo": "terrenos/praca_lajes_musgo_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_2",
+    "arquivo": "terrenos/praca_lajes_musgo_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_3",
+    "arquivo": "terrenos/praca_lajes_musgo_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_4",
+    "arquivo": "terrenos/praca_lajes_musgo_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "laje_templo_1",
+    "arquivo": "terrenos/laje_templo_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "laje_templo_2",
+    "arquivo": "terrenos/laje_templo_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "laje_templo_3",
+    "arquivo": "terrenos/laje_templo_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "laje_templo_4",
+    "arquivo": "terrenos/laje_templo_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "piso_madeira_1",
+    "arquivo": "terrenos/piso_madeira_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "piso_madeira_2",
+    "arquivo": "terrenos/piso_madeira_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "piso_madeira_3",
+    "arquivo": "terrenos/piso_madeira_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "piso_madeira_4",
+    "arquivo": "terrenos/piso_madeira_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "tatame_1",
+    "arquivo": "terrenos/tatame_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "tatame_2",
+    "arquivo": "terrenos/tatame_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "tatame_3",
+    "arquivo": "terrenos/tatame_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "tatame_4",
+    "arquivo": "terrenos/tatame_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_outono_1",
+    "arquivo": "terrenos/grama_outono_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_outono_2",
+    "arquivo": "terrenos/grama_outono_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_outono_3",
+    "arquivo": "terrenos/grama_outono_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_outono_4",
+    "arquivo": "terrenos/grama_outono_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_cerejeira_1",
+    "arquivo": "terrenos/grama_cerejeira_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_cerejeira_2",
+    "arquivo": "terrenos/grama_cerejeira_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_cerejeira_3",
+    "arquivo": "terrenos/grama_cerejeira_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_cerejeira_4",
+    "arquivo": "terrenos/grama_cerejeira_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_tangerina_1",
+    "arquivo": "terrenos/grama_tangerina_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_tangerina_2",
+    "arquivo": "terrenos/grama_tangerina_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_tangerina_3",
+    "arquivo": "terrenos/grama_tangerina_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_tangerina_4",
+    "arquivo": "terrenos/grama_tangerina_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "chao_caverna_1",
+    "arquivo": "terrenos/chao_caverna_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "chao_caverna_2",
+    "arquivo": "terrenos/chao_caverna_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "chao_caverna_3",
+    "arquivo": "terrenos/chao_caverna_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "chao_caverna_4",
+    "arquivo": "terrenos/chao_caverna_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_quadro_1",
+    "arquivo": "terrenos/agua/agua_quadro_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_quadro_2",
+    "arquivo": "terrenos/agua/agua_quadro_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_quadro_3",
+    "arquivo": "terrenos/agua/agua_quadro_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_quadro_4",
+    "arquivo": "terrenos/agua/agua_quadro_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_grama_norte",
+    "arquivo": "terrenos/transicoes/caminho_pedras_rio_grama_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_grama_leste",
+    "arquivo": "terrenos/transicoes/caminho_pedras_rio_grama_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_grama_sul",
+    "arquivo": "terrenos/transicoes/caminho_pedras_rio_grama_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "caminho_pedras_rio_grama_oeste",
+    "arquivo": "terrenos/transicoes/caminho_pedras_rio_grama_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_grama_norte",
+    "arquivo": "terrenos/transicoes/areia_grama_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_grama_leste",
+    "arquivo": "terrenos/transicoes/areia_grama_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_grama_sul",
+    "arquivo": "terrenos/transicoes/areia_grama_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_grama_oeste",
+    "arquivo": "terrenos/transicoes/areia_grama_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_grama_norte",
+    "arquivo": "terrenos/transicoes/praca_lajes_musgo_grama_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_grama_leste",
+    "arquivo": "terrenos/transicoes/praca_lajes_musgo_grama_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_grama_sul",
+    "arquivo": "terrenos/transicoes/praca_lajes_musgo_grama_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "praca_lajes_musgo_grama_oeste",
+    "arquivo": "terrenos/transicoes/praca_lajes_musgo_grama_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_margem_agua_norte",
+    "arquivo": "terrenos/transicoes/grama_margem_agua_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_margem_agua_leste",
+    "arquivo": "terrenos/transicoes/grama_margem_agua_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_margem_agua_sul",
+    "arquivo": "terrenos/transicoes/grama_margem_agua_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "grama_margem_agua_oeste",
+    "arquivo": "terrenos/transicoes/grama_margem_agua_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_margem_agua_norte",
+    "arquivo": "terrenos/transicoes/areia_margem_agua_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_margem_agua_leste",
+    "arquivo": "terrenos/transicoes/areia_margem_agua_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_margem_agua_sul",
+    "arquivo": "terrenos/transicoes/areia_margem_agua_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "areia_margem_agua_oeste",
+    "arquivo": "terrenos/transicoes/areia_margem_agua_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_espuma_norte",
+    "arquivo": "terrenos/agua/agua_espuma_norte.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_espuma_leste",
+    "arquivo": "terrenos/agua/agua_espuma_leste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_espuma_sul",
+    "arquivo": "terrenos/agua/agua_espuma_sul.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "agua_espuma_oeste",
+    "arquivo": "terrenos/agua/agua_espuma_oeste.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   }
+  ],
+  "pontes": [
+   {
+    "nome": "ponte_tabuas_1",
+    "arquivo": "pontes/ponte_tabuas_1.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "ponte_tabuas_2",
+    "arquivo": "pontes/ponte_tabuas_2.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "ponte_tabuas_3",
+    "arquivo": "pontes/ponte_tabuas_3.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "ponte_tabuas_4",
+    "arquivo": "pontes/ponte_tabuas_4.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "chao"
+   },
+   {
+    "nome": "corrimao_eixo_x",
+    "arquivo": "pontes/corrimao_eixo_x.png",
+    "tamanho": [
+     128,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "corrimao_eixo_y",
+    "arquivo": "pontes/corrimao_eixo_y.png",
+    "tamanho": [
+     128,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   }
+  ],
+  "vegetacao": [
+   {
+    "nome": "arvore_verde",
+    "arquivo": "vegetacao/arvore_verde.png",
+    "tamanho": [
+     192,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     96,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "arvore_outono",
+    "arquivo": "vegetacao/arvore_outono.png",
+    "tamanho": [
+     192,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     96,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cerejeira",
+    "arquivo": "vegetacao/cerejeira.png",
+    "tamanho": [
+     192,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     96,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "tangerineira",
+    "arquivo": "vegetacao/tangerineira.png",
+    "tamanho": [
+     192,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     96,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "arbusto_florido_1",
+    "arquivo": "vegetacao/arbusto_florido_1.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "arbusto_florido_2",
+    "arquivo": "vegetacao/arbusto_florido_2.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "toco",
+    "arquivo": "vegetacao/toco.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   }
+  ],
+  "bambus": [
+   {
+    "nome": "bambu_baixo",
+    "arquivo": "bambus/bambu_baixo.png",
+    "tamanho": [
+     128,
+     192
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "bambu_medio",
+    "arquivo": "bambus/bambu_medio.png",
+    "tamanho": [
+     128,
+     192
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "bambu_alto",
+    "arquivo": "bambus/bambu_alto.png",
+    "tamanho": [
+     128,
+     192
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "bambu_muito_alto",
+    "arquivo": "bambus/bambu_muito_alto.png",
+    "tamanho": [
+     128,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "bambu_gigante",
+    "arquivo": "bambus/bambu_gigante.png",
+    "tamanho": [
+     128,
+     256
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     240
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cerca_bambu",
+    "arquivo": "bambus/cerca_bambu.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   }
+  ],
+  "pedras": [
+   {
+    "nome": "pedra_musgo_grande",
+    "arquivo": "pedras/pedra_musgo_grande.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "pedra_musgo_pequena",
+    "arquivo": "pedras/pedra_musgo_pequena.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "rocha_caverna_grande",
+    "arquivo": "pedras/rocha_caverna_grande.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "rocha_caverna_pequena",
+    "arquivo": "pedras/rocha_caverna_pequena.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "estalagmite",
+    "arquivo": "pedras/estalagmite.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cristal_azul",
+    "arquivo": "pedras/cristal_azul.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cristal_roxo",
+    "arquivo": "pedras/cristal_roxo.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   }
+  ],
+  "construcoes": [
+   {
+    "nome": "torii",
+    "arquivo": "construcoes/torii.png",
+    "tamanho": [
+     192,
+     192
+    ],
+    "tiles": [
+     3,
+     1
+    ],
+    "ancora": [
+     96,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "santuario_hokora",
+    "arquivo": "construcoes/santuario_hokora.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "lanterna_poste",
+    "arquivo": "construcoes/lanterna_poste.png",
+    "tamanho": [
+     64,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "lanterna_pedra_toro",
+    "arquivo": "construcoes/lanterna_pedra_toro.png",
+    "tamanho": [
+     64,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "estatua",
+    "arquivo": "construcoes/estatua.png",
+    "tamanho": [
+     128,
+     192
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "coluna",
+    "arquivo": "construcoes/coluna.png",
+    "tamanho": [
+     128,
+     192
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     176
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "coluna_quebrada",
+    "arquivo": "construcoes/coluna_quebrada.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "fonte",
+    "arquivo": "construcoes/fonte.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     2,
+     2
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "dojo_4x3",
+    "arquivo": "construcoes/predios/dojo_4x3.png",
+    "tamanho": [
+     384,
+     320
+    ],
+    "tiles": [
+     4,
+     3
+    ],
+    "ancora": [
+     192,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "biblioteca_3x3",
+    "arquivo": "construcoes/predios/biblioteca_3x3.png",
+    "tamanho": [
+     320,
+     320
+    ],
+    "tiles": [
+     3,
+     3
+    ],
+    "ancora": [
+     160,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "arena_5x3",
+    "arquivo": "construcoes/predios/arena_5x3.png",
+    "tamanho": [
+     448,
+     320
+    ],
+    "tiles": [
+     5,
+     3
+    ],
+    "ancora": [
+     224,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "hospedaria_3x3",
+    "arquivo": "construcoes/predios/hospedaria_3x3.png",
+    "tamanho": [
+     320,
+     320
+    ],
+    "tiles": [
+     3,
+     3
+    ],
+    "ancora": [
+     160,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "casa_de_cha_3x3",
+    "arquivo": "construcoes/predios/casa_de_cha_3x3.png",
+    "tamanho": [
+     320,
+     320
+    ],
+    "tiles": [
+     3,
+     3
+    ],
+    "ancora": [
+     160,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "oficina_3x3",
+    "arquivo": "construcoes/predios/oficina_3x3.png",
+    "tamanho": [
+     320,
+     320
+    ],
+    "tiles": [
+     3,
+     3
+    ],
+    "ancora": [
+     160,
+     288
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "meditacao_3x3",
+    "arquivo": "construcoes/predios/meditacao_3x3.png",
+    "tamanho": [
+     320,
+     384
+    ],
+    "tiles": [
+     3,
+     3
+    ],
+    "ancora": [
+     160,
+     352
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "salao_6x4",
+    "arquivo": "construcoes/predios/salao_6x4.png",
+    "tamanho": [
+     512,
+     384
+    ],
+    "tiles": [
+     6,
+     4
+    ],
+    "ancora": [
+     256,
+     352
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "arena_mestres_5x4",
+    "arquivo": "construcoes/predios/arena_mestres_5x4.png",
+    "tamanho": [
+     448,
+     384
+    ],
+    "tiles": [
+     5,
+     4
+    ],
+    "ancora": [
+     224,
+     352
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   },
+   {
+    "nome": "arquivo_4x4",
+    "arquivo": "construcoes/predios/arquivo_4x4.png",
+    "tamanho": [
+     384,
+     384
+    ],
+    "tiles": [
+     4,
+     4
+    ],
+    "ancora": [
+     192,
+     352
+    ],
+    "tipo": "construcao",
+    "nota": "âncora = canto da frente da construção (vértice de baixo do tile da frente)"
+   }
+  ],
+  "objetos": [
+   {
+    "nome": "placa",
+    "arquivo": "objetos/placa.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "banco",
+    "arquivo": "objetos/banco.png",
+    "tamanho": [
+     128,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cesto",
+    "arquivo": "objetos/cesto.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "mesa",
+    "arquivo": "objetos/mesa.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "cama",
+    "arquivo": "objetos/cama.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "estante",
+    "arquivo": "objetos/estante.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "almofada",
+    "arquivo": "objetos/almofada.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "boneco",
+    "arquivo": "objetos/boneco.png",
+    "tamanho": [
+     128,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     64,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "makiwara",
+    "arquivo": "objetos/makiwara.png",
+    "tamanho": [
+     64,
+     128
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     112
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   },
+   {
+    "nome": "papel",
+    "arquivo": "objetos/papel.png",
+    "tamanho": [
+     64,
+     64
+    ],
+    "tiles": [
+     1,
+     1
+    ],
+    "ancora": [
+     32,
+     48
+    ],
+    "tipo": "objeto",
+    "nota": "âncora = centro do tile onde o objeto fica"
+   }
+  ]
+ }
+}

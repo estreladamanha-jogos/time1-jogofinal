@@ -1,0 +1,6 @@
+TILESET KARATÊ ISOMÉTRICO (ESTILO ASIÁTICO)
+Grade: tiles de 64 x 32 px (projeção 2:1). Chão = PNG 64x64 com o losango na metade de baixo.
+Objetos e construções: largura/altura múltiplas de 64, fundo transparente.
+Pastas: terrenos (+ agua, transicoes), vegetacao, pedras, bambus, pontes, construcoes (+ predios), objetos.
+tileset.json = lista de todos os PNGs com tamanho, quantos tiles ocupam e a "ancora" (pixel que encosta no chão).
+_preview = pranchas de cada categoria + mapa_de_teste.png (montado só com estes PNGs).
