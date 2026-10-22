@@ -957,19 +957,19 @@ function construirBambuzal() {
 
 // --- VILAREJO (centro de serviços; sem inimigos) ---
 const CASAS = [
-  { id: 'dojo',       mapa: 'vilarejo', x: 5,  y: 4,  w: 4, d: 3, H: 30, tel: '#b8453a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Dojo',        alvo: 'dojo' },
-  { id: 'biblioteca', mapa: 'vilarejo', x: 20, y: 4,  w: 3, d: 3, H: 30, tel: '#3f6fb0', par: ['#e9dcc0', '#d6c6a4'], nome: 'Biblioteca',  alvo: 'biblioteca' },
-  { id: 'arena',      mapa: 'vilarejo', x: 36, y: 4,  w: 5, d: 3, H: 28, tel: '#8e44ad', par: ['#e0d0b0', '#cdbd9a'], nome: 'Arena Marcial', alvo: 'arena' },
-  { id: 'hospedaria', mapa: 'vilarejo', x: 6,  y: 29, w: 3, d: 3, H: 30, tel: '#2f8f5a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Hospedaria',  alvo: 'hospedaria' },
-  { id: 'cha',        mapa: 'vilarejo', x: 16, y: 29, w: 3, d: 3, H: 28, tel: '#c9892f', par: ['#e9dcc0', '#d6c6a4'], palha: true, nome: 'Casa de Chá', alvo: 'casa_cha' },
-  { id: 'oficina',    mapa: 'vilarejo', x: 37, y: 29, w: 3, d: 3, H: 28, tel: '#6b5b4a', par: ['#d9cdb0', '#c4b896'], palha: true, nome: '', fechada: 'Oficina de artesãos: fechada por enquanto (em breve).' },
-  { id: 'flor_de_liz', mapa: 'cerejeiras', x: 19, y: 15, w: 3, d: 3, H: 26, tel: '#d8608f', par: ['#f4e8ec', '#e2d2d8'], nome: 'Flor de Liz', alvo: 'flor_de_liz' },
-  { id: 'meditacao',  mapa: 'templos', x: 19, y: 3, w: 3, d: 3, H: 30, tel: '#a63a3a', par: ['#e6dcc6', '#d2c7ac'], tiers: 3, nome: 'Templo de Meditação', alvo: 'meditacao' },
-  { id: 'salao',      mapa: 'gt_patio', x: 17, y: 2, w: 6, d: 4, H: 36, tel: '#d4a020', par: ['#ece2cc', '#d8cdb2'], nome: 'Salão de Graduação', alvo: 'salao',
+  { id: 'dojo', funcao: 'dojo',       mapa: 'vilarejo', x: 5,  y: 4,  w: 4, d: 3, H: 30, tel: '#b8453a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Dojo',        alvo: 'dojo' },
+  { id: 'biblioteca', funcao: 'biblioteca', mapa: 'vilarejo', x: 20, y: 4,  w: 3, d: 3, H: 30, tel: '#3f6fb0', par: ['#e9dcc0', '#d6c6a4'], nome: 'Biblioteca',  alvo: 'biblioteca' },
+  { id: 'arena', funcao: 'arena',      mapa: 'vilarejo', x: 36, y: 4,  w: 5, d: 3, H: 28, tel: '#8e44ad', par: ['#e0d0b0', '#cdbd9a'], nome: 'Arena Marcial', alvo: 'arena' },
+  { id: 'hospedaria', funcao: 'hospedaria', mapa: 'vilarejo', x: 6,  y: 29, w: 3, d: 3, H: 30, tel: '#2f8f5a', par: ['#e9dcc0', '#d6c6a4'], nome: 'Hospedaria',  alvo: 'hospedaria' },
+  { id: 'cha', funcao: 'cha',        mapa: 'vilarejo', x: 16, y: 29, w: 3, d: 3, H: 28, tel: '#c9892f', par: ['#e9dcc0', '#d6c6a4'], palha: true, nome: 'Casa de Chá', alvo: 'casa_cha' },
+  { id: 'oficina',    mapa: 'vilarejo', x: 37, y: 29, w: 3, d: 3, H: 28, tel: '#6b5b4a', par: ['#d9cdb0', '#c4b896'], palha: true, funcao: 'oficina', nome: 'Oficina', alvo: 'oficina' },
+  { id: 'flor_de_liz', funcao: 'flor', mapa: 'cerejeiras', x: 19, y: 15, w: 3, d: 3, H: 26, tel: '#d8608f', par: ['#f4e8ec', '#e2d2d8'], nome: 'Flor de Liz', alvo: 'flor_de_liz' },
+  { id: 'meditacao', funcao: 'meditacao',  mapa: 'templos', x: 19, y: 3, w: 3, d: 3, H: 30, tel: '#a63a3a', par: ['#e6dcc6', '#d2c7ac'], tiers: 3, nome: 'Templo de Meditação', alvo: 'meditacao' },
+  { id: 'salao', funcao: 'salao',      mapa: 'gt_patio', x: 17, y: 2, w: 6, d: 4, H: 36, tel: '#d4a020', par: ['#ece2cc', '#d8cdb2'], nome: 'Salão de Graduação', alvo: 'salao',
     req: { faixa: 2, msg: 'O salão de graduação recebe quem tem faixa laranja ou superior.' } },
-  { id: 'arena_mestres', mapa: 'gt_patio', x: 3, y: 6, w: 5, d: 4, H: 34, tel: '#b8453a', par: ['#ece2cc', '#d8cdb2'], nome: 'Arena dos Grandes Mestres', alvo: 'arena_mestres',
+  { id: 'arena_mestres', funcao: 'arena_mestres', mapa: 'gt_patio', x: 3, y: 6, w: 5, d: 4, H: 34, tel: '#b8453a', par: ['#ece2cc', '#d8cdb2'], nome: 'Arena dos Grandes Mestres', alvo: 'arena_mestres',
     req: { faixa: 3, msg: 'Só faixas verdes ou superiores entram na arena dos grandes mestres.' } },
-  { id: 'arquivo',    mapa: 'gt_patio', x: 32, y: 6, w: 4, d: 4, H: 34, tel: '#3f6fb0', par: ['#ece2cc', '#d8cdb2'], nome: 'Arquivo de Técnicas', alvo: 'arquivo',
+  { id: 'arquivo', funcao: 'arquivo',    mapa: 'gt_patio', x: 32, y: 6, w: 4, d: 4, H: 34, tel: '#3f6fb0', par: ['#ece2cc', '#d8cdb2'], nome: 'Arquivo de Técnicas', alvo: 'arquivo',
     req: { faixa: 1, msg: 'O arquivo abre a partir da faixa amarela.' } }
 ];
 
@@ -986,7 +986,7 @@ const CASAS_DECO = [
 ];
 function colocarCasa(m, c) {
   for (let j = c.y; j < c.y + c.d; j++) for (let i = c.x; i < c.x + c.w; i++) m.bloq[j][i] = true;
-  m.objs.push({ tipo: 'casa', x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
+  m.objs.push({ tipo: 'casa', x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var, funcao: c.funcao }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
   if (c.alvo) m.exits.push({ x: c.x + c.w / 2 - .5, y: c.y + c.d + .05, w: 1, h: .6, alvo: c.alvo, nome: c.nome, req: c.req });
   else if (c.fechada) placa(m, c.x + c.w / 2 - 1.5, c.y + c.d + .5, c.fechada);
 }
@@ -1031,54 +1031,6 @@ function interior(id, nome, w, h, piso, saida) {
 const saidaDe = id => { const c = CASAS.find(k => k.id === id); return { mapa: c.mapa, x: c.x + c.w / 2, y: c.y + c.d + 1.4 }; };
 const prop = (m, tipo, x, y, r, extra) => m.objs.push(Object.assign({ tipo, x, y, r, spr: SPR[tipo] }, extra));
 
-function construirDojo() {
-  const m = interior('dojo', 'Dojo', 10, 9, T.TATAME, saidaDe('dojo'));
-  prop(m, 'boneco', 3, 4.5, .3, { hp: 9999, wob: 0, alvo: true });
-  prop(m, 'boneco', 7, 4.5, .3, { hp: 9999, wob: 0, alvo: true });
-  prop(m, 'lanterna', 1.2, 1.2, .15); prop(m, 'lanterna', 8.8, 1.2, .15);
-  npc(m, { nome: 'Mestre Kenji', x: 5, y: 2.2, dir: 2, pal: PAL_KENJI, fala: 'kenji', mestre: 'kenji' });
-  return m;
-}
-function construirBiblioteca() {
-  const m = interior('biblioteca', 'Biblioteca', 9, 8, T.PISO, saidaDe('biblioteca'));
-  [1.6, 3.4, 5.2, 7.0].forEach(x => prop(m, 'estante', x, .8, .5));
-  [2.4, 4.2, 6].forEach(y => prop(m, 'estante', .8, y, .5));
-  prop(m, 'mesa', 5.5, 4.6, .7);
-  npc(m, { nome: 'Davi', x: 3.5, y: 3.4, dir: 2, pal: PAL_DAVI, fala: 'davi' });
-  return m;
-}
-function construirArena() {
-  const m = interior('arena', 'Arena Marcial', 11, 10, T.TATAME, saidaDe('arena'));
-  prop(m, 'lanterna', 1.2, 1.2, .15); prop(m, 'lanterna', 9.8, 1.2, .15);
-  prop(m, 'lanterna', 1.2, 8.5, .15); prop(m, 'lanterna', 9.8, 8.5, .15);
-  npc(m, { nome: 'Pietra', x: 5.5, y: 3.4, dir: 2, pal: PAL_PIETRA, fala: 'pietra' });
-  npc(m, { nome: 'Henrique', x: 8.2, y: 4.6, dir: 3, pal: PAL_NPC.henrique, fala: 'henrique' });
-  if (stM('debora_gemeos') === 'concluida') { npc(m, { nome: 'David', x: 3, y: 6.2, dir: 1, pal: PAL_NPC.david, fala: 'gemeos_arena', pid: 'david' }); npc(m, { nome: 'Miguel', x: 4.2, y: 6.8, dir: 1, pal: PAL_NPC.miguel, fala: 'gemeos_arena', pid: 'miguel' }); }
-  return m;
-}
-function construirHospedaria() {
-  const m = interior('hospedaria', 'Hospedaria', 8, 7, T.PISO, saidaDe('hospedaria'));
-  prop(m, 'cama', 1.8, 1.8, .7); prop(m, 'cama', 1.8, 4, .7);
-  prop(m, 'mesa', 5.5, 4.6, .7);
-  npc(m, { nome: 'Hospedeira Hana', x: 5.2, y: 2.4, dir: 2, pal: PAL_HANA, fala: 'hana' });
-  return m;
-}
-function construirCasaCha() {                                          // Casa de Chá: Pibe e Ramor
-  const m = interior('casa_cha', 'Casa de Chá', 9, 8, T.PISO, saidaDe('cha'));
-  prop(m, 'mesa', 2.6, 4.4, .7); prop(m, 'mesa', 6.4, 4.4, .7);
-  [[1.6, 5.4], [3.6, 5.4], [5.4, 5.4], [7.4, 5.4]].forEach(([x, y]) => prop(m, 'almofada', x, y, 0));
-  prop(m, 'lanterna', 1.2, 1.2, .15); prop(m, 'lanterna', 7.8, 1.2, .15); prop(m, 'cesto', 8, 3, .25);
-  npc(m, { nome: 'Pibe', x: 3.6, y: 2.2, dir: 2, pal: PAL_NPC.pibe, fala: 'casal_cha', pid: 'pibe' });
-  npc(m, { nome: 'Ramor', x: 5.4, y: 2.2, dir: 2, pal: PAL_NPC.ramor, fala: 'casal_cha', pid: 'ramor' });
-  return m;
-}
-function construirFlorDeLiz() {                                         // floricultura da Lane
-  const m = interior('flor_de_liz', 'Flor de Liz', 7, 6, T.PISO, saidaDe('flor_de_liz'));
-  [[1.2, 1.2], [2.6, 1], [4.4, 1], [5.8, 1.2]].forEach(([x, y], k) => m.objs.push({ tipo: 'arbusto', x, y, r: .38, spr: SPR.arbusto[k % 2] }));
-  prop(m, 'mesa', 3.5, 3.4, .7); prop(m, 'cesto', 1, 3.6, .25);
-  npc(m, { nome: 'Lane', x: 3.5, y: 2.2, dir: 2, pal: PAL_NPC.lane, fala: 'lane' });
-  return m;
-}
 // --- OBJETOS GENÉRICOS E REGIÕES (cada região é só uma tabela de dados) ---
 const BON = { hp: 9999, wob: 0, alvo: true };           // boneco de treino (só balança)
 const DEF_OBJ = {
@@ -1114,7 +1066,7 @@ function regiao(c) {
   m.spawn = { x: c.spawn[0], y: c.spawn[1] };
   res.push({ x: m.spawn.x, y: m.spawn.y, r: 2 });
   (c.saidas || []).forEach(e => { m.exits.push(e); res.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, r: Math.max(e.w, e.h) / 2 + 1.3 }); });
-  (c.casas || []).forEach(id => colocarCasa(m, CASAS.find(k => k.id === id)));
+  (c.casas || []).forEach(id => { const k = CASAS.find(q => q.id === id); colocarCasa(m, k); res.push({ x: k.x + k.w / 2, y: k.y + k.d / 2 + .8, r: Math.max(k.w, k.d) / 2 + 2.6 }); });   // árvores não escondem a fachada
   if (c.montanha) {                                                    // chão escondido atrás da montanha da cachoeira: bloqueado
     const [mx, my] = c.montanha, prof = mx + my;
     for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) {
@@ -1303,42 +1255,129 @@ const CFG = {
   })
 };
 
+// --- INTERIORES: cada estabelecimento tem a sua planta e os seus móveis (o centro fica livre para andar) ---
+const MOVEIS_R = { balcao_livros: .9, balcao_flores: .9, balcao_cha: .9, balcao_recepcao: .9, estanteAlta: .5, pergaminhos: .5, mesaLeitura: .75, escadinha: .2, pilhaLivros: .25, armario: .5, biombo: .6,
+  vasoGrande: .3, vasoPequeno: .2, prateleiraFlores: .5, bancadaBuque: .8, fogao: .55, prateleiraUtensilios: .5, arquibancada: 1.2, suporteArmas: .55, sacoPancada: .35, velas: .1, bancadaTrabalho: .9,
+  ferramentasParede: .5, plataforma: 1.3, bandeiraFaixas: .15, tapete: 0, mesaEstudo: .75, suporteTecnica: .3 };
+Object.keys(MOVEIS_R).forEach(k => { DEF_OBJ[k] = { r: MOVEIS_R[k] }; });
+const pisoMeio = (m, x0, y0, x1, y1, t) => { for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) m.tiles[j][i] = t; };
+function construirDojo() {
+  const m = interior('dojo', 'Dojo', 11, 9, T.PISO, saidaDe('dojo'));
+  pisoMeio(m, 1, 1, 10, 8, T.TATAME);                                  // tatame no meio, piso de madeira em volta
+  pm(m, 'suporteArmas', 2.1, .9); pm(m, 'bandeiraFaixas', 3.7, .7); pm(m, 'altar', 5.5, .9); pm(m, 'bandeiraFaixas', 7.3, .7); pm(m, 'armario', 9.2, .9);
+  pm(m, 'sacoPancada', .8, 3.2); pm(m, 'sacoPancada', .8, 5.6);
+  prop(m, 'boneco', 2.8, 5.4, .3, { hp: 9999, wob: 0, alvo: true }); prop(m, 'boneco', 8.4, 5.4, .3, { hp: 9999, wob: 0, alvo: true });
+  [3, 4.2, 5.4].forEach(y => pm(m, 'almofada', 10.1, y));                // lugar dos alunos
+  prop(m, 'lanterna', 1.1, 1.1, .15); prop(m, 'lanterna', 9.9, 7.4, .15);
+  npc(m, { nome: 'Mestre Kenji', x: 5.5, y: 2.2, dir: 2, pal: PAL_KENJI, fala: 'kenji', mestre: 'kenji' });
+  return m;
+}
+function construirBiblioteca() {
+  const m = interior('biblioteca', 'Biblioteca', 11, 9, T.PISO, saidaDe('biblioteca'));
+  [1.4, 3.1, 7.9, 9.6].forEach(x => pm(m, 'estanteAlta', x, .8)); pm(m, 'escadinha', 4.6, .9);
+  [2.6, 4.4].forEach(y => pm(m, 'pergaminhos', .8, y)); pm(m, 'armario', .8, 6.3);
+  pm(m, 'estanteAlta', 9.6, 5.2);                                     // corredor entre estantes
+  pm(m, 'balcao_livros', 5.6, 2.6); pm(m, 'pilhaLivros', 7.2, 2.4);       // área de consulta e atendimento
+  pm(m, 'mesaLeitura', 3, 6); [[1.9, 6.9], [4.1, 6.9]].forEach(([x, y]) => pm(m, 'almofada', x, y));
+  pm(m, 'mesaEstudo', 7.6, 6.4); pm(m, 'pilhaLivros', 9.9, 6.9); pm(m, 'tapete', 5.5, 4.6);
+  npc(m, { nome: 'Davi', x: 7.3, y: 3.1, dir: 3, pal: PAL_DAVI, fala: 'davi' });
+  return m;
+}
+function construirArena() {
+  const m = interior('arena', 'Arena Marcial', 12, 10, T.PISO, saidaDe('arena'));
+  pisoMeio(m, 3, 3, 9, 8, T.TATAME);                                     // área central de combate (limite visível)
+  pm(m, 'arquibancada', 3.2, 1.2); pm(m, 'arquibancada', 8.8, 1.2);       // espectadores
+  pm(m, 'suporteArmas', .9, 3.6); pm(m, 'armario', .9, 6);                 // preparação dos lutadores
+  m.objs.push(mkObj('estandarte', Math.random, { x: 2.4, y: 2.7 }), mkObj('estandarte', Math.random, { x: 9.6, y: 2.7 }));
+  prop(m, 'lanterna', .9, 8.6, .15); prop(m, 'lanterna', 11.1, 8.6, .15);
+  npc(m, { nome: 'Pietra', x: 5.4, y: 2.2, dir: 2, pal: PAL_PIETRA, fala: 'pietra' });            // espectadora: perto da arquibancada
+  npc(m, { nome: 'Henrique', x: 9.6, y: 4.6, dir: 3, pal: PAL_NPC.henrique, fala: 'henrique' });
+  if (stM('debora_gemeos') === 'concluida') { npc(m, { nome: 'David', x: 1.8, y: 7.4, dir: 1, pal: PAL_NPC.david, fala: 'gemeos_arena', pid: 'david' }); npc(m, { nome: 'Miguel', x: 2.9, y: 8, dir: 1, pal: PAL_NPC.miguel, fala: 'gemeos_arena', pid: 'miguel' }); }
+  return m;
+}
+function construirHospedaria() {
+  const m = interior('hospedaria', 'Hospedaria', 11, 9, T.PISO, saidaDe('hospedaria'));
+  pm(m, 'balcao_recepcao', 3.6, 2.4); pm(m, 'armario', .8, 1.2); pm(m, 'vasoGrande', 1.2, 3.4);   // recepção
+  pm(m, 'biombo', 7.6, 2.4); pm(m, 'biombo', 7.6, 5);                      // biombos separam os quartos
+  prop(m, 'cama', 9.6, 1.6, .7); prop(m, 'cama', 9.6, 3.9, .7); prop(m, 'cama', 9.6, 6.3, .7);
+  pm(m, 'mesa', 3.4, 6); [[2.2, 6.9], [4.6, 6.9]].forEach(([x, y]) => pm(m, 'almofada', x, y)); pm(m, 'tapete', 3.4, 6.3);
+  prop(m, 'lanterna', .9, 7.8, .15); prop(m, 'lanterna', 6.6, .9, .15);
+  npc(m, { nome: 'Hospedeira Hana', x: 5.7, y: 2.2, dir: 2, pal: PAL_HANA, fala: 'hana' });
+  return m;
+}
+function construirCasaCha() {
+  const m = interior('casa_cha', 'Casa de Chá', 11, 9, T.PISO, saidaDe('cha'));
+  pm(m, 'fogao', 9.6, 1.1); pm(m, 'prateleiraUtensilios', 7.7, .8); pm(m, 'barril', 10.3, 2.8); pm(m, 'caixote', 10.2, 4);   // cozinha e despensa
+  pm(m, 'balcao_cha', 4.8, 2.3); pm(m, 'prateleiraUtensilios', 1.6, .8);
+  [[2.6, 5.4], [7.6, 5.6]].forEach(([x, y]) => { pm(m, 'mesa', x, y); pm(m, 'almofada', x - 1.2, y + .9); pm(m, 'almofada', x + 1.2, y + .9); });
+  pm(m, 'vasoPequeno', .8, 3.2); prop(m, 'lanterna', .9, 7.8, .15);
+  npc(m, { nome: 'Pibe', x: 3.4, y: 3.4, dir: 2, pal: PAL_NPC.pibe, fala: 'casal_cha', pid: 'pibe' });
+  npc(m, { nome: 'Ramor', x: 6.3, y: 3.4, dir: 2, pal: PAL_NPC.ramor, fala: 'casal_cha', pid: 'ramor' });
+  return m;
+}
+function construirFlorDeLiz() {
+  const m = interior('flor_de_liz', 'Flor de Liz', 9, 7, T.PISO, saidaDe('flor_de_liz'));
+  pm(m, 'prateleiraFlores', 1.5, .8); pm(m, 'prateleiraFlores', 7.5, .8); pm(m, 'balcao_flores', 4.5, 2.2);
+  pm(m, 'bancadaBuque', 2.2, 3.6); pm(m, 'armario', .8, 5.2);
+  [[.8, 2.6, 'vasoGrande'], [8.2, 2.8, 'vasoGrande'], [8.3, 4.4, 'vasoPequeno'], [7.4, 5.6, 'vasoPequeno'], [1.8, 5.8, 'vasoPequeno'], [8.1, 5.6, 'vasoGrande']].forEach(([x, y, k]) => pm(m, k, x, y));   // vasos organizados por tamanho
+  npc(m, { nome: 'Lane', x: 6.4, y: 2.6, dir: 3, pal: PAL_NPC.lane, fala: 'lane' });
+  return m;
+}
 function construirMeditacao() {
   const m = interior('meditacao', 'Templo de Meditação', 9, 8, T.PISO, saidaDe('meditacao'));
-  pm(m, 'altar', 4.5, 1.4); [[2.5, 4], [4.5, 4.8], [6.5, 4]].forEach(([x, y]) => pm(m, 'meditar', x, y));
-  pm(m, 'lanternaPedra', 1.3, 1.3); pm(m, 'lanternaPedra', 7.7, 1.3);
-  npc(m, { nome: 'Monge Ishi', x: 6.6, y: 2.6, dir: 2, pal: PAL_MONGE, fala: 'monge' });
+  pisoMeio(m, 2, 2, 7, 6, T.TATAME);
+  pm(m, 'altar', 4.5, 1.2); pm(m, 'velas', 3.1, 1.2); pm(m, 'velas', 5.9, 1.2);
+  [[2.8, 3.8], [4.5, 4.6], [6.2, 3.8]].forEach(([x, y]) => pm(m, 'meditar', x, y));
+  pm(m, 'lanternaPedra', 1.2, 1.2); pm(m, 'lanternaPedra', 7.8, 1.2); pm(m, 'vasoPequeno', .8, 5.6);
+  npc(m, { nome: 'Monge Ishi', x: 7.2, y: 3, dir: 2, pal: PAL_MONGE, fala: 'monge' });
   return m;
 }
 function construirArquivo() {
-  const m = interior('arquivo', 'Arquivo de Técnicas', 10, 8, T.PISO, saidaDe('arquivo'));
-  [1.6, 3.4, 5.2, 7.0, 8.8].forEach(x => pm(m, 'estante', x, .8)); [2.4, 4.2, 6].forEach(y => pm(m, 'estante', .8, y));
-  pm(m, 'mesa', 6, 4.6);
-  npc(m, { nome: 'Arquivista Noa', x: 3.6, y: 3.4, dir: 2, pal: PAL_MEI, fala: 'arquivista' });
+  const m = interior('arquivo', 'Arquivo de Técnicas', 11, 9, T.PISO, saidaDe('arquivo'));
+  [1.5, 3.3, 7.7, 9.5].forEach(x => pm(m, 'pergaminhos', x, .8)); pm(m, 'suporteTecnica', 5.5, .9);   // nicho central com a técnica ilustrada
+  [2.6, 4.4].forEach(y => pm(m, 'armario', .8, y));                       // documentos raros (fechados)
+  pm(m, 'mesaEstudo', 3.2, 5.4); pm(m, 'mesaEstudo', 7.8, 5.4); [[2, 6.3], [4.4, 6.3], [6.6, 6.3], [9, 6.3]].forEach(([x, y]) => pm(m, 'almofada', x, y));
+  [3, 4.8].forEach(y => pm(m, 'suporteTecnica', 10.1, y)); pm(m, 'velas', 5.5, 3.2);
+  npc(m, { nome: 'Arquivista Noa', x: 5.5, y: 2.4, dir: 2, pal: PAL_MEI, fala: 'arquivista' });
   return m;
 }
 function construirArenaMestres() {
-  const m = interior('arena_mestres', 'Arena dos Grandes Mestres', 12, 10, T.TATAME, saidaDe('arena_mestres'));
-  [3, 6, 9].forEach(x => pm(m, 'boneco', x, 4.5, BON));
-  pm(m, 'lanternaPedra', 1.2, 1.2); pm(m, 'lanternaPedra', 10.8, 1.2);
-  npc(m, { nome: 'Grande Mestre Gen', x: 6, y: 2.2, dir: 2, pal: PAL_KENJI, fala: 'gmestre' });
-  npc(m, { nome: 'Gil', x: 9.4, y: 2.8, dir: 3, pal: PAL_NPC.gil, fala: 'gil' });                     // organizador do torneio
-  npc(m, { nome: 'Alana', x: 1.6, y: 7.6, dir: 1, pal: PAL_NPC.alana, fala: 'alana' });               // plateia
-  if (stM('ajudar_nicolas') === 'concluida') npc(m, { nome: 'Nicolas', x: 3.4, y: 3, dir: 1, pal: PAL_NPC.nicolas, fala: 'nicolas' });   // depois do resgate nas Cavernas, treina aqui
+  const m = interior('arena_mestres', 'Arena dos Grandes Mestres', 13, 11, T.PISO, saidaDe('arena_mestres'));
+  pisoMeio(m, 3, 3, 10, 9, T.TATAME);
+  pm(m, 'arquibancada', 3.4, 1.2); pm(m, 'arquibancada', 9.6, 1.2); pm(m, 'bandeiraFaixas', 6.5, .7);
+  pm(m, 'suporteArmas', .9, 3.6); pm(m, 'armario', .9, 6.2); pm(m, 'sacoPancada', 12.1, 4); pm(m, 'sacoPancada', 12.1, 6.4);
+  [[2.2, 4.8], [10.8, 9.2]].forEach(([x, y]) => pm(m, 'boneco', x, y, BON));
+  m.objs.push(mkObj('estandarte', Math.random, { x: 2.6, y: 2.6 }), mkObj('estandarte', Math.random, { x: 10.4, y: 2.6 }));
+  npc(m, { nome: 'Grande Mestre Gen', x: 6.5, y: 2.4, dir: 2, pal: PAL_KENJI, fala: 'gmestre' });
+  npc(m, { nome: 'Gil', x: 9.8, y: 2.6, dir: 3, pal: PAL_NPC.gil, fala: 'gil' });                       // organizador do torneio
+  npc(m, { nome: 'Alana', x: 4.6, y: 2.2, dir: 2, pal: PAL_NPC.alana, fala: 'alana' });                 // plateia, perto da arquibancada
+  if (stM('ajudar_nicolas') === 'concluida') npc(m, { nome: 'Nicolas', x: 1.9, y: 8.6, dir: 1, pal: PAL_NPC.nicolas, fala: 'nicolas' });   // depois do resgate nas Cavernas, treina aqui
   return m;
 }
 function construirSalao() {
-  const m = interior('salao', 'Salão de Graduação', 12, 9, T.PISO, saidaDe('salao'));
-  pm(m, 'altar', 6, 1.5); [[2.5, 3], [9.5, 3], [2.5, 6], [9.5, 6]].forEach(([x, y]) => pm(m, 'coluna', x, y));
-  npc(m, { nome: 'Mestre da Graduação', x: 6, y: 3.6, dir: 2, pal: PAL_KENJI, fala: 'mestre_graduacao', mestre: 'graduacao' });
-  npc(m, { nome: 'Michele', x: 9.2, y: 6.6, dir: 3, pal: PAL_NPC.michele, fala: 'michele' });            // interior do Grande Templo
+  const m = interior('salao', 'Salão de Graduação', 13, 10, T.PISO, saidaDe('salao'));
+  pm(m, 'plataforma', 6.5, 1.5); pm(m, 'altar', 6.5, .8);                  // plataforma principal
+  [[2.4, 3], [10.6, 3], [2.4, 6.4], [10.6, 6.4]].forEach(([x, y]) => pm(m, 'coluna', x, y));
+  [[1, 1], [12, 1], [4.4, .7], [8.6, .7]].forEach(([x, y]) => pm(m, 'bandeiraFaixas', x, y));
+  [3.6, 5, 8, 9.4].forEach(x => pm(m, 'almofada', x, 7.4));                // assentos para a cerimônia
+  pm(m, 'tapete', 6.5, 5.2); pm(m, 'velas', 4.8, 2.2); pm(m, 'velas', 8.2, 2.2);
+  npc(m, { nome: 'Mestre da Graduação', x: 6.5, y: 3.4, dir: 2, pal: PAL_KENJI, fala: 'mestre_graduacao', mestre: 'graduacao' });
+  npc(m, { nome: 'Michele', x: 11, y: 8.2, dir: 3, pal: PAL_NPC.michele, fala: 'michele' });            // interior do Grande Templo
   return m;
 }
+function construirOficina() {                                             // oficina de artesãos: o lugar existe; o serviço (NPC/função) ainda não foi definido
+  const m = interior('oficina', 'Oficina', 10, 8, T.PISO, saidaDe('oficina'));
+  pm(m, 'ferramentasParede', 1.8, .8); pm(m, 'ferramentasParede', 8.2, .8); pm(m, 'bancadaTrabalho', 5, 1.9);
+  pm(m, 'caixote', .8, 3); pm(m, 'caixote', .9, 4.1); pm(m, 'barril', .8, 5.4); pm(m, 'tronco', 8.6, 4.2); pm(m, 'caixote', 9.2, 5.6); pm(m, 'armario', 9.3, 2.4);
+  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de artesãos. O artesão ainda não chegou (serviço em breve).' });
+  return m;
+}
+
 const MAPAS = {
   bambuzal: construirBambuzal, vilarejo: construirVilarejo, dojo: construirDojo,
   biblioteca: construirBiblioteca, arena: construirArena, hospedaria: construirHospedaria,
   meditacao: construirMeditacao, arquivo: construirArquivo, arena_mestres: construirArenaMestres, salao: construirSalao,
-  casa_cha: construirCasaCha, flor_de_liz: construirFlorDeLiz
+  casa_cha: construirCasaCha, flor_de_liz: construirFlorDeLiz, oficina: construirOficina
 };
 Object.keys(CFG).forEach(k => { MAPAS[k] = () => regiao(CFG[k]()); });
 
@@ -6366,7 +6405,7 @@ const cacheCasa = {};
 function casaSpr(w, d, H, tel, par, op) {
   op = op || {};
   const palha = !!op.palha, nT = palha ? 1 : (op.tiers || (w * d >= 12 ? 2 : 1));
-  const chave = [w, d, H, tel, par[0], nT, palha, op.var || 0].join('|');
+  const chave = [w, d, H, tel, par[0], nT, palha, op.var || 0, op.funcao || ''].join('|');
   if (cacheCasa[chave]) return cacheCasa[chave];
   // --- planta: cada andar tem um retângulo (r), o beiral (ext) e o topo do telhado (inn) ---
   const ZB = palha ? 4 : 6, PB = .18, niveis = [];
@@ -6778,13 +6817,59 @@ function casaSpr(w, d, H, tel, par, op) {
       tufo: (x, y) => { for (let b = 0; b < 7; b++) { const a = (b - 3) * .3; risco(g, x + (b - 3) * .5, y, x + Math.sin(a) * 4, y - 2.6 - rd() * 2.4, .45, ['#4f8a34', '#6fae48', '#8fcc5a'][b % 3]); } if (rd() < .5) { g.beginPath(); g.arc(x + .6, y - 4.2, .7, 0, TAU); g.fillStyle = ['#ffd84a', '#ffffff', '#ff8fb1'][Math.floor(rd() * 3)]; g.fill(); } },
       geta: (x, y) => { [[-1.4, 0], [1, .4]].forEach(([dx, dy]) => { retR(g, x + dx - 1, y + dy - .9, 2, 1.1, .3); g.fillStyle = '#c99560'; g.fill(); risco(g, x + dx - .6, y + dy - .5, x + dx + .6, y + dy - .5, .35, '#c42a22'); }); }
     };
+    // ===== FACHADA COM FUNÇÃO: placa com o nome e objetos que mostram o que é o lugar antes de entrar =====
+    const placaPe = (x, y, txt, cor) => {                           // placa de pé (kanban) com o nome escrito
+      g.font = 'bold 4.2px sans-serif'; const w = Math.max(18, g.measureText(txt).width + 6);
+      risco(g, x - w / 2 + 3, y, x - w / 2 + 3, y - 9, 1.1, '#4a2c14'); risco(g, x + w / 2 - 3, y, x + w / 2 - 3, y - 9, 1.1, '#4a2c14');
+      retR(g, x - w / 2, y - 17, w, 9, 1.4); contorno(g, lin(g, 0, y - 17, 0, y - 8, [cla(cor || '#d9a85e', .2), cor || '#d9a85e', esc(cor || '#d9a85e', .7)]), .7, '#3a2010');
+      g.fillStyle = '#2a1408'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, x, y - 12.4); g.textBaseline = 'alphabetic';
+    };
+    const FP = {
+      makiwara: (x, y) => { sombraSuave(g, x + .5, y, 3, 1, .3); madeira(g, x - 1, y - 14, 2.2, 14, '#8a5a30', .6); retR(g, x - 2.2, y - 13, 4.6, 6, 1); contorno(g, '#dcc67e', .4, '#6b5424'); risco(g, x - 2.2, y - 11, x + 2.4, y - 11, .5, '#a8341f'); },
+      armas: (x, y) => { risco(g, x - 4, y, x - 4, y - 9, .8, '#6b4423'); risco(g, x + 4, y, x + 4, y - 9, .8, '#6b4423'); risco(g, x - 5, y - 7, x + 5, y - 7, .8, '#8a5a30'); [-2.4, -.8, .8, 2.4].forEach((o, k) => risco(g, x + o, y - .5, x + o + (k % 2 ? .4 : -.4), y - 13, .9, k < 2 ? '#8a5a30' : '#c9a06a')); },
+      sapateira: (x, y) => { madeira(g, x - 5, y - 4, 10, 4, '#8a5a30', .5); [[-3, -4.6], [0, -4.4], [3, -4.6]].forEach(([dx, dy]) => { retR(g, x + dx - 1.2, y + dy - .8, 2.4, 1.2, .3); g.fillStyle = '#c99560'; g.fill(); }); },
+      caixaLivros: (x, y) => { sombraSuave(g, x + .5, y, 4, 1.2, .3); madeira(g, x - 4, y - 5, 8, 5, '#a8703c', .5); livros(g, x - 3.4, y - 9, 6.8, 4.5, Math.round(x * 7)); },
+      rolos: (x, y) => { sombraSuave(g, x + .5, y, 3.5, 1, .3); for (let k = 0; k < 5; k++) { const yy = y - 1.2 - (k % 3) * 1.8 - (k > 2 ? 1 : 0), xx = x - 2 + (k % 3) * 2 + (k > 2 ? 1 : 0); g.beginPath(); g.ellipse(xx, yy, 1.1, 1.1, 0, 0, TAU); g.fillStyle = '#f4e8c0'; g.fill(); g.lineWidth = .3; g.strokeStyle = '#8a7440'; g.stroke(); g.fillStyle = '#c42a22'; g.fillRect(xx - .3, yy - .3, .6, .6); } },
+      banco: (x, y) => { sombraSuave(g, x + .5, y, 6, 1.2, .3); madeira(g, x - 6, y - 4.6, 12, 2, '#b07a44', .6); risco(g, x - 5, y - 2.6, x - 5, y, .8, '#6b4423'); risco(g, x + 5, y - 2.6, x + 5, y, .8, '#6b4423'); },
+      nobori: (x, y, cor) => { risco(g, x, y, x, y - 22, .8, '#3a2a1a'); risco(g, x, y - 21, x + 5, y - 21, .7, '#3a2a1a'); g.beginPath(); g.moveTo(x + .4, y - 20.6); g.lineTo(x + 5, y - 20.6); g.lineTo(x + 5, y - 6); g.lineTo(x + .4, y - 6); g.closePath(); contorno(g, lin(g, x, 0, x + 5, 0, [cla(cor, .2), cor, esc(cor, .7)]), .4, esc(cor, .4)); g.beginPath(); g.arc(x + 2.7, y - 16, 1.4, 0, TAU); g.fillStyle = '#fff6e0'; g.fill(); },
+      braseiro: (x, y) => { sombraSuave(g, x + .5, y, 3, 1, .3); risco(g, x - 2, y, x - 1, y - 6, .8, '#3a3a4a'); risco(g, x + 2, y, x + 1, y - 6, .8, '#3a3a4a'); g.beginPath(); g.ellipse(x, y - 6.5, 3, 1.3, 0, 0, Math.PI); g.fillStyle = '#3a3a4a'; g.fill(); brilho(g, x, y - 8, 6, '#ff9a3a', .8); g.fillStyle = '#ffcf4a'; g.beginPath(); g.moveTo(x - 1.6, y - 6.8); g.quadraticCurveTo(x, y - 12, x + 1.6, y - 6.8); g.fill(); luzes.push([x, y - 8, 2.2]); },
+      andon: (x, y) => { sombraSuave(g, x + .5, y, 2.6, 1, .3); madeira(g, x - 2.2, y - 10, 4.4, 9, '#6b4423', .5); g.fillStyle = lin(g, 0, y - 9.4, 0, y - 2, ['#fff4d0', '#ffd890']); g.fillRect(x - 1.6, y - 9.4, 3.2, 7.4); brilho(g, x, y - 6, 6, '#ffd070', .7); risco(g, x - 1.6, y - 5.7, x + 1.6, y - 5.7, .3, '#6b4423'); luzes.push([x, y - 6, 1.8]); },
+      mesaCha: (x, y) => { sombraSuave(g, x + .5, y, 6, 1.6, .3); madeira(g, x - 5.5, y - 4.4, 11, 2.2, '#8a5a30', .6); risco(g, x - 4, y - 2.2, x - 4, y, .8, '#5a3a1a'); risco(g, x + 4, y - 2.2, x + 4, y, .8, '#5a3a1a'); g.beginPath(); g.ellipse(x - 1.4, y - 5.6, 1.8, 1.6, 0, 0, TAU); g.fillStyle = '#4a6a4a'; g.fill(); [[1.6, -5], [3.4, -5]].forEach(([dx, dy]) => { g.beginPath(); g.ellipse(x + dx, y + dy, .8, .5, 0, 0, TAU); g.fillStyle = '#f4efe0'; g.fill(); }); [[-7, 0], [7, 0]].forEach(([dx]) => { g.beginPath(); g.ellipse(x + dx, y - .6, 2.2, 1.1, 0, 0, TAU); g.fillStyle = '#8e44ad'; g.fill(); }); },
+      cardapio: (x, y) => { risco(g, x - 2, y, x, y - 8, .7, '#4a2c14'); risco(g, x + 2, y, x, y - 8, .7, '#4a2c14'); retR(g, x - 3, y - 9, 6, 6, .4); contorno(g, '#2a2a2a', .3, '#4a2c14'); for (let k = 0; k < 3; k++) risco(g, x - 2, y - 7.6 + k * 1.6, x + 1.6, y - 7.6 + k * 1.6, .3, '#f4efe0'); },
+      madeiras: (x, y) => { sombraSuave(g, x + .5, y, 5, 1.2, .3); for (let k = 0; k < 4; k++) madeira(g, x - 5 + (k % 2), y - 2 - k * 1.6, 10, 1.6, ['#c99560', '#b07a44'][k % 2], .4); },
+      cavalete: (x, y) => { risco(g, x - 3, y, x - 2, y - 5, .8, '#6b4423'); risco(g, x + 3, y, x + 2, y - 5, .8, '#6b4423'); madeira(g, x - 4, y - 6, 8, 1.4, '#a8703c', .4); madeira(g, x - 5, y - 7.6, 10, 1.6, '#d8a868', .4); },
+      bigorna: (x, y) => { sombraSuave(g, x + .5, y, 3, 1, .3); madeira(g, x - 1.6, y - 3, 3.2, 3, '#6b4423', .4); g.beginPath(); g.moveTo(x - 3.6, y - 5); g.lineTo(x + 2.4, y - 5); g.lineTo(x + 4, y - 4.2); g.lineTo(x + 2, y - 3); g.lineTo(x - 3, y - 3); g.closePath(); contorno(g, lin(g, 0, y - 5, 0, y - 3, ['#8a8a9a', '#3a3a4a']), .4, '#1a1a20'); },
+      vasoG: (x, y) => vasoFlor(g, x, y, .9, Math.round(x * 13 + y)),
+      vasoP: (x, y) => vasoFlor(g, x, y, .55, Math.round(x * 7 + y * 3)),
+      floreira: (x, y) => { sombraSuave(g, x + .5, y, 7, 1.4, .3); madeira(g, x - 7, y - 4, 14, 1.4, '#a8703c', .4); madeira(g, x - 5.5, y - 8, 11, 1.4, '#a8703c', .4); risco(g, x - 6.5, y, x - 5, y - 8, .7, '#6b4423'); risco(g, x + 6.5, y, x + 5, y - 8, .7, '#6b4423'); [-4.5, -1.5, 1.5, 4.5].forEach((o, k) => vasoFlor(g, x + o, y - 4, .4, k + Math.round(x))); [-3, 0, 3].forEach((o, k) => vasoFlor(g, x + o, y - 8, .38, k + 9 + Math.round(y))); },
+      trelica: (x, y) => { g.strokeStyle = '#8a5a30'; g.lineWidth = .7; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(x - 4 + k * 2.6, y); g.lineTo(x - 4 + k * 2.6, y - 16); g.stroke(); } for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(x - 4.5, y - 2 - k * 3.4); g.lineTo(x + 4.5, y - 2 - k * 3.4); g.stroke(); }
+        for (let k = 0; k < 14; k++) { const fx = x - 4 + (k * 37 % 9), fy = y - 2 - (k * 23 % 15); folhaH(fx, fy, .9); if (k % 3 === 0) { g.beginPath(); g.arc(fx + .5, fy - .5, .9, 0, TAU); g.fillStyle = ['#ff8fb1', '#ffffff', '#c9a0ff'][k % 3]; g.fill(); } } },
+      areia: (x, y) => { g.beginPath(); g.ellipse(x, y - 1, 9, 3.6, 0, 0, TAU); g.fillStyle = '#e8dcc0'; g.fill(); g.strokeStyle = 'rgba(160,140,100,.55)'; g.lineWidth = .3; for (let k = 1; k < 4; k++) { g.beginPath(); g.ellipse(x + 2, y - 1, k * 1.8, k * .7, 0, 0, TAU); g.stroke(); } g.beginPath(); g.ellipse(x + 2, y - 1.6, 1.6, 1, 0, 0, TAU); g.fillStyle = '#8a8698'; g.fill(); },
+      faixas: (x, y) => { risco(g, x, y, x, y - 20, .7, '#3a2a1a'); ['#f6f6f2', '#f4d03f', '#e67e22', '#27ae60', '#2e86c1', '#8e44ad', '#6b4423', '#151515'].forEach((c, k) => { g.fillStyle = c; g.fillRect(x + .4, y - 19.5 + k * 1.7, 4.2, 1.7); }); },
+      futon: () => {}
+    };
+    const LAYOUT = {                                                  // [tipo, i, j] nas faixas em frente às paredes (porta = parede j)
+      dojo: { nome: 'DOJO', cor: '#d9a85e', p: [['makiwara', pc + 1.05, .85], ['makiwara', pc + 1.65, 1.1], ['sapateira', pc - .85, .55], ['armas', .85, -d + .8], ['banco', .9, -1]] },
+      biblioteca: { nome: 'BIBLIOTECA', cor: '#e6c690', p: [['caixaLivros', -w + .5, .55], ['rolos', -w + 1.1, .7], ['banco', .85, -1], ['caixaLivros', .7, -d + .6]] },
+      arena: { nome: 'ARENA', cor: '#d9a85e', p: [['nobori', pc - 1.1, .45, '#c8322a'], ['nobori', pc + 1.1, .45, '#2f5fb8'], ['braseiro', -w + .5, .6], ['braseiro', -.4, .6], ['banco', .9, -d + 1], ['nobori', .6, -1.2, '#8e44ad']] },
+      hospedaria: { nome: 'HOSPEDARIA', cor: '#f0d8a8', p: [['andon', pc - .9, .5], ['andon', pc + .9, .5], ['banco', -w + .7, .7], ['banco', .9, -d + 1]] },
+      cha: { nome: 'CASA DE CHÁ', cor: '#e0c088', p: [['mesaCha', pc + 1.1, .85], ['cardapio', pc - .9, .55], ['mesaCha', .95, -d + 1.1]] },
+      oficina: { nome: 'OFICINA', cor: '#c9a06a', p: [['madeiras', -w + .6, .7], ['cavalete', pc + 1, .7], ['bigorna', .8, -d + .8], ['madeiras', .8, -1]] },
+      flor: { nome: 'FLOR DE LIZ', cor: '#f6d6e0', p: [['vasoG', -w + .4, .5], ['vasoP', -w + .9, .45], ['floreira', pc + 1.05, .75], ['trelica', -.3, .55], ['vasoG', .7, -d + .6], ['vasoP', .65, -d + 1.1], ['floreira', .9, -1.1]] },
+      meditacao: { nome: 'TEMPLO DE MEDITAÇÃO', cor: '#e8dcc0', p: [['areia', .95, -d + 1.4], ['andon', pc - 1, .5], ['andon', pc + 1, .5]] },
+      salao: { nome: 'SALÃO DE GRADUAÇÃO', cor: '#e0c070', p: [['faixas', pc - 1.3, .45], ['faixas', pc + 1.3, .45], ['braseiro', -w + .6, .6], ['braseiro', -.5, .6], ['nobori', .8, -d + 1, '#c8322a']] },
+      arena_mestres: { nome: 'ARENA DOS GRANDES MESTRES', cor: '#e0c070', p: [['nobori', pc - 1.2, .45, '#b8453a'], ['nobori', pc + 1.2, .45, '#b8453a'], ['braseiro', -w + .6, .6], ['braseiro', -.5, .6], ['nobori', .8, -d + 1, '#2f5fb8']] },
+      arquivo: { nome: 'ARQUIVO DE TÉCNICAS', cor: '#e6c690', p: [['rolos', -w + .5, .55], ['caixaLivros', -.5, .6], ['banco', .9, -d + 1]] }
+    };
+    const L0 = op.funcao && LAYOUT[op.funcao];
     const tiposP = palha ? ['lenha', 'sacos', 'jarra', 'barril', 'vassoura', 'vaso', 'cesto', 'tufo', 'tufo', 'caixas', 'pedrinhas']
       : ['vaso', 'vaso', 'bonsai', 'barril', 'jarra', 'tufo', 'tufo', 'caixas', 'pedrinhas', 'vassoura', 'cesto'];
     const props = [];
-    for (let i = -w + .45; i <= -.3; i += .48) { if (Math.abs(i - pc) < 1.05) continue; if (rd() < .62) props.push([i, PB + .28 + rd() * .1, tiposP[Math.floor(rd() * tiposP.length)]]); }
-    for (let j = -d + .45; j <= -.5; j += .48) { if (rd() < .62) props.push([PB + .28 + rd() * .1, j, tiposP[Math.floor(rd() * tiposP.length)]]); }
-    props.push([pc + .62, PB + .58, 'geta'], [-w - PB + .05, PB + .35, 'tufo'], [PB + .3, -d - PB + .1, 'tufo']);
-    props.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1])).forEach(([i, j, k]) => { const p = P(i, j, 0); PROP[k](p[0], p[1]); });
+    if (L0) { L0.p.forEach(([k, i, j, cor]) => props.push([i, j, k, cor])); props.push([-w - PB + .05, PB + .35, 'tufo'], [PB + .3, -d - PB + .1, 'tufo'], [-w + .2, PB + 1, 'placa']); }
+    else for (let i = -w + .45; i <= -.3; i += .48) { if (Math.abs(i - pc) < 1.05) continue; if (rd() < .62) props.push([i, PB + .28 + rd() * .1, tiposP[Math.floor(rd() * tiposP.length)]]); }
+    if (!L0) { for (let j = -d + .45; j <= -.5; j += .48) { if (rd() < .62) props.push([PB + .28 + rd() * .1, j, tiposP[Math.floor(rd() * tiposP.length)]]); }
+      props.push([pc + .62, PB + .58, 'geta'], [-w - PB + .05, PB + .35, 'tufo'], [PB + .3, -d - PB + .1, 'tufo']); }
+    props.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1])).forEach(([i, j, k, cor]) => { const p = P(i, j, 0); if (k === 'placa') placaPe(p[0], p[1], L0.nome, L0.cor); else if (FP[k]) FP[k](p[0], p[1], cor); else PROP[k](p[0], p[1]); });
     if (palha) { const Ii = topo.inn, e = P(Ii.i1, Ii.j1, topo.zT + 2); fumaca.push(e[0], e[1]); }   // fumaça sai pela cumeeira
   });
   // lanternas piscando (brilho que muda com o tempo, por cima do sprite)
@@ -7013,6 +7098,139 @@ function seloSpr(ok) {
   return base;
 }
 
+/* ---------- móveis dos interiores (cada estabelecimento tem os seus) ---------- */
+const livroCores = ['#c0392b', '#2e86c1', '#27ae60', '#f1c40f', '#8e44ad', '#e67e22', '#6b4423', '#16a085'];
+function livros(g, x, y, w, h, seed) { const r = mul(seed); let u = x; while (u < x + w - 1.5) { const lw = 1.6 + r() * 1.8, lh = h * (.7 + r() * .3), c = livroCores[Math.floor(r() * livroCores.length)]; g.fillStyle = lin(g, u, 0, u + lw, 0, [cla(c, .25), c, esc(c, .7)]); g.fillRect(u, y + h - lh, lw - .3, lh); g.fillStyle = 'rgba(255,240,200,.5)'; g.fillRect(u + .3, y + h - lh + 1, lw - .9, .5); u += lw; if (r() < .12) { g.save(); g.translate(u + 1, y + h); g.rotate(-.35); g.fillStyle = c; g.fillRect(0, -lh, lw, lh); g.restore(); u += 3; } } }
+function vasoFlor(g, x, y, s, seed, cores) {                           // vaso com flores coloridas (tamanho s)
+  const r = mul(seed), cs = cores || ['#ff6a8a', '#ffd84a', '#ffffff', '#c9a0ff', '#ff9a4a'];
+  sombraSuave(g, x + 1, y, 5 * s, 1.6 * s, .32);
+  g.beginPath(); g.moveTo(x - 3.4 * s, y - 7 * s); g.lineTo(x + 3.4 * s, y - 7 * s); g.lineTo(x + 2.4 * s, y); g.lineTo(x - 2.4 * s, y); g.closePath(); contorno(g, lin(g, x - 3.4 * s, 0, x + 3.4 * s, 0, [cla('#b4603a', .3), '#b4603a', '#6a3020']), .5, '#3a1810');
+  g.fillStyle = '#5a2a14'; g.fillRect(x - 3.7 * s, y - 7.8 * s, 7.4 * s, 1.2 * s);
+  for (let k = 0; k < 7; k++) { const a = -Math.PI / 2 + (k - 3) * .38, l = (5 + r() * 4) * s; risco(g, x, y - 7.5 * s, x + Math.cos(a) * l * .7, y - 7.5 * s + Math.sin(a) * l, .55, '#3f7a2e'); }
+  for (let k = 0; k < 8; k++) { const a = -Math.PI / 2 + (r() - .5) * 2.2, l = (6 + r() * 5) * s, fx = x + Math.cos(a) * l * .7, fy = y - 7.5 * s + Math.sin(a) * l, c = cs[Math.floor(r() * cs.length)];
+    for (let p = 0; p < 5; p++) { g.beginPath(); g.arc(fx + Math.cos(p * 1.257) * 1.1 * s, fy + Math.sin(p * 1.257) * 1.1 * s, .9 * s, 0, TAU); g.fillStyle = c; g.fill(); } g.beginPath(); g.arc(fx, fy, .6 * s, 0, TAU); g.fillStyle = '#ffd040'; g.fill(); }
+}
+const SP3 = {
+  balcao: tipo => hi(70, 46, 35, 38, g => {                        // balcão de atendimento (muda o que fica em cima conforme a loja)
+    sombraSuave(g, 36, 38, 30, 5, .35);
+    madeira(g, 5, 16, 60, 21, '#8a5a30', 1.4);
+    for (let k = 0; k < 4; k++) { retR(g, 8 + k * 14.5, 20, 12, 13, 1); contorno(g, lin(g, 0, 20, 0, 33, ['#a8703c', '#7a4a22']), .5, '#3a2010'); g.beginPath(); g.arc(14 + k * 14.5, 26.5, .9, 0, TAU); g.fillStyle = '#e0b44a'; g.fill(); }
+    retR(g, 2, 11, 66, 6, 1.6); contorno(g, lin(g, 0, 11, 0, 17, ['#e0aa6a', '#c98f50', '#8a5a30']), .8, '#3a2010');
+    g.fillStyle = 'rgba(255,240,210,.45)'; g.fillRect(4, 11.6, 62, .8);
+    if (tipo === 'livros') { livros(g, 6, 3, 16, 8, 3); retR(g, 30, 7, 14, 4, .5); contorno(g, '#f6ecc8', .4, '#8a7440'); risco(g, 46, 10, 52, 5, .7, '#2a1810'); g.fillStyle = '#1a1010'; g.fillRect(54, 7, 4, 4); for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(58 + (k % 3) * 2, 3 + Math.floor(k / 3) * 2, .7, 0, TAU); g.fillStyle = '#c9962e'; g.fill(); } }
+    else if (tipo === 'flores') { vasoFlor(g, 12, 11, .8, 4); vasoFlor(g, 56, 11, .9, 5, ['#ff8fb1', '#ffffff', '#f08ab0']); retR(g, 26, 6, 16, 5, 1); contorno(g, '#f4efe0', .4, '#8a8070'); [['#ff6a8a', 30], ['#ffd84a', 34], ['#c9a0ff', 38]].forEach(([c, x]) => { g.beginPath(); g.arc(x, 5.5, 1.6, 0, TAU); g.fillStyle = c; g.fill(); }); risco(g, 44, 9, 48, 5, .8, '#9a9aaa'); risco(g, 46, 9, 47, 4, .8, '#9a9aaa'); }
+    else if (tipo === 'cha') { [[14, 9], [22, 9]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 3.2, 3, 0, 0, TAU); contorno(g, lin(g, x - 3, 0, x + 3, 0, ['#6a8a6a', '#3a5a3a']), .5, '#1a2a1a'); risco(g, x + 3, y - 1, x + 5, y - 3, .8, '#3a5a3a'); }); [34, 40, 46].forEach(x => { g.beginPath(); g.ellipse(x, 10, 2, 1.2, 0, 0, TAU); contorno(g, '#f4efe0', .4, '#8a8070'); }); retR(g, 52, 6, 12, 5, .8); contorno(g, '#c98f50', .4, '#5a3010'); }
+    else { retR(g, 8, 5, 18, 6, .8); contorno(g, '#f6ecc8', .4, '#8a7440'); risco(g, 12, 8, 22, 8, .4, '#5a4a2a'); g.beginPath(); g.arc(44, 8, 3, Math.PI, 0); contorno(g, '#e0b44a', .5, '#6a5420'); g.fillStyle = '#3a2a1a'; g.fillRect(43.4, 4.5, 1.2, 1.4); brilho(g, 58, 6, 6, '#ffd890', .5); }   // recepção: livro de hóspedes e sininho
+  }),
+  estanteAlta: () => hi(42, 76, 21, 70, g => {
+    sombraSuave(g, 22, 70, 17, 4, .35); retR(g, 4, 2, 34, 66, 2); contorno(g, lin(g, 4, 0, 38, 0, ['#9a6a3c', '#7a4f2a', '#5a3a1e']), 1, '#341f10');
+    for (let r = 0; r < 5; r++) { const y = 5 + r * 12.6; g.fillStyle = 'rgba(25,12,8,.6)'; g.fillRect(6, y, 30, 10); g.fillStyle = '#5a3a1a'; g.fillRect(5, y + 10, 32, 2); livros(g, 7, y + 1, 28, 9, r * 11 + 2); }
+    retR(g, 2, 0, 38, 4, 1); contorno(g, '#a8703c', .6, '#341f10');
+  }),
+  pergaminhos: () => hi(42, 58, 21, 52, g => {                      // estante de pergaminhos (nichos com rolos)
+    sombraSuave(g, 22, 52, 16, 4, .35); retR(g, 4, 3, 34, 47, 2); contorno(g, lin(g, 4, 0, 38, 0, ['#8a5a30', '#6b4423', '#4a2c14']), 1, '#2a160a');
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { const x = 6.5 + c * 7.6, y = 5.5 + r * 10.8; g.fillStyle = 'rgba(20,10,4,.65)'; g.fillRect(x, y, 6.6, 9.4);
+      for (let k = 0; k < 3; k++) { const yy = y + 2 + k * 2.6; g.beginPath(); g.ellipse(x + 3.3, yy + 1, 2.8, 1.2, 0, 0, TAU); g.fillStyle = ['#f4e8c0', '#e8d8a8', '#f6ecd0'][(r + c + k) % 3]; g.fill(); g.beginPath(); g.ellipse(x + 1, yy + 1, .7, 1.1, 0, 0, TAU); g.fillStyle = '#c42a22'; g.fill(); } }
+  }),
+  mesaLeitura: () => hi(52, 34, 26, 27, g => {
+    sombraSuave(g, 27, 27, 21, 4, .33); madeira(g, 6, 15, 4, 11, '#6b4423', 1); madeira(g, 42, 15, 4, 11, '#6b4423', 1);
+    retR(g, 3, 9, 46, 7, 1.6); contorno(g, lin(g, 3, 9, 3, 16, ['#c98f50', '#8a5a30']), .8, '#3a2010');
+    g.beginPath(); g.moveTo(12, 10); g.lineTo(20, 7.5); g.lineTo(28, 10); g.lineTo(20, 12); g.closePath(); contorno(g, '#fbf4dc', .5, '#8a7440'); risco(g, 20, 7.6, 20, 12, .4, '#8a7440');   // livro aberto
+    for (let k = 0; k < 3; k++) { risco(g, 13.5 + k, 9.4 + k * .5, 18.5, 8.6 + k * .5, .25, '#5a4a2a'); risco(g, 21.5, 8.6 + k * .5, 26.5 - k, 9.4 + k * .5, .25, '#5a4a2a'); }
+    livros(g, 31, 3, 9, 7, 9); g.fillStyle = '#e8e0c8'; g.fillRect(42, 6, 2.4, 4); brilho(g, 43.2, 5, 6, '#ffd890', .7); g.fillStyle = '#ffd04a'; g.beginPath(); g.ellipse(43.2, 5, .8, 1.4, 0, 0, TAU); g.fill();   // vela
+  }),
+  escadinha: () => hi(22, 58, 11, 52, g => { sombraSuave(g, 12, 52, 7, 2, .3); risco(g, 5, 52, 9, 4, 1.6, '#6b4423'); risco(g, 15, 52, 17, 4, 1.6, '#6b4423'); for (let k = 0; k < 7; k++) { const y = 46 - k * 6.4, t = (52 - y) / 48; risco(g, 5 + t * 4, y, 15 + t * 2, y, 1.2, '#8a5a30'); } }),
+  pilhaLivros: () => hi(22, 22, 11, 18, g => { sombraSuave(g, 12, 18, 8, 2, .3); for (let k = 0; k < 5; k++) { const c = livroCores[k * 3 % 8], y = 16 - k * 3; retR(g, 3 + (k % 2) * 1.5, y, 15 - (k % 3), 3, .6); contorno(g, lin(g, 0, y, 0, y + 3, [cla(c, .3), c]), .4, esc(c, .5)); g.fillStyle = '#f4efe0'; g.fillRect(16 - (k % 3), y + .6, 1.2, 1.8); } }),
+  armario: () => hi(40, 60, 20, 54, g => {
+    sombraSuave(g, 21, 54, 16, 4, .35); retR(g, 4, 4, 32, 48, 2); contorno(g, lin(g, 4, 0, 36, 0, ['#9a6a3c', '#7a4f2a', '#5a3a1e']), 1, '#341f10');
+    [[6, 6, 13, 22], [21, 6, 13, 22], [6, 30, 28, 9], [6, 41, 28, 9]].forEach(([x, y, w, h]) => { retR(g, x, y, w, h, 1); contorno(g, lin(g, 0, y, 0, y + h, ['#b07a44', '#8a5a2e']), .6, '#3a2010'); g.fillStyle = '#2a2832'; g.fillRect(x + w / 2 - 2, y + h / 2 - .5, 4, 1); });
+    retR(g, 2, 1, 36, 4, 1); contorno(g, '#a8703c', .6, '#341f10');
+  }),
+  biombo: () => hi(56, 50, 28, 44, g => {                         // biombo dobrável com pintura de montanha e cerejeira
+    sombraSuave(g, 29, 44, 24, 4, .3);
+    for (let k = 0; k < 4; k++) { const x = 4 + k * 12, d = k % 2 ? 3 : 0; g.beginPath(); g.moveTo(x, 8 + d); g.lineTo(x + 12, 8 + (k % 2 ? 0 : 3)); g.lineTo(x + 12, 42 + (k % 2 ? 0 : 3)); g.lineTo(x, 42 + d); g.closePath(); contorno(g, lin(g, x, 0, x + 12, 0, k % 2 ? ['#f6ecd0', '#e2d4b2'] : ['#e8dcbc', '#d2c29a']), .8, '#4a2e18');
+      g.save(); g.clip(); g.fillStyle = 'rgba(120,130,170,.45)'; g.beginPath(); g.moveTo(x, 30 + d); g.lineTo(x + 6, 20 + d); g.lineTo(x + 12, 30 + (k % 2 ? 0 : 3)); g.closePath(); g.fill(); if (k === 1 || k === 2) for (let q = 0; q < 6; q++) { g.beginPath(); g.arc(x + 2 + q * 1.6, 14 + d + Math.sin(q) * 2, 1.2, 0, TAU); g.fillStyle = '#ff9fc0'; g.fill(); } g.restore();
+      g.fillStyle = '#4a2e18'; g.fillRect(x, 8 + d, 12, 1.2); }
+  }),
+  vasoGrande: () => hi(28, 34, 14, 30, g => vasoFlor(g, 14, 30, 1.4, 21)),
+  vasoPequeno: () => hi(20, 22, 10, 19, g => vasoFlor(g, 10, 19, .85, 22, ['#ffffff', '#ff8fb1'])),
+  prateleiraFlores: () => hi(46, 58, 23, 52, g => {               // estante de arranjos prontos
+    sombraSuave(g, 24, 52, 18, 4, .33); madeira(g, 4, 6, 3, 46, '#8a5a30', .8); madeira(g, 39, 6, 3, 46, '#8a5a30', .8);
+    [18, 33, 48].forEach((y, r) => { madeira(g, 3, y, 40, 3, '#a8703c', .6); [10, 23, 36].forEach((x, c) => vasoFlor(g, x, y, .62 + ((r + c) % 2) * .12, r * 9 + c + 30)); });
+  }),
+  bancadaBuque: () => hi(56, 36, 28, 29, g => {                   // mesa de preparar buquês: flores soltas, fitas, tesoura e papel
+    sombraSuave(g, 29, 29, 23, 4, .33); madeira(g, 6, 16, 4, 12, '#6b4423', 1); madeira(g, 46, 16, 4, 12, '#6b4423', 1); retR(g, 3, 10, 50, 7, 1.6); contorno(g, lin(g, 0, 10, 0, 17, ['#d8a868', '#a8703c']), .8, '#3a2010');
+    g.beginPath(); g.moveTo(14, 13); g.lineTo(26, 6); g.lineTo(30, 13); g.closePath(); contorno(g, '#f6e8f0', .4, '#a88898');   // papel do buquê
+    for (let k = 0; k < 7; k++) { const c = ['#ff6a8a', '#ffd84a', '#ffffff', '#c9a0ff'][k % 4]; g.beginPath(); g.arc(19 + (k % 4) * 2.4, 6 + Math.floor(k / 4) * 2, 1.4, 0, TAU); g.fillStyle = c; g.fill(); }
+    [['#e8473b', 36], ['#2e86c1', 40], ['#f4d03f', 44]].forEach(([c, x]) => { g.beginPath(); g.ellipse(x, 12, 1.8, 1.2, 0, 0, TAU); g.fillStyle = c; g.fill(); risco(g, x + 1.6, 12, x + 3, 14.5, .6, c); });   // fitas
+    risco(g, 6, 13, 11, 11, .9, '#9a9aaa'); risco(g, 7, 11, 11, 13, .9, '#9a9aaa');   // tesoura
+  }),
+  fogao: () => hi(46, 50, 23, 44, g => {                          // fogão de barro (kamado) com panelas
+    sombraSuave(g, 24, 44, 19, 4, .35); retR(g, 4, 16, 38, 26, 4); contorno(g, lin(g, 4, 0, 42, 0, ['#d8a878', '#b07a54', '#7a4a2a']), 1, '#3a2010');
+    [14, 32].forEach(x => { g.beginPath(); g.ellipse(x, 32, 4.4, 4, 0, Math.PI, 0); g.fillStyle = '#1a0a04'; g.fill(); brilho(g, x, 32, 5, '#ff8a30', .8); });
+    [[14, 15], [32, 15]].forEach(([x, y], k) => { g.beginPath(); g.ellipse(x, y, 7, 3, 0, 0, TAU); contorno(g, lin(g, x - 7, 0, x + 7, 0, k ? ['#6a6a7a', '#3a3a4a'] : ['#8a5a30', '#5a3a1a']), .6, '#1a1a20'); g.fillStyle = k ? '#3a3a4a' : '#5a3a1a'; g.fillRect(x - 7, y, 14, 4); });
+  }, { anim: null }),
+  prateleiraUtensilios: () => hi(46, 56, 23, 50, g => {
+    sombraSuave(g, 24, 50, 18, 4, .33); madeira(g, 4, 4, 3, 46, '#8a5a30', .8); madeira(g, 39, 4, 3, 46, '#8a5a30', .8);
+    [16, 31, 46].forEach((y, r) => { madeira(g, 3, y, 40, 3, '#a8703c', .6);
+      if (r === 0) [10, 18, 26, 34].forEach(x => { g.beginPath(); g.ellipse(x, y - 1, 3, 1.2, 0, 0, TAU); contorno(g, '#f4efe0', .4, '#7a7a8a'); g.fillStyle = '#e8e2d2'; g.fillRect(x - 3, y - 3, 6, 2); });
+      else if (r === 1) [12, 26].forEach(x => { g.beginPath(); g.ellipse(x, y - 4, 4.4, 4, 0, 0, TAU); contorno(g, lin(g, x - 4, 0, x + 4, 0, ['#8aa88a', '#4a6a4a']), .5, '#1a2a1a'); risco(g, x + 4, y - 5, x + 6.5, y - 7, .9, '#4a6a4a'); });
+      else [10, 17, 24, 31].forEach(x => { g.fillStyle = ['#c8553d', '#2e86c1', '#e0b44a', '#7a5a8a'][x % 4]; g.fillRect(x - 2.4, y - 5, 4.8, 5); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x - 2, y - 4.6, 1, 4); }); });
+  }),
+  arquibancada: () => hi(80, 46, 40, 40, g => {                    // arquibancada de madeira (2 degraus)
+    sombraSuave(g, 41, 40, 36, 5, .35);
+    [[4, 24, 72, 14], [10, 12, 60, 12]].forEach(([x, y, w, h], k) => { madeira(g, x, y + 4, w, h - 2, k ? '#9a6a3c' : '#8a5a30', 1.2); retR(g, x - 1, y, w + 2, 5, 1.2); contorno(g, lin(g, 0, y, 0, y + 5, ['#e0aa6a', '#b07a44']), .7, '#3a2010'); for (let u = x + 8; u < x + w; u += 12) { g.beginPath(); g.ellipse(u, y + 1.4, 3.6, 1.4, 0, 0, TAU); g.fillStyle = ['#c0392b', '#2e86c1', '#8e44ad'][(u / 12 | 0) % 3]; g.fill(); } });
+  }),
+  suporteArmas: () => hi(50, 56, 25, 50, g => {                    // suporte com bastões (bo), espadas de madeira (bokken) e tonfas
+    sombraSuave(g, 26, 50, 20, 4, .33); madeira(g, 5, 8, 3, 42, '#6b4423', .8); madeira(g, 42, 8, 3, 42, '#6b4423', .8); madeira(g, 4, 14, 42, 3, '#8a5a30', .6); madeira(g, 4, 38, 42, 3, '#8a5a30', .6);
+    for (let k = 0; k < 5; k++) { const x = 11 + k * 7; risco(g, x, 6, x + (k % 2 ? 1 : -1), 48, k < 2 ? 2 : 1.6, k < 2 ? '#8a5a30' : '#c9a06a'); if (k >= 2) { risco(g, x - 2.4, 39 - k, x + 2.4, 39 - k, 1.2, '#2a1810'); } }
+  }),
+  sacoPancada: () => hi(36, 70, 18, 64, g => {                     // saco de pancada pendurado no cavalete
+    sombraSuave(g, 19, 64, 13, 3, .33); risco(g, 4, 64, 8, 4, 1.8, '#6b4423'); risco(g, 32, 64, 28, 4, 1.8, '#6b4423'); risco(g, 6, 5, 30, 5, 2, '#8a5a30');
+    risco(g, 18, 5, 18, 14, .8, '#5a4a3a');
+    retR(g, 11, 14, 14, 40, 6); contorno(g, lin(g, 11, 0, 25, 0, ['#d86a4a', '#b0402a', '#6a2010']), .9, '#3a0a04');
+    g.strokeStyle = 'rgba(30,8,4,.6)'; g.lineWidth = .7; [22, 46].forEach(y => { g.beginPath(); g.moveTo(11, y); g.lineTo(25, y); g.stroke(); });
+    g.fillStyle = 'rgba(255,220,200,.3)'; g.fillRect(13, 17, 2, 32);
+  }),
+  velas: () => hi(22, 24, 11, 20, g => { sombraSuave(g, 12, 20, 7, 2, .3); [[6, 7], [11, 10], [16, 6]].forEach(([x, h]) => { g.fillStyle = lin(g, x - 1.5, 0, x + 1.5, 0, ['#fffaf0', '#e8dcc8']); g.fillRect(x - 1.4, 20 - h, 2.8, h); g.fillStyle = '#ffd04a'; g.beginPath(); g.ellipse(x, 20 - h - 1.6, .9, 1.6, 0, 0, TAU); g.fill(); }); }, { luz: { x: 0, y: -12, r: 18, c: '#ffc060' } }),
+  bancadaTrabalho: () => hi(62, 42, 31, 35, g => {                 // oficina: bancada com morsa, plaina, serra e madeira
+    sombraSuave(g, 32, 35, 26, 4, .35); madeira(g, 6, 18, 4, 16, '#6b4423', 1); madeira(g, 52, 18, 4, 16, '#6b4423', 1); madeira(g, 8, 28, 46, 3, '#7a4a22', .5);
+    retR(g, 3, 12, 56, 7, 1.4); contorno(g, lin(g, 0, 12, 0, 19, ['#c98f50', '#8a5a30']), .8, '#3a2010');
+    madeira(g, 8, 6, 22, 6, '#d8a868', 1); retR(g, 42, 6, 8, 6, .8); contorno(g, '#5a5a6a', .5, '#1a1a20'); risco(g, 46, 6, 46, 3, 1, '#3a3a4a');
+    g.beginPath(); g.moveTo(32, 11); g.lineTo(40, 11); g.lineTo(40, 8); g.lineTo(34, 9); g.closePath(); contorno(g, '#c8c8d8', .4, '#3a3a4a'); for (let k = 0; k < 4; k++) risco(g, 33 + k * 1.8, 11, 33.6 + k * 1.8, 12, .4, '#3a3a4a');   // serra
+    for (let k = 0; k < 6; k++) { const x = 10 + Math.sin(k * 3) * 20 + 20; g.fillStyle = '#e8c890'; g.fillRect(x, 34 + (k % 2), 2, .8); }   // serragem
+  }),
+  ferramentasParede: () => hi(46, 50, 23, 44, g => {               // painel com ferramentas penduradas
+    sombraSuave(g, 24, 44, 16, 3, .25); madeira(g, 6, 4, 34, 30, '#b07a44', 1); madeira(g, 9, 34, 3, 10, '#6b4423', .6); madeira(g, 34, 34, 3, 10, '#6b4423', .6);
+    risco(g, 12, 8, 12, 24, 1.1, '#8a5a30'); g.fillStyle = '#7a7a8a'; g.fillRect(9.5, 6, 5, 3);   // martelo
+    risco(g, 20, 8, 20, 26, 1, '#8a5a30'); g.beginPath(); g.moveTo(18, 26); g.lineTo(22, 26); g.lineTo(20, 30); g.closePath(); g.fillStyle = '#9a9aaa'; g.fill();   // formão
+    g.beginPath(); g.arc(30, 14, 5, 0, TAU); g.lineWidth = 1.2; g.strokeStyle = '#5a5a6a'; g.stroke(); risco(g, 28, 22, 36, 22, 1.4, '#3a3a4a'); risco(g, 34, 26, 36, 30, 1.2, '#8a5a30');
+  }),
+  plataforma: () => hi(96, 40, 48, 32, g => {                      // plataforma cerimonial com degraus
+    sombraSuave(g, 49, 32, 42, 6, .35);
+    [[4, 20, 88, 10, '#8a5a30'], [12, 12, 72, 9, '#a8703c']].forEach(([x, y, w, h, c]) => { madeira(g, x, y + 3, w, h, c, 1); retR(g, x - 1, y, w + 2, 4, 1); contorno(g, lin(g, 0, y, 0, y + 4, ['#e0aa6a', '#c08848']), .7, '#3a2010'); });
+    retR(g, 34, 10, 28, 3, 1); contorno(g, '#c42a22', .5, '#5a0a08');                     // tapete vermelho em cima
+  }),
+  bandeiraFaixas: () => hi(22, 62, 11, 58, g => {                  // bandeira com as cores das faixas (progressão marcial)
+    sombraSuave(g, 12, 58, 6, 2, .3); risco(g, 6, 58, 6, 4, 1.4, '#3a2a1a'); risco(g, 5, 6, 18, 6, 1.2, '#3a2a1a');
+    const cs = ['#f6f6f2', '#f4d03f', '#e67e22', '#27ae60', '#2e86c1', '#8e44ad', '#6b4423', '#151515'];
+    cs.forEach((c, k) => { g.fillStyle = c; g.fillRect(7, 7 + k * 4.4, 10, 4.4); }); g.strokeStyle = '#2a1a10'; g.lineWidth = .5; g.strokeRect(7, 7, 10, 35.2);
+  }),
+  tapete: () => hi(64, 34, 32, 18, g => { g.beginPath(); g.moveTo(4, 18); g.lineTo(32, 4); g.lineTo(60, 18); g.lineTo(32, 32); g.closePath(); contorno(g, lin(g, 4, 0, 60, 0, ['#9a2a24', '#c43a2a', '#8a1e1a']), .6, '#4a0c08'); g.beginPath(); g.moveTo(12, 18); g.lineTo(32, 8); g.lineTo(52, 18); g.lineTo(32, 28); g.closePath(); g.strokeStyle = '#e0b44a'; g.lineWidth = .8; g.stroke(); }),
+  mesaEstudo: () => hi(52, 34, 26, 27, g => {                      // arquivo: mesa de estudo com pergaminho aberto e pincel
+    sombraSuave(g, 27, 27, 21, 4, .33); madeira(g, 6, 15, 4, 11, '#5a3a1e', 1); madeira(g, 42, 15, 4, 11, '#5a3a1e', 1); retR(g, 3, 9, 46, 7, 1.6); contorno(g, lin(g, 3, 9, 3, 16, ['#a8703c', '#6b4423']), .8, '#2a1810');
+    retR(g, 10, 7, 24, 5, .5); contorno(g, '#f6ecd0', .4, '#8a7440'); [14, 18, 22, 26, 30].forEach(x => risco(g, x, 8, x, 11, .5, '#2a1a10'));
+    g.beginPath(); g.ellipse(10, 9.5, 1.2, 2.5, 0, 0, TAU); g.fillStyle = '#c42a22'; g.fill(); g.beginPath(); g.ellipse(34, 9.5, 1.2, 2.5, 0, 0, TAU); g.fill();
+    risco(g, 38, 12, 44, 6, .8, '#6b4423'); g.fillStyle = '#1a1010'; g.fillRect(40, 9, 4, 3);
+  }),
+  suporteTecnica: () => hi(30, 58, 15, 52, g => {                  // suporte com técnica ilustrada (pergaminho pendurado)
+    sombraSuave(g, 16, 52, 9, 2.5, .3); risco(g, 8, 52, 9, 6, 1.4, '#6b4423'); risco(g, 22, 52, 21, 6, 1.4, '#6b4423'); risco(g, 6, 7, 24, 7, 1.6, '#4a2c14');
+    retR(g, 8, 8, 14, 34, .5); contorno(g, '#f6ecd0', .5, '#8a7440');
+    g.strokeStyle = '#2a1a10'; g.lineWidth = .8; g.beginPath(); g.arc(15, 15, 2, 0, TAU); g.moveTo(15, 17); g.lineTo(15, 26); g.moveTo(15, 20); g.lineTo(10.5, 17); g.moveTo(15, 20); g.lineTo(20, 22); g.moveTo(15, 26); g.lineTo(11, 33); g.moveTo(15, 26); g.lineTo(21, 29); g.stroke();   // golpe desenhado
+    g.fillStyle = '#c42a22'; g.fillRect(17, 36, 3, 3); risco(g, 7, 42, 23, 42, 1.4, '#4a2c14');
+  })
+};
+
 function criarSprites(SPR) {
   SPR.arvore = arvoreSpr('#3f9a3a', '#5fbd4d', '#a4ea7e', '#8a5a34');
   SPR.arvoreOutono = arvoreSpr('#d9622b', '#f0a040', '#ffd870', '#6e4429');
@@ -7035,6 +7253,7 @@ function criarSprites(SPR) {
   SPR.estandarte = [SP2.estandarte('#c8322a'), SP2.estandarte('#2f5fb8')]; SPR.tufo = [SP2.tufo(0), SP2.tufo(1)];
   SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false); SPR.cavernaBoca = SP.cavernaBoca();
   SPR.selo = seloSpr(false); SPR.seloOk = seloSpr(true);
+  for (const k in SP3) if (k !== 'balcao') SPR[k] = SP3[k](); ['livros', 'flores', 'cha', 'recepcao'].forEach(t => { SPR['balcao_' + t] = SP3.balcao(t); });
   SPR.cachoeira = { pre: () => { if (!cachMonte) montanhaSprite(); return [cachMonte, cachLabios]; }, hi: true, dyn: cachoeiraDyn, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 176, r: 176, t: 316, b: 14 } };
   SPR.cachoeiraSo = { hi: true, dyn: (g, t) => cachoeiraDyn(g, t, true), w: 0, h: 0, ax: 0, ay: 0 };   // sem montanha (abertura)
 }
