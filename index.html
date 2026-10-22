@@ -140,7 +140,32 @@
   #dlgOpcoes button.sel::before { content: '▶'; position: absolute; left: 6px; font-size: 11px; top: 7px; }
 
   /* minimapa circular (canto superior direito) — mesma moldura do HUD */
-  #minimapa { position: fixed; top: 8px; right: 8px; z-index: 5; width: clamp(78px, 17vmin, 132px); height: clamp(78px, 17vmin, 132px); border-radius: 50%; border: 2px solid #c9d0e6; background: #0d1027; box-shadow: 0 0 0 2px #000, 0 0 14px rgba(0, 229, 255, .45), inset 0 0 0 1px #5a6490; pointer-events: none; image-rendering: pixelated; }
+  #minimapa { position: fixed; top: 8px; right: 8px; z-index: 5; width: clamp(78px, 17vmin, 132px); height: clamp(78px, 17vmin, 132px); border-radius: 50%; border: 2px solid #c9d0e6; background: #0d1027; box-shadow: 0 0 0 2px #000, 0 0 14px rgba(0, 229, 255, .45), inset 0 0 0 1px #5a6490; cursor: pointer; touch-action: none; }
+  /* mapa em tela cheia (mesmo estilo do menu do jogo: azul-escuro com borda dourada) */
+  #mapaTela { position: fixed; inset: 2vh 2vw; z-index: 12; display: grid; grid-template-columns: 1fr min(280px, 34vw); grid-template-rows: auto 1fr auto; gap: 6px; padding: 8px 10px; box-sizing: border-box; background: rgba(10, 16, 30, .97); border: 3px solid #f4d03f; border-radius: 8px; color: #fff; font-family: 'Pixelify Sans', 'Courier New', monospace; font-size: 13px; user-select: none; }
+  #mapaTela[hidden] { display: none; }
+  .mpTopo { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .mpTopo h2 { margin: 0; color: #f4d03f; font-size: 16px; }
+  .mpRegiao { color: #9be36b; font-size: 13px; }
+  .mpBotoes { margin-left: auto; display: flex; flex-wrap: wrap; gap: 4px; }
+  #mapaTela button { background: #f4d03f; color: #2a1f00; border: 0; border-radius: 4px; padding: 4px 9px; font-weight: bold; cursor: pointer; font-family: inherit; font-size: 12px; }
+  #mapaTela button.sel { outline: 2px solid #9be36b; }
+  #mapaTela .mpFechar { background: #e8473b; color: #fff; }
+  .mpCanvas { width: 100%; height: 100%; min-height: 0; border: 2px solid #c9d0e6; border-radius: 4px; background: #0d1027; cursor: crosshair; touch-action: none; }
+  .mpPainel { overflow: auto; background: rgba(20, 28, 52, .9); border: 1px solid #5a6490; border-radius: 4px; padding: 8px; }
+  .mpPainel h3 { margin: 0 0 6px; color: #f4d03f; font-size: 14px; }
+  .mpPainel p { margin: 5px 0; } .mpPainel small { color: #9aa4c0; }
+  .mpPainel label { display: grid; gap: 3px; margin: 6px 0; }
+  .mpPainel input, .mpPainel textarea { font: inherit; background: #0d1027; color: #fff; border: 1px solid #5a6490; border-radius: 3px; padding: 4px; user-select: text; -webkit-user-select: text; }
+  #mapaTela .mpCor { width: 22px; height: 22px; padding: 0; background: var(--c); border: 2px solid #221033; }
+  .mpFiltros, .mpLegenda { position: absolute; top: 44px; right: calc(min(280px, 34vw) + 24px); background: rgba(10, 16, 30, .97); border: 2px solid #f4d03f; border-radius: 6px; padding: 8px 12px; z-index: 2; }
+  .mpFiltros[hidden], .mpLegenda[hidden] { display: none; }
+  .mpFiltros h3, .mpLegenda h3 { margin: 0 0 6px; color: #f4d03f; font-size: 14px; }
+  .mpFiltros label { display: block; margin: 3px 0; }
+  .mpLegenda p { margin: 2px 0; display: flex; align-items: center; gap: 6px; }
+  .mpDica { grid-column: 1 / -1; margin: 0; color: #9aa4c0; font-size: 11px; }
+  @media (max-width: 700px), (max-height: 420px) { #mapaTela { inset: 1vh 1vw; grid-template-columns: 1fr; grid-template-rows: auto 1fr minmax(90px, 32%) auto; } .mpFiltros, .mpLegenda { right: 12px; } .mpDica { display: none; } }
+  body.mapaAberto #joystick, body.mapaAberto .btn { display: none; }
   #minimapa[hidden] { display: none; }
   body.gotico #minimapa { border: 3px solid #9096a6; background: #0b0508; box-shadow: 0 0 0 2px #000, 0 0 22px rgba(190, 20, 50, .55), inset 0 0 0 2px #14080c; }
   #salvando { position: fixed; right: 10px; top: 58px; z-index: 6; margin: 0; padding: 3px 9px; border-radius: 10px; background: rgba(10,16,30,.8); color: #bfe9ff; font-size: 11px; opacity: 0; transition: opacity .3s; pointer-events: none; }
@@ -1076,7 +1101,7 @@ const CASAS_DECO = [
 ];
 function colocarCasa(m, c) {
   for (let j = c.y; j < c.y + c.d; j++) for (let i = c.x; i < c.x + c.w; i++) m.bloq[j][i] = true;
-  m.objs.push({ tipo: 'casa', x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var, funcao: c.funcao }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
+  m.objs.push({ tipo: 'casa', tel: c.tel, par: c.par, nome: c.nome, x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var, funcao: c.funcao }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
   if (c.alvo) m.exits.push({ x: c.x + c.w / 2 - .5, y: c.y + c.d + .05, w: 1, h: .6, alvo: c.alvo, nome: c.nome, req: c.req });
   else if (c.fechada) placa(m, c.x + c.w / 2 - 1.5, c.y + c.d + .5, c.fechada);
 }
@@ -9748,55 +9773,389 @@ const CenaSelos = (() => {
    15. LOOP PRINCIPAL E INÍCIO
    ===================================================================== */
 /* =====================================================================
-   MINIMAPA CIRCULAR (canto superior direito)
-   Usa os dados do próprio mapa: mapa.tiles (tipo do chão), mapa.bloq (paredes, árvores, pedras),
-   jog.x / jog.y (posição do jogador em tiles) e a mesma orientação isométrica da tela.
-   As cores de cada tipo de chão são a média das texturas do jogo (grama, terra, água...).
+   MAPA DO JOGO: minimapa circular + mapa em tela cheia + marcações pessoais
+   - Lê o mundo real: mapa.tiles (chão), mapa.bloq (obstáculos), os objetos de cada pedaço (chunk) do mapa,
+     mapa.dyn (NPCs e inimigos), mapa.exits (portas), mapa.portoes (portões entre regiões) e mapa.cel (regiões).
+   - Mesma projeção isométrica da tela (tile (x, y) -> ((x - y), (x + y) / 2)).
+   - Só funciona na exploração normal: MODO_TELA === 'jogo'. No torneio (MODO_TELA === 'torneio') nada aparece,
+     a tecla não abre e os cliques não fazem nada.
+   - Partes ainda não exploradas (pedaços do mundo que o jogo ainda não gerou) aparecem escurecidas.
+   - Marcações salvas no localStorage com chave própria: 'akira-mapa-marcacoes-v1'.
    ===================================================================== */
-const Minimapa = (() => {
-  const el = document.getElementById('minimapa'), g = el.getContext('2d'), RAIO = 26;   // tiles visíveis do centro até a borda
-  let cores = null, cache = null, cacheMapa = null, cacheT = 0;
-  // cor média de cada tipo de chão, tirada das texturas do jogo
+const MapaMundo = (() => {
+  const S = 4, K = 4, TOPO = 40, CHAVE = 'akira-mapa-marcacoes-v1', LINHA = '#221033';
+  const elMini = document.getElementById('minimapa'), gMini = elMini.getContext('2d');
+  let cores = null, base = null, aberto = false, ui = null, verT = 0;
+  const px = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+  const tom = (hex, f, clarear) => { const n = parseInt(hex.slice(1), 16), m = v => Math.round(clarear ? v + (255 - v) * f : v * f); return 'rgb(' + m(n >> 16 & 255) + ',' + m(n >> 8 & 255) + ',' + m(n & 255) + ')'; };
+  // ---------- quando o mapa pode existir ----------
+  const explorando = () => MODO_TELA === 'jogo' && jogoIniciado && !!mapa;
+  const podeAbrir = () => explorando() && !dlg.ativo && !menuAberto && !chefeAtual && !exameAtual && !fade && !jog.morto;
+  // ---------- cores do chão: média das texturas do jogo ----------
   function corDasTexturas() {
     const fonte = TEX3.pronto ? [TEX3.v, TEX_TIPO3] : TEX.pronto ? [TEX.v, TEX_TIPO] : null; if (!fonte) return null;
     const c = document.createElement('canvas'); c.width = c.height = 1; const cg = c.getContext('2d', { willReadFrequently: true }), r = {};
     for (const tipo in fonte[1]) { const img = fonte[0][fonte[1][tipo][0]]; if (!img) continue; cg.clearRect(0, 0, 1, 1); cg.drawImage(img, 0, 0, 1, 1); const d = cg.getImageData(0, 0, 1, 1).data; r[tipo] = [d[0], d[1], d[2]]; }
-    if (!r[T.TATAME]) r[T.TATAME] = [0xd4, 0xcd, 0x88];                       // tatame não tem textura: usa a cor do desenho do tatame (#cfc982/#d9d28e)
+    if (!r[T.TATAME]) r[T.TATAME] = [0xd4, 0xcd, 0x88];                       // tatame não tem textura: cor do desenho do tatame
     return r;
   }
-  // pinta o mapa inteiro, 1 pixel por tile (refeito quando troca de mapa e de tempos em tempos no mundo aberto)
-  function pintarMapa(M) {
-    const c = cache && cache.width === M.w && cache.height === M.h ? cache : document.createElement('canvas'); c.width = M.w; c.height = M.h;
-    const cg = c.getContext('2d'), img = cg.createImageData(M.w, M.h), d = img.data;
+  const h2m = (i, j, k) => { let n = (i * 374761393 + j * 668265263 + k * 2147483647) | 0; n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
+  // ---------- objetos do mapa atual (pedaços já existentes + dinâmicos) ----------
+  function objetosEstaticos(M) { const l = []; if (M.chunks) M.chunks.forEach(ch => ch.objs.forEach(o => l.push(o))); else (M.objs || []).forEach(o => { if (o.tipo !== 'npc' && o.tipo !== 'inimigo') l.push(o); }); return l; }
+  function objetosVivos(M) { const l = []; (M.dyn || []).forEach(o => l.push(o)); if (!M.chunks) (M.objs || []).forEach(o => { if (o.tipo === 'npc' || o.tipo === 'inimigo') l.push(o); }); return l; }
+  // ---------- tile -> pixel do mapa base ----------
+  const isoB = (B, x, y) => [(x - y) * S + B.offX, (x + y) * S / 2 + TOPO];
+  const doIso = (B, X, Y) => { const u = (X - B.offX) / S, v = (Y - TOPO) * 2 / S; return [(u + v) / 2, (v - u) / 2]; };
+  // ---------- pinta o chão em detalhe (4 x 4 pixels por tile): grama, água com brilho e espuma, trilhas, pontes ----------
+  function pintarChao(M) {
+    const W = M.w * K, H = M.h * K, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'), img = g.createImageData(W, H), d = img.data;
+    const t = (i, j) => (M.tiles[j] && M.tiles[j][i] != null) ? M.tiles[j][i] : -1;
+    const caminho = v => v === T.TERRA || v === T.LAJE || v === T.PEDRA || v === T.AREIA;
     for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) {
-      const t = M.tiles[j][i], k = (j * M.w + i) * 4, cor = t == null ? null : cores[t]; if (!cor) continue;
-      const esc = M.bloq[j] && M.bloq[j][i] && t !== T.AGUA ? .55 : 1;                 // obstáculos ficam mais escuros
-      d[k] = cor[0] * esc; d[k + 1] = cor[1] * esc; d[k + 2] = cor[2] * esc; d[k + 3] = 255;
+      const tp = t(i, j), cor = cores[tp]; if (!cor) continue;
+      const bloq = M.bloq[j] && M.bloq[j][i] && tp !== T.AGUA;
+      for (let b = 0; b < K; b++) for (let a = 0; a < K; a++) {
+        let f = .94 + h2m(i * K + a, j * K + b, 3) * .12;
+        let r = cor[0], gg = cor[1], bb = cor[2];
+        if (tp === T.AGUA) {
+          if (b === 1 && (i * 3 + j * 5 + a) % 6 === 0) f = 1.35;                                   // brilho na água
+          const borda = (a === 0 && t(i - 1, j) !== T.AGUA) || (a === K - 1 && t(i + 1, j) !== T.AGUA) || (b === 0 && t(i, j - 1) !== T.AGUA) || (b === K - 1 && t(i, j + 1) !== T.AGUA);
+          if (borda) { r = 232; gg = 248; bb = 255; f = 1; }                                        // espuma na margem
+        } else if (caminho(tp)) {
+          if (h2m(i, j, a * 7 + b) < .12) f *= .78;                                                 // pedrinhas da trilha
+          const vizG = (a === 0 && !caminho(t(i - 1, j))) || (a === K - 1 && !caminho(t(i + 1, j))) || (b === 0 && !caminho(t(i, j - 1))) || (b === K - 1 && !caminho(t(i, j + 1)));
+          if (vizG) f *= .82;                                                                       // borda da trilha
+        } else if (tp === T.PONTE || tp === T.PISO) { if (b === K - 1) f *= .7; }                     // tábuas
+        else if (h2m(i, j, a + b * 5 + 11) < .1) f *= .82;                                          // tufinhos na grama
+        if (bloq) f *= .8;
+        const k = ((j * K + b) * W + i * K + a) * 4;
+        d[k] = Math.min(255, r * f); d[k + 1] = Math.min(255, gg * f); d[k + 2] = Math.min(255, bb * f); d[k + 3] = 255;
+      }
     }
-    cg.putImageData(img, 0, 0); return c;
+    g.putImageData(img, 0, 0); return c;
   }
-  function desenhar(dt) {
-    const visivel = MODO_TELA === 'jogo' && mapa && jogoIniciado;
-    if (el.hidden === visivel) el.hidden = !visivel;
-    if (!visivel) return;
-    if (!cores) { cores = corDasTexturas(); if (!cores) return; }
-    cacheT -= dt;
-    if (cacheMapa !== mapa || (mapa.grande && cacheT <= 0)) { cache = pintarMapa(mapa); cacheMapa = mapa; cacheT = 3; }
-    const raio = mapa.grande ? RAIO : Math.min(RAIO, Math.max(mapa.w, mapa.h) * .75), W = el.width, s = W / 2 / raio / Math.SQRT2;   // pixels por tile (salas pequenas aparecem maiores)
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
-    g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2, 0, Math.PI * 2); g.clip();
-    // mesma projeção isométrica da tela: tile (i, j) -> ((i - j), (i + j) / 2); o jogador fica no centro
-    g.setTransform(s, s / 2, -s, s / 2, W / 2 - (jog.x - jog.y) * s, W / 2 - (jog.x + jog.y) * s / 2);
-    g.imageSmoothingEnabled = false; g.drawImage(cache, 0, 0);
+  // ---------- desenhos em pixel art de cada tipo de objeto (formas reconhecíveis, no estilo do jogo) ----------
+  const arvoreCopa = (g, x, y, c1, c2, extra) => { px(g, x, y - 3, 1, 3, '#4a2e18'); px(g, x - 2, y - 7, 5, 4, c1); px(g, x - 1, y - 8, 3, 1, c1); px(g, x - 2, y - 7, 2, 2, c2); if (extra) { px(g, x + 1, y - 6, 1, 1, extra); px(g, x - 1, y - 4, 1, 1, extra); } px(g, x - 3, y - 6, 1, 2, LINHA); px(g, x + 3, y - 6, 1, 2, LINHA); };
+  function icone(g, o, x, y) {
+    switch (o.tipo) {
+      case 'arvore': arvoreCopa(g, x, y, '#3f8a46', '#62b05c'); break;
+      case 'cerejeira': arvoreCopa(g, x, y, '#f0a8c0', '#ffd4e2'); break;
+      case 'arvoreOutono': arvoreCopa(g, x, y, '#d8742a', '#f0a040'); break;
+      case 'tangerineira': arvoreCopa(g, x, y, '#3f8a46', '#62b05c', '#ff9a1e'); break;
+      case 'bambu': px(g, x, y - 6, 1, 6, '#5aa040'); px(g, x, y - 4, 1, 1, '#3a6a2a'); px(g, x + 1, y - 7, 1, 2, '#8ad06a'); break;
+      case 'arbusto': px(g, x - 1, y - 2, 3, 2, '#3f7a3a'); px(g, x, y - 3, 1, 1, '#62a05a'); break;
+      case 'pedra': px(g, x - 1, y - 2, 3, 2, '#8a8a96'); px(g, x - 1, y - 2, 1, 1, '#c0c0cc'); break;
+      case 'toco': case 'tronco': px(g, x - 1, y - 1, 3, 1, '#7a4a26'); break;
+      case 'caixote': case 'cesto': case 'banco': px(g, x - 1, y - 2, 2, 2, '#a8743e'); break;
+      case 'lanterna': case 'lanternaPedra': px(g, x, y - 3, 1, 3, '#c8c0b0'); px(g, x, y - 3, 1, 1, '#ffd27a'); break;
+      case 'torii': px(g, x - 3, y - 7, 1, 7, '#c0281e'); px(g, x + 3, y - 7, 1, 7, '#c0281e'); px(g, x - 4, y - 8, 9, 1, '#1e1a20'); px(g, x - 3, y - 6, 7, 1, '#c0281e'); break;
+      case 'estatua': case 'coluna': case 'altar': case 'meditar': case 'colunaQuebrada': px(g, x - 1, y - 4, 2, 4, '#b8b8c4'); px(g, x - 1, y - 4, 1, 1, '#e0e0ea'); break;
+      case 'cerca': px(g, x - 2, y - 2, 5, 1, '#8a5a30'); px(g, x - 2, y - 1, 1, 1, '#8a5a30'); px(g, x + 2, y - 1, 1, 1, '#8a5a30'); break;
+      case 'estandarte': px(g, x, y - 6, 1, 6, '#5a3a1e'); px(g, x + 1, y - 6, 2, 3, '#c0281e'); break;
+      case 'fonte': px(g, x - 2, y - 2, 5, 2, '#9a9aa8'); px(g, x - 1, y - 2, 3, 1, '#7fd0ff'); break;
+      case 'makiwara': case 'boneco': px(g, x, y - 5, 1, 5, '#8a5a30'); px(g, x - 1, y - 5, 3, 2, '#e8d8b0'); break;
+      case 'serra': { const s = 10; g.fillStyle = '#7a7266'; g.beginPath(); g.moveTo(x - s, y); g.lineTo(x, y - s * 1.3); g.lineTo(x + s, y); g.fill(); g.fillStyle = '#5a544a'; g.beginPath(); g.moveTo(x, y - s * 1.3); g.lineTo(x + s, y); g.lineTo(x + 2, y); g.fill(); g.fillStyle = '#eef2fa'; g.beginPath(); g.moveTo(x - 3, y - s * .95); g.lineTo(x, y - s * 1.3); g.lineTo(x + 3, y - s * .95); g.fill(); break; }
+      case 'cachoeira': px(g, x - 2, y - 14, 5, 14, '#4fb8f0'); px(g, x - 1, y - 14, 1, 14, '#e8fbff'); px(g, x - 4, y - 1, 9, 2, '#e8fbff'); break;
+      case 'cascataBorda': px(g, x - 1, y - 6, 3, 6, '#4fb8f0'); px(g, x, y - 6, 1, 6, '#e8fbff'); break;
+      case 'cavernaBoca': px(g, x - 4, y - 6, 9, 6, '#5a544a'); px(g, x - 2, y - 4, 5, 4, '#100c14'); break;
+      case 'placa': px(g, x, y - 4, 1, 4, '#5a3a1e'); px(g, x - 2, y - 6, 5, 3, '#c8a06a'); break;
+      case 'parede': px(g, x - 2, y - 3, 4, 3, '#3a3448'); break;
+    }
+  }
+  // casa: caixa isométrica com paredes, telhado na cor do telhado real e porta quando dá pra entrar
+  function casa(g, B, o) {
+    const w = (o.ax - o.x) * 2, dd = (o.ay - o.y) * 2, x0 = o.ax - w, y0 = o.ay - dd, hp = 5;
+    const P = (x, y) => isoB(B, x, y), a = P(x0, y0), b = P(o.ax, y0), c = P(o.ax, o.ay), d = P(x0, o.ay);
+    const tel = o.tel || '#8a5a3a', par = (o.par && o.par[0]) || '#e9dcc0';
+    const quad = (pts, cor) => { g.beginPath(); pts.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = cor; g.fill(); g.lineWidth = 1; g.strokeStyle = LINHA; g.stroke(); };
+    quad([d, c, [c[0], c[1] - hp], [d[0], d[1] - hp]], par);                                       // parede da frente
+    quad([c, b, [b[0], b[1] - hp], [c[0], c[1] - hp]], tom(par, .82));                             // parede do lado
+    quad([[a[0], a[1] - hp - 3], [b[0], b[1] - hp], [c[0], c[1] - hp], [d[0], d[1] - hp]], tel);   // telhado
+    g.beginPath(); g.moveTo((a[0] + d[0]) / 2, (a[1] + d[1]) / 2 - hp - 1.5); g.lineTo((b[0] + c[0]) / 2, (b[1] + c[1]) / 2 - hp - 1.5); g.lineWidth = 1; g.strokeStyle = tom(tel, .35, true); g.stroke();
+    if (!o.deco) { const m = [(d[0] + c[0]) / 2, (d[1] + c[1]) / 2]; px(g, m[0] - 1, m[1] - 4, 2, 4, '#3a2416'); px(g, m[0] - 1, m[1] - 4, 2, 1, '#e0b44a'); }   // porta
+  }
+  // ---------- monta (ou completa) o mapa base do mapa atual ----------
+  function chaveDe(M) { let n = 0; if (M.chunks) M.chunks.forEach(c => { if (c.gerado) n++; }); return M.id + '|' + M.w + 'x' + M.h + '|' + n + '|' + (estado.fase || ''); }
+  function montar(M) {
+    if (!cores) { cores = corDasTexturas(); if (!cores) return null; }
+    if (base && base.M === M && base.estruturaFase === (estado.fase || '')) { completar(base); return base; }
+    const B = { M, offX: M.h * S, W: (M.w + M.h) * S, H: (M.w + M.h) * S / 2 + TOPO + 4, feitos: new WeakSet(), estruturaFase: estado.fase || '' };
+    B.c = document.createElement('canvas'); B.c.width = B.W; B.c.height = B.H;
+    const g = B.c.getContext('2d'); g.imageSmoothingEnabled = false;
+    g.setTransform(S / K, S / (2 * K), -S / K, S / (2 * K), B.offX, TOPO); g.drawImage(pintarChao(M), 0, 0); g.setTransform(1, 0, 0, 1, 0, 0);
+    base = B; completar(B, true); return B;
+  }
+  // desenha os objetos que ainda não estão no mapa (pedaços recém-explorados entram aos poucos)
+  function completar(B, tudo) {
+    const novos = objetosEstaticos(B.M).filter(o => !B.feitos.has(o)); if (!novos.length) { B.chave = chaveDe(B.M); return; }
+    novos.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+    const g = B.c.getContext('2d');
+    for (const o of novos) { B.feitos.add(o); if (o.tipo === 'selo' || o.tipo === 'papel') continue; if (o.tipo === 'casa') casa(g, B, o); else { const [x, y] = isoB(B, o.x, o.y); icone(g, o, x, y); } }
+    B.chave = chaveDe(B.M);
+  }
+  // ---------- pontos de interesse (desenhados por cima, sempre atualizados) ----------
+  function pontos(M) {
+    const l = [], R = reqOk;
+    for (const o of objetosVivos(M)) {
+      if (o.removido) continue;
+      if (o.tipo === 'npc') l.push({ cat: 'npc', x: o.x, y: o.y, nome: o.nome, desc: 'Personagem' });
+      else if (o.tipo === 'inimigo' && o.vivo && !o.chefe && !o.clone) l.push({ cat: 'inimigo', x: o.x, y: o.y, nome: o.nome || 'Inimigo', desc: 'Inimigo' });
+      else if (o.chefe && o.vivo && !o.clone) l.push({ cat: 'chefe', x: o.x, y: o.y, nome: CHEFES[o.chefe] ? CHEFES[o.chefe].nome : 'Chefe', desc: 'Chefe em combate' });
+    }
+    for (const o of objetosEstaticos(M)) {
+      if (o.tipo === 'selo') { const d = CHEFES[o.chefe]; l.push({ cat: 'chefe', x: o.x, y: o.y, nome: d ? d.nome : 'Selo antigo', desc: estado.chefes[o.chefe] ? 'Selo restaurado (chefe vencido)' : 'Selo rompido: chefe à espera', feito: !!estado.chefes[o.chefe] }); }
+      else if (o.tipo === 'papel' && !estado.coletados[o.id]) l.push({ cat: 'item', x: o.x, y: o.y, nome: 'Papel perdido', desc: 'Item da missão "Os papéis perdidos"' });
+      else if (o.tipo === 'placa' && o.texto) l.push({ cat: 'placa', x: o.x, y: o.y, nome: 'Placa', desc: o.texto });
+      else if (o.tipo === 'boneco' || o.tipo === 'makiwara') l.push({ cat: 'treino', x: o.x, y: o.y, nome: 'Treino', desc: 'Boneco de treinamento' });
+      else if (o.tipo === 'cavernaBoca') l.push({ cat: 'saida', x: o.x, y: o.y, nome: 'Entrada de caverna', desc: 'Passagem para as cavernas' });
+    }
+    for (const e of (M.exits || [])) { const ok = !e.req || R(e.req); l.push({ cat: 'saida', x: e.x + (e.w || 1) / 2, y: e.y + (e.h || .6) / 2, nome: e.nome || 'Saída', desc: ok ? 'Entrada/saída' : 'Trancada: ' + ((e.req && e.req.msg) || 'requisito não cumprido'), tranca: !ok }); }
+    for (const p of (M.portoes || [])) { if (!p.nome) continue; const ok = !p.req || R(p.req); l.push({ cat: 'saida', x: p.x + p.w / 2 - 1, y: p.y + p.h / 2 - 1, nome: 'Portão: ' + p.nome, desc: ok ? 'Passagem entre regiões' : 'Trancado: ' + (p.req.msg || ''), tranca: !ok }); }
+    return l;
+  }
+  const COR_CAT = { npc: '#f4d03f', inimigo: '#e8402a', chefe: '#b06aff', item: '#ffffff', placa: '#c8a06a', treino: '#9be36b', saida: '#4fc8ff' };
+  function desenharPonto(g, p, x, y, k) {                                   // ícones dos marcadores automáticos (k = tamanho)
+    const c = COR_CAT[p.cat] || '#fff';
+    g.lineWidth = Math.max(1, k * .35); g.strokeStyle = LINHA;
+    switch (p.cat) {
+      case 'npc': g.fillStyle = c; g.beginPath(); g.arc(x, y - k * 1.2, k * .7, 0, TAU); g.fill(); g.stroke(); g.fillRect(x - k * .55, y - k * .6, k * 1.1, k * 1.1); g.strokeRect(x - k * .55, y - k * .6, k * 1.1, k * 1.1); break;
+      case 'inimigo': g.fillStyle = c; g.beginPath(); g.moveTo(x, y - k * 1.6); g.lineTo(x + k, y - k * .6); g.lineTo(x, y + k * .4); g.lineTo(x - k, y - k * .6); g.closePath(); g.fill(); g.stroke(); break;
+      case 'chefe': g.fillStyle = p.feito ? '#e0b44a' : c; g.beginPath(); for (let q = 0; q < 10; q++) { const a = -Math.PI / 2 + q * Math.PI / 5, r = q % 2 ? k * .7 : k * 1.6; g.lineTo(x + Math.cos(a) * r, y - k + Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); break;
+      case 'item': g.fillStyle = '#f6ecc8'; g.fillRect(x - k * .8, y - k * 1.6, k * 1.6, k * 1.4); g.strokeRect(x - k * .8, y - k * 1.6, k * 1.6, k * 1.4); g.fillStyle = '#a8743e'; g.fillRect(x - k * .9, y - k * 1.7, k * 1.8, k * .35); break;
+      case 'placa': g.fillStyle = c; g.fillRect(x - k * .8, y - k * 1.8, k * 1.6, k * .9); g.strokeRect(x - k * .8, y - k * 1.8, k * 1.6, k * .9); g.fillStyle = '#5a3a1e'; g.fillRect(x - k * .15, y - k * .9, k * .3, k); break;
+      case 'treino': g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y - k, k, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#d42a2a'; g.beginPath(); g.arc(x, y - k, k * .5, 0, TAU); g.fill(); break;
+      case 'saida': g.fillStyle = p.tranca ? '#8a8a96' : c; g.beginPath(); g.moveTo(x - k * .8, y); g.lineTo(x - k * .8, y - k); g.arc(x, y - k, k * .8, Math.PI, 0); g.lineTo(x + k * .8, y); g.closePath(); g.fill(); g.stroke(); if (p.tranca) { g.fillStyle = LINHA; g.fillRect(x - k * .25, y - k * .9, k * .5, k * .5); } break;
+    }
+  }
+  function desenharJogador(g, x, y, k, t) {
+    const a = (jog.dir || 0) * Math.PI / 4;
+    g.save(); g.translate(x, y); g.strokeStyle = 'rgba(253,251,246,' + (.5 + .4 * Math.sin(t * 5)) + ')'; g.lineWidth = Math.max(1, k * .3); g.beginPath(); g.arc(0, 0, k * 2.2, 0, TAU); g.stroke();
+    g.rotate(a); g.fillStyle = '#fdfbf6'; g.strokeStyle = '#0d1027'; g.lineWidth = Math.max(1.5, k * .45);
+    g.beginPath(); g.moveTo(k * 1.6, 0); g.lineTo(-k * 1.1, -k * 1.1); g.lineTo(-k * .4, 0); g.lineTo(-k * 1.1, k * 1.1); g.closePath(); g.stroke(); g.fill(); g.restore();
+  }
+  // ---------- marcações pessoais ----------
+  const ICONES = { bandeira: 'Bandeira', estrela: 'Estrela', alvo: 'Alvo', casa: 'Casa', interrogacao: 'Interrogação' };
+  const CORES = ['#f4d03f', '#e8402a', '#4fc8ff', '#9be36b', '#b06aff', '#fdfbf6'];
+  function carregarMarcas() {
+    try { const d = JSON.parse(localStorage.getItem(CHAVE) || 'null'); if (!d || !Array.isArray(d.marcas)) return [];
+      return d.marcas.filter(m => m && typeof m.mapa === 'string' && isFinite(m.x) && isFinite(m.y)).map(m => ({ id: String(m.id || Math.random()), mapa: m.mapa, x: +m.x, y: +m.y, nome: String(m.nome || 'Marcação').slice(0, 40), icone: ICONES[m.icone] ? m.icone : 'bandeira', cor: CORES.includes(m.cor) ? m.cor : CORES[0], desc: String(m.desc || '').slice(0, 300) }));
+    } catch (e) { return []; }
+  }
+  let marcas = carregarMarcas();
+  function salvarMarcas() { try { localStorage.setItem(CHAVE, JSON.stringify({ versao: 1, marcas })); } catch (e) {} }
+  function desenharMarca(g, m, x, y, k, sel) {
+    g.save(); g.translate(x, y); g.lineWidth = Math.max(1, k * .35); g.strokeStyle = LINHA; g.fillStyle = m.cor;
+    // pino com base: as marcações pessoais ficam "fincadas" e com sombra, diferentes dos ícones automáticos
+    g.fillStyle = 'rgba(20,10,30,.35)'; g.beginPath(); g.ellipse(0, 0, k * 1.2, k * .5, 0, 0, TAU); g.fill();
+    g.fillStyle = m.cor; g.strokeStyle = LINHA; g.fillRect(-k * .15, -k * 3.2, k * .3, k * 3.2);
+    g.translate(0, -k * 3.6);
+    switch (m.icone) {
+      case 'bandeira': g.beginPath(); g.moveTo(0, -k); g.lineTo(k * 2, -k * .3); g.lineTo(0, k * .4); g.closePath(); g.fill(); g.stroke(); break;
+      case 'estrela': g.beginPath(); for (let q = 0; q < 10; q++) { const a = -Math.PI / 2 + q * Math.PI / 5, r = q % 2 ? k * .5 : k * 1.2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); break;
+      case 'alvo': g.beginPath(); g.arc(0, 0, k * 1.1, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, k * .6, 0, TAU); g.fill(); g.fillStyle = m.cor; g.beginPath(); g.arc(0, 0, k * .28, 0, TAU); g.fill(); break;
+      case 'casa': g.beginPath(); g.moveTo(-k, 0); g.lineTo(0, -k * 1.1); g.lineTo(k, 0); g.lineTo(k * .7, 0); g.lineTo(k * .7, k * .9); g.lineTo(-k * .7, k * .9); g.lineTo(-k * .7, 0); g.closePath(); g.fill(); g.stroke(); break;
+      default: g.beginPath(); g.arc(0, 0, k * 1.1, 0, TAU); g.fill(); g.stroke(); g.fillStyle = LINHA; g.font = 'bold ' + Math.round(k * 1.6) + 'px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', 0, k * .1);
+    }
+    if (sel) { g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, k * .3); g.beginPath(); g.arc(0, 0, k * 1.9, 0, TAU); g.stroke(); }
     g.restore();
-    // marcador do jogador (sempre no centro, aponta para onde ele está virado)
-    const a = (jog.dir || 0) * Math.PI / 4;                                   // mesma direção de dirDeVetor (0 = direita, 2 = baixo...)
-    g.setTransform(1, 0, 0, 1, W / 2, W / 2); g.rotate(a);
-    g.fillStyle = '#fdfbf6'; g.strokeStyle = '#0d1027'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -5); g.lineTo(-2, 0); g.lineTo(-5, 5); g.closePath(); g.stroke(); g.fill();
-    g.setTransform(1, 0, 0, 1, 0, 0);
   }
-  return { desenhar };
+
+  /* =================== MINIMAPA =================== */
+  const RAIO = 24;
+  function desenharMini(t) {
+    const W = elMini.width, M = mapa, B = montar(M); if (!B) return;
+    const raio = M.grande ? RAIO : Math.min(RAIO, Math.max(M.w, M.h) * .75), s = W / 2 / raio / Math.SQRT2, z = s / S;   // z = escala do mapa base
+    const [jx, jy] = isoB(B, jog.x, jog.y);
+    const g = gMini; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
+    g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2, 0, TAU); g.clip();
+    g.fillStyle = '#0d1027'; g.fillRect(0, 0, W, W);
+    g.imageSmoothingEnabled = true; g.drawImage(B.c, W / 2 - jx * z, W / 2 - jy * z, B.W * z, B.H * z);
+    nevoa(g, B, (X, Y) => [W / 2 + (X - jx) * z, W / 2 + (Y - jy) * z], z);
+    const tela = (x, y) => { const [X, Y] = isoB(B, x, y); return [W / 2 + (X - jx) * z, W / 2 + (Y - jy) * z]; };
+    for (const p of pontos(M)) { if (p.cat === 'placa' || p.cat === 'treino') continue; const [x, y] = tela(p.x, p.y); if (Math.hypot(x - W / 2, y - W / 2) < W / 2 - 4) desenharPonto(g, p, x, y, 3); }
+    for (const m of marcas) if (m.mapa === M.id) { const [x, y] = tela(m.x, m.y); if (Math.hypot(x - W / 2, y - W / 2) < W / 2 - 6) desenharMarca(g, m, x, y, 2.4); }
+    g.restore();
+    desenharJogador(g, W / 2, W / 2, 3.2, t);
+  }
+  // partes do mundo ainda não exploradas: losangos escuros por cima (pedaços que o jogo ainda não gerou)
+  function nevoa(g, B, para, z) {
+    const M = B.M; if (!M.chunks) return;
+    g.fillStyle = 'rgba(8,10,24,.55)';
+    for (let cj = 0; cj < Math.ceil(M.h / CHUNK); cj++) for (let ci = 0; ci < Math.ceil(M.w / CHUNK); ci++) {
+      const ch = M.chunks.get(ci + ',' + cj); if (ch && ch.gerado) continue;
+      const x0 = ci * CHUNK, y0 = cj * CHUNK, x1 = Math.min(M.w, x0 + CHUNK), y1 = Math.min(M.h, y0 + CHUNK);
+      const P = [isoB(B, x0, y0), isoB(B, x1, y0), isoB(B, x1, y1), isoB(B, x0, y1)].map(([X, Y]) => para(X, Y));
+      g.beginPath(); P.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill();
+    }
+  }
+
+  /* =================== MAPA EM TELA CHEIA =================== */
+  const vista = { z: 1, cx: 0, cy: 0 };
+  const filtros = { npc: true, inimigo: true, chefe: true, saida: true, item: true, placa: true, treino: true, marcas: true, nomes: true };
+  let sel = null, movendo = false, editando = null, infoAtual = null, confirmarTudo = false;
+  function montarUI() {
+    if (ui) return ui;
+    const s = document.createElement('section'); s.id = 'mapaTela'; s.hidden = true;
+    s.innerHTML = `<header class="mpTopo"><h2 class="mpTitulo">Mapa</h2><span class="mpRegiao"></span>
+        <nav class="mpBotoes"><button type="button" data-a="centro" title="Centralizar no Akira">◎ Akira</button><button type="button" data-a="geral" title="Visão geral">⤢ Geral</button>
+        <button type="button" data-a="mais" title="Aproximar">＋</button><button type="button" data-a="menos" title="Afastar">－</button><button type="button" data-a="filtros">Filtros</button><button type="button" data-a="legenda">Legenda</button><button type="button" data-a="fechar" class="mpFechar" title="Fechar (Esc ou N)">✕</button></nav></header>
+      <canvas class="mpCanvas"></canvas>
+      <aside class="mpPainel"></aside>
+      <div class="mpFiltros" hidden></div><div class="mpLegenda" hidden></div>
+      <p class="mpDica">Arraste para mover • roda do mouse ou ＋/－ para zoom • clique para marcar um lugar • Esc ou N fecha</p>`;
+    document.body.appendChild(s);
+    const q = c => s.querySelector(c);
+    ui = { s, cv: q('.mpCanvas'), painel: q('.mpPainel'), filtros: q('.mpFiltros'), legenda: q('.mpLegenda'), regiao: q('.mpRegiao'), titulo: q('.mpTitulo') };
+    ui.g = ui.cv.getContext('2d');
+    s.querySelector('.mpBotoes').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; acao(b.dataset.a); });
+    // filtros e legenda
+    const NOMES = { npc: 'Personagens', inimigo: 'Inimigos', chefe: 'Chefes / selos', saida: 'Entradas e saídas', item: 'Itens de missão', placa: 'Placas', treino: 'Treino', marcas: 'Minhas marcações', nomes: 'Nomes das regiões' };
+    ui.filtros.innerHTML = '<h3>Mostrar</h3>' + Object.keys(NOMES).map(k => `<label><input type="checkbox" data-f="${k}" checked> ${NOMES[k]}</label>`).join('');
+    ui.filtros.addEventListener('change', e => { const f = e.target.dataset.f; if (f) filtros[f] = e.target.checked; });
+    const leg = document.createElement('canvas'); leg.width = 24; leg.height = 24;
+    ui.legenda.innerHTML = '<h3>Legenda</h3>' + [['jogador', 'Akira (você)'], ['npc', 'Personagem'], ['inimigo', 'Inimigo'], ['chefe', 'Chefe / selo'], ['saida', 'Entrada, porta ou portão'], ['item', 'Item de missão'], ['placa', 'Placa'], ['treino', 'Boneco de treino'], ['marca', 'Sua marcação'], ['nevoa', 'Área ainda não explorada']].map(([k, n]) => `<p><canvas width="24" height="24" data-l="${k}"></canvas> ${n}</p>`).join('');
+    ui.legenda.querySelectorAll('canvas').forEach(c => { const g = c.getContext('2d'), k = c.dataset.l; if (k === 'jogador') desenharJogador(g, 12, 12, 3.2, 0); else if (k === 'marca') desenharMarca(g, { cor: '#f4d03f', icone: 'bandeira' }, 10, 22, 3.2); else if (k === 'nevoa') { g.fillStyle = 'rgba(8,10,24,.7)'; g.fillRect(3, 6, 18, 12); g.strokeStyle = '#5a6490'; g.strokeRect(3, 6, 18, 12); } else desenharPonto(g, { cat: k }, 12, 20, 4); });
+    // arrastar, zoom e cliques
+    const ptrs = new Map(); let arrasto = null, pinça = null;
+    ui.cv.addEventListener('pointerdown', e => { if (!aberto) return; ui.cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); if (ptrs.size === 1) arrasto = { x: e.clientX, y: e.clientY, cx: vista.cx, cy: vista.cy, moveu: false }; else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinça = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: vista.z }; arrasto = null; } });
+    ui.cv.addEventListener('pointermove', e => { if (!aberto || !ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pinça && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; vista.z = limitarZoom(pinça.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinça.d); return; }
+      if (arrasto) { const dx = e.clientX - arrasto.x, dy = e.clientY - arrasto.y; if (Math.hypot(dx, dy) > 5) arrasto.moveu = true; if (arrasto.moveu) { vista.cx = arrasto.cx - dx / vista.z; vista.cy = arrasto.cy - dy / vista.z; } } });
+    const solta = e => { if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); if (ptrs.size < 2) pinça = null; if (arrasto && !arrasto.moveu && e.type === 'pointerup') clique(e); if (!ptrs.size) arrasto = null; };
+    ui.cv.addEventListener('pointerup', solta); ui.cv.addEventListener('pointercancel', solta);
+    ui.cv.addEventListener('wheel', e => { if (!aberto) return; e.preventDefault(); const r = ui.cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, [bx, by] = daTela(mx, my); vista.z = limitarZoom(vista.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)); vista.cx = bx - (mx - r.width / 2) / vista.z; vista.cy = by - (my - r.height / 2) / vista.z; }, { passive: false });
+    ui.painel.addEventListener('click', e => { const b = e.target.closest('button'); if (b) acaoPainel(b.dataset.p, b); });
+    ui.painel.addEventListener('input', e => { if (!editando) return; const f = e.target.dataset.c; if (f) editando[f] = e.target.value; });
+    return ui;
+  }
+  const limitarZoom = z => Math.max(.18, Math.min(6, z));
+  const daTela = (mx, my) => { const r = ui.cv.getBoundingClientRect(); return [vista.cx + (mx - r.width / 2) / vista.z, vista.cy + (my - r.height / 2) / vista.z]; };
+  const paraTela = (X, Y) => { const r = ui.cv.getBoundingClientRect(); return [r.width / 2 + (X - vista.cx) * vista.z, r.height / 2 + (Y - vista.cy) * vista.z]; };
+  function centralizar() { const B = base; if (!B) return; const [x, y] = isoB(B, jog.x, jog.y); vista.cx = x; vista.cy = y; if (vista.z < 1.6) vista.z = 2; }
+  function visaoGeral() { const B = base; if (!B) return; const r = ui.cv.getBoundingClientRect(); vista.z = limitarZoom(Math.min(r.width / B.W, r.height / B.H) * .95); vista.cx = B.W / 2; vista.cy = B.H / 2; }
+  function acao(a) {
+    if (a === 'fechar') fechar();
+    else if (a === 'centro') centralizar();
+    else if (a === 'geral') visaoGeral();
+    else if (a === 'mais') vista.z = limitarZoom(vista.z * 1.4);
+    else if (a === 'menos') vista.z = limitarZoom(vista.z / 1.4);
+    else if (a === 'filtros') { ui.filtros.hidden = !ui.filtros.hidden; ui.legenda.hidden = true; }
+    else if (a === 'legenda') { ui.legenda.hidden = !ui.legenda.hidden; ui.filtros.hidden = true; }
+  }
+  // clique no mapa: mover marcação, selecionar marcação, ver um local ou criar marcação nova
+  function clique(e) {
+    const r = ui.cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, B = base; if (!B) return;
+    const [X, Y] = daTela(mx, my), [tx, ty] = doIso(B, X, Y);
+    if (tx < 0 || ty < 0 || tx >= B.M.w || ty >= B.M.h) return;
+    if (movendo && sel) { sel.x = tx; sel.y = ty; movendo = false; salvarMarcas(); mostrarMarca(sel); return; }
+    const k = marcaK(), perto = (x, y, lim) => { const [sx, sy] = paraTela(...isoB(B, x, y)); return Math.hypot(sx - mx, sy - (my + k * 2.5)) < lim; };
+    if (filtros.marcas) { const m = marcas.find(m => m.mapa === B.M.id && perto(m.x, m.y, 14)); if (m) { sel = m; mostrarMarca(m); return; } }
+    const p = pontos(B.M).find(p => filtros[p.cat] && (() => { const [sx, sy] = paraTela(...isoB(B, p.x, p.y)); return Math.hypot(sx - mx, sy - my + 6) < 11; })());
+    if (p) { sel = null; mostrarInfo(p); return; }
+    sel = null; novaMarca(tx, ty);
+  }
+  const marcaK = () => Math.max(2.4, Math.min(5, vista.z * 2));
+  const escH = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  function regiaoDe(x, y) { const M = mapa; if (M.grande && M.regiaoEm) { const R = M.regiaoEm(x, y); return R ? R.nome : ''; } return M.nome || ''; }
+  function painelPadrao() {
+    editando = null; confirmarTudo = false;
+    const n = marcas.filter(m => m.mapa === mapa.id).length;
+    ui.painel.innerHTML = `<h3>${escH(mapa.grande ? 'Mundo' : mapa.nome)}</h3><p>Você está em: <b>${escH(regiaoDe(jog.x, jog.y))}</b></p>
+      <p><small>Clique num lugar do mapa para criar uma marcação. Clique num ícone para ver o que é.</small></p>
+      <p>Marcações neste mapa: <b>${n}</b></p>${marcas.length ? '<button type="button" data-p="apagarTudo">Apagar todas as marcações</button>' : ''}`;
+  }
+  function mostrarInfo(p) {
+    editando = null;
+    ui.painel.innerHTML = `<h3>${escH(p.nome)}</h3><p>${escH(p.desc || '')}</p><p><small>Região: ${escH(regiaoDe(p.x, p.y))}</small></p><button type="button" data-p="voltar">Voltar</button>`;
+  }
+  function formMarca(m, nova) {
+    editando = m;
+    ui.painel.innerHTML = `<h3>${nova ? 'Nova marcação' : 'Editar marcação'}</h3>
+      <label>Nome <input type="text" maxlength="40" data-c="nome" value="${escH(m.nome)}"></label>
+      <p>Ícone: ${Object.keys(ICONES).map(k => `<button type="button" data-p="icone" data-v="${k}" class="${m.icone === k ? 'sel' : ''}">${ICONES[k]}</button>`).join('')}</p>
+      <p>Cor: ${CORES.map(c => `<button type="button" data-p="cor" data-v="${c}" class="mpCor${m.cor === c ? ' sel' : ''}" aria-label="cor ${c}"></button>`).join('')}</p>
+      <label>Descrição (opcional) <textarea maxlength="300" rows="3" data-c="desc">${escH(m.desc)}</textarea></label>
+      <p><button type="button" data-p="salvar">Salvar</button>${nova ? '' : '<button type="button" data-p="mover">Mover</button><button type="button" data-p="excluir">Excluir</button>'}<button type="button" data-p="cancelar">Cancelar</button></p>`;
+    ui.painel.querySelectorAll('.mpCor').forEach(b => b.style.setProperty('--c', b.dataset.v));   // amostra de cor de cada botão
+    const inp = ui.painel.querySelector('input'); if (inp && nova) inp.focus();
+  }
+  function novaMarca(x, y) { const m = { id: 'm' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), mapa: mapa.id, x, y, nome: 'Marcação ' + (marcas.length + 1), icone: 'bandeira', cor: CORES[0], desc: '', nova: true }; sel = m; formMarca(m, true); }
+  function mostrarMarca(m) {
+    editando = null;
+    ui.painel.innerHTML = `<h3>${escH(m.nome)}</h3>${m.desc ? '<p>' + escH(m.desc) + '</p>' : ''}<p><small>${ICONES[m.icone]} • ${escH(regiaoDe(m.x, m.y))}</small></p>
+      <p><button type="button" data-p="editar">Editar</button><button type="button" data-p="mover">Mover</button><button type="button" data-p="excluir">Excluir</button><button type="button" data-p="voltar">Voltar</button></p>${movendo ? '<p><b>Clique no novo lugar da marcação.</b></p>' : ''}`;
+  }
+  function acaoPainel(a, b) {
+    const m = editando || sel;
+    if (a === 'voltar' || a === 'cancelar') { if (m && m.nova) sel = null; movendo = false; painelPadrao(); return; }
+    if (a === 'icone' && editando) { editando.icone = b.dataset.v; formMarca(editando, !!editando.nova); return; }
+    if (a === 'cor' && editando) { editando.cor = b.dataset.v; formMarca(editando, !!editando.nova); return; }
+    if (a === 'salvar' && editando) { const e = editando; e.nome = (e.nome || '').trim().slice(0, 40) || 'Marcação'; e.desc = (e.desc || '').slice(0, 300); if (e.nova) { delete e.nova; marcas.push(e); } salvarMarcas(); sel = e; mostrarMarca(e); return; }
+    if (a === 'editar' && sel) { formMarca(sel, false); return; }
+    if (a === 'mover' && sel) { if (sel.nova) return; movendo = true; mostrarMarca(sel); return; }
+    if (a === 'excluir' && sel) { marcas = marcas.filter(x => x !== sel); sel = null; salvarMarcas(); painelPadrao(); return; }
+    if (a === 'apagarTudo') { ui.painel.innerHTML = '<h3>Apagar todas?</h3><p>Isso remove todas as suas marcações de todos os mapas.</p><button type="button" data-p="confirmarTudo">Sim, apagar</button><button type="button" data-p="voltar">Não</button>'; return; }
+    if (a === 'confirmarTudo') { marcas = []; sel = null; salvarMarcas(); painelPadrao(); return; }
+  }
+  function desenharTela(t) {
+    const B = montar(mapa); if (!B) return;
+    const r = ui.cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2), cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+    if (ui.cv.width !== cw || ui.cv.height !== ch) { ui.cv.width = cw; ui.cv.height = ch; }
+    const g = ui.g; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#0d1027'; g.fillRect(0, 0, r.width, r.height);
+    const [ox, oy] = paraTela(0, 0);
+    g.imageSmoothingEnabled = vista.z < 1; g.drawImage(B.c, ox, oy, B.W * vista.z, B.H * vista.z);
+    nevoa(g, B, (X, Y) => paraTela(X, Y), vista.z);
+    // nomes das regiões (os nomes reais do jogo)
+    if (filtros.nomes && mapa.grande && mapa.cel) {
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'bold ' + Math.round(Math.max(11, Math.min(20, vista.z * 9))) + 'px "Pixelify Sans", monospace';
+      for (const linha of mapa.cel) for (const R of linha) { if (!R || !R.nome || R.lago) continue; const [x, y] = paraTela(...isoB(B, R.x0 + RW / 2, R.y0 + RW / 2)); const atual = R === mapa.regAtual; g.lineWidth = 4; g.strokeStyle = '#0d1027'; g.strokeText(R.nome, x, y); g.fillStyle = atual ? '#f4d03f' : '#fdfbf6'; g.fillText(R.nome, x, y); }
+    }
+    const k = Math.max(3, Math.min(6, vista.z * 2.4));
+    for (const p of pontos(mapa)) { if (!filtros[p.cat]) continue; const [x, y] = paraTela(...isoB(B, p.x, p.y)); if (x < -20 || y < -20 || x > r.width + 20 || y > r.height + 20) continue; desenharPonto(g, p, x, y, k); if (vista.z >= 2.2 && (p.cat === 'npc' || p.cat === 'saida' || p.cat === 'chefe')) { g.font = '10px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#0d1027'; g.strokeText(p.nome, x, y + 11); g.fillStyle = '#fff'; g.fillText(p.nome, x, y + 11); } }
+    if (filtros.marcas) { const km = marcaK(); for (const m of marcas) if (m.mapa === mapa.id) { const [x, y] = paraTela(...isoB(B, m.x, m.y)); desenharMarca(g, m, x, y, km, m === sel); } if (sel && sel.nova) { const [x, y] = paraTela(...isoB(B, sel.x, sel.y)); desenharMarca(g, sel, x, y, km, true); } }
+    const [jx, jy] = paraTela(...isoB(B, jog.x, jog.y)); desenharJogador(g, jx, jy, k * .9, t);
+    ui.regiao.textContent = regiaoDe(jog.x, jog.y);
+  }
+  function abrir() {
+    if (aberto || !podeAbrir()) return false;
+    montarUI(); if (!montar(mapa)) return false;
+    aberto = true; ui.s.hidden = false; document.body.classList.add('mapaAberto');
+    for (const k in teclas) teclas[k] = false; edge = {};
+    ui.titulo.textContent = mapa.grande ? 'Mapa do mundo' : mapa.id === 'caverna' ? 'Mapa das cavernas' : mapa.nome;
+    sel = null; movendo = false; ui.filtros.hidden = true; ui.legenda.hidden = true;
+    requestAnimationFrame(() => { if (mapa.grande) centralizar(); else visaoGeral(); painelPadrao(); });   // salas e cavernas: mostra tudo
+    return true;
+  }
+  function fechar() {
+    if (!aberto) return; aberto = false; if (ui) ui.s.hidden = true; document.body.classList.remove('mapaAberto');
+    sel = null; movendo = false; editando = null;
+    for (const k in teclas) teclas[k] = false; edge = {};                  // nada "sobra" do teclado ao voltar pro jogo
+    if (canvas) canvas.focus();
+  }
+  // teclado: N abre/fecha; Esc fecha. Com o mapa aberto, as teclas não chegam ao jogo (dá pra digitar nas marcações).
+  addEventListener('keydown', e => {
+    if (aberto) {
+      const digitando = e.target && /INPUT|TEXTAREA/.test(e.target.tagName);
+      if (!digitando && (e.code === 'Escape' || e.code === 'KeyN')) { e.preventDefault(); fechar(); }
+      else if (!digitando && (e.code === 'Equal' || e.code === 'NumpadAdd')) acao('mais');
+      else if (!digitando && (e.code === 'Minus' || e.code === 'NumpadSubtract')) acao('menos');
+      e.stopImmediatePropagation(); return;
+    }
+    if (e.code === 'KeyN' && !e.repeat && !e.ctrlKey && !e.altKey && podeAbrir()) { e.preventDefault(); e.stopImmediatePropagation(); abrir(); }
+  }, true);
+  elMini.addEventListener('pointerdown', e => { if (!podeAbrir()) return; e.preventDefault(); abrir(); });
+  // chamado a cada quadro pelo loop do jogo
+  function quadro(dt) {
+    const pode = explorando();
+    if (!pode && aberto) fechar();                                         // entrou no torneio, menu principal ou cena: fecha na hora
+    if (elMini.hidden === pode) elMini.hidden = !pode;
+    if (!pode) return;
+    verT -= dt; if (verT <= 0 && base && base.M === mapa && base.chave !== chaveDe(mapa)) { completar(base); verT = 1.5; } else if (verT <= 0) verT = 1.5;
+    const t = performance.now() / 1000;
+    if (aberto) desenharTela(t); else desenharMini(t);
+  }
+  return { quadro, abrir, fechar, get aberto() { return aberto; }, get marcas() { return marcas; }, explorando, CHAVE };
 })();
 
 let ultimo = 0;
@@ -9806,13 +10165,13 @@ function loop(agora) {                                                // um loop
   if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
   else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
   else if (MODO_TELA === 'torneio') { try { Luta2D.quadro(dt); } catch (e) { console.error(e); } }
-  else {
+  else if (!MapaMundo.aberto) {                                          // com o mapa em tela cheia aberto, a partida fica pausada
     const a = performance.now(); atualizar(dt); const b = performance.now(); renderizar(dt); const c = performance.now();
     perfQuadro(Math.min(250, agora - (loop.ant || agora - 16.7)), b - a, c - b);
     if (c - a < 9 && (loop.k = (loop.k || 0) + 1) % 3 === 0) preaquecer(null, 3);   // sobrou tempo no quadro: adianta um pouco do que vem pela frente
   }
   loop.ant = agora;
-  try { Minimapa.desenhar(dt); } catch (e) {}
+  try { MapaMundo.quadro(dt); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
 }
 
@@ -9833,7 +10192,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
