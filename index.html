@@ -4839,11 +4839,12 @@ function juntas(P) {
 }
 
 /* ---------- 3. DESENHO ---------- */
-const OUT = '#1a1230';
+const OUT = '#221033';                                         // linha interna: roxo bem escuro (não preto puro)
 let COR = { pele: '#f6c19a', peleS: '#d98d6c', gi: '#fdfbf6', giS: '#aeb8d8', giSS: '#7e8cb8', cab: '#222850', cabS: '#10142e', cabL: '#3f58b0', cabL2: '#8fa8f0' };
 const LUZ = [.5, -.85];                                         // direção da luz (frente e de cima)
 const hx = v => ('0' + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2);
 function esc(hex, f) { const n = parseInt(hex.slice(1), 16); return '#' + hx(((n >> 16) & 255) * f) + hx(((n >> 8) & 255) * f) + hx((n & 255) * f); }   // escurece
+function quente(hex) { const n = parseInt(hex.slice(1), 16); return '#' + hx(((n >> 16) & 255) * .9) + hx(((n >> 8) & 255) * .7) + hx((n & 255) * .66); }   // sombra quente
 function claro(hex, f) { const n = parseInt(hex.slice(1), 16), m = k => ((n >> k) & 255) + (255 - ((n >> k) & 255)) * f; return '#' + hx(m(16)) + hx(m(8)) + hx(m(0)); }   // clareia
 const COR_AKIRA = COR;
 let EST = null;
@@ -4851,11 +4852,11 @@ let EST = null;
 function fazEstilo(c) {
   const branco = c.gi === '#fdfbf6';
   const cor = {
-    pele: c.pele, peleS: esc(c.pele, .82),
-    gi: c.gi, giS: c.giS || (branco ? '#aeb8d8' : esc(c.gi, .74)), giSS: c.giSS || (branco ? '#7e8cb8' : esc(c.gi, .55)),
+    pele: c.pele, peleS: quente(c.pele),                                // sombra da pele puxada pro vermelho (anime pintado)
+    gi: c.gi, giS: c.giS || (branco ? '#b4b5e4' : esc(c.gi, .74)), giSS: c.giSS || (branco ? '#7d7cc4' : esc(c.gi, .55)),
     cab: c.cab, cabS: esc(c.cab, .5), cabL: c.cabL || claro(c.cab, .28), cabL2: claro(c.cab, .55)
   };
-  if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#222850', cabS: '#10142e', cabL: '#3f58b0', cabL2: '#8fa8f0' });
+  if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#232a62', cabS: '#11143a', cabL: '#4a6ad0', cabL2: '#b4c8ff' });
   return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura };
 }
 const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: null, externo: true, capa: '#8a1230', aura: true });   // como na ficha: cabelo espetado azul-marinho, sem bandana
@@ -4903,7 +4904,7 @@ function forma(g, caminho, base, sombra, desl, linha) {
 const poli = (pts, fech) => g => { g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); if (fech !== false) g.closePath(); };
 
 function mao(g, h, ang) {                                      // punho fechado
-  forma(g, c => c.arc(h[0], h[1], 6.4, 0, 7), COR.pele, COR.peleS, 2.2, 2.8);
+  forma(g, c => c.arc(h[0], h[1], 7, 0, 7), COR.pele, COR.peleS, 2.2, 2.8);
   const c = Math.cos(ang * D2R), s = Math.sin(ang * D2R);
   g.lineWidth = 1.3; g.strokeStyle = '#9a5a44'; g.lineCap = 'round';
   for (const k of [-2.2, 0.4, 2.8]) { g.beginPath(); g.moveTo(h[0] + s * 2.5 + c * k, h[1] + c * 2.5 - s * k); g.lineTo(h[0] + s * 5.6 + c * k, h[1] + c * 5.6 - s * k); g.stroke(); }
@@ -4924,8 +4925,8 @@ function braco(g, S, J, U, F, ang) {
 function perna(g, q, k, a, P, pe, fFt) {
   // pé descalço (calcanhar mais largo que os dedos)
   const fd = [Math.sin(fFt * D2R), Math.cos(fFt * D2R)];
-  const tx = a[0] + fd[0] * 13, ty = a[1] + fd[1] * 13 + 1;
-  capsula(g, a[0], a[1] + 2, tx, ty, 6.1, 5, OUT); capsula(g, a[0], a[1] + 2, tx, ty, 4.4, 3.2, COR.peleS); capsula(g, a[0] - .6, a[1] + 1.4, tx - .6, ty - .6, 3, 2, COR.pele);
+  const tx = a[0] + fd[0] * 14, ty = a[1] + fd[1] * 14 + 1;
+  capsula(g, a[0], a[1] + 2, tx, ty, 6.6, 5.4, OUT); capsula(g, a[0], a[1] + 2, tx, ty, 4.9, 3.6, COR.peleS); capsula(g, a[0] - .6, a[1] + 1.4, tx - .6, ty - .6, 3.4, 2.3, COR.pele);
   membro2(g, q, k, a, 19, 15.5, 13, COR.gi, COR.giS);                                      // coxa + canela (calça larga), sem corte no joelho
   dobraJunta(g, q, k, a, 8, COR.giSS);
   g.lineWidth = 1.5; g.strokeStyle = COR.giSS; g.lineCap = 'round';                      // dobras da calça
@@ -4988,8 +4989,11 @@ function cabeca(g, J, P, faixa) {
     const c1 = [(b1[0] + tp[0]) / 2 + nx * curva, (b1[1] + tp[1]) / 2 + ny * curva], c2 = [(b2[0] + tp[0]) / 2 + nx * curva * .5, (b2[1] + tp[1]) / 2 + ny * curva * .5];
     const cam = c => { c.moveTo(b1[0], b1[1]); c.quadraticCurveTo(c1[0], c1[1], tp[0], tp[1]); c.quadraticCurveTo(c2[0], c2[1], b2[0], b2[1]); c.closePath(); };
     forma(g, cam, cor || COR.cab, COR.cabS, 2.4, 2.6);
+    g.save(); g.beginPath(); cam(g); g.clip();                          // brilho pintado ao longo da mecha
     g.beginPath(); g.moveTo(ra[0], ra[1]); g.quadraticCurveTo((ra[0] + tp[0]) / 2 + nx * curva * .6, (ra[1] + tp[1]) / 2 + ny * curva * .6, ra[0] + dx * .86, ra[1] + dy * .86);
-    g.lineWidth = 1.3; g.strokeStyle = COR.cabL; g.lineCap = 'round'; g.stroke();
+    g.lineWidth = 2.6; g.strokeStyle = COR.cabL; g.lineCap = 'round'; g.stroke();
+    g.beginPath(); g.moveTo(ra[0] + dx * .18, ra[1] + dy * .18); g.lineTo(ra[0] + dx * .45, ra[1] + dy * .45); g.lineWidth = 1.1; g.strokeStyle = COR.cabL2; g.stroke();
+    g.restore();
   };
   // cabelo de trás (atrás do rosto): muda conforme o tipo (espeto, curto, coque, longo, trança, rabo, careca)
   const H = EST.cabelo;
@@ -4998,7 +5002,8 @@ function cabeca(g, J, P, faixa) {
     for (const a of [rb, rb2]) { traco(g, a[0][0], a[0][1], a[1][0], a[1][1], 6.4, OUT); traco(g, a[1][0], a[1][1], a[2][0], a[2][1], 5.2, OUT); traco(g, a[0][0], a[0][1], a[1][0], a[1][1], 3.6, EST.banda); traco(g, a[1][0], a[1][1], a[2][0], a[2][1], 2.6, esc(EST.banda, .8)); }
   }
   if (H === 'espeto' || H === 'curto' || H === 'rabo') {
-    escM = H === 'espeto' ? 1 : .45;
+    escM = H === 'espeto' ? 1.12 : .45;
+    if (H === 'espeto') mecha([-8, -15], [0, -17], [-30, -38], 2, null, .8);   // espeto extra pra cima/trás (coroa de espetos)
     mecha([-11, -12], [-4, -16], [-36, -22], -6);
     mecha([-14, -4], [-12, -12], [-37, -6], -5);
     mecha([-13, 4], [-14, -4], [-31, 11], -4);
@@ -5028,6 +5033,7 @@ function cabeca(g, J, P, faixa) {
     c.bezierCurveTo(10.5, 10.5, 6, 15, 1.5, 14.5); c.bezierCurveTo(-6, 14, -12, 9, -13, -2); c.closePath();
   };
   forma(g, rosto, COR.pele, COR.peleS, 3, 3);
+  if (!P.costas) { g.save(); g.beginPath(); rosto(g); g.clip(); const bl = g.createRadialGradient(7, 8.5, 0, 7, 8.5, 4.5); bl.addColorStop(0, 'rgba(255,110,110,.35)'); bl.addColorStop(1, 'rgba(255,110,110,0)'); g.fillStyle = bl; g.fillRect(1, 3, 12, 11); g.restore(); }   // bochecha rosada
   if (!P.costas) {
   // olho
   const ox = 5.5, oy = 2.2;
@@ -5423,8 +5429,44 @@ function quadro(nome, i, sc, est, costas) {
     if (est.boca && P.mouth === 'closed') P.mouth = est.boca;
     (AKIRA_ANIMATIONS[nome].frente ? desenharFrente : desenhar)(g, P, est);
   }
+  if (!usaExt) acabamento(c, sc);
   if (CONF.pixel) pixelarCv(c);
   return (cacheQ[key] = c);
+}
+/* ---------- ACABAMENTO DE ANIME DESENHADO À MÃO ----------
+   Depois que o personagem é desenhado, a silhueta inteira ganha:
+   1) sombra de volume suave do lado oposto à luz (dá peso e "pintura" ao corpo);
+   2) luz de borda clara do lado da luz (recorte quente nas bordas);
+   3) contorno externo mais grosso que as linhas de dentro (silhueta forte e legível). */
+const ACAB = { borda: '#fff2da', sombra: '#2c1f5e', linha: '#1c0f2a' };
+let acA = null, acB = null;
+function acabamento(c, sc) {
+  const w = c.width, h = c.height;
+  if (!acA) { acA = novoCanvas(w, h); acB = novoCanvas(w, h); }
+  acA.width = acB.width = w; acA.height = acB.height = h;
+  const a = acA.getContext('2d'), b = acB.getContext('2d'), g = c.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // máscara de sombra: só a faixa da silhueta que fica longe da luz
+  const d2 = 4.2 * sc, d1 = 1.5 * sc;
+  a.clearRect(0, 0, w, h); a.drawImage(c, 0, 0); a.globalCompositeOperation = 'source-in'; a.fillStyle = ACAB.sombra; a.fillRect(0, 0, w, h);
+  a.globalCompositeOperation = 'destination-out'; a.drawImage(c, LUZ[0] * d2, LUZ[1] * d2); a.globalCompositeOperation = 'source-over';
+  b.clearRect(0, 0, w, h); b.filter = 'blur(' + (1.4 * sc).toFixed(2) + 'px)'; b.drawImage(acA, 0, 0); b.filter = 'none';
+  g.save(); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = .26; g.drawImage(acB, 0, 0); g.restore();
+  // luz de borda: a faixa fina da silhueta virada para a luz
+  const wo = 2.1 * sc;                                                   // começa por dentro do contorno (não clareia a linha)
+  a.clearRect(0, 0, w, h); a.drawImage(c, -LUZ[0] * wo, -LUZ[1] * wo); a.globalCompositeOperation = 'source-in'; a.fillStyle = ACAB.borda; a.fillRect(0, 0, w, h);
+  a.globalCompositeOperation = 'destination-out'; a.drawImage(c, -LUZ[0] * (wo + d1), -LUZ[1] * (wo + d1)); a.globalCompositeOperation = 'source-over';
+  g.save(); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = .5; g.drawImage(acA, 0, 0); g.restore();
+  // luz pintada: topo do corpo um pouco mais quente, pés um pouco mais frios (degradê suave, como arte pintada)
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,236,210,.14)'); gr.addColorStop(.55, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(70,50,140,.16)');
+  g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore();
+  // contorno externo: a silhueta escura carimbada em volta, por trás do desenho
+  b.clearRect(0, 0, w, h); b.drawImage(c, 0, 0); b.globalCompositeOperation = 'source-in'; b.fillStyle = ACAB.linha; b.fillRect(0, 0, w, h); b.globalCompositeOperation = 'source-over';
+  const r = Math.max(1, 1.25 * sc);
+  a.clearRect(0, 0, w, h);
+  for (let k = 0; k < 12; k++) { const an = k / 12 * Math.PI * 2; a.drawImage(acB, Math.cos(an) * r, Math.sin(an) * r); }
+  a.drawImage(c, 0, 0);
+  g.clearRect(0, 0, w, h); g.drawImage(acA, 0, 0);
 }
 function limparCache() { for (const k in cacheQ) delete cacheQ[k]; }
 // Monta a sprite sheet inteira (uma linha por animação) + JSON
