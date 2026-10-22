@@ -233,12 +233,12 @@
     .dlg-caixa { padding: 16px 14px 18px 18px; min-height: 76px; }
     .dlg-dica { display: none; }
   }
-  /* ===== MODO 3D (torneio e cenas) ===== */
-  body.modo3d #hud, body.modo3d #dica, body.modo3d #hudChefe, body.modo3d #ctxAcoes, body.modo3d #btnE, body.modo3d #btnM, body.modo3d #btnR { display: none !important; }
-  body.modo3d #aviso { top: auto; bottom: 22%; z-index: 8; }
-  #luta3d { position: fixed; inset: 0; z-index: 4; font-family: 'Pixelify Sans', system-ui, sans-serif; color: #fff; overflow: hidden; user-select: none; }
-  #luta3d[hidden] { display: none; }
-  #c3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; }
+  /* ===== MODO TORNEIO (lutas laterais e cenas no estilo da abertura) ===== */
+  body.modoTorneio #hud, body.modoTorneio #dica, body.modoTorneio #hudChefe, body.modoTorneio #ctxAcoes, body.modoTorneio #btnE, body.modoTorneio #btnM, body.modoTorneio #btnR { display: none !important; }
+  body.modoTorneio #aviso { top: auto; bottom: 22%; z-index: 8; }
+  #telaTorneio { position: fixed; inset: 0; z-index: 4; font-family: 'Pixelify Sans', system-ui, sans-serif; color: #fff; overflow: hidden; user-select: none; }
+  #telaTorneio[hidden] { display: none; }
+  #c2d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; }
   .l3topo { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: min(980px, 96vw); display: grid; grid-template-columns: 1fr 64px 1fr; gap: 10px; align-items: start; pointer-events: none; }
   .l3topo[hidden] { display: none; }
   .l3lado { display: grid; gap: 4px; }
@@ -2135,8 +2135,8 @@ const pegou = k => { const v = edge[k]; edge[k] = false; return !!v; };
 const joy = { x: 0, y: 0, id: null };
 const BLOQUEAR = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'];
 addEventListener('keydown', e => {
-  if (BLOQUEAR.includes(e.code) && (MODO_TELA === 'jogo' || MODO_TELA === 'luta3d')) e.preventDefault();
-  if (!e.repeat && MODO_TELA === 'luta3d') edge[e.code] = true;          // luta 3D: só os comandos de luta
+  if (BLOQUEAR.includes(e.code) && (MODO_TELA === 'jogo' || MODO_TELA === 'torneio')) e.preventDefault();
+  if (!e.repeat && MODO_TELA === 'torneio') edge[e.code] = true;          // torneio: só os comandos de luta
   if (!e.repeat && MODO_TELA === 'jogo') {
     edge[e.code] = true;
     if (e.code === 'KeyR' && e.shiftKey) reiniciar();
@@ -4853,7 +4853,7 @@ function fazEstilo(c) {
   if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#222850', cabS: '#10142e', cabL: '#3f58b0', cabL2: '#8fa8f0' });
   return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura };
 }
-const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: '#1c1c24', externo: true, capa: '#8a1230', aura: true });   // bandana preta na testa
+const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: null, externo: true, capa: '#8a1230', aura: true });   // como na ficha: cabelo espetado azul-marinho, sem bandana
 
 function traco(g, ax, ay, bx, by, w, cor) { g.strokeStyle = cor; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); }
 // Membro com contorno + sombra + luz (cel-shading)
@@ -8141,7 +8141,7 @@ const MenuP = (() => {
 })();
 
 /* ---------- sequência de início: abertura -> menu -> jogo (um loop só) ---------- */
-let MODO_TELA = 'abertura';                         // 'abertura' | 'menu' | 'jogo' | 'luta3d' (torneio e cenas 3D)
+let MODO_TELA = 'abertura';                         // 'abertura' | 'menu' | 'jogo' | 'torneio' (lutas do torneio e cenas)
 function comecarJogo(novo) {
   if (novo) { MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null; estado = estadoInicial(); estado.hp = maxHp(); }
   else carregarSave();
@@ -8171,610 +8171,187 @@ addEventListener('pointerdown', e => { if (MODO_TELA === 'abertura') pularAbertu
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (Som.iniciar(true) && MODO_TELA === 'menu') { Som.tocarMusica(); $('somDica').hidden = true; } }, { passive: true }));
 
 /* =====================================================================
-   MOTOR 3D (WebGL2, feito à mão — sem biblioteca externa)
-   Usado nas lutas oficiais do torneio e nas cenas de cinema.
-   Visual cartoon: luz em faixas (toon), contorno escuro, sombra no chão, partículas.
+   TORNEIO: VISUAL NO ESTILO DA ABERTURA (cenário em pixel art + personagens anime do jogo)
+   O cenário é pintado em "pixels de cena" (como o dojo da abertura) e ampliado sem borrar.
+   Os lutadores usam o MESMO desenho do jogo (Akira.quadro), com câmera que dá zoom e corta.
+   Medidas: 1 metro = 42 pixels de cena. Pés na linha GY. x = 0 é o meio do tatame.
    ===================================================================== */
-const Motor3D = (() => {
-  // ---------- matemática (matrizes 4x4 em coluna) ----------
-  const M = {
-    id: () => { const m = new Float32Array(16); m[0] = m[5] = m[10] = m[15] = 1; return m; },
-    mul(a, b, o) { o = o || new Float32Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k]; o[c * 4 + r] = s; } return o; },
-    persp(fov, asp, n, f) { const t = 1 / Math.tan(fov / 2), m = new Float32Array(16); m[0] = t / asp; m[5] = t; m[10] = (f + n) / (n - f); m[11] = -1; m[14] = 2 * f * n / (n - f); return m; },
-    olhar(e, a, u) {
-      let zx = e[0] - a[0], zy = e[1] - a[1], zz = e[2] - a[2], l = Math.hypot(zx, zy, zz); zx /= l; zy /= l; zz /= l;
-      let xx = u[1] * zz - u[2] * zy, xy = u[2] * zx - u[0] * zz, xz = u[0] * zy - u[1] * zx; l = Math.hypot(xx, xy, xz); xx /= l; xy /= l; xz /= l;
-      const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx, m = new Float32Array(16);
-      m[0] = xx; m[4] = xy; m[8] = xz; m[1] = yx; m[5] = yy; m[9] = yz; m[2] = zx; m[6] = zy; m[10] = zz;
-      m[12] = -(xx * e[0] + xy * e[1] + xz * e[2]); m[13] = -(yx * e[0] + yy * e[1] + yz * e[2]); m[14] = -(zx * e[0] + zy * e[1] + zz * e[2]); m[15] = 1; return m;
-    },
-    trs(p, r, s, o) {                                                      // posição, rotação (Y depois X depois Z), escala
-      o = o || new Float32Array(16);
-      const cy = Math.cos(r[1]), sy = Math.sin(r[1]), cx = Math.cos(r[0]), sx = Math.sin(r[0]), cz = Math.cos(r[2]), sz = Math.sin(r[2]);
-      // R = Ry * Rx * Rz
-      const r00 = cy * cz + sy * sx * sz, r01 = -cy * sz + sy * sx * cz, r02 = sy * cx;
-      const r10 = cx * sz, r11 = cx * cz, r12 = -sx;
-      const r20 = -sy * cz + cy * sx * sz, r21 = sy * sz + cy * sx * cz, r22 = cy * cx;
-      o[0] = r00 * s[0]; o[1] = r10 * s[0]; o[2] = r20 * s[0]; o[3] = 0;
-      o[4] = r01 * s[1]; o[5] = r11 * s[1]; o[6] = r21 * s[1]; o[7] = 0;
-      o[8] = r02 * s[2]; o[9] = r12 * s[2]; o[10] = r22 * s[2]; o[11] = 0;
-      o[12] = p[0]; o[13] = p[1]; o[14] = p[2]; o[15] = 1; return o;
-    },
-    ponto(m, x, y, z) { return [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]]; }
-  };
-  // ---------- geometrias (posição, normal, uv) ----------
-  function malha(pos, nor, uv, idx, cor, fase) { const nv = pos.length / 3; return { pos: new Float32Array(pos), nor: new Float32Array(nor), uv: new Float32Array(uv), idx: nv > 65535 ? new Uint32Array(idx) : new Uint16Array(idx), cor: cor ? new Float32Array(cor) : null, fase: fase ? new Float32Array(fase) : null, vao: null }; }
-  // junta várias peças numa malha só (cenário e torcida = 1 desenho só). itens: { m, mat, cor:[r,g,b], fase }
-  function juntar(itens) {
-    const P = [], N = [], U = [], I = [], C = [], FA = [];
-    for (const it of itens) {
-      const m = it.m, mt = it.mat, o = P.length / 3, n = m.pos.length / 3, c = it.cor || [1, 1, 1];
-      for (let k = 0; k < n; k++) {
-        const x = m.pos[k * 3], y = m.pos[k * 3 + 1], z = m.pos[k * 3 + 2], a = m.nor[k * 3], b = m.nor[k * 3 + 1], d = m.nor[k * 3 + 2];
-        P.push(mt[0] * x + mt[4] * y + mt[8] * z + mt[12], mt[1] * x + mt[5] * y + mt[9] * z + mt[13], mt[2] * x + mt[6] * y + mt[10] * z + mt[14]);
-        let nx = mt[0] * a + mt[4] * b + mt[8] * d, ny = mt[1] * a + mt[5] * b + mt[9] * d, nz = mt[2] * a + mt[6] * b + mt[10] * d; const l = Math.hypot(nx, ny, nz) || 1;
-        N.push(nx / l, ny / l, nz / l); U.push(m.uv[k * 2], m.uv[k * 2 + 1]); C.push(c[0], c[1], c[2]); FA.push(it.fase || 0);
-      }
-      for (let k = 0; k < m.idx.length; k++) I.push(m.idx[k] + o);
-    }
-    return malha(P, N, U, I, C, FA);
-  }
-  function caixa(w, h, d) {
-    const x = w / 2, y = h / 2, z = d / 2, P = [], N = [], U = [], I = [];
-    const face = (n, a, b, c, e) => { const o = P.length / 3; [a, b, c, e].forEach(v => { P.push(...v); N.push(...n); }); U.push(0, 0, 1, 0, 1, 1, 0, 1); I.push(o, o + 1, o + 2, o, o + 2, o + 3); };
-    face([0, 0, 1], [-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]); face([0, 0, -1], [x, -y, -z], [-x, -y, -z], [-x, y, -z], [x, y, -z]);
-    face([1, 0, 0], [x, -y, z], [x, -y, -z], [x, y, -z], [x, y, z]); face([-1, 0, 0], [-x, -y, -z], [-x, -y, z], [-x, y, z], [-x, y, -z]);
-    face([0, 1, 0], [-x, y, z], [x, y, z], [x, y, -z], [-x, y, -z]); face([0, -1, 0], [-x, -y, -z], [x, -y, -z], [x, -y, z], [-x, -y, z]);
-    return malha(P, N, U, I);
-  }
-  function esfera(r, sg, an) {                                              // sg = segmentos (pouca coisa = cara de cartoon facetado)
-    sg = sg || 14; an = an || 10; const P = [], N = [], U = [], I = [];
-    for (let i = 0; i <= an; i++) { const v = i / an, t = v * Math.PI; for (let j = 0; j <= sg; j++) { const u = j / sg, f = u * Math.PI * 2, nx = Math.sin(t) * Math.sin(f), ny = Math.cos(t), nz = Math.sin(t) * Math.cos(f); P.push(nx * r, ny * r, nz * r); N.push(nx, ny, nz); U.push(u, v); } }
-    for (let i = 0; i < an; i++) for (let j = 0; j < sg; j++) { const a = i * (sg + 1) + j, b = a + sg + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
-    return malha(P, N, U, I);
-  }
-  function capsula(r, len, sg) {                                            // de y = 0 até y = -len (pendurada, como um membro)
-    sg = sg || 10; const an = 8, P = [], N = [], U = [], I = [];
-    for (let i = 0; i <= an; i++) { const v = i / an, t = v * Math.PI, ny = Math.cos(t), off = i <= an / 2 ? 0 : -len; for (let j = 0; j <= sg; j++) { const f = j / sg * Math.PI * 2, nx = Math.sin(t) * Math.sin(f), nz = Math.sin(t) * Math.cos(f); P.push(nx * r, ny * r + off, nz * r); N.push(nx, ny, nz); U.push(j / sg, v); } }
-    for (let i = 0; i < an; i++) for (let j = 0; j < sg; j++) { const a = i * (sg + 1) + j, b = a + sg + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
-    return malha(P, N, U, I);
-  }
-  function cilindro(r1, r2, h, sg, tampa) {                                 // de y = 0 até y = h
-    sg = sg || 12; const P = [], N = [], U = [], I = [], k = (r1 - r2) / h;
-    for (let j = 0; j <= sg; j++) { const f = j / sg * Math.PI * 2, s = Math.sin(f), c = Math.cos(f), l = Math.hypot(1, k); P.push(s * r1, 0, c * r1, s * r2, h, c * r2); N.push(s / l, k / l, c / l, s / l, k / l, c / l); U.push(j / sg, 0, j / sg, 1); }
-    for (let j = 0; j < sg; j++) { const a = j * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-    if (tampa !== false) [[0, r1, -1], [h, r2, 1]].forEach(([y, r, n]) => { if (r <= 0) return; const o = P.length / 3; P.push(0, y, 0); N.push(0, n, 0); U.push(.5, .5); for (let j = 0; j <= sg; j++) { const f = j / sg * Math.PI * 2; P.push(Math.sin(f) * r, y, Math.cos(f) * r); N.push(0, n, 0); U.push(.5 + Math.sin(f) / 2, .5 + Math.cos(f) / 2); } for (let j = 0; j < sg; j++) n > 0 ? I.push(o, o + j + 1, o + j + 2) : I.push(o, o + j + 2, o + j + 1); });
-    return malha(P, N, U, I);
-  }
-  function toro(R, r, sg, an) {
-    sg = sg || 16; an = an || 6; const P = [], N = [], U = [], I = [];
-    for (let i = 0; i <= sg; i++) { const a = i / sg * Math.PI * 2; for (let j = 0; j <= an; j++) { const b = j / an * Math.PI * 2, nx = Math.cos(a) * Math.cos(b), ny = Math.sin(b), nz = Math.sin(a) * Math.cos(b); P.push(Math.cos(a) * R + nx * r, ny * r, Math.sin(a) * R + nz * r); N.push(nx, ny, nz); U.push(i / sg, j / an); } }
-    for (let i = 0; i < sg; i++) for (let j = 0; j < an; j++) { const a = i * (an + 1) + j, b = a + an + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
-    return malha(P, N, U, I);
-  }
-  function plano(w, d, rep) { rep = rep || 1; const x = w / 2, z = d / 2; return malha([-x, 0, z, x, 0, z, x, 0, -z, -x, 0, -z], [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], [0, 0, rep, 0, rep, rep, 0, rep], [0, 1, 2, 0, 2, 3]); }
-  function quadV(w, h) { const x = w / 2; return malha([-x, 0, 0, x, 0, 0, x, h, 0, -x, h, 0], [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], [0, 1, 1, 1, 1, 0, 0, 0], [0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2]); }
-  const GEO = {}; const geo = (k, f) => GEO[k] || (GEO[k] = f());           // geometrias compartilhadas (cache)
+const CENA_M = 42, CENA_GY = 150, CENA_W = 1000, CENA_CX = 500;
+const cenaX = x => CENA_CX + x * CENA_M, cenaY = y => CENA_GY - y * CENA_M;
 
-  // ---------- shaders ----------
-  const VS = `#version 300 es
-  in vec3 aP; in vec3 aN; in vec2 aU; in vec3 aC; in float aF; uniform mat4 uM, uVP; uniform float uInfla, uTempo, uPulo; out vec3 vN; out vec3 vW; out vec2 vU; out vec3 vC;
-  void main(){
-    vec3 p = aP + aN * uInfla;
-    if (aF > 0.0) p.y += max(0.0, sin(uTempo * (7.0 + fract(aF * 7.3) * 4.0) + aF * 6.2831)) * uPulo * (0.5 + fract(aF * 3.1));   // torcida pulando (cada um no seu ritmo)
-    vec4 w = uM * vec4(p, 1.0); vW = w.xyz; vN = mat3(uM) * aN; vU = aU; vC = aC; gl_Position = uVP * w; }`;
-  const FS = `#version 300 es
-  precision mediump float; in vec3 vN; in vec3 vW; in vec2 vU; in vec3 vC; out vec4 cor;
-  uniform vec3 uCor, uLuz, uLuzCor, uAmb, uCam, uEmis, uNevoa, uRim; uniform float uAlfa, uSolido, uTex, uNevoaD; uniform sampler2D uT;
-  void main(){
-    vec3 base = uCor * vC; if (uTex > 0.5) base *= texture(uT, vU).rgb;
-    if (uSolido > 0.5) { cor = vec4(base, uAlfa); return; }
-    vec3 N = normalize(vN), V = normalize(uCam - vW), L = normalize(-uLuz);
-    float d = dot(N, L), f = smoothstep(-0.05, 0.05, d) * 0.32 + smoothstep(0.45, 0.55, d) * 0.22 + 0.46;   // luz em 3 faixas (toon)
-    float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0) * smoothstep(-0.2, 0.4, d + 0.3);
-    vec3 H = normalize(L + V); float sp = smoothstep(0.88, 0.92, pow(max(dot(N, H), 0.0), 18.0));
-    vec3 c = base * (uAmb + uLuzCor * f) + uRim * rim * 0.55 + vec3(sp * 0.16) + uEmis;
-    float nv = clamp((length(uCam - vW) - uNevoaD) / 40.0, 0.0, 0.75); c = mix(c, uNevoa, nv);
-    cor = vec4(c, uAlfa);
-  }`;
-  const VSP = `#version 300 es
-  in vec3 aP; in vec2 aU; in vec4 aC; uniform mat4 uVP; out vec2 vU; out vec4 vC; void main(){ vU = aU; vC = aC; gl_Position = uVP * vec4(aP, 1.0); }`;
-  const FSP = `#version 300 es
-  precision mediump float; in vec2 vU; in vec4 vC; out vec4 cor; uniform float uForma;
-  void main(){ float d = length(vU - 0.5) * 2.0; float a = uForma > 0.5 ? (1.0 - smoothstep(0.0, 1.0, d)) : smoothstep(1.0, 0.85, d); cor = vec4(vC.rgb * vC.a * a, vC.a * a); }`;
-  const VSC = `#version 300 es
-  in vec2 aP; out vec2 vP; void main(){ vP = aP; gl_Position = vec4(aP, 0.999, 1.0); }`;
-  const FSC = `#version 300 es
-  precision mediump float; in vec2 vP; out vec4 cor; uniform vec3 uC1, uC2, uC3; uniform vec2 uSol;
-  void main(){ float t = vP.y * 0.5 + 0.5; vec3 c = t > 0.45 ? mix(uC2, uC1, (t - 0.45) / 0.55) : mix(uC3, uC2, t / 0.45); float s = 1.0 - smoothstep(0.0, 0.55, length(vP - uSol)); c += vec3(1.0, 0.85, 0.6) * s * s * 0.55; cor = vec4(c, 1.0); }`;
-
-  const LOC = {}, est = { chamadas: 0, tris: 0 };
-  let gl = null, cv = null, P1, PP, PC, bufP, vaoP, vaoC, texBranca, W = 1, H = 1;
-  function prog(vs, fs) { const p = gl.createProgram(); [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]].forEach(([t, s]) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); gl.attachShader(p, sh); }); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); } return { p, u }; }
-  function iniciar(canvas) {
-    if (gl) return true;
-    cv = canvas; gl = cv.getContext('webgl2', { antialias: true, stencil: true, alpha: false, powerPreference: 'high-performance' });
-    if (!gl) return false;
-    P1 = prog(VS, FS); PP = prog(VSP, FSP); PC = prog(VSC, FSC);
-    LOC.p = gl.getAttribLocation(P1.p, 'aP'); LOC.n = gl.getAttribLocation(P1.p, 'aN'); LOC.u = gl.getAttribLocation(P1.p, 'aU'); LOC.c = gl.getAttribLocation(P1.p, 'aC'); LOC.f = gl.getAttribLocation(P1.p, 'aF');
-    vaoC = gl.createVertexArray(); gl.bindVertexArray(vaoC); const bc = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bc); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.bindAttribLocation(PC.p, 0, 'aP');
-    vaoP = gl.createVertexArray(); gl.bindVertexArray(vaoP); bufP = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bufP);
-    const lp = gl.getAttribLocation(PP.p, 'aP'), lu = gl.getAttribLocation(PP.p, 'aU'), lc = gl.getAttribLocation(PP.p, 'aC');
-    gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 3, gl.FLOAT, false, 36, 0); gl.enableVertexAttribArray(lu); gl.vertexAttribPointer(lu, 2, gl.FLOAT, false, 36, 12); gl.enableVertexAttribArray(lc); gl.vertexAttribPointer(lc, 4, gl.FLOAT, false, 36, 20);
-    gl.bindVertexArray(null);
-    texBranca = textura(c => { c.fillStyle = '#fff'; c.fillRect(0, 0, 4, 4); }, 4);
-    return true;
-  }
-  function enviar(m) {
-    if (m.vao) return m;
-    m.vao = gl.createVertexArray(); gl.bindVertexArray(m.vao);
-    [[m.pos, LOC.p, 3], [m.nor, LOC.n, 3], [m.uv, LOC.u, 2], [m.cor, LOC.c, 3], [m.fase, LOC.f, 1]].forEach(([d, l, n]) => {
-      if (l < 0) return;
-      if (!d) { gl.disableVertexAttribArray(l); return; }                  // sem cor/fase por vértice: usa o valor padrão (branco / parado)
-      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 0, 0); });
-    const bi = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bi); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW);
-    gl.bindVertexArray(null); m.n = m.idx.length; m.tipoIdx = m.idx instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT; return m;
-  }
-  function textura(desenha, tam) { tam = tam || 128; const c = document.createElement('canvas'); c.width = c.height = tam; desenha(c.getContext('2d'), tam); const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); return t; }
-
-  // ---------- nós da cena (hierarquia: articulações dos personagens) ----------
-  const hex = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
-  class No {
-    constructor(m, cor, op) { this.m = m || null; this.cor = cor ? (typeof cor === 'string' ? hex(cor) : cor) : [1, 1, 1]; this.pos = [0, 0, 0]; this.rot = [0, 0, 0]; this.esc = [1, 1, 1]; this.filhos = []; this.mw = M.id(); this.vis = true; Object.assign(this, { contorno: true, sombra: true, emis: [0, 0, 0], alfa: 1, tex: null, solido: false }, op || {}); }
-    add(...f) { f.forEach(n => this.filhos.push(n)); return this; }
-    em(x, y, z) { this.pos = [x, y, z]; return this; }
-    gira(x, y, z) { this.rot = [x, y, z]; return this; }
-    escala(x, y, z) { this.esc = [x, y == null ? x : y, z == null ? x : z]; return this; }
-  }
-  const tmp = new Float32Array(16);
-  function atualizar(no, pai, lista) {
-    if (!no.vis) return;
-    M.trs(no.pos, no.rot, no.esc, tmp); M.mul(pai, tmp, no.mw);
-    if (no.m) lista.push(no);
-    for (const f of no.filhos) atualizar(f, no.mw, lista);
-  }
-  // ---------- desenho ----------
-  const sombraM = new Float32Array(16);
-  function desenhar(cena, cam, parts) {
-    const dpr = Math.min(window.devicePixelRatio || 1, cena.resMax || 1.5), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
-    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-    W = w; H = h; gl.viewport(0, 0, w, h); est.chamadas = 0; est.tris = 0;
-    gl.clearColor(0, 0, 0, 1); gl.clearStencil(0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-    // céu
-    gl.disable(gl.DEPTH_TEST); gl.useProgram(PC.p); gl.bindVertexArray(vaoC);
-    gl.uniform3fv(PC.u.uC1, cena.ceu[0]); gl.uniform3fv(PC.u.uC2, cena.ceu[1]); gl.uniform3fv(PC.u.uC3, cena.ceu[2]); gl.uniform2fv(PC.u.uSol, cena.sol || [-.6, .6]);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL);
-    const VP = M.mul(M.persp(cam.fov || .9, w / h, .1, 200), M.olhar(cam.olho, cam.alvo, [0, 1, 0]));
-    const lista = []; for (const r of cena.raizes) atualizar(r, M.id(), lista);
-    gl.useProgram(P1.p); const u = P1.u;
-    if (LOC.c >= 0) gl.vertexAttrib3f(LOC.c, 1, 1, 1); if (LOC.f >= 0) gl.vertexAttrib1f(LOC.f, 0);
-    gl.uniformMatrix4fv(u.uVP, false, VP); gl.uniform1f(u.uTempo, cena.tempo || 0); gl.uniform3fv(u.uLuz, cena.luz); gl.uniform3fv(u.uLuzCor, cena.luzCor); gl.uniform3fv(u.uAmb, cena.amb); gl.uniform3fv(u.uCam, cam.olho);
-    gl.uniform3fv(u.uNevoa, cena.nevoa || [.8, .8, .9]); gl.uniform1f(u.uNevoaD, cena.nevoaD || 18); gl.uniform3fv(u.uRim, cena.rim || [1, .9, .8]);
-    gl.uniform1i(u.uT, 0); gl.activeTexture(gl.TEXTURE0);
-    const opacos = [], transp = [];
-    for (const n of lista) (n.alfa < 1 ? transp : opacos).push(n);
-    const um = (n, infla, solido, corOv, alfa) => {
-      enviar(n.m); gl.bindVertexArray(n.m.vao);
-      gl.uniformMatrix4fv(u.uM, false, n.mw); gl.uniform1f(u.uInfla, infla); gl.uniform1f(u.uSolido, solido ? 1 : 0);
-      gl.uniform3fv(u.uCor, corOv || n.cor); gl.uniform3fv(u.uEmis, n.emis); gl.uniform1f(u.uAlfa, alfa == null ? n.alfa : alfa);
-      if (n.tex && !solido) { gl.uniform1f(u.uTex, 1); gl.bindTexture(gl.TEXTURE_2D, n.tex); } else gl.uniform1f(u.uTex, 0);
-      gl.uniform1f(u.uPulo, n.pulo || 0);
-      gl.drawElements(gl.TRIANGLES, n.m.n, n.m.tipoIdx, 0); est.chamadas++; est.tris += n.m.n / 3;
-    };
-    gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.disable(gl.BLEND); gl.depthMask(true);
-    for (const n of opacos) um(n, 0, n.solido);
-    // contorno (casca invertida um pouco maior, só as costas)
-    gl.cullFace(gl.FRONT); const corL = cena.corLinha || [.08, .05, .1];
-    for (const n of opacos) if (n.contorno) um(n, n.linha || .012, true, corL, 1);
-    gl.cullFace(gl.BACK);
-    // sombras projetadas no chão (cada pixel escurece uma vez só: stencil)
-    const L = cena.luz; sombraM.fill(0); sombraM[0] = 1; sombraM[4] = -L[0] / L[1]; sombraM[6] = -L[2] / L[1]; sombraM[10] = 1; sombraM[15] = 1; sombraM[13] = .012;
-    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.enable(gl.STENCIL_TEST); gl.stencilFunc(gl.EQUAL, 0, 255); gl.stencilOp(gl.KEEP, gl.KEEP, gl.INCR);
-    gl.disable(gl.CULL_FACE);
-    const sm = new Float32Array(16);
-    for (const n of opacos) if (n.sombra && n.projetaSombra) { const mw = n.mw; M.mul(sombraM, mw, sm); const salva = n.mw; n.mw = sm; um(n, 0, true, cena.corSombra || [.12, .08, .16], cena.alfaSombra || .38); n.mw = salva; }
-    gl.disable(gl.STENCIL_TEST); gl.enable(gl.CULL_FACE);
-    // transparentes
-    transp.sort((a, b) => dist2(b.mw, cam.olho) - dist2(a.mw, cam.olho));
-    for (const n of transp) um(n, 0, n.solido);
-    // partículas (somadas = brilho)
-    if (parts && parts.length) desenharParticulas(parts, VP, cam);
-    gl.depthMask(true); gl.disable(gl.BLEND); gl.bindVertexArray(null);
-    return VP;
-  }
-  const dist2 = (m, o) => (m[12] - o[0]) ** 2 + (m[13] - o[1]) ** 2 + (m[14] - o[2]) ** 2;
-  let bufArr = new Float32Array(9 * 6 * 600);
-  function desenharParticulas(parts, VP, cam) {
-    // eixos da câmera para virar os quadrados de frente
-    const f = [cam.alvo[0] - cam.olho[0], cam.alvo[1] - cam.olho[1], cam.alvo[2] - cam.olho[2]], lf = Math.hypot(...f); f[0] /= lf; f[1] /= lf; f[2] /= lf;
-    let r = [f[2], 0, -f[0]]; const lr = Math.hypot(...r) || 1; r = [-r[0] / lr, 0, -r[2] / lr]; const up = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
-    for (const modo of ['soma', 'normal']) {
-      const lista = parts.filter(p => (p.modo || 'soma') === modo); if (!lista.length) continue;
-      const n = Math.min(lista.length, 600); if (bufArr.length < n * 54) bufArr = new Float32Array(n * 54);
-      let o = 0;
-      for (let i = 0; i < n; i++) {
-        const p = lista[i], s = p.tam / 2, c = p.cor, a = p.alfa, rot = p.rot || 0, cr = Math.cos(rot), sr = Math.sin(rot);
-        const ax = (r[0] * cr + up[0] * sr) * s, ay = (r[1] * cr + up[1] * sr) * s, az = (r[2] * cr + up[2] * sr) * s, bx = (-r[0] * sr + up[0] * cr) * s * (p.esticar || 1), by = (-r[1] * sr + up[1] * cr) * s * (p.esticar || 1), bz = (-r[2] * sr + up[2] * cr) * s * (p.esticar || 1);
-        const V = [[p.x - ax - bx, p.y - ay - by, p.z - az - bz, 0, 0], [p.x + ax - bx, p.y + ay - by, p.z + az - bz, 1, 0], [p.x + ax + bx, p.y + ay + by, p.z + az + bz, 1, 1], [p.x - ax + bx, p.y - ay + by, p.z - az + bz, 0, 1]];
-        for (const k of [0, 1, 2, 0, 2, 3]) { const v = V[k]; bufArr[o++] = v[0]; bufArr[o++] = v[1]; bufArr[o++] = v[2]; bufArr[o++] = v[3]; bufArr[o++] = v[4]; bufArr[o++] = c[0]; bufArr[o++] = c[1]; bufArr[o++] = c[2]; bufArr[o++] = a; }
-      }
-      gl.useProgram(PP.p); gl.uniformMatrix4fv(PP.u.uVP, false, VP); gl.uniform1f(PP.u.uForma, 1);
-      gl.bindVertexArray(vaoP); gl.bindBuffer(gl.ARRAY_BUFFER, bufP); gl.bufferData(gl.ARRAY_BUFFER, bufArr.subarray(0, o), gl.DYNAMIC_DRAW);
-      gl.enable(gl.BLEND); if (modo === 'soma') gl.blendFunc(gl.ONE, gl.ONE); else gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      gl.depthMask(false); gl.disable(gl.CULL_FACE); gl.drawArrays(gl.TRIANGLES, 0, o / 9); gl.enable(gl.CULL_FACE);
-    }
-  }
-  // projeta um ponto 3D na tela (para os textos em HTML seguirem os personagens)
-  function naTela(VP, x, y, z) { const X = VP[0] * x + VP[4] * y + VP[8] * z + VP[12], Y = VP[1] * x + VP[5] * y + VP[9] * z + VP[13], Wc = VP[3] * x + VP[7] * y + VP[11] * z + VP[15]; return [(X / Wc * .5 + .5) * cv.clientWidth, (1 - (Y / Wc * .5 + .5)) * cv.clientHeight, Wc > 0]; }
-  return { est, M, No, juntar, caixa, esfera, capsula, cilindro, toro, plano, quadV, geo, hex, iniciar, desenhar, textura, naTela, get gl() { return gl; } };
-})();
-
-/* =====================================================================
-   PERSONAGENS 3D (cartoon/anime) — corpo articulado montado em código
-   Juntas: quadril, tronco, cabeça, ombros, cotovelos, coxas, joelhos.
-   As poses usam graus. Convenção: rx negativo = levantar para a FRENTE.
-   ===================================================================== */
-const Boneco3D = (() => {
-  const { No, caixa, esfera, capsula, cilindro, toro, geo, hex } = Motor3D;
-  const R = Math.PI / 180;
-  const escurece = (c, k) => c.map(v => v * k);
-  const clareia = (c, k) => c.map(v => v + (1 - v) * k);
-  // textura do bordado de dragão dourado (peito do Oitavo Dragão)
-  let texDragao = null;
-  function bordadoDragao() {
-    if (texDragao) return texDragao;
-    texDragao = Motor3D.textura((g, s) => {
-      g.fillStyle = '#ffffff'; g.fillRect(0, 0, s, s);
-      g.fillStyle = '#16121c'; g.fillRect(0, 0, s, s);
-      g.strokeStyle = '#e8c45a'; g.lineCap = 'round'; g.lineWidth = s * .05;
-      g.beginPath(); g.moveTo(s * .2, s * .85);                              // corpo do dragão em S
-      g.bezierCurveTo(s * .9, s * .75, s * .05, s * .45, s * .7, s * .3); g.bezierCurveTo(s * .85, s * .25, s * .8, s * .12, s * .62, s * .14); g.stroke();
-      g.lineWidth = s * .02; for (let k = 0; k < 9; k++) { const t = k / 9, x = s * (.25 + .5 * Math.sin(t * 5)), y = s * (.82 - t * .6); g.beginPath(); g.moveTo(x - s * .04, y); g.lineTo(x, y - s * .05); g.lineTo(x + s * .04, y); g.stroke(); }   // escamas
-      g.fillStyle = '#e8c45a'; g.beginPath(); g.arc(s * .62, s * .14, s * .06, 0, 7); g.fill();          // cabeça
-      g.strokeStyle = '#a8862e'; g.lineWidth = s * .035; g.strokeRect(s * .04, s * .04, s * .92, s * .92);   // borda dourada
-    }, 128);
-    return texDragao;
-  }
-  /* ---------- montar um personagem ----------
-     def: { gi, faixa, pele, cab, cabelo, olho(iris), esc, largura, banda, chapeu, sombra(rosto oculto), manto, punhos, calca, elemento } */
-  function criar(def) {
-    const e = def.esc || 1, L = def.largura || 1;
-    const cGi = hex(def.gi || '#f6f6f2'), cCalca = hex(def.calca || def.gi || '#f6f6f2'), cPele = hex(def.pele || '#f1c9a5'), cCab = hex(def.cab || '#222'), cFaixa = hex(def.faixa || '#222');
-    const corpo = { def, nos: {} };
-    const raiz = new No(null); raiz.escala(e);
-    const quadril = new No(null).em(0, .92, 0);
-    const pelve = new No(geo('pelve', () => caixa(.34, .2, .22)), cCalca, { projetaSombra: true }).escala(L, 1, 1);
-    const cinto = new No(geo('cinto', () => toro(.185, .035, 18, 6)), cFaixa, { projetaSombra: false, linha: .006 }).em(0, .1, 0).escala(L, 1, .72);
-    const no = new No(geo('no', () => esfera(.045, 8, 6)), cFaixa, { linha: .006 }).em(.06, .1, .15);
-    const pontas = [-1, 1].map(s => new No(geo('ponta', () => caixa(.05, .16, .025)), cFaixa, { linha: .005 }).em(.06 + s * .03, .02, .16).gira(0, 0, s * .25));
-    quadril.add(pelve, cinto, no, ...pontas);
-    const tronco = new No(null).em(0, .1, 0);
-    const torso = new No(geo('torso', () => cilindro(.2, .25, .46, 14)), cGi, { projetaSombra: true }).escala(L, 1, .72);
-    const gola = new No(geo('gola', () => caixa(.14, .2, .02)), escurece(cPele, .95), { contorno: false }).em(0, .34, .175).gira(-.15, 0, 0);    // decote do gi (pele aparecendo)
-    const lapelas = [-1, 1].map(s => new No(geo('lapela', () => caixa(.05, .32, .02)), escurece(cGi, .88), { contorno: false }).em(s * .05, .28, .185).gira(-.1, 0, s * .45));
-    tronco.add(torso, gola, ...lapelas);
-    if (def.chapeu) {                                                      // bordado do dragão no peito
-      const placa = new No(geo('placaDragao', () => caixa(.22, .22, .01)), [1, 1, 1], { contorno: false, tex: bordadoDragao() }).em(-.05, .25, .19).gira(-.08, 0, 0);
-      tronco.add(placa);
-    }
-    if (def.manto) tronco.add(new No(geo('manto', () => caixa(.46, .9, .04)), hex(def.manto), { projetaSombra: true }).em(0, -.25, -.2).gira(.12, 0, 0));
-    const pescoco = new No(geo('pescoco', () => cilindro(.055, .05, .1, 8)), cPele).em(0, .45, 0);
-    const cabeca = new No(null).em(0, .63, 0);
-    const cranio = new No(geo('cranio', () => esfera(.165, 16, 12)), cPele, { projetaSombra: true }).escala(1, 1.05, 1);
-    cabeca.add(cranio);
-    // rosto: olhos grandes de anime (branco, íris, pupila, brilho), sobrancelhas e boca
-    if (!def.sombra) {
-      const iris = hex(def.olho || '#6a3a1a');
-      [-1, 1].forEach(s => {
-        const olho = new No(null).em(s * .062, -.005, .138).gira(0, s * .32, 0);
-        olho.add(new No(geo('olhoB', () => esfera(.04, 10, 8)), [1, 1, 1], { contorno: false }).escala(1, 1.25, .35),
-          new No(geo('iris', () => esfera(.03, 10, 8)), iris, { contorno: false }).em(0, -.004, .012).escala(1, 1.25, .3),
-          new No(geo('pupila', () => esfera(.016, 8, 6)), [.05, .03, .05], { contorno: false }).em(0, -.004, .018).escala(1, 1.3, .3),
-          new No(geo('brilho', () => esfera(.009, 6, 4)), [1, 1, 1], { contorno: false, emis: [.5, .5, .5] }).em(.01, .016, .022));
-        const sob = new No(geo('sobr', () => caixa(.06, .012, .012)), escurece(cCab, .7), { contorno: false }).em(s * .064, .06, .15).gira(0, s * .3, s * (def.bravo ? -.3 : .12));
-        cabeca.add(olho, sob);
-      });
-      cabeca.add(new No(geo('boca', () => caixa(.035, .008, .01)), [.45, .18, .18], { contorno: false }).em(0, -.085, .155));
-      cabeca.add(new No(geo('nariz', () => esfera(.012, 6, 4)), escurece(cPele, .9), { contorno: false }).em(0, -.035, .165));
-    } else {
-      // rosto sempre oculto: sombra total sob o chapéu (só olhos dourados quando desperto)
-      cabeca.add(new No(geo('sombraRosto', () => esfera(.168, 14, 10)), [.03, .02, .05], { contorno: false }).em(0, -.01, .012).escala(1, 1.04, 1));
-      corpo.olhosDourados = [-1, 1].map(s => { const n = new No(geo('olhoD', () => esfera(.018, 8, 6)), [1, .85, .3], { contorno: false, emis: [1, .7, .1] }).em(s * .055, -.01, .16).escala(1.4, .6, .5); n.vis = false; cabeca.add(n); return n; });
-    }
-    // cabelo por tipo
-    const cab = (m, op) => new No(m, cCab, Object.assign({ projetaSombra: true, linha: .01 }, op));
-    const capa = cab(geo('capaCab', () => esfera(.178, 16, 10))).em(0, .03, -.012).escala(1.02, 1, 1.02);
-    const t = def.cabelo || 'curto';
-    if (t !== 'careca' && !def.chapeu) cabeca.add(capa);
-    if (t === 'espeto') for (let k = 0; k < 9; k++) { const a = (k / 8 - .5) * 2.6, f = k % 2; cabeca.add(cab(geo('espeto', () => cilindro(.06, 0, .2, 6))).em(Math.sin(a) * .1, .1 + f * .02, Math.cos(a) * .06 - .05).gira(-.7 - f * .3, 0, -Math.sin(a) * 1.2)); }
-    if (t === 'espeto' || t === 'curto') for (let k = 0; k < 5; k++) cabeca.add(cab(geo('franja', () => cilindro(.035, 0, .11, 5))).em((k - 2) * .05, .11, .12).gira(1.9, 0, (k - 2) * .18));
-    if (t === 'longo') { cabeca.add(cab(geo('longo', () => caixa(.32, .42, .08))).em(0, -.17, -.12).gira(.08, 0, 0)); for (let k = 0; k < 4; k++) cabeca.add(cab(geo('franja', () => cilindro(.035, 0, .11, 5))).em((k - 1.5) * .06, .11, .12).gira(1.9, 0, (k - 1.5) * .2)); }
-    if (t === 'coque') { cabeca.add(cab(geo('coque', () => esfera(.08, 10, 8))).em(0, .17, -.06)); cabeca.add(new No(geo('fita', () => toro(.06, .015, 12, 4)), hex(def.faixa || '#c33'), { linha: .004 }).em(0, .13, -.05).gira(.3, 0, 0)); }
-    if (t === 'rabo' || t === 'tranca') { const rabo = cab(geo('rabo', () => capsula(.055, .32, 8))).em(0, .1, -.15).gira(.5, 0, 0); cabeca.add(rabo); corpo.rabo = rabo; }
-    if (def.banda) { const b = hex(def.banda); cabeca.add(new No(geo('banda', () => toro(.172, .022, 18, 4)), b, { linha: .005 }).em(0, .055, -.005).gira(-.12, 0, 0)); cabeca.add(new No(geo('bandaPonta', () => caixa(.03, .2, .015)), b, { linha: .004 }).em(.03, -.04, -.18).gira(.5, 0, .25)); }
-    if (def.chapeu) {                                                      // chapéu cônico tradicional, preto com aro dourado
-      const ch = new No(null).em(0, .1, .01).gira(-.06, 0, 0);
-      ch.add(new No(geo('chapeu', () => cilindro(.44, .0, .24, 22, true)), [.08, .07, .1], { projetaSombra: true, linha: .012 }),
-        new No(geo('aroChapeu', () => toro(.43, .014, 26, 4)), [.85, .66, .22], { contorno: false, emis: [.12, .08, 0] }).em(0, .005, 0),
-        new No(geo('pontaChapeu', () => esfera(.03, 8, 6)), [.85, .66, .22], { contorno: false }).em(0, .24, 0));
-      for (let k = 0; k < 3; k++) ch.add(new No(geo('faixaCh' + k, () => toro(.33 - k * .1, .006, 24, 3)), [.75, .58, .2], { contorno: false }).em(0, .06 + k * .055, 0));
-      cabeca.add(ch); corpo.chapeu = ch;
-    }
-    tronco.add(pescoco, cabeca);
-    // braços
-    const braco = (s) => {
-      const ombro = new No(null).em(s * .25 * L, .4, 0);
-      const sup = new No(geo('bracoSup', () => capsula(.075, .24, 10)), cGi, { projetaSombra: true });
-      const cot = new No(null).em(0, -.27, 0);
-      const ant = new No(geo('antebraco', () => capsula(.055, .2, 10)), def.punhos ? hex(def.punhos) : (def.mangaLonga ? cGi : cPele), { projetaSombra: true });
-      const punho = new No(null).em(0, -.25, 0);
-      const mao = new No(geo('mao', () => esfera(.068, 10, 8)), cPele, { projetaSombra: true }).escala(1, .9, 1.1);
-      if (def.aroPunho) ant.add(new No(geo('aroPunho', () => toro(.06, .012, 12, 4)), hex(def.aroPunho), { contorno: false }).em(0, -.18, 0));
-      punho.add(mao); cot.add(ant, punho); ombro.add(sup, cot);
-      return { ombro, cot, punho };
-    };
-    const bE = braco(1), bD = braco(-1);
-    tronco.add(bE.ombro, bD.ombro);
-    // pernas
-    const perna = (s) => {
-      const coxa = new No(null).em(s * .1 * L, -.04, 0);
-      const sup = new No(geo('coxa', () => capsula(.095, .36, 10)), cCalca, { projetaSombra: true });
-      const joelho = new No(null).em(0, -.41, 0);
-      const can = new No(geo('canela', () => cilindro(.1, .075, .38, 10)), cCalca, { projetaSombra: true }).gira(Math.PI, 0, 0);
-      const tor = new No(null).em(0, -.41, 0);
-      const pe = new No(geo('pe', () => caixa(.1, .07, .22)), cPele, { projetaSombra: true }).em(0, -.03, .05);
-      tor.add(pe); joelho.add(can, tor); coxa.add(sup, joelho);
-      return { coxa, joelho, pe: tor };
-    };
-    const pE = perna(1), pD = perna(-1);
-    quadril.add(tronco, pE.coxa, pD.coxa);
-    raiz.add(quadril);
-    Object.assign(corpo.nos, { raiz, quadril, tronco, cabeca, oE: bE.ombro, cE: bE.cot, mE: bE.punho, oD: bD.ombro, cD: bD.cot, mD: bD.punho, qE: pE.coxa, jE: pE.joelho, fE: pE.pe, qD: pD.coxa, jD: pD.joelho, fD: pD.pe });
-    corpo.raiz = raiz;
-    return corpo;
-  }
-
-  /* ---------- poses (graus) ---------- */
-  const BASE = { y: 0, rx: 0, ry: 0, rz: 0, tr: [0, 0, 0], ca: [0, 0, 0], oE: [0, 0, 8], cE: [-10, 0, 0], oD: [0, 0, -8], cD: [-10, 0, 0], qE: [0, 0, 3], jE: [4, 0, 0], qD: [0, 0, -3], jD: [4, 0, 0] };
-  const JUNTAS = ['tr', 'ca', 'oE', 'cE', 'oD', 'cD', 'qE', 'jE', 'qD', 'jD'];
-  const P = (mods) => { const p = JSON.parse(JSON.stringify(BASE)); for (const k in mods) p[k] = Array.isArray(mods[k]) ? mods[k].slice() : mods[k]; return p; };
-  const POSES = {
-    guarda: P({ y: -.07, tr: [6, -22, 0], ca: [-4, 18, 0], oE: [-62, 0, 14], cE: [-100, 0, 0], oD: [-40, 0, 26], cD: [-118, 0, 0], qE: [-24, 0, 5], jE: [32, 0, 0], qD: [16, 0, -5], jD: [30, 0, 0] }),
-    jab: P({ y: -.06, tr: [4, -42, 0], ca: [-4, 34, 0], oE: [-88, 0, 4], cE: [-4, 0, 0], oD: [-40, 0, 26], cD: [-120, 0, 0], qE: [-28, 0, 5], jE: [26, 0, 0], qD: [20, 0, -5], jD: [22, 0, 0] }),
-    direto: P({ y: -.09, tr: [10, 28, 0], ca: [-6, -20, 0], oE: [-50, 0, 20], cE: [-120, 0, 0], oD: [-92, 0, -2], cD: [-3, 0, 0], qE: [-34, 0, 5], jE: [34, 0, 0], qD: [26, 0, -5], jD: [8, 0, 0] }),
-    gancho: P({ y: -.1, tr: [8, 44, -8], ca: [-6, -30, 0], oE: [-50, 0, 20], cE: [-120, 0, 0], oD: [-62, 0, -62], cD: [-95, 0, 0], qE: [-28, 0, 5], jE: [36, 0, 0], qD: [22, 0, -5], jD: [30, 0, 0] }),
-    cotovelo: P({ y: -.1, tr: [10, 50, 0], ca: [-6, -36, 0], oE: [-50, 0, 20], cE: [-120, 0, 0], oD: [-82, 0, -48], cD: [-150, 0, 0], qE: [-30, 0, 5], jE: [34, 0, 0], qD: [24, 0, -5], jD: [26, 0, 0] }),
-    chuteArma: P({ y: -.04, tr: [-6, -10, 0], oE: [-55, 0, 20], cE: [-100, 0, 0], oD: [-30, 0, 30], cD: [-110, 0, 0], qE: [-8, 0, 3], jE: [16, 0, 0], qD: [-85, 0, -4], jD: [110, 0, 0] }),
-    chute: P({ y: -.02, tr: [-16, -12, 0], ca: [10, 10, 0], oE: [-40, 0, 40], cE: [-90, 0, 0], oD: [10, 0, 40], cD: [-60, 0, 0], qE: [-4, 0, 3], jE: [12, 0, 0], qD: [-100, 0, -4], jD: [4, 0, 0] }),
-    chuteAlto: P({ y: 0, tr: [-26, -14, 0], ca: [18, 10, 0], oE: [-30, 0, 50], cE: [-80, 0, 0], oD: [20, 0, 50], cD: [-50, 0, 0], qE: [0, 0, 3], jE: [8, 0, 0], qD: [-132, 0, -4], jD: [0, 0, 0] }),
-    lateral: P({ y: -.02, ry: 55, tr: [-10, 0, -22], ca: [0, -40, 18], oE: [-30, 0, 70], cE: [-70, 0, 0], oD: [0, 0, -40], cD: [-40, 0, 0], qE: [0, 0, 10], jE: [12, 0, 0], qD: [-20, 0, -86], jD: [0, 0, 0] }),
-    marretaArma: P({ y: -.02, tr: [-18, 0, 0], ca: [-14, 0, 0], oE: [-170, 0, -8], cE: [-40, 0, 0], oD: [-170, 0, 8], cD: [-40, 0, 0], qE: [-18, 0, 6], jE: [20, 0, 0], qD: [14, 0, -6], jD: [16, 0, 0] }),
-    marreta: P({ y: -.2, tr: [30, 0, 0], ca: [12, 0, 0], oE: [-70, 0, -8], cE: [-20, 0, 0], oD: [-70, 0, 8], cD: [-20, 0, 0], qE: [-40, 0, 6], jE: [60, 0, 0], qD: [26, 0, -6], jD: [44, 0, 0] }),
-    empurrao: P({ y: -.1, tr: [14, 0, 0], ca: [-8, 0, 0], oE: [-86, 0, -12], cE: [-12, 0, 0], oD: [-86, 0, 12], cD: [-12, 0, 0], qE: [-34, 0, 5], jE: [32, 0, 0], qD: [28, 0, -5], jD: [10, 0, 0] }),
-    palmaArma: P({ y: -.12, tr: [0, -40, 0], ca: [0, 30, 0], oE: [-40, 0, 30], cE: [-110, 0, 0], oD: [20, 0, 20], cD: [-120, 0, 0], qE: [-30, 0, 8], jE: [44, 0, 0], qD: [22, 0, -8], jD: [40, 0, 0] }),
-    palma: P({ y: -.14, tr: [8, 34, 0], ca: [-4, -24, 0], oE: [-40, 0, 30], cE: [-110, 0, 0], oD: [-90, 0, 0], cD: [-2, 0, 0], qE: [-40, 0, 8], jE: [44, 0, 0], qD: [30, 0, -8], jD: [14, 0, 0] }),
-    bloqueio: P({ y: -.12, tr: [14, -10, 0], ca: [10, 8, 0], oE: [-78, 0, -22], cE: [-128, 0, 0], oD: [-72, 0, 26], cD: [-132, 0, 0], qE: [-26, 0, 5], jE: [40, 0, 0], qD: [18, 0, -5], jD: [38, 0, 0] }),
-    esquiva: P({ y: -.2, tr: [-26, -30, 0], ca: [-14, 20, 0], oE: [-50, 0, 30], cE: [-110, 0, 0], oD: [-30, 0, 34], cD: [-110, 0, 0], qE: [-34, 0, 5], jE: [60, 0, 0], qD: [30, 0, -5], jD: [56, 0, 0] }),
-    dano: P({ y: -.06, tr: [-22, 10, 6], ca: [-24, 0, 8], oE: [-20, 0, 50], cE: [-40, 0, 0], oD: [-10, 0, -40], cD: [-50, 0, 0], qE: [-14, 0, 5], jE: [20, 0, 0], qD: [22, 0, -5], jD: [24, 0, 0] }),
-    caido: P({ y: .14, rx: -88, tr: [-4, 0, 0], ca: [-10, 30, 0], oE: [-150, 0, 40], cE: [-20, 0, 0], oD: [-30, 0, -50], cD: [-20, 0, 0], qE: [-20, 0, 10], jE: [30, 0, 0], qD: [6, 0, -8], jD: [10, 0, 0] }),
-    agachado: P({ y: -.42, tr: [30, -10, 0], ca: [-16, 0, 0], oE: [-60, 0, 20], cE: [-90, 0, 0], oD: [-20, 0, 30], cD: [-60, 0, 0], qE: [-80, 0, 8], jE: [110, 0, 0], qD: [-10, 0, -6], jD: [120, 0, 0] }),
-    tonto: P({ y: -.05, tr: [12, 0, 0], ca: [16, 0, 0], oE: [-4, 0, 18], cE: [-20, 0, 0], oD: [-4, 0, -18], cD: [-20, 0, 0], qE: [-6, 0, 8], jE: [16, 0, 0], qD: [4, 0, -8], jD: [16, 0, 0] }),
-    vitoria: P({ y: 0, tr: [-6, 10, 0], ca: [-14, -10, 0], oE: [-20, 0, 40], cE: [-120, 0, 0], oD: [-172, 0, -14], cD: [-14, 0, 0], qE: [-6, 0, 8], jE: [6, 0, 0], qD: [6, 0, -8], jD: [6, 0, 0] }),
-    derrota: P({ y: -.46, tr: [28, 0, 0], ca: [26, 0, 0], oE: [-30, 0, 10], cE: [-40, 0, 0], oD: [-8, 0, -10], cD: [-20, 0, 0], qE: [-88, 0, 6], jE: [92, 0, 0], qD: [10, 0, -6], jD: [104, 0, 0] }),
-    reverencia: P({ y: 0, tr: [38, 0, 0], ca: [16, 0, 0], oE: [6, 0, 6], cE: [-6, 0, 0], oD: [6, 0, -6], cD: [-6, 0, 0], qE: [-4, 0, 2], jE: [4, 0, 0], qD: [4, 0, -2], jD: [4, 0, 0] }),
-    pulo: P({ y: .05, tr: [8, -10, 0], oE: [-70, 0, 20], cE: [-100, 0, 0], oD: [-40, 0, 26], cD: [-110, 0, 0], qE: [-70, 0, 6], jE: [100, 0, 0], qD: [-30, 0, -6], jD: [96, 0, 0] }),
-    puloChute: P({ y: .05, tr: [-14, -10, 0], oE: [-50, 0, 40], cE: [-90, 0, 0], oD: [-10, 0, 40], cD: [-80, 0, 0], qE: [-60, 0, 6], jE: [110, 0, 0], qD: [-86, 0, -6], jD: [4, 0, 0] }),
-    torcer: P({ y: 0, tr: [-6, 0, 0], ca: [-16, 0, 0], oE: [-160, 0, -20], cE: [-30, 0, 0], oD: [-160, 0, 20], cD: [-30, 0, 0] }),
-    bracosCruzados: P({ tr: [-2, 0, 0], ca: [4, 0, 0], oE: [-40, -30, -30], cE: [-100, 0, 0], oD: [-34, 30, 30], cD: [-104, 0, 0] }),
-    aura: P({ y: -.22, tr: [6, 0, 0], ca: [-10, 0, 0], oE: [-30, 0, 60], cE: [-80, 0, 0], oD: [-30, 0, -60], cD: [-80, 0, 0], qE: [-30, 0, 16], jE: [50, 0, 0], qD: [-30, 0, -16], jD: [50, 0, 0] }),
-    flutua: P({ y: 0, tr: [-4, 0, 0], ca: [-6, 0, 0], oE: [-20, 0, 40], cE: [-30, 0, 0], oD: [-20, 0, -40], cD: [-30, 0, 0], qE: [-10, 0, 4], jE: [24, 0, 0], qD: [4, 0, -4], jD: [40, 0, 0] })
-  };
-  const mix = (a, b, k) => {
-    const o = { y: a.y + (b.y - a.y) * k, rx: a.rx + (b.rx - a.rx) * k, ry: a.ry + (b.ry - a.ry) * k, rz: a.rz + (b.rz - a.rz) * k };
-    for (const j of JUNTAS) o[j] = [a[j][0] + (b[j][0] - a[j][0]) * k, a[j][1] + (b[j][1] - a[j][1]) * k, a[j][2] + (b[j][2] - a[j][2]) * k];
-    return o;
-  };
-  const suave = k => k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k);
-  // golpe: arma (prep) -> estica (ativo) -> volta (rec)
-  function golpe(armar, bater, t, prep, ativo, rec, base) {
-    base = base || POSES.guarda;
-    if (t < prep) return mix(base, armar, suave(t / prep));
-    if (t < prep + ativo) return mix(armar, bater, Math.min(1, (t - prep) / (ativo * .6)));
-    return mix(bater, base, suave((t - prep - ativo) / rec));
-  }
-  // aplica a pose no corpo
-  function aplicar(c, p, extra) {
-    const n = c.nos;
-    n.quadril.pos[1] = .92 + p.y; n.quadril.rot = [p.rx * R, p.ry * R, p.rz * R];
-    const jo = { tr: 'tronco', ca: 'cabeca', oE: 'oE', cE: 'cE', oD: 'oD', cD: 'cD', qE: 'qE', jE: 'jE', qD: 'qD', jD: 'jD' };
-    for (const j of JUNTAS) { const v = p[j], no = n[jo[j]]; no.rot = [v[0] * R, v[1] * R, v[2] * R]; }
-    if (c.rabo) c.rabo.rot[0] = .5 + Math.sin((extra || 0) * 6) * .15;
-  }
-  // posição no mundo de uma mão/pé (para faíscas e rastros saírem do lugar certo)
-  const ponta = (c, k) => { const m = c.nos[k].mw; return [m[12], m[13], m[14]]; };
-  return { criar, POSES, P, mix, golpe, aplicar, suave, ponta, escurece, clareia };
-})();
-
-/* =====================================================================
-   ARENA 3D DO TORNEIO + EFEITOS (partículas)
-   A arena é montada em código: tatame elevado, arquibancadas com torcida,
-   pavilhão vermelho, torii, bandeiras, lanternas e montanhas no fundo.
-   O cenário parado vira UMA malha só (rápido até no celular).
-   ===================================================================== */
-const FX3D = (() => {
+/* ---------- efeitos (partículas em pixel: faíscas, explosões azuis, poeira, confete, fogos) ---------- */
+const FX2D = (() => {
   const lista = [];
-  const hexA = c => Motor3D.hex(c);
-  // p: { x,y,z, vx,vy,vz, vida, tam, tamF, cor, alfa, g, arrasto, modo, rot, vrot, esticar }
-  function add(p) { if (lista.length > 900) lista.shift(); p.t = 0; p.cor = typeof p.cor === 'string' ? hexA(p.cor) : p.cor; p.a0 = p.alfa == null ? 1 : p.alfa; lista.push(p); return p; }
+  const hexA = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+  // p: { x,y (metros), vx,vy, vida, tam (metros), tamF, cor [r,g,b], alfa, g (gravidade), arrasto, modo ('soma'|'normal'), forma ('quad'|'estrela'|'anel'|'brilho'|'raio'), rot, vrot, esticar }
+  function add(p) { if (lista.length > 700) lista.shift(); p.t = 0; p.cor = typeof p.cor === 'string' ? hexA(p.cor) : p.cor; p.a0 = p.alfa == null ? 1 : p.alfa; p.vz = 0; p.z = 0; lista.push(p); return p; }
   function atualizar(dt) {
     for (let i = lista.length - 1; i >= 0; i--) {
       const p = lista[i]; p.t += dt;
       if (p.t >= p.vida) { lista.splice(i, 1); continue; }
       const k = p.t / p.vida;
       p.vy -= (p.g || 0) * dt; const ar = Math.pow(p.arrasto || 1, dt * 60);
-      p.vx *= ar; p.vy *= ar; p.vz *= ar;
-      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
-      if (p.chao != null && p.y < p.chao) { p.y = p.chao; p.vy *= -.3; p.vx *= .6; p.vz *= .6; }
+      p.vx *= ar; p.vy *= ar; p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.chao != null && p.y < p.chao) { p.y = p.chao; p.vy *= -.3; p.vx *= .6; }
       p.rot = (p.rot || 0) + (p.vrot || 0) * dt;
-      p.tam = p.tam0 == null ? (p.tam0 = p.tam) : p.tam0 + ((p.tamF == null ? p.tam0 : p.tamF) - p.tam0) * k;
+      if (p.tam0 == null) p.tam0 = p.tam;
+      p.tam = p.tam0 + ((p.tamF == null ? p.tam0 : p.tamF) - p.tam0) * k;
       p.alfa = p.a0 * (p.fadeIn ? Math.min(1, k * 5) : 1) * (1 - Math.pow(k, p.curva || 1.6));
     }
   }
-  // faísca de impacto: estrela + anel + lascas
-  function impacto(x, y, z, cor, forte) {
-    const n = forte ? 22 : 12;
-    add({ x, y, z, vx: 0, vy: 0, vz: 0, vida: .16, tam: forte ? 1.4 : .9, tamF: forte ? 2.2 : 1.3, cor: [1, 1, 1], alfa: 1 });
-    add({ x, y, z, vx: 0, vy: 0, vz: 0, vida: .28, tam: .4, tamF: forte ? 2.6 : 1.6, cor, alfa: .9 });
-    for (let k = 0; k < n; k++) {
-      const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * (forte ? 7 : 4);
-      add({ x, y, z, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: (Math.random() - .5) * 3, vida: .2 + Math.random() * .25, tam: .07 + Math.random() * .06, tamF: .01, cor: Math.random() < .5 ? cor : [1, .95, .8], arrasto: .9, esticar: 3, rot: Math.atan2(Math.sin(a), Math.cos(a)) - Math.PI / 2 });
-    }
-  }
-  function poeira(x, y, z, n, cor) {
-    for (let k = 0; k < (n || 8); k++) add({ x: x + (Math.random() - .5) * .5, y: y + .05, z: z + (Math.random() - .5) * .4, vx: (Math.random() - .5) * 2.2, vy: .4 + Math.random() * .9, vz: (Math.random() - .5) * 1.2, vida: .5 + Math.random() * .4, tam: .2, tamF: .6, cor: cor || [.75, .66, .52], alfa: .45, modo: 'normal', arrasto: .93 });
-  }
-  function aura(x, y, z, cor, n) {
-    for (let k = 0; k < (n || 2); k++) add({ x: x + (Math.random() - .5) * .6, y: y + Math.random() * 1.4, z: z + (Math.random() - .5) * .4, vx: 0, vy: .8 + Math.random() * 1.2, vz: 0, vida: .5 + Math.random() * .4, tam: .16, tamF: .02, cor, alfa: .8, fadeIn: true });
-  }
-  function estrelas(x, y, z, t) {                                       // tontura: estrelinhas girando sobre a cabeça
-    for (let k = 0; k < 3; k++) { const a = t * 5 + k * 2.1; add({ x: x + Math.cos(a) * .25, y: y + Math.sin(t * 9 + k) * .03, z: z + Math.sin(a) * .25, vx: 0, vy: 0, vz: 0, vida: .08, tam: .12, cor: [1, .92, .3], alfa: 1 }); }
-  }
-  function confete(x0, x1, y, z0, z1, n) {
-    const cores = [[1, .3, .3], [1, .85, .2], [.3, .8, 1], [.5, 1, .5], [1, .5, .9], [1, 1, 1]];
-    for (let k = 0; k < n; k++) add({ x: x0 + Math.random() * (x1 - x0), y: y + Math.random() * 2, z: z0 + Math.random() * (z1 - z0), vx: (Math.random() - .5) * .6, vy: -.6 - Math.random() * .8, vz: (Math.random() - .5) * .4, vida: 3 + Math.random() * 2, tam: .09, cor: cores[k % cores.length], alfa: 1, modo: 'normal', rot: Math.random() * 6, vrot: (Math.random() - .5) * 12, esticar: .5, curva: 4 });
-  }
-  function fogos(x, y, z, cor) {
-    for (let k = 0; k < 40; k++) { const a = Math.random() * Math.PI * 2, b = Math.acos(2 * Math.random() - 1), v = 4 + Math.random() * 1.5; add({ x, y, z, vx: Math.sin(b) * Math.cos(a) * v, vy: Math.cos(b) * v, vz: Math.sin(b) * Math.sin(a) * v * .4, vida: 1.2 + Math.random() * .5, tam: .22, tamF: .05, cor, alfa: 1, g: 2.5, arrasto: .96 }); }
-  }
-  return { lista, add, atualizar, impacto, poeira, aura, estrelas, confete, fogos, limpar: () => { lista.length = 0; } };
-})();
-
-const Arena3D = (() => {
-  const { No, M, caixa, esfera, capsula, cilindro, toro, plano, quadV, geo, hex, juntar, textura } = Motor3D;
-  const mat = (p, r, s) => M.trs(p, r || [0, 0, 0], s || [1, 1, 1], new Float32Array(16));
-  let tex = null;
-  function texturas() {
-    if (tex) return tex;
-    tex = {};
-    tex.tatame = textura((g, s) => {                                      // tatame: placas verdes-claras com borda escura
-      g.fillStyle = '#cfc58e'; g.fillRect(0, 0, s, s);
-      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const x = i * s / 2, y = j * s / 2; g.fillStyle = (i + j) % 2 ? '#c8bd82' : '#d6cc96'; g.fillRect(x + 3, y + 3, s / 2 - 6, s / 2 - 6); for (let k = 0; k < 18; k++) { g.fillStyle = 'rgba(120,110,60,.12)'; g.fillRect(x + 4, y + 6 + k * 3.4, s / 2 - 8, 1); } }
-      g.strokeStyle = '#2e3a24'; g.lineWidth = 3; for (let k = 0; k <= 2; k++) { g.beginPath(); g.moveTo(k * s / 2, 0); g.lineTo(k * s / 2, s); g.stroke(); g.beginPath(); g.moveTo(0, k * s / 2); g.lineTo(s, k * s / 2); g.stroke(); }
-    }, 256);
-    tex.pedra = textura((g, s) => {                                       // pátio de pedra
-      g.fillStyle = '#8c8070'; g.fillRect(0, 0, s, s);
-      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const v = 120 + Math.random() * 30 | 0; g.fillStyle = `rgb(${v + 14},${v + 4},${v - 10})`; g.fillRect(i * s / 4 + 2, j * s / 4 + 2 + (i % 2) * 6, s / 4 - 4, s / 4 - 4); }
-      for (let k = 0; k < 200; k++) { g.fillStyle = `rgba(40,30,20,${Math.random() * .12})`; g.fillRect(Math.random() * s, Math.random() * s, 2, 2); }
-    }, 256);
-    tex.bandeira = ['#b8202a', '#1f3f8a', '#e0a020', '#2a6a3a'].map((c, i) => textura((g, s) => {
-      g.fillStyle = c; g.fillRect(0, 0, s, s); g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(s * .08, 0, s * .06, s); g.fillRect(s * .86, 0, s * .06, s);
-      g.fillStyle = '#fff8e0'; g.font = `bold ${s * .34}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(['武', '道', '龍', '心'][i], s / 2, s * .32); g.fillText(['魂', '会', '王', '技'][i], s / 2, s * .72);
-    }, 128));
-    tex.madeira = textura((g, s) => { g.fillStyle = '#7a4a2a'; g.fillRect(0, 0, s, s); for (let k = 0; k < 40; k++) { g.fillStyle = `rgba(${Math.random() < .5 ? '40,20,10' : '150,100,60'},.25)`; g.fillRect(0, Math.random() * s, s, 1 + Math.random() * 2); } }, 128);
-    return tex;
-  }
-  /* clima por fase do torneio: céu (topo, meio, horizonte), sol, luz, ambiente, névoa */
-  const CLIMAS = {
-    tarde: { ceu: [[.32, .55, .9], [.78, .82, .92], [.98, .86, .66]], sol: [-.55, .55], luz: [.45, -1, -.35], luzCor: [1, .95, .85], amb: [.46, .45, .52], nevoa: [.85, .82, .8], rim: [1, .95, .85], lant: .35 },
-    por: { ceu: [[.22, .2, .45], [.95, .5, .35], [1, .78, .45]], sol: [.5, .05], luz: [-.55, -.8, -.4], luzCor: [1, .72, .5], amb: [.42, .34, .44], nevoa: [.85, .55, .45], rim: [1, .6, .35], lant: .8 },
-    noite: { ceu: [[.03, .04, .12], [.1, .1, .25], [.3, .18, .3]], sol: [.6, .7], luz: [.3, -1, -.6], luzCor: [.55, .6, .9], amb: [.28, .26, .4], nevoa: [.12, .1, .2], rim: [1, .7, .35], lant: 1.3 }
-  };
-  // torcida: cores das roupas e cabelos
-  const ROUPAS = ['#c0392b', '#2e86c1', '#f4d03f', '#27ae60', '#8e44ad', '#e67e22', '#ecf0f1', '#34495e', '#d35400', '#16a085', '#f1948a', '#5dade2'];
-  const PELES = ['#f6c19a', '#e0b08a', '#c08a60', '#8a5a3a', '#f1c9a5'], CABELOS = ['#1a1010', '#3a2a1a', '#6a4a2a', '#c8a050', '#222850', '#aa3322', '#e8e8e8'];
-  function construir(q) {
-    const T = texturas(), raizes = [], estatico = [], torcida = [], lanternas = [];
-    const add = (m, p, r, s, cor) => estatico.push({ m, mat: mat(p, r, s), cor: typeof cor === 'string' ? hex(cor) : cor });
-    // chão do pátio (com textura) e tatame elevado
-    const chao = new No(plano(90, 70, 14), '#ffffff', { contorno: false, tex: T.pedra }).em(0, -.32, -8); raizes.push(chao);
-    const tat = new No(plano(11, 5.2, 4), '#ffffff', { contorno: false, tex: T.tatame }).em(0, .001, 0); raizes.push(tat);
-    add(caixa(11.3, .32, 5.5), [0, -.16, 0], 0, 0, '#5a3a24');                         // base de madeira do tatame
-    add(caixa(11.4, .06, .12), [0, .01, 2.68], 0, 0, '#b8202a'); add(caixa(11.4, .06, .12), [0, .01, -2.68], 0, 0, '#b8202a');   // faixas vermelhas da borda
-    add(caixa(.12, .06, 5.5), [5.62, .01, 0], 0, 0, '#b8202a'); add(caixa(.12, .06, 5.5), [-5.62, .01, 0], 0, 0, '#b8202a');
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {                         // postes dos cantos com lanterna de pedra
-      add(cilindro(.12, .1, 1.4, 10), [sx * 5.75, -.3, sz * 2.85], 0, 0, '#3a2418');
-      add(caixa(.36, .3, .36), [sx * 5.75, 1.22, sz * 2.85], 0, 0, '#d9c8a0'); add(caixa(.5, .08, .5), [sx * 5.75, 1.41, sz * 2.85], 0, 0, '#3a2418');
-      lanternas.push([sx * 5.75, 1.22, sz * 2.85, 1]);
-    });
-    add(cilindro(.02, .02, 11.5, 4), [-5.75, 1.0, -2.85], [0, 0, -Math.PI / 2], 0, '#e8d8b0');   // cordas sagradas (shimenawa) de trás
-    for (let k = 0; k < 9; k++) add(caixa(.08, .26, .01), [-4.8 + k * 1.2, .82, -2.85], [0, 0, (k % 2 - .5) * .2], 0, '#ffffff');
-    // arquibancadas em degraus (atrás e nas laterais)
-    const degraus = q >= 1 ? 4 : 3;
-    for (let d = 0; d < degraus; d++) {
-      const z = -6.4 - d * 1.25, h = .55 + d * .55;
-      add(caixa(30, h, 1.3), [0, -.32 + h / 2, z], 0, 0, d % 2 ? '#6a3e22' : '#7a4a2a');
-      add(caixa(30, .06, 1.32), [0, -.32 + h, z], 0, 0, '#a8744a');
-      [-1, 1].forEach(s => { add(caixa(1.3, h, 9), [s * (16 + d * 1.25), -.32 + h / 2, -1.5], 0, 0, d % 2 ? '#6a3e22' : '#7a4a2a'); });
-      // torcida do degrau (corpo + cabeça), cada um com fase própria (pula na comemoração)
-      const passo = q >= 2 ? .62 : q === 1 ? .8 : 1.1;
-      for (let x = -14.5; x <= 14.5; x += passo) {
-        if (Math.random() < .12) continue;
-        const xx = x + (Math.random() - .5) * .2, yy = -.32 + h, zz = z + (Math.random() - .5) * .2, fase = .05 + Math.random() * .95, esc = .85 + Math.random() * .25;
-        const roupa = hex(ROUPAS[Math.random() * ROUPAS.length | 0]);
-        torcida.push({ m: geo('torcCorpo', () => capsula(.17, .32, 7)), mat: mat([xx, yy + .5 * esc, zz], 0, [esc, esc, esc]), cor: roupa, fase });
-        torcida.push({ m: geo('torcCab', () => esfera(.14, 8, 6)), mat: mat([xx, yy + .82 * esc, zz], 0, [esc, esc, esc]), cor: hex(PELES[Math.random() * PELES.length | 0]), fase });
-        torcida.push({ m: geo('torcCabelo', () => esfera(.15, 8, 5)), mat: mat([xx, yy + .87 * esc, zz - .02], 0, [esc, esc * .8, esc]), cor: hex(CABELOS[Math.random() * CABELOS.length | 0]), fase });
-        if (Math.random() < .35) torcida.push({ m: geo('torcBraco', () => capsula(.05, .3, 5)), mat: mat([xx + (Math.random() < .5 ? -.18 : .18), yy + 1.02 * esc, zz], [0, 0, Math.PI + (Math.random() - .5) * .6], [esc, esc, esc]), cor: roupa, fase });
+  const rgba = (c, a) => 'rgba(' + (c[0] * 255 | 0) + ',' + (c[1] * 255 | 0) + ',' + (c[2] * 255 | 0) + ',' + a.toFixed(3) + ')';
+  // desenha em coordenadas de cena (o contexto já está com a câmera aplicada)
+  function desenhar(g) {
+    for (const modo of ['normal', 'soma']) {
+      g.globalCompositeOperation = modo === 'soma' ? 'lighter' : 'source-over';
+      for (const p of lista) {
+        if ((p.modo || 'soma') !== modo) continue;
+        const x = cenaX(p.x), y = cenaY(p.y), s = Math.max(1, p.tam * CENA_M), a = Math.max(0, p.alfa);
+        if (a <= .01) continue;
+        g.fillStyle = rgba(p.cor, a);
+        switch (p.forma) {
+          case 'estrela': {                                              // explosão de impacto (como na ficha: estrela de energia)
+            g.save(); g.translate(x, y); g.rotate(p.rot || 0); g.beginPath();
+            for (let k = 0; k < 16; k++) { const r = k % 2 ? s * .32 : s * (k % 4 ? .8 : 1.15), an = k / 16 * Math.PI * 2; g.lineTo(Math.cos(an) * r, Math.sin(an) * r); }
+            g.closePath(); g.fill(); g.fillStyle = rgba([1, 1, 1], a); g.beginPath(); g.arc(0, 0, s * .3, 0, 7); g.fill(); g.restore(); break;
+          }
+          case 'anel': g.strokeStyle = rgba(p.cor, a); g.lineWidth = Math.max(1, s * .12); g.beginPath(); g.ellipse(x, y, s, s * (p.achatado || 1), 0, 0, 7); g.stroke(); break;
+          case 'brilho': { const gr = g.createRadialGradient(x, y, 0, x, y, s); gr.addColorStop(0, rgba(p.cor, a)); gr.addColorStop(1, rgba(p.cor, 0)); g.fillStyle = gr; g.fillRect(x - s, y - s, s * 2, s * 2); break; }
+          case 'raio': g.save(); g.translate(x, y); g.rotate(p.rot || 0); g.fillRect(-s * (p.esticar || 3), -Math.max(.6, s * .18), s * 2 * (p.esticar || 3), Math.max(1.2, s * .36)); g.restore(); break;
+          default: { const q = Math.max(1, Math.round(s)); g.fillRect(Math.round(x - q / 2), Math.round(y - q / 2), q, Math.round(q * (p.esticar || 1))); }   // pixel quadrado
+        }
       }
     }
-    // pavilhão: colunas vermelhas, vigas e telhado escuro com beirais curvos
-    const zp = -6.2 - degraus * 1.25 - .6;
-    for (let x = -15; x <= 15; x += 5) { add(cilindro(.22, .2, 5.6, 12), [x, -.32, zp], 0, 0, '#a51e22'); add(caixa(.6, .3, .6), [x, -.2, zp], 0, 0, '#2a1a14'); }
-    add(caixa(31, .32, .5), [0, 5.05, zp], 0, 0, '#7a1418'); add(caixa(31, .18, .4), [0, 4.55, zp], 0, 0, '#c9a24a');
-    add(caixa(32.5, .3, 3.4), [0, 5.55, zp + .6], [-.22, 0, 0], 0, '#2a2630'); add(caixa(33, .18, .6), [0, 5.2, zp + 2.2], [-.05, 0, 0], 0, '#3a3440');
-    // torii gigante atrás do pavilhão
-    const zt = zp - 7;
-    [-4.4, 4.4].forEach(x => add(cilindro(.42, .36, 10, 14), [x, -.32, zt], 0, 0, '#c0281e'));
-    add(caixa(12.5, .7, .8), [0, 9.3, zt], 0, 0, '#c0281e'); add(caixa(13.6, .4, 1), [0, 9.85, zt], [0, 0, 0], 0, '#1e1a20'); add(caixa(10.5, .45, .55), [0, 7.9, zt], 0, 0, '#c0281e');
-    add(caixa(1.2, 1.4, .3), [0, 8.7, zt + .4], 0, 0, '#1e1a20');
-    // montanhas e árvores no horizonte
-    [[-34, -46, 11, 16], [-14, -54, 14, 22], [8, -50, 12, 18], [30, -44, 10, 14], [48, -56, 13, 20], [-50, -58, 12, 18]].forEach(([x, z, r, h], i) => {
-      add(cilindro(r, 0, h, 9), [x, -.32, z], [0, i, 0], 0, i % 2 ? '#5a6a8a' : '#4a5a7a');
-      add(cilindro(r * .32, 0, h * .3, 9), [x, h * .7 - .32, z], [0, i, 0], 0, '#e8eef8');   // pico com neve
+    g.globalCompositeOperation = 'source-over';
+  }
+  // impacto: estrela de energia + anel + faíscas em pixel
+  function impacto(x, y, cor, forte) {
+    add({ x, y, vx: 0, vy: 0, vida: forte ? .26 : .18, tam: forte ? .55 : .35, tamF: forte ? .95 : .55, cor, alfa: 1, forma: 'estrela', rot: Math.random() });
+    add({ x, y, vx: 0, vy: 0, vida: .28, tam: .15, tamF: forte ? 1.1 : .7, cor: [1, 1, 1], alfa: .9, forma: 'anel' });
+    add({ x, y, vx: 0, vy: 0, vida: .3, tam: forte ? 1.1 : .6, cor, alfa: .55, forma: 'brilho' });
+    for (let k = 0; k < (forte ? 20 : 11); k++) { const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * (forte ? 6 : 3.5); add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vida: .2 + Math.random() * .25, tam: .07, tamF: .03, cor: Math.random() < .5 ? cor : [1, 1, 1], arrasto: .9 }); }
+  }
+  function poeira(x, y, n, cor) {
+    for (let k = 0; k < (n || 8); k++) add({ x: x + (Math.random() - .5) * .5, y: y + .05, vx: (Math.random() - .5) * 2.2, vy: .3 + Math.random() * .8, vida: .5 + Math.random() * .4, tam: .12, tamF: .3, cor: cor || [.86, .8, .66], alfa: .7, modo: 'normal', arrasto: .93, forma: 'brilho' });
+  }
+  function aura(x, y, cor, n) { for (let k = 0; k < (n || 2); k++) add({ x: x + (Math.random() - .5) * .7, y: y + Math.random() * 1.6, vx: 0, vy: 1 + Math.random() * 1.4, vida: .45 + Math.random() * .35, tam: .09, tamF: .03, cor, alfa: .9, fadeIn: true, esticar: 2.5 }); }
+  function estrelas(x, y, t) { for (let k = 0; k < 3; k++) { const a = t * 5 + k * 2.1; add({ x: x + Math.cos(a) * .3, y: y + Math.sin(a) * .08, vx: 0, vy: 0, vida: .08, tam: .1, cor: [1, .92, .3], alfa: 1 }); } }
+  function confete(x0, x1, y, n) {
+    const cores = [[1, .3, .3], [1, .85, .2], [.3, .8, 1], [.5, 1, .5], [1, .5, .9], [1, 1, 1]];
+    for (let k = 0; k < n; k++) add({ x: x0 + Math.random() * (x1 - x0), y: y + Math.random() * 1.5, vx: (Math.random() - .5) * .6, vy: -.5 - Math.random() * .8, vida: 3 + Math.random() * 2, tam: .07, cor: cores[k % cores.length], alfa: 1, modo: 'normal', curva: 4, esticar: Math.random() < .5 ? .5 : 1.5 });
+  }
+  function fogos(x, y, cor) {
+    add({ x, y, vx: 0, vy: 0, vida: .5, tam: 1.6, cor, alfa: .5, forma: 'brilho' });
+    for (let k = 0; k < 34; k++) { const a = k / 34 * Math.PI * 2, v = 3.2 + Math.random() * .8; add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vida: 1.1 + Math.random() * .4, tam: .09, tamF: .04, cor, alfa: 1, g: 2.2, arrasto: .95 }); }
+  }
+  return { lista, add, atualizar, desenhar, impacto, poeira, aura, estrelas, confete, fogos, rgba, hexA, limpar: () => { lista.length = 0; } };
+})();
+
+/* ---------- arena do torneio pintada em pixel art (tarde, pôr do sol ou noite) ---------- */
+const Arena2D = (() => {
+  const off = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  function px(g, x, y, w, h, c) { g.fillStyle = c; g.fillRect(x | 0, y | 0, Math.max(1, w | 0), Math.max(1, h | 0)); }
+  const CLIMAS = {
+    tarde: { ceu: ['#5aa0e8', '#9cc8f0', '#d8ecf8', '#fff2d0'], sol: [180, 34, '#fff8d8'], tinta: null, lant: 0, chao: '#cfc982' },
+    por:   { ceu: ['#3a2a6a', '#a04a6a', '#f08a4a', '#ffd08a'], sol: [800, 92, '#ffe0a0'], tinta: 'rgba(255,140,90,.28)', lant: .7, chao: '#d8b878' },
+    noite: { ceu: ['#06081a', '#141a3a', '#2a2050', '#4a2a50'], sol: [820, 30, '#f4f0ff'], tinta: 'rgba(30,30,90,.55)', lant: 1, chao: '#9a9468' }
+  };
+  const cache = {};
+  const BANDEIRAS = [['#b8202a', '武'], ['#1f3f8a', '道'], ['#e0a020', '龍'], ['#2a6a3a', '心'], ['#b8202a', '魂'], ['#1f3f8a', '技']];
+  // pinta o cenário inteiro (1000 x 200 pixels de cena)
+  function pintar(nome) {
+    if (cache[nome]) return cache[nome];
+    const C = CLIMAS[nome] || CLIMAS.tarde, W = CENA_W, H = 200;
+    const fundo = off(W, H), g = fundo.getContext('2d');
+    // céu em faixas (pixel art) + sol/lua
+    const faixas = C.ceu; for (let y = 0; y < 112; y++) { const k = y / 112 * (faixas.length - 1), i = Math.min(faixas.length - 2, Math.floor(k)); px(g, 0, y, W, 1, (k - i) > .5 && (y % 2 || (k - i) > .75) ? faixas[i + 1] : faixas[i]); }
+    const [sx, sy, sc] = C.sol; g.fillStyle = sc; g.beginPath(); g.arc(sx, sy, 13, 0, 7); g.fill(); g.globalAlpha = .25; g.beginPath(); g.arc(sx, sy, 20, 0, 7); g.fill(); g.globalAlpha = 1;
+    if (nome === 'noite') { const r = mulberry32(77); for (let k = 0; k < 160; k++) px(g, r() * W, r() * 80, 1, 1, r() < .2 ? '#fff4c0' : '#c8d0ff'); }
+    // tudo o que não é céu é pintado em outra camada (para receber a cor do entardecer/noite)
+    const L = off(W, H), l = L.getContext('2d');
+    // montanhas com neve
+    [[60, 62, 120], [250, 50, 160], [470, 58, 150], [700, 48, 170], [900, 60, 130]].forEach(([x, y, w], i) => {
+      l.fillStyle = i % 2 ? '#6a7aa0' : '#5a6a90'; l.beginPath(); l.moveTo(x - w, 112); l.lineTo(x, y); l.lineTo(x + w, 112); l.fill();
+      l.fillStyle = '#eef2fa'; l.beginPath(); l.moveTo(x - w * .22, y + 14); l.lineTo(x, y); l.lineTo(x + w * .22, y + 14); l.lineTo(x + 6, y + 10); l.lineTo(x - 4, y + 15); l.fill();
     });
-    for (let k = 0; k < 26; k++) { const x = -40 + k * 3.2 + Math.random(), z = -24 - Math.random() * 6, h = 3 + Math.random() * 3; add(cilindro(.15, .12, h * .4, 6), [x, -.32, z], 0, 0, '#3a2418'); add(esfera(1.4, 7, 5), [x, h * .5, z], 0, [1, 1.1, 1], k % 3 ? '#2f5a3a' : '#e8a0b8'); }
-    // malhas finais
-    const cenario = new No(juntar(estatico), '#ffffff', { contorno: false }); raizes.push(cenario);
-    const povo = new No(juntar(torcida), '#ffffff', { contorno: q >= 1, linha: .012 }); povo.pulo = .04; raizes.push(povo);
-    // bandeiras penduradas no pavilhão e nas laterais (balançam)
-    const bandeiras = [];
-    for (let k = 0; k < 6; k++) {
-      const b = new No(geo('bandeira', () => quadV(1.1, 2.4)), '#ffffff', { contorno: false, tex: T.bandeira[k % 4], sombra: false }).em(-12.5 + k * 5, 2.2, zp + .35);
-      raizes.push(b); bandeiras.push(b);
+    // árvores (cerejeiras e pinheiros) atrás do pavilhão
+    const ra = mulberry32(5); for (let x = 0; x < W; x += 13) { const h = 10 + ra() * 10, c = ra() < .4 ? ['#f0a8c0', '#d880a0'] : ['#3a7a4a', '#2a5a3a']; px(l, x + 5, 96, 2, 14, '#4a2e18'); l.fillStyle = c[1]; l.beginPath(); l.arc(x + 6, 96 - h * .3, h * .55, 0, 7); l.fill(); l.fillStyle = c[0]; l.beginPath(); l.arc(x + 4, 94 - h * .4, h * .4, 0, 7); l.fill(); }
+    // torii gigante no meio
+    [446, 548].forEach(x => { px(l, x, 22, 8, 92, '#c0281e'); px(l, x + 6, 22, 2, 92, '#8a1a14'); });
+    px(l, 430, 16, 142, 7, '#1e1a20'); px(l, 424, 14, 154, 3, '#1e1a20'); px(l, 436, 24, 130, 6, '#c0281e'); px(l, 440, 36, 122, 4, '#c0281e'); px(l, 494, 24, 14, 12, '#1e1a20'); px(l, 497, 27, 8, 6, '#e8c45a');
+    // pavilhão: telhado escuro com beiral curvo, viga dourada, colunas vermelhas
+    for (let x = 0; x < W; x++) { const b = Math.round(Math.sin(x / W * Math.PI * 6) * 1.5); px(l, x, 44 + b, 1, 8, '#2a2630'); px(l, x, 52 + b, 1, 2, '#4a4458'); }
+    px(l, 0, 54, W, 3, '#7a1418'); px(l, 0, 57, W, 2, '#c9a24a');
+    for (let x = 20; x < W; x += 80) { px(l, x, 59, 6, 54, '#a51e22'); px(l, x + 4, 59, 2, 54, '#7a1418'); px(l, x - 2, 110, 10, 3, '#2a1a14'); }
+    // bandeiras com kanji penduradas entre as colunas
+    l.font = 'bold 9px serif'; l.textAlign = 'center'; l.textBaseline = 'middle';
+    for (let x = 52, k = 0; x < W; x += 160, k++) { const [c, kj] = BANDEIRAS[k % BANDEIRAS.length]; px(l, x, 60, 18, 34, c); px(l, x, 60, 18, 2, '#1e1a20'); px(l, x + 2, 60, 1, 34, 'rgba(255,255,255,.6)'); px(l, x + 15, 60, 1, 34, 'rgba(255,255,255,.6)'); for (let j = 0; j < 4; j++) px(l, x + 1 + j * 5, 94, 3, 3 + (j % 2) * 2, c); l.fillStyle = '#fff8e0'; l.fillText(kj, x + 9, 71); }
+    // arquibancada em degraus (a torcida é desenhada por cima, mexendo)
+    for (let d = 0; d < 4; d++) { const y = 74 + d * 10; px(l, 0, y + 6, W, 10, d % 2 ? '#6a3e22' : '#7a4a2a'); px(l, 0, y + 6, W, 1, '#a8744a'); for (let x = (d * 13) % 40; x < W; x += 40) px(l, x, y + 7, 1, 9, '#4a2a16'); }
+    // pátio de pedra atrás do tatame
+    for (let y = 114; y < 128; y++) px(l, 0, y, W, 1, y % 4 ? '#a89a84' : '#8a7e6a');
+    for (let x = 0; x < W; x += 22) px(l, x + ((x / 22) % 2) * 11, 114, 1, 14, '#7a6e5c');
+    // tatame em perspectiva (fundo y=128, frente y=178)
+    const yT = 128, yF = 178, larg = y => 236 * (.86 + (y - yT) / (yF - yT) * .32);
+    for (let y = yT; y < yF; y++) { const w = larg(y), k = (y - yT) / (yF - yT); px(l, CENA_CX - w, y, w * 2, 1, (Math.floor(k * 6) % 2) ? '#cfc58e' : '#d8ce98'); }
+    l.strokeStyle = '#4a5a30'; l.lineWidth = 1;
+    for (let k = -6; k <= 6; k++) { l.beginPath(); l.moveTo(CENA_CX + k * 236 * .86 / 6, yT); l.lineTo(CENA_CX + k * 236 * 1.18 / 6, yF); l.stroke(); }
+    for (let k = 1; k < 4; k++) { const y = yT + k * (yF - yT) / 4; px(l, CENA_CX - larg(y), y, larg(y) * 2, 1, '#6a7a40'); }
+    // borda vermelha e base de madeira do tatame
+    for (let y = yT; y < yF; y++) { const w = larg(y); px(l, CENA_CX - w - 3, y, 3, 1, '#b8202a'); px(l, CENA_CX + w, y, 3, 1, '#b8202a'); }
+    px(l, CENA_CX - larg(yT) - 3, yT - 1, larg(yT) * 2 + 6, 2, '#b8202a'); px(l, CENA_CX - larg(yF) - 3, yF, larg(yF) * 2 + 6, 3, '#b8202a');
+    px(l, CENA_CX - larg(yF) - 3, yF + 3, larg(yF) * 2 + 6, 8, '#5a3a24'); for (let x = CENA_CX - larg(yF); x < CENA_CX + larg(yF); x += 9) px(l, x, yF + 3, 1, 8, '#3a2414');
+    // chão da frente
+    for (let y = yF + 11; y < H; y++) px(l, 0, y, W, 1, y % 3 ? '#8a7e6a' : '#7a6e5c');
+    for (let y = yT; y < yF + 11; y++) { const w = larg(Math.min(y, yF)) + 3; px(l, 0, y, CENA_CX - w, 1, y % 4 ? '#a89a84' : '#948870'); px(l, CENA_CX + w, y, W - CENA_CX - w, 1, y % 4 ? '#a89a84' : '#948870'); }
+    // postes dos cantos com lanterna de pedra
+    [[-1, yT], [1, yT], [-1, yF], [1, yF]].forEach(([s, y]) => { const x = CENA_CX + s * (larg(y) + 8); px(l, x - 2, y - 40, 4, 40, '#3a2418'); px(l, x - 5, y - 48, 10, 9, '#e8dcb8'); px(l, x - 3, y - 46, 6, 5, '#ffd27a'); px(l, x - 7, y - 50, 14, 3, '#3a2418'); });
+    // cordas sagradas (shimenawa) atrás
+    for (let x = CENA_CX - larg(yT) - 8; x < CENA_CX + larg(yT) + 8; x++) { const yy = yT - 30 + Math.round(Math.sin((x - CENA_CX) / 60) * 2); px(l, x, yy, 1, 2, '#e8d8b0'); }
+    for (let x = CENA_CX - larg(yT); x < CENA_CX + larg(yT); x += 26) { px(l, x, yT - 28, 3, 6, '#ffffff'); px(l, x + 1, yT - 22, 2, 4, '#ffffff'); }
+    // entardecer/noite: escurece tudo menos o céu
+    if (C.tinta) { l.globalCompositeOperation = 'source-atop'; l.fillStyle = C.tinta; l.fillRect(0, 0, W, H); l.globalCompositeOperation = 'source-over'; }
+    g.drawImage(L, 0, 0);
+    // lanternas de papel penduradas no pavilhão (acesas no fim da tarde e à noite)
+    const lant = []; for (let x = 60; x < W; x += 80) lant.push([x, 66]);
+    lant.forEach(([x, y]) => { px(g, x, y - 6, 1, 4, '#2a1a10'); px(g, x - 4, y - 3, 9, 10, '#e8473b'); px(g, x - 3, y - 1, 7, 6, C.lant ? '#ffd27a' : '#ff8a68'); px(g, x - 5, y - 3, 11, 2, '#2a1a10'); px(g, x - 5, y + 6, 11, 2, '#2a1a10'); });
+    // torcida: posições fixas (desenhadas a cada quadro, pulando conforme a empolgação)
+    const r = mulberry32(31), povo = [], CORES = ['#c0392b', '#2e86c1', '#f4d03f', '#27ae60', '#8e44ad', '#e67e22', '#ecf0f1', '#34495e', '#d35400', '#16a085', '#f1948a', '#5dade2'],
+      PELES = ['#f6c19a', '#e0b08a', '#c08a60', '#8a5a3a'], CABS = ['#1a1010', '#3a2a1a', '#6a4a2a', '#c8a050', '#222850', '#aa3322'];
+    for (let d = 0; d < 4; d++) for (let x = 4 + r() * 4; x < W - 4; x += 6 + r() * 3) { if (r() < .12) continue; povo.push({ x: Math.round(x), y: 80 + d * 10, c: CORES[r() * CORES.length | 0], p: PELES[r() * PELES.length | 0], h: CABS[r() * CABS.length | 0], f: r() * 6.28, b: r() < .4 }); }
+    const tintaPovo = C.tinta;
+    return (cache[nome] = { fundo, povo, lant, clima: C, nome, tintaPovo });
+  }
+  // torcida em pixel (corpo, cabeça, cabelo, braços pra cima quando comemora)
+  let povoCv = null;
+  function desenharPovo(g0, a, t, emp) {
+    let g = g0;
+    if (a.tintaPovo) { povoCv = povoCv || off(CENA_W, 120); g = povoCv.getContext('2d'); g.clearRect(0, 0, CENA_W, 120); }
+    for (const p of a.povo) {
+      const pula = Math.max(0, Math.sin(t * 9 + p.f)) * Math.min(3, emp * 12), y = Math.round(p.y - pula);
+      px(g, p.x - 2, y - 7, 5, 7, p.c); px(g, p.x - 2, y - 11, 4, 4, p.p); px(g, p.x - 2, y - 12, 4, 2, p.h);
+      if (p.b && emp > .08) { px(g, p.x - 3, y - 13, 1, 5, p.c); px(g, p.x + 3, y - 13, 1, 5, p.c); }
     }
-    // lanternas de papel vermelhas (brilham mais à noite)
-    const lantNos = [];
-    for (let k = 0; k < 14; k++) { const x = -15 + k * (30 / 13); lanternas.push([x, 4.1 + Math.sin(k) * .1, zp + .9, 0]); }
-    for (const [x, y, z, pedra] of lanternas) {
-      const l = new No(geo(pedra ? 'lantPedraLuz' : 'lantPapel', () => pedra ? caixa(.26, .2, .26) : esfera(.28, 10, 8)), pedra ? [1, .85, .5] : [.9, .2, .15], { contorno: !pedra, linha: .01, emis: [0, 0, 0] }).em(x, y, z).escala(1, pedra ? 1 : 1.25, 1);
-      l.pedra = pedra; raizes.push(l); lantNos.push(l);
-    }
-    return { raizes, povo, bandeiras, lanternas: lantNos, zp };
+    if (a.tintaPovo) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = a.tintaPovo; g.fillRect(0, 0, CENA_W, 120); g.globalCompositeOperation = 'source-over'; g0.drawImage(povoCv, 0, 0); }
   }
-  function aplicarClima(cena, a, nome) {
-    const c = CLIMAS[nome] || CLIMAS.tarde;
-    Object.assign(cena, { ceu: c.ceu, sol: c.sol, luz: c.luz, luzCor: c.luzCor, amb: c.amb, nevoa: c.nevoa, rim: c.rim, nevoaD: 22 });
-    for (const l of a.lanternas) l.emis = l.pedra ? [c.lant * .7, c.lant * .5, c.lant * .2] : [c.lant * .8, c.lant * .25, c.lant * .1];
-    a.clima = c;
+  // brilho das lanternas (soma luz) — mais forte à noite
+  function desenharLuzes(g, a, t) {
+    const k = a.clima.lant; if (!k) return;
+    g.globalCompositeOperation = 'lighter';
+    for (const [x, y] of a.lant) { const r = 16 + Math.sin(t * 3 + x) * 1.5, gr = g.createRadialGradient(x, y + 1, 0, x, y + 1, r); gr.addColorStop(0, 'rgba(255,170,80,' + (.45 * k) + ')'); gr.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    g.globalCompositeOperation = 'source-over';
   }
-  // brilho das lanternas (partículas que somam luz) e bandeiras balançando
-  function animar(a, t, dt) {
-    a.bandeiras.forEach((b, k) => { b.rot[0] = Math.sin(t * 1.6 + k) * .06; b.rot[2] = Math.sin(t * 1.1 + k * 2) * .03; });
-    if (a.clima && a.clima.lant > .5) for (const l of a.lanternas) if (Math.random() < dt * 3) FX3D.add({ x: l.pos[0], y: l.pos[1], z: l.pos[2] + .1, vx: 0, vy: 0, vz: 0, vida: .5, tam: (l.pedra ? 1 : 1.5) * a.clima.lant, cor: [1, .5, .2], alfa: .22, fadeIn: true });
-  }
-  return { construir, aplicarClima, animar, CLIMAS };
+  return { pintar, desenharPovo, desenharLuzes, CLIMAS, px, off };
 })();
 
 /* =====================================================================
-   LUTA LATERAL 3D (só nas lutas oficiais do torneio)
+   LUTA LATERAL DO TORNEIO (só nas lutas oficiais)
    Câmera de lado, estilo jogo de luta. Golpes com preparação/ativo/recuperação,
    hitbox na frente do lutador, defesa, esquiva com janela, tontura e queda.
    Cada competidor tem uma IA com estilo próprio. Ninguém vence repetindo um golpe só.
+   Visual: mesmo estilo da abertura (cenário em pixel art + personagens anime do jogo).
    ===================================================================== */
-const Luta3D = (() => {
-  const B = Boneco3D, R = Math.PI / 180;
+const Luta2D = (() => {
   const DANO_IA = .62;                                                   // equilíbrio: quanto do dano da IA chega no Akira
   /* ---------- golpes (tempos em segundos, alcance em metros) ---------- */
   const GOLPES = {
@@ -8802,37 +8379,39 @@ const Luta3D = (() => {
     return Object.assign({}, g, { id: DO_RPG[id], nome: t.nome, dano: t.dano, prep: Math.max(.07, t.prep), ativo: t.ativo + .02, rec: t.rec + .02 });
   }
 
-  /* ---------- competidores: visual 3D + estilo de luta (IA) ----------
-     PROVISÓRIO: aparência de Renji, Goro e Mei (o projeto ainda não definiu). Ajuste aqui. */
-  const dePal = (p, ex) => Object.assign({ gi: p.gi, pele: p.pele, cab: p.cab, cabelo: p.cabelo, faixa: p.faixa, olho: p.iris, esc: .94 * (p.esc || 1), bravo: p.olho === 'angry', banda: p.testa || null }, ex);
+
+  /* ---------- competidores: aparência (a mesma do jogo) + estilo de luta (IA) ----------
+     cor = cor da energia/efeitos. Akira: azul, como na ficha do personagem. */
   const LUTADORES = {
-    akira: { nome: 'Akira', estilo: 'Karatê equilibrado', cor: '#ffcf4a', visual: () => ({ gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', cabelo: 'espeto', faixa: FAIXAS[estado.faixa].cor, banda: '#1c1c24', olho: '#b4561c', esc: .92 }) },
-    renji: { nome: 'Renji', estilo: 'Velocidade', cor: '#9ff8e0', visual: () => ({ gi: '#1f6f62', calca: '#16483f', pele: '#e8b890', cab: '#e4e6ee', cabelo: 'espeto', faixa: '#222', banda: '#e8e8e8', olho: '#2a8a6a', esc: .93 }),
+    akira: { nome: 'Akira', estilo: 'Karatê equilibrado', cor: '#4fc8ff', est: () => estiloAkira() },
+    renji: { nome: 'Renji', estilo: 'Velocidade', cor: '#9ff8e0', pal: () => PAL_COMP.renji,
       ia: { vel: 2.7, hp: 95, forca: .9, reacao: .19, defesa: .22, esquiva: .42, punir: .6, agress: .85, dist: 1.0, cadeia: .6, golpes: [['jab', 3], ['direto', 2], ['investida', 3], ['chute', 1]], salto: .12 } },
-    goro: { nome: 'Goro', estilo: 'Força', cor: '#ffb347', visual: () => ({ gi: '#8a3a1a', calca: '#5a2a14', pele: '#c08a60', cab: '#151010', cabelo: 'curto', faixa: '#222', olho: '#3a2a1a', esc: 1.12, largura: 1.38, bravo: true }),
+    goro: { nome: 'Goro', estilo: 'Força', cor: '#ffb347', pal: () => PAL_COMP.goro,
       ia: { vel: 1.35, hp: 130, forca: 1.3, reacao: .3, defesa: .35, esquiva: .05, punir: .5, agress: .55, dist: 1.1, cadeia: .25, golpes: [['marreta', 3], ['empurrao', 2], ['direto', 2], ['gancho', 2]], armadura: true } },
-    mei: { nome: 'Mei', estilo: 'Contra-ataque', cor: '#ff9fc0', visual: () => ({ gi: '#3a2a4a', calca: '#2a1e36', pele: '#f1c9a5', cab: '#1a1010', cabelo: 'coque', faixa: '#d96b8a', olho: '#6a2a4a', esc: .88, mangaLonga: true }),
+    mei: { nome: 'Mei', estilo: 'Contra-ataque', cor: '#ff9fc0', pal: () => PAL_COMP.mei_torneio,
       ia: { vel: 1.9, hp: 105, forca: 1.0, reacao: .16, defesa: .55, esquiva: .5, punir: .95, agress: .3, dist: 1.45, cadeia: .3, golpes: [['jab', 2], ['chute', 2], ['lateral', 1]], contraGolpe: 'contra' } },
-    luna: { nome: 'Luna', estilo: 'Chutes elétricos', cor: '#ffe45e', visual: () => dePal(PAL_NPC.luna || PN('#2a2a4a', '#e8c0a0', '#1a1a2a', 'longo', '#ffe45e'), { olho: '#4a6aaa' }),
+    luna: { nome: 'Luna', estilo: 'Chutes elétricos', cor: '#ffe45e', pal: () => PAL_NPC.luna,
       ia: { vel: 2.1, hp: 105, forca: 1.0, reacao: .21, defesa: .35, esquiva: .35, punir: .55, agress: .6, dist: 1.35, cadeia: .45, golpes: [['chute', 3], ['chuteAlto', 2], ['lateral', 2], ['jab', 1]], elemento: 'raio' } },
-    nicolas: { nome: 'Nicolas', estilo: 'Gelo e distância', cor: '#8fe8ff', visual: () => dePal(PAL_NPC.nicolas),
+    nicolas: { nome: 'Nicolas', estilo: 'Gelo e distância', cor: '#8fe8ff', pal: () => PAL_NPC.nicolas,
       ia: { vel: 1.8, hp: 115, forca: 1.05, reacao: .23, defesa: .55, esquiva: .2, punir: .6, agress: .45, dist: 1.45, cadeia: .35, golpes: [['lateral', 3], ['direto', 2], ['palma', 1]], elemento: 'gelo' } },
-    henrique: { nome: 'Henrique', estilo: 'Fogo e pressão', cor: '#ff6a2a', visual: () => dePal(PAL_NPC.henrique),
+    henrique: { nome: 'Henrique', estilo: 'Fogo e pressão', cor: '#ff6a2a', pal: () => PAL_NPC.henrique,
       ia: { vel: 2.0, hp: 115, forca: 1.1, reacao: .24, defesa: .3, esquiva: .25, punir: .55, agress: .8, dist: 1.1, cadeia: .55, golpes: [['direto', 2], ['gancho', 2], ['cotovelo', 2], ['chute', 2]], elemento: 'fogo' } },
-    oitavo: { nome: 'O Oitavo Dragão', estilo: 'Desconhecido', cor: '#ffcf4a', visual: () => ({ gi: '#121018', calca: '#0e0c14', pele: '#3a2a24', cab: '#08060c', faixa: '#c9a24a', chapeu: true, sombra: true, aroPunho: '#c9a24a', mangaLonga: true, esc: 1.0 }),
+    oitavo: { nome: 'O Oitavo Dragão', estilo: 'Desconhecido', cor: '#ffcf4a', pal: () => PAL_COMP.oitavo, chefe: 'oitavo_dragao',
       ia: { vel: 2.2, hp: 135, forca: 1.15, reacao: .17, defesa: .5, esquiva: .42, punir: .9, agress: .6, dist: 1.3, cadeia: .5, golpes: [['jab', 2], ['direto', 2], ['lateral', 2], ['giro', 1], ['palma', 2], ['sombra', 1]], leitura: 1, contraGolpe: 'contra' } }
   };
+  const estiloDe = id => { const d = LUTADORES[id] || {}; return d.est ? d.est() : estiloPal(d.pal ? d.pal() : PAL_INIM); };
 
   /* ---------- estado da cena ---------- */
-  let cv = null, ui = null, arena = null, cena = null, ativo = false, escalaT = 1, lentoT = 0, quadroCb = null;
-  const cam = { olho: [0, 1.7, 7], alvo: [0, 1.1, 0], fov: .75, modo: 'lado', tremor: 0, d: { olho: [0, 1.7, 7], alvo: [0, 1.1, 0] } };
-  let L = [], luta = null, plateia = [], baloes = [], esperas = [], legenda = null, tempoCena = 0, VP = null, empolgacao = .04;
+  let cv = null, g2 = null, ui = null, ativo = false, escalaT = 1, lentoT = 0, quadroCb = null, cenario = null, clima = 'tarde';
+  const cam = { x: CENA_CX, y: 104, z: 1, alvo: { x: CENA_CX, y: 104, z: 1 }, modo: 'lado', vel: 5, tremor: 0, corte: false, linhas: 0, k: 1 };
+  const ganchos = { fundo: null, frente: null };
+  let L = [], luta = null, plateia = [], baloes = [], esperas = [], legenda = null, tempoCena = 0, empolgacao = .04;
 
   /* ---------- tela (DOM) ---------- */
   function montarUI() {
     if (ui) return ui;
-    const s = document.createElement('section'); s.id = 'luta3d'; s.hidden = true;
-    s.innerHTML = `<canvas id="c3d"></canvas>
+    const s = document.createElement('section'); s.id = 'telaTorneio'; s.hidden = true;
+    s.innerHTML = `<canvas id="c2d"></canvas>
       <header class="l3topo"><div class="l3lado l3a"><b class="l3nome"></b><div class="l3vida"><i class="l3rastro"></i><i class="l3hp"></i></div><div class="l3pips"></div><div class="l3aura"><i></i></div></div>
       <div class="l3tempo">40</div><div class="l3lado l3b"><b class="l3nome"></b><div class="l3vida"><i class="l3rastro"></i><i class="l3hp"></i></div><div class="l3pips"></div><small class="l3estilo"></small></div></header>
       <p class="l3combo" hidden></p><p class="l3centro" hidden></p><p class="l3sub" hidden></p>
@@ -8842,10 +8421,10 @@ const Luta3D = (() => {
       <button type="button" class="l3pular" hidden>Pular (E)</button><div class="l3flash"></div><div class="l3faixas"></div>`;
     document.body.appendChild(s);
     const q = c => s.querySelector(c);
-    ui = { s, cv: q('#c3d'), topo: q('.l3topo'), a: q('.l3a'), b: q('.l3b'), tempo: q('.l3tempo'), combo: q('.l3combo'), centro: q('.l3centro'), sub: q('.l3sub'), cards: q('.l3cards'), leg: q('.l3leg'), chave: q('.l3chave'), op: q('.l3op'), pular: q('.l3pular'), flash: q('.l3flash'), faixas: q('.l3faixas') };
+    ui = { s, cv: q('#c2d'), topo: q('.l3topo'), a: q('.l3a'), b: q('.l3b'), tempo: q('.l3tempo'), combo: q('.l3combo'), centro: q('.l3centro'), sub: q('.l3sub'), cards: q('.l3cards'), leg: q('.l3leg'), chave: q('.l3chave'), op: q('.l3op'), pular: q('.l3pular'), flash: q('.l3flash'), faixas: q('.l3faixas') };
     ui.leg.addEventListener('pointerdown', e => { e.preventDefault(); avancarLegenda(); });
     ui.pular.addEventListener('pointerdown', e => { e.preventDefault(); pedirPular(); });
-    cv = ui.cv;
+    cv = ui.cv; g2 = cv.getContext('2d');
     return ui;
   }
   const lado = l => l === L[0] ? ui.a : ui.b;
@@ -8882,31 +8461,40 @@ const Luta3D = (() => {
     baloes.push({ el, quem, t: 0, dur: dur || 2.6 });
   }
   function atualizarBaloes(dt) {
+    const dpr = cv.width / Math.max(1, cv.clientWidth);
     for (let i = baloes.length - 1; i >= 0; i--) {
       const b = baloes[i]; b.t += dt; if (b.t > b.dur) { b.el.remove(); baloes.splice(i, 1); continue; }
-      const p = b.quem.corpo ? B.ponta(b.quem.corpo, 'cabeca') : [0, 0, 0];
-      const [x, y, ok] = Motor3D.naTela(VP, p[0], p[1] + .45, p[2]);
-      b.el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`; b.el.style.opacity = ok ? Math.min(1, (b.dur - b.t) * 3) : 0;
+      const [hx, hy] = cabecaCena(b.quem), x = ((hx - cam.x) * cam.k + cv.width / 2) / dpr, y = ((hy - 10 - cam.y) * cam.k + cv.height / 2) / dpr;
+      b.el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`; b.el.style.opacity = Math.min(1, (b.dur - b.t) * 3);
     }
   }
 
   /* ---------- lutadores ---------- */
   function novoLutador(id, x, face, op) {
-    const d = LUTADORES[id], corpo = B.criar(d.visual());
-    const f = { id, pid: id === 'akira' ? 'akira' : id === 'mei' ? 'mei_torneio' : id, nome: d.nome, def: d, corpo, x, y: 0, vy: 0, vx: 0, face, est: 'idle', t: 0, golpe: null, acertou: false,
-      hp: 100, hpMax: 100, rastro: 100, guarda: 100, tontura: 0, invul: 0, aura: 0, esc: d.visual().esc || 1, cor: Motor3D.hex(d.cor), vitorias: 0, combo: 0, comboT: 0, buf: false, fila: [],
-      historico: [], tokens: [], dmgMult: 1, forca: 1, esqCd: 0, bloqT: 0, falou: {}, pose: B.POSES.guarda, poseAnt: B.POSES.guarda, poseK: 1, sombraT: 0 };
+    const d = LUTADORES[id];
+    const f = { id, pid: id === 'akira' ? 'akira' : id === 'mei' ? 'mei_torneio' : id, nome: d.nome, def: d, estilo: estiloDe(id), est: 'idle', chefe: d.chefe || null, x, y: 0, vy: 0, vx: 0, face, t: 0, golpe: null, acertou: false,
+      hp: 100, hpMax: 100, rastro: 100, guarda: 100, tontura: 0, invul: 0, aura: 0, esc: 1, cor: FX2D.hexA(d.cor), vitorias: 0, combo: 0, comboT: 0, buf: false, fila: [],
+      historico: [], tokens: [], dmgMult: 1, forca: 1, esqCd: 0, bloqT: 0, falou: {}, flashT: 0, prof: CENA_GY, escala: 1 };
+    f.esc = f.estilo.esc || 1;
     if (op && op.ia) { const P = d.ia; f.ia = { P, cd: .8, reagiu: false, contra: false, guardaT: 0, planoT: 0, previsto: null, leu: 0, ngram: {}, ultimos: [] }; f.hpMax = f.hp = P.hp * (op.escHp || 1); f.forca = P.forca; }
     else { f.hpMax = f.hp = 100 + (estado.attr.vit - 1) * 6; f.forca = multDano(); f.defesa = 1 / (1 + (estado.attr.vit - 1) * .06); }
     if (op && op.mult) f.dmgMult = op.mult;
-    corpo.raiz.em(x, 0, 0); return f;
+    return f;
   }
+  // pontos do corpo (em metros) para faíscas, rastros e balões
+  function pontoDe(f, g) {
+    const id = g && g.id, alto = id === 'chuteAlto' || id === 'giro' ? 1.42 : id === 'chute' || id === 'lateral' ? 1.05 : id === 'voadora' ? .85 : 1.25;
+    const alc = g ? Math.min(g.onda ? 1.7 : g.alc, 1.15) : .9;
+    return [f.x + f.face * alc * .9 * f.esc, f.y + (f.base || 0) + alto * f.esc, 0];
+  }
+  const cabecaDe = f => [f.x, f.y + (f.base || 0) + 1.62 * f.esc, 0];
+  const cabecaCena = q => q.corpoCena ? q.corpoCena() : [cenaX(q.x), cenaY((q.y || 0) + (q.base || 0) + 1.75 * (q.esc || 1) * (q.escala || 1)) - (CENA_GY - (q.prof || CENA_GY))];
   const livre = f => f.est === 'idle' || f.est === 'andar';
   const noChao = f => f.y <= .001;
   function iniciarGolpe(f, g, token) {
     f.est = 'atk'; f.t = 0; f.golpe = g; f.acertou = false; f.buf = false;
     if (token) { f.tokens.push(token); if (f.tokens.length > 12) f.tokens.shift(); f.ultimoToken = token; }
-    if (g.energia || g.onda) FX3D.aura(f.x, .2, 0, f.cor, 6);
+    if (g.energia || g.onda) FX2D.aura(f.x, .2, f.cor, 6);
   }
   function mudar(f, est, dur) { f.est = est; f.t = 0; f.dur = dur || 0; }
 
@@ -9036,7 +8624,7 @@ const Luta3D = (() => {
     // virar para o oponente quando está livre
     if ((livre(f) || f.est === 'bloq') && noChao(f)) { const nf = Math.sign(o.x - f.x) || f.face; if (nf !== f.face) f.face = nf; }
     // ar / pulo
-    if (f.y > 0 || f.vy > 0) { f.vy -= 15 * dt; f.y += f.vy * dt; if (f.y <= 0) { f.y = 0; f.vy = 0; if (f.est === 'pulo' || (f.est === 'atk' && f.golpe.aereo)) { mudar(f, 'pouso', .12); FX3D.poeira(f.x, 0, 0, 5); } } }
+    if (f.y > 0 || f.vy > 0) { f.vy -= 15 * dt; f.y += f.vy * dt; if (f.y <= 0) { f.y = 0; f.vy = 0; if (f.est === 'pulo' || (f.est === 'atk' && f.golpe.aereo)) { mudar(f, 'pouso', .12); FX2D.poeira(f.x, 0, 5); } } }
     f.x += f.vx * dt; f.vx *= Math.pow(.0009, dt);
     if (Math.abs(f.vx) < .05) f.vx = 0;
     switch (f.est) {
@@ -9044,7 +8632,7 @@ const Luta3D = (() => {
         const g = f.golpe, fimA = g.prep + g.ativo;
         if (g.avanco && f.t > g.prep * .7 && f.t < fimA) f.x += f.face * g.avanco / (g.ativo + g.prep * .3) * dt;
         if (g.giro) f.giro = Math.min(1, f.t / fimA);
-        if (g.pe && f.t > g.prep && f.t < fimA && Math.random() < .7) { const p = B.ponta(f.corpo, g.pe); FX3D.add({ x: p[0], y: p[1], z: p[2], vx: 0, vy: 0, vz: 0, vida: .18, tam: .25, tamF: .05, cor: f.ia && f.ia.P.elemento ? f.cor : [1, 1, 1], alfa: .55 }); }
+        if (g.pe && f.t > g.prep && f.t < fimA && Math.random() < .7) { const p = pontoDe(f, g); FX2D.add({ x: p[0], y: p[1], z: p[2], vx: 0, vy: 0, vz: 0, vida: .18, tam: .25, tamF: .05, cor: f.ia && f.ia.P.elemento ? f.cor : [1, 1, 1], alfa: .55 }); }
         if (f.t >= g.prep && f.t < fimA && !f.acertou) tentarAcerto(f, o, g);
         if (g.aereo) { if (noChao(f) && f.t > .05) mudar(f, 'pouso', .14); break; }
         if (f.t >= fimA) {
@@ -9060,10 +8648,10 @@ const Luta3D = (() => {
       }
       case 'esq': if (f.t > .42) mudar(f, 'idle'); break;
       case 'dano': case 'bloqStun': case 'pouso': if (f.t > f.dur) mudar(f, 'idle'); break;
-      case 'queda': if (f.t > .38) { mudar(f, 'caido'); FX3D.poeira(f.x, 0, 0, 12); cam.tremor = Math.max(cam.tremor, .12); } break;
+      case 'queda': if (f.t > .38) { mudar(f, 'caido'); FX2D.poeira(f.x, 0, 12); cam.tremor = Math.max(cam.tremor, .12); } break;
       case 'caido': if (f.hp > 0 && f.t > (f.ia ? .75 : .6)) { mudar(f, 'levantar'); f.invul = .55; } break;
       case 'levantar': if (f.t > .45) mudar(f, 'idle'); break;
-      case 'tonto': if (f.t > 1.5) { mudar(f, 'idle'); f.tontura = 0; } else if (Math.random() < dt * 20) { const p = B.ponta(f.corpo, 'cabeca'); FX3D.estrelas(p[0], p[1] + .3, p[2], tempoCena); } break;
+      case 'tonto': if (f.t > 1.5) { mudar(f, 'idle'); f.tontura = 0; } else if (Math.random() < dt * 20) { const p = cabecaDe(f); FX2D.estrelas(p[0], p[1] + .3, tempoCena); } break;
     }
     f.x = Math.max(-5.1, Math.min(5.1, f.x));
   }
@@ -9083,7 +8671,7 @@ const Luta3D = (() => {
       return;
     }
     a.acertou = true;
-    const ponto = B.ponta(a.corpo, g.pe || g.mao || 'mD'), cor = a.ia && a.ia.P.elemento ? a.cor : g.energia ? a.cor : [1, .85, .4];
+    const ponto = pontoDe(a, g), cor = a.ia && a.ia.P.elemento ? a.cor : g.energia ? a.cor : [1, .85, .4];
     const deFrente = d.face === -a.face || d.face === Math.sign(a.x - d.x);
     let mult = a.dmgMult * a.forca * (a.ia && !d.ia ? DANO_IA : 1) * (d.defesa || 1);
     // golpe repetido rende menos (e a IA começa a ler)
@@ -9091,7 +8679,7 @@ const Luta3D = (() => {
     // defesa
     if ((d.est === 'bloq' || (d.est === 'andar' && d.tras && !g.onda)) && deFrente) {
       const quebra = g.quebra ? 2.2 : 1; d.guarda -= g.dano * 2.6 * quebra;
-      d.hp -= g.dano * mult * .1; ganharAura(d, 2); FX3D.impacto(ponto[0], ponto[1], ponto[2] + .1, [.6, .8, 1], false);
+      d.hp -= g.dano * mult * .1; ganharAura(d, 2); FX2D.impacto(ponto[0], ponto[1], [.6, .8, 1], false);
       Som && Som.efeito && Som.efeito('golpe');
       if (d.guarda <= 0) { d.guarda = 40; mudar(d, 'tonto'); d.t = .7; textoCentro('', 'Guarda quebrada!', 1); flash('#9fd8ff', .35); }
       else { mudar(d, 'bloqStun', .14 + g.dano * .008); d.vx = a.face * (1.4 + (g.empurra || 0) * .4); }
@@ -9100,15 +8688,15 @@ const Luta3D = (() => {
       return;
     }
     // armadura do Goro: aguenta golpe leve enquanto prepara a marreta
-    if (d.est === 'atk' && d.golpe.armadura && d.t < d.golpe.prep && g.dano < 12) { d.hp -= g.dano * mult * .6; FX3D.impacto(ponto[0], ponto[1], ponto[2] + .1, [1, .7, .3], false); flash('#ffb060', .15); return; }
+    if (d.est === 'atk' && d.golpe.armadura && d.t < d.golpe.prep && g.dano < 12) { d.hp -= g.dano * mult * .6; FX2D.impacto(ponto[0], ponto[1], [1, .7, .3], false); flash('#ffb060', .15); return; }
     const contra = d.est === 'atk' && d.t < d.golpe.prep + d.golpe.ativo;
     if (contra) mult *= 1.25;
-    const dano = g.dano * mult; d.hp = Math.max(luta && luta.vencedor === d.id ? 1 : 0, d.hp - dano);   // exibição: o resultado previsto da chave não muda
+    const dano = g.dano * mult; d.hp = Math.max(luta && luta.vencedor === d.id ? 1 : 0, d.hp - dano); d.flashT = .14; if (g.dano >= 14 || g.onda) cam.linhas = Math.max(cam.linhas, .7);   // exibição: o resultado previsto da chave não muda
     if (luta) (luta.log || (luta.log = [])).push([a.id, g.id || g.nome, Math.round(dano * 10) / 10, d.est]);
     d.tontura += g.dano * 3.2 * Math.min(1, mult); a.combo = (a.comboT > 0 ? a.combo : 0) + 1; a.comboT = .9;
     ganharAura(a, 6); ganharAura(d, 3);
-    FX3D.impacto(ponto[0], ponto[1], ponto[2] + .1, cor, g.dano >= 12 || contra);
-    if (g.energia || g.onda) for (let k = 0; k < 16; k++) { const an = k / 16 * Math.PI * 2; FX3D.add({ x: d.x, y: .9, z: 0, vx: Math.cos(an) * 4, vy: Math.sin(an) * 4, vz: 0, vida: .35, tam: .3, tamF: .05, cor: a.cor, alfa: .8 }); }
+    FX2D.impacto(ponto[0], ponto[1], cor, g.dano >= 12 || contra);
+    if (g.energia || g.onda) for (let k = 0; k < 16; k++) { const an = k / 16 * Math.PI * 2; FX2D.add({ x: d.x, y: .9, z: 0, vx: Math.cos(an) * 4, vy: Math.sin(an) * 4, vz: 0, vida: .35, tam: .3, tamF: .05, cor: a.cor, alfa: .8 }); }
     cam.tremor = Math.max(cam.tremor, g.tremor || (g.dano >= 12 ? .1 : .05));
     pararQuadro(g.dano >= 12 ? .07 : .04);
     if (Som && Som.efeito) Som.efeito(g.dano >= 12 ? 'impacto' : 'golpe');
@@ -9127,48 +8715,108 @@ const Luta3D = (() => {
   const pararQuadro = s => { paraT = Math.max(paraT, s); };
   const lento = (s, k) => { lentoT = s; escalaT = k; };
 
-  /* ---------- animação (pose do corpo a partir do estado) ---------- */
-  function poseDe(f) {
-    const P = B.POSES, t = f.t, g = f.golpe;
+  /* ---------- desenho dos personagens (o mesmo desenho anime do jogo) ---------- */
+  const RIG = .477;                                                     // pixels de cena por unidade do desenho do personagem (≈ 1,75 m de altura)
+  const ANIM_GOLPE = { jab: 'punch', direto: 'punchHeavy', gancho: 'punchHeavy', cotovelo: 'elbow', chuteAlto: 'highKick', chute: 'kick', lateral: 'kick', giro: 'spinKick', investida: 'punchHeavy',
+    marreta: 'punchHeavy', empurrao: 'punchHeavy', contra: 'punch', palma: 'punchHeavy', sombra: 'punchHeavy', voadora: 'highKick', onda: 'punchHeavy' };
+  const quadroLoop = (n, t) => { const a = Akira.ANIM[n]; const i = Math.floor(t * a.fps); return a.loop ? i % a.frames : Math.min(a.frames - 1, i); };
+  // quadro do golpe: a preparação vai até o quadro do impacto, o ativo até "seg", a recuperação até o fim
+  function quadroGolpe(n, g, t) {
+    const a = Akira.ANIM[n], imp = a.imp || .45, seg = a.seg || .65;
+    const k = t < g.prep ? t / g.prep * imp : t < g.prep + g.ativo ? imp + (t - g.prep) / g.ativo * (seg - imp) : seg + Math.min(1, (t - g.prep - g.ativo) / g.rec) * (1 - seg);
+    return Math.min(a.frames - 1, Math.floor(k * a.frames));
+  }
+  function animDe(f) {
+    const t = f.t, g = f.golpe;
     switch (f.est) {
       case 'atk': {
-        const pp = B.golpe(P[g.anim[0]], P[g.anim[1]], t, g.prep, g.ativo, g.rec);
-        if (g.giro) pp.ry += (f.giro || 0) * 360;
-        if (g.aereo) return B.mix(P.pulo, P.puloChute, Math.min(1, t / .1));
-        return pp;
+        if (g.onda && t < g.prep) return ['aura', quadroLoop('aura', t)];
+        if (g.aereo) return ['highKick', 4];
+        const n = ANIM_GOLPE[g.id] || (g.rajada ? 'punch' : 'punch');
+        return [n, quadroGolpe(n, g, t)];
       }
-      case 'andar': { const ph = (f.passo || 0) * 5.5, p = B.mix(P.guarda, P.guarda, 0); p.qE[0] += Math.sin(ph) * 16; p.qD[0] -= Math.sin(ph) * 16; p.jE[0] += Math.max(0, Math.cos(ph)) * 18; p.jD[0] += Math.max(0, -Math.cos(ph)) * 18; p.y += Math.abs(Math.sin(ph)) * .02; return p; }
-      case 'bloq': case 'bloqStun': return P.bloqueio;
-      case 'esq': return B.mix(P.esquiva, P.guarda, Math.max(0, (t - .25) / .17));
-      case 'dano': return B.mix(P.dano, P.guarda, Math.max(0, (t - f.dur * .5) / (f.dur * .5)));
-      case 'queda': return B.mix(P.dano, P.caido, Math.min(1, t / .3));
-      case 'caido': return P.caido;
-      case 'levantar': return t < .25 ? B.mix(P.caido, P.agachado, t / .25) : B.mix(P.agachado, P.guarda, Math.min(1, (t - .25) / .2));
-      case 'tonto': { const p = B.mix(P.tonto, P.tonto, 0); p.tr[2] = Math.sin(tempoCena * 5) * 12; p.ca[2] = Math.sin(tempoCena * 5 + 1) * 16; p.rz = Math.sin(tempoCena * 5) * 4; return p; }
-      case 'pulo': return P.pulo;
-      case 'pouso': return B.mix(P.agachado, P.guarda, t / .14);
-      case 'vitoria': return f.poseFim ? f.poseFim(t) : B.mix(P.guarda, P.vitoria, Math.min(1, t / .4));
-      case 'derrota': return B.mix(P.caido, P.derrota, Math.min(1, t / .6));
-      case 'reverencia': return t < .4 ? B.mix(P.guarda, P.reverencia, t / .4) : t < 1.2 ? P.reverencia : B.mix(P.reverencia, P.guarda, Math.min(1, (t - 1.2) / .4));
-      case 'entrada': { const ph = tempoCena * 9, p = B.mix(P.guarda, P.bracosCruzados, .6); p.qE[0] += Math.sin(ph) * 20; p.qD[0] -= Math.sin(ph) * 20; return p; }
-      case 'pose': return f.poseFixa || P.guarda;
-      default: { const p = B.mix(P.guarda, P.guarda, 0); const b = Math.sin(tempoCena * 4 + f.x) * .015; p.y += b; p.oE[0] += b * 80; p.oD[0] -= b * 60; return p; }
+      case 'andar': { const fr = Math.floor(Math.abs(f.passo || 0) * 6.5) % 8; return ['walk', f.tras ? 7 - fr : fr]; }
+      case 'bloq': case 'bloqStun': return ['block', Math.min(3, Math.floor(t * 20))];
+      case 'esq': return ['dodge', Math.min(5, Math.floor(t / .42 * 6))];
+      case 'dano': return ['hit', Math.min(3, Math.floor(t / Math.max(.1, f.dur) * 4))];
+      case 'queda': return ['ko', Math.min(3, Math.floor(t / .38 * 4))];
+      case 'caido': case 'derrota': return ['ko', 5];
+      case 'levantar': return ['ko', Math.max(0, 5 - Math.floor(t / .45 * 6))];
+      case 'tonto': return ['hit', 1];
+      case 'pulo': return ['jump', f.vy > 2 ? 1 : f.vy > -1 ? 2 : 4];
+      case 'pouso': return ['jump', 5];
+      case 'vitoria': return ['victory', quadroLoop('victory', t)];
+      case 'reverencia': return ['relax', quadroLoop('relax', t)];
+      case 'entrada': { const fr = Math.floor(Math.abs(f.passo || 0) * 6.5) % 8; return ['walk', fr]; }
+      case 'pose': return [f.animFixa || 'idle', quadroLoop(f.animFixa || 'idle', t)];
+      default: return ['idle', quadroLoop('idle', tempoCena + f.x)];
     }
   }
-  function desenharLutador(f, dt) {
-    const alvo = poseDe(f);
-    // suaviza a troca de pose (não "teleporta" os membros)
-    f.pose = B.mix(f.pose, alvo, Math.min(1, dt * (f.est === 'atk' ? 30 : 16)));
-    B.aplicar(f.corpo, f.pose, tempoCena);
-    const r = f.corpo.raiz; r.pos = [f.x, f.y + (f.base || 0), f.z || 0];
-    r.rot[1] = f.rotY != null ? f.rotY : f.face > 0 ? Math.PI / 2 - .42 : -(Math.PI / 2 - .42);
-    if (f.corpo.olhosDourados) f.corpo.olhosDourados.forEach(o => o.vis = !!f.desperto);
-    // brilho de elemento/aura em volta
-    if (f.ia && f.ia.P.elemento && Math.random() < dt * 6) FX3D.aura(f.x, 0, 0, f.cor, 1);
-    if (f.desperto && Math.random() < dt * 30) FX3D.aura(f.x, 0, 0, [1, .78, .25], 1);
-    if (!f.ia && f.aura >= custoEsp() && Math.random() < dt * 5) FX3D.aura(f.x, 0, 0, [1, .85, .35], 1);
+  const BRANCO = document.createElement('canvas');
+  // desenha um personagem com os pés em (xs, ys) da cena
+  function desenharBoneco(g, est, an, fr, xs, ys, face, escala, flash, alfa, chefe, desperto) {
+    const u = RIG * est.esc * escala, sc = Math.max(.5, Math.min(6, Math.round(u * cam.k * 4) / 4)), q = Akira.quadro(an, fr, sc, est, false);
+    let img = q;
+    if (flash) { BRANCO.width = q.width; BRANCO.height = q.height; const b = BRANCO.getContext('2d'); b.drawImage(q, 0, 0); b.globalCompositeOperation = 'source-atop'; b.fillStyle = flash; b.fillRect(0, 0, q.width, q.height); img = BRANCO; }
+    g.save(); g.translate(xs, ys); g.scale(face, 1); if (alfa != null) g.globalAlpha = alfa;
+    g.drawImage(img, -Akira.AK.OX * u, -Akira.AK.OY * u, q.width / sc * u, q.height / sc * u);
+    g.restore();
+    if (chefe) {                                                         // chapéu cônico e rosto oculto do Oitavo Dragão (o mesmo do mapa)
+      const k = u / (Akira.AK.K * est.esc);
+      g.save(); g.translate(xs, ys); g.scale(k, k);
+      acessorioChefe({ chefe, face, pal: { esc: est.esc }, forma: desperto ? 'desperto' : null }, 0, 0, g); g.restore();
+    }
   }
-
+  function sombra(g, xs, ys, larg, alt) { const s = Math.max(.35, 1 - alt * .35); g.fillStyle = 'rgba(20,10,30,' + (.35 * s) + ')'; g.beginPath(); g.ellipse(xs, ys, larg * s, larg * .28 * s, 0, 0, 7); g.fill(); }
+  function desenharLutador(g, f) {
+    const xs = cenaX(f.x), ys = cenaY(f.y + (f.base || 0)) - (CENA_GY - f.prof), [an, fr] = animDe(f), cor = f.cor, rgb = c => FX2D.rgba(cor, c);
+    if (!f.base) sombra(g, xs, cenaY(0) - (CENA_GY - f.prof), 15 * f.esc, f.y);
+    // aura de energia atrás do corpo (Akira: azul, como na ficha)
+    const carregando = f.est === 'atk' && f.golpe && (f.golpe.onda || f.golpe.energia) && f.t < f.golpe.prep + f.golpe.ativo;
+    if (carregando || f.desperto || (!f.ia && f.aura >= custoEsp() && luta)) {
+      const r = (carregando ? 46 : 36) * f.esc + Math.sin(tempoCena * 14) * 2;
+      g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(xs, ys - 34 * f.esc, 4, xs, ys - 34 * f.esc, r); gr.addColorStop(0, rgb(carregando ? .55 : .3)); gr.addColorStop(1, rgb(0)); g.fillStyle = gr; g.beginPath(); g.ellipse(xs, ys - 34 * f.esc, r * .6, r, 0, 0, 7); g.fill(); g.restore();
+    }
+    // golpe giratório: anéis de energia em volta (ficha: GIRO)
+    if (f.est === 'atk' && f.golpe && f.golpe.giro && f.t < f.golpe.prep + f.golpe.ativo + .1) {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgb(.8); g.lineWidth = 2;
+      for (let k = 0; k < 3; k++) { g.beginPath(); g.ellipse(xs, ys - (14 + k * 16) * f.esc, (26 + k * 4) * f.esc, 7 * f.esc, 0, tempoCena * 14 + k, tempoCena * 14 + k + 4.2); g.stroke(); }
+      g.restore();
+    }
+    const flash = f.flashT > 0 ? (f.flashT > .06 ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.4)') : null;
+    const dx = f.est === 'tonto' ? Math.sin(tempoCena * 9) * 1.5 : 0;
+    desenharBoneco(g, f.estilo, an, fr, xs + dx, ys, f.face, f.escala || 1, flash, f.alfa, f.chefe, f.desperto);
+    // rastro em meia-lua dos chutes (ficha: CHUTE / COMBO)
+    if (f.est === 'atk' && f.golpe && f.golpe.pe && f.t > f.golpe.prep && f.t < f.golpe.prep + f.golpe.ativo + .12) {
+      const k = Math.min(1, (f.t - f.golpe.prep) / (f.golpe.ativo + .12)), alto = f.golpe.id === 'chuteAlto' || f.golpe.id === 'giro';
+      g.save(); g.globalCompositeOperation = 'lighter'; g.translate(xs, ys - (alto ? 44 : 34) * f.esc); g.scale(f.face, 1);
+      for (let j = 0; j < 3; j++) { g.strokeStyle = j ? rgb((1 - k) * .55) : 'rgba(255,255,255,' + (1 - k) * .8 + ')'; g.lineWidth = 4 - j; g.beginPath(); g.arc(0, 0, (30 + j * 4) * f.esc, alto ? -1.6 : -1, alto ? .1 : .6); g.stroke(); }
+      g.restore();
+    }
+    // Onda de Aura: raio de energia saindo da mão (ficha: RAIO / KI BLAST)
+    if (f.est === 'atk' && f.golpe && f.golpe.onda && f.t >= f.golpe.prep - .05 && f.t < f.golpe.prep + f.golpe.ativo + .18) {
+      const k = Math.min(1, (f.t - f.golpe.prep + .05) / .12), fade = Math.max(0, 1 - Math.max(0, f.t - f.golpe.prep - f.golpe.ativo) / .18), alc = f.golpe.alc * CENA_M * k;
+      g.save(); g.globalCompositeOperation = 'lighter'; g.translate(xs + f.face * 22 * f.esc, ys - 50 * f.esc); g.scale(f.face, 1);
+      const gr = g.createLinearGradient(0, 0, alc, 0); gr.addColorStop(0, rgb(.2 * fade)); gr.addColorStop(.6, rgb(.75 * fade)); gr.addColorStop(1, rgb(.95 * fade));
+      g.fillStyle = gr; g.beginPath(); g.moveTo(0, -3); g.lineTo(alc, -11); g.lineTo(alc, 11); g.lineTo(0, 3); g.fill();
+      g.fillStyle = 'rgba(255,255,255,' + .9 * fade + ')'; g.fillRect(0, -1.5, alc, 3);
+      const rb = 13 + Math.sin(tempoCena * 40) * 2, gb = g.createRadialGradient(alc, 0, 1, alc, 0, rb * 1.8); gb.addColorStop(0, 'rgba(255,255,255,' + fade + ')'); gb.addColorStop(.35, rgb(.9 * fade)); gb.addColorStop(1, rgb(0));
+      g.fillStyle = gb; g.beginPath(); g.arc(alc, 0, rb * 1.8, 0, 7); g.fill();
+      g.restore();
+    }
+    // bola de energia carregando na mão (antes de soltar)
+    if (carregando && f.t < f.golpe.prep) {
+      const r = 3 + f.t / f.golpe.prep * 8; g.save(); g.globalCompositeOperation = 'lighter'; const gx = xs + f.face * 14 * f.esc, gy = ys - 46 * f.esc, gb = g.createRadialGradient(gx, gy, 0, gx, gy, r * 2);
+      gb.addColorStop(0, 'rgba(255,255,255,.95)'); gb.addColorStop(.4, rgb(.9)); gb.addColorStop(1, rgb(0)); g.fillStyle = gb; g.beginPath(); g.arc(gx, gy, r * 2, 0, 7); g.fill(); g.restore();
+    }
+  }
+  function efeitosDoLutador(f, dt) {
+    f.flashT -= dt;
+    if (f.ia && f.ia.P.elemento && Math.random() < dt * 5) FX2D.aura(f.x, f.y, f.cor, 1);
+    if (f.desperto && Math.random() < dt * 25) FX2D.aura(f.x, f.y, [1, .78, .25], 1);
+    if (!f.ia && luta && f.aura >= custoEsp() && Math.random() < dt * 8) FX2D.aura(f.x, f.y, f.cor, 1);
+    if (f.est === 'atk' && f.golpe && (f.golpe.onda || f.golpe.energia) && f.t < f.golpe.prep && Math.random() < dt * 40) { const p = pontoDe(f, f.golpe); FX2D.add({ x: p[0] - f.face * .4 + (Math.random() - .5) * .8, y: p[1] + (Math.random() - .5) * .8, vx: f.face * 2, vy: (Math.random() - .5), vida: .25, tam: .07, cor: f.cor, alfa: 1 }); }
+  }
   /* ---------- HUD da luta ---------- */
   function hud() {
     if (!luta) return;
@@ -9188,81 +8836,103 @@ const Luta3D = (() => {
   }
   function marcarPip(f) { const pips = lado(f).querySelectorAll('.l3pips i'); if (pips[f.vitorias - 1]) pips[f.vitorias - 1].className = 'on'; }
 
-  /* ---------- câmera ---------- */
-  function atualizarCamera(dt) {
-    const d = cam.d;
-    if (cam.modo === 'lado' && L.length === 2) {
-      const [a, b] = L, mx = Math.max(-2.6, Math.min(2.6, (a.x + b.x) / 2)), dist = Math.abs(a.x - b.x);
-      const asp = cv.clientWidth / Math.max(1, cv.clientHeight), meia = dist / 2 + 1.3;   // afasta a câmera para os dois caberem (celular em pé também)
-      const z = Math.min(11, Math.max(4.6 + Math.min(3, dist * .55), meia / (Math.tan(cam.fov / 2) * asp)));
-      d.alvo = [mx, 1.05 + Math.max(a.y, b.y) * .3 + (asp < 1 ? .25 : 0), 0]; d.olho = [mx, 1.55 + (asp < 1 ? .5 : 0), z];
-    } else if (cam.modo === 'orbita') {
-      const o = cam.orb, a = o.a0 + tempoCena * o.vel, c = typeof o.centro === 'function' ? o.centro() : o.centro;
-      d.alvo = [c[0], c[1], c[2]]; d.olho = [c[0] + Math.sin(a) * o.raio, c[1] + o.alt, c[2] + Math.cos(a) * o.raio];
-    } else if (cam.modo === 'fixa') { d.olho = cam.fixa.olho; d.alvo = cam.fixa.alvo; }
-    const k = cam.corte ? 1 : 1 - Math.exp(-dt * (cam.vel || 5)); cam.corte = false;
-    for (let i = 0; i < 3; i++) { cam.olho[i] += (d.olho[i] - cam.olho[i]) * k; cam.alvo[i] += (d.alvo[i] - cam.alvo[i]) * k; }
+
+  /* ---------- câmera (zoom e cortes, como na abertura) ---------- */
+  function alvoCamera(cw, ch) {
+    if (cam.modo === 'lado' && L.length >= 2) {
+      const [a, b] = L, mx = Math.max(-3.4, Math.min(3.4, (a.x + b.x) / 2)), dist = Math.abs(a.x - b.x);
+      return { x: cenaX(mx), y: cenaY(1.05 + Math.max(a.y, b.y) * .3), z: Math.max(.95, Math.min(1.3, 1.32 - dist * .05)), caber: (dist + 2.8) * CENA_M };
+    }
+    if (cam.modo === 'foco') { const p = typeof cam.foco === 'function' ? cam.foco() : cam.foco; return { x: cenaX(p[0]), y: cenaY(p[1]) - (p[3] || 0), z: p[2] }; }
+    if (cam.modo === 'pan') { const k = Math.min(1, (tempoCena - cam.pan.t0) / cam.pan.dur), e = k * k * (3 - 2 * k), A = cam.pan.de, B = cam.pan.para; return { x: cenaX(A[0] + (B[0] - A[0]) * e), y: cenaY(A[1] + (B[1] - A[1]) * e), z: A[2] + (B[2] - A[2]) * e }; }
+    return cam.alvo;
+  }
+  function aplicarCamera(dt, cw, ch) {
+    const A = alvoCamera(cw, ch), k0 = Math.max(cw / 320, ch / 180);
+    const kv = cam.corte ? 1 : 1 - Math.exp(-dt * (cam.vel || 5)); cam.corte = false;
+    cam.x += (A.x - cam.x) * kv; cam.y += (A.y - cam.y) * kv; cam.z += (A.z - cam.z) * kv;
+    let k = k0 * cam.z;
+    if (A.caber) k = Math.max(Math.min(k, cw / A.caber), ch / 330);       // celular em pé: os dois lutadores continuam na tela
+    cam.k = k;
+    // não deixa a câmera sair do cenário
+    const vw = cw / k, vh = ch / k;
+    cam.x = Math.max(vw / 2, Math.min(CENA_W - vw / 2, cam.x)); if (vh < 200) cam.y = Math.max(vh / 2, Math.min(200 - vh / 2, cam.y));
     cam.tremor = Math.max(0, cam.tremor - dt * .8);
-    const tr = cam.tremor * cam.tremor * 3;
-    return { olho: [cam.olho[0] + (Math.random() - .5) * tr, cam.olho[1] + (Math.random() - .5) * tr, cam.olho[2]], alvo: cam.alvo, fov: cam.fov };
+    const tr = cam.tremor * cam.tremor * 60 * k;
+    return [k, cw / 2 - cam.x * k + (Math.random() - .5) * tr, ch / 2 - cam.y * k + (Math.random() - .5) * tr];
   }
   const camLado = () => { cam.modo = 'lado'; cam.vel = 5; };
-  const camOrbita = (centro, raio, alt, vel, a0, corte) => { cam.modo = 'orbita'; cam.orb = { centro, raio, alt, vel, a0: (a0 || 0) - tempoCena * vel }; cam.vel = 3; if (corte) { cam.corte = true; } };
-  const camFixa = (olho, alvo, vel, corte) => { cam.modo = 'fixa'; cam.fixa = { olho, alvo }; cam.vel = vel || 3; if (corte) cam.corte = true; };
+  const camFoco = (foco, vel, corte) => { cam.modo = 'foco'; cam.foco = foco; cam.vel = vel || 3; if (corte) cam.corte = true; };   // foco: [x, y, zoom] em metros
+  const camPan = (de, para, dur) => { cam.modo = 'pan'; cam.pan = { de, para, dur, t0: tempoCena }; cam.vel = 30; cam.corte = true; };
+  // linhas de velocidade em pixel (iguais às da abertura)
+  function linhasVelocidade(g, cw, ch, forca, u) {
+    const q = Math.max(2, Math.round(u)), cx = cw / 2, cy = ch / 2;
+    for (let k = 0; k < 46; k++) {
+      const a = k * 2.399 + Math.floor(tempoCena * 30) * .3, r0 = (60 + (k * 37 % 70)) * u, r1 = r0 + (30 + forca * 90) * u;
+      g.fillStyle = k % 3 ? 'rgba(255,255,255,' + (.85 * forca) + ')' : 'rgba(160,220,255,' + (.9 * forca) + ')';
+      for (let r = r0; r < r1; r += q * 1.5) g.fillRect(Math.round((cx + Math.cos(a) * r) / q) * q, Math.round((cy + Math.sin(a) * r) / q) * q, q, q);
+    }
+  }
 
   /* ---------- plateia (NPCs do jogo na primeira fila) ---------- */
   function montarPlateia(lista) {
-    plateia.forEach(n => { const i = cena.raizes.indexOf(n.corpo.raiz); if (i >= 0) cena.raizes.splice(i, 1); });
-    if (QUAL.nivel === 0) lista = lista.filter(l => l[0] === 'pietra' || l[0] === 'gil');   // qualidade baixa: só quem fala
-    const simples = no => { no.contorno = false; no.projetaSombra = false; no.filhos.forEach(simples); };   // plateia: sem contorno/sombra (mais leve)
-    plateia = lista.map(([pid, nome, pal, x, z, jeito]) => {
-      const corpo = B.criar(dePal(pal, { esc: .9 * (pal.esc || 1) })); if (QUAL.nivel < 2 || pid !== 'pietra') simples(corpo.raiz);
-      corpo.raiz.em(x, -.32, z); corpo.raiz.rot[1] = Math.atan2(-x * .3, 3); cena.raizes.push(corpo.raiz);
-      return { pid, nome, corpo, x, z, jeito: jeito || 'torce', fase: Math.random() * 6, falandoT: 0, humor: 'calmo' };
-    });
+    if (QUAL.nivel === 0) lista = lista.filter(l => l[0] === 'pietra' || l[0] === 'gil');
+    plateia = lista.map(([pid, nome, pal, x, prof, jeito]) => ({ pid, nome, estilo: estiloPal(pal), x, y: 0, prof: prof || 124, escala: (prof || 124) >= CENA_GY ? 1 : .66, face: x < 0 ? 1 : -1, jeito: jeito || 'torce', fase: Math.random() * 6, falandoT: 0, humor: 'calmo', esc: (pal.esc || 1) }));
   }
-  function animarPlateia(dt) {
-    for (const n of plateia) {
-      n.falandoT -= dt; const P = B.POSES; let p;
+  function desenharPlateia(g, lista) {
+    for (const n of lista) {
       const anima = empolgacao > .1 || n.humor === 'festa';
-      if (n.jeito === 'braços') p = B.mix(P.bracosCruzados, P.bracosCruzados, 0);
-      else if (n.humor === 'tenso') { p = B.mix(P.bracosCruzados, P.guarda, .3); p.ca[0] = 10; }
-      else if (anima) { p = B.mix(P.torcer, P.torcer, 0); const s = Math.sin(tempoCena * 9 + n.fase); p.oE[0] += s * 20; p.oD[0] -= s * 20; p.y = Math.max(0, s) * .08; }
-      else { p = B.mix(P.bracosCruzados, B.POSES.reverencia, 0); p = B.mix(P.bracosCruzados, P.torcer, (Math.sin(tempoCena * 2 + n.fase) + 1) * .08); }
-      if (n.falandoT > 0) { p.oD = [-120, 0, -20]; p.cD = [-60, 0, 0]; }
-      n.pose = n.pose ? B.mix(n.pose, p, Math.min(1, dt * 8)) : p;
-      B.aplicar(n.corpo, n.pose, tempoCena);
+      let an = 'relax', t = tempoCena + n.fase;
+      if (n.jeito === 'braços') an = n.falandoT > 0 ? 'idle' : 'relax';
+      else if (n.humor === 'tenso') an = 'block';
+      else if (anima) an = 'victory';
+      else if (n.falandoT > 0) an = 'idle';
+      desenharBoneco(g, n.estilo, an, quadroLoop(an, t), cenaX(n.x), n.prof, n.face, n.escala, null, null, null, false);
     }
   }
 
   /* ---------- quadro (chamado pelo loop do jogo) ---------- */
-  let dtReal = 0; const rel = { t: 0, n: 0 };
+  let dtReal = 0;
   function quadro(dt0) {
     if (!ativo) return;
     dtReal = dt0;
     if (lentoT > 0) { lentoT -= dt0; if (lentoT <= 0) escalaT = 1; }
     let dt = dt0 * escalaT;
     if (paraT > 0) { paraT -= dt0; dt = 0; }
-    tempoCena += dt0; dtLuta = dt;
-    // resolução automática: se o aparelho não aguenta, a imagem 3D fica um pouco menor (a luta continua lisa)
-    rel.t += dt0; rel.n++; if (rel.t > 2) { const med = rel.t / rel.n; if (med > 1 / 40 && cena.resMax > .6) cena.resMax = Math.max(.6, cena.resMax - .15); else if (med < 1 / 55 && cena.resMax < (QUAL.nivel >= 2 ? 1.25 : 1)) cena.resMax += .05; rel.t = 0; rel.n = 0; }
-    cena.tempo = tempoCena;
+    tempoCena += dt0; dtLuta = dt; tempo += dt0;                           // o relógio do jogo também anda (brilhos do chapéu do Dragão etc.)
     for (let i = esperas.length - 1; i >= 0; i--) { esperas[i].t -= dt0; if (esperas[i].t <= 0 || pulando && esperas[i].pulavel) { const r = esperas[i].r; esperas.splice(i, 1); r(); } }
     if (legenda) { legenda.t += dt0; if (pegou('KeyJ') || pegou('KeyE') || pegou('Enter') || pegou('Space')) avancarLegenda(); }
     if (pegou('KeyE') && !ui.pular.hidden) pedirPular();
     if (luta && luta.rodando) passoLuta(dt);
-    else L.forEach(f => { f.t += dt; if (f.y > 0 || f.vy) { f.vy -= 15 * dt; f.y = Math.max(0, f.y + f.vy * dt); if (f.y === 0) f.vy = 0; } f.x += (f.vx || 0) * dt; f.vx = (f.vx || 0) * Math.pow(.001, dt); if (f.alvoX != null) { const dx = f.alvoX - f.x; if (Math.abs(dx) > .03) { f.x += Math.sign(dx) * Math.min(Math.abs(dx), 2.2 * dt); f.passo = (f.passo || 0) + 2.2 * dt; } else if (f.est === 'entrada') { f.est = 'idle'; f.alvoX = null; } } });
+    else L.forEach(f => { f.t += dt; if (f.y > 0 || f.vy) { f.vy -= 15 * dt; f.y = Math.max(0, f.y + f.vy * dt); if (f.y === 0) f.vy = 0; } f.x += (f.vx || 0) * dt; f.vx = (f.vx || 0) * Math.pow(.001, dt); if (f.alvoX != null) { const dx = f.alvoX - f.x; if (Math.abs(dx) > .03) { f.x += Math.sign(dx) * Math.min(Math.abs(dx), 2.2 * dt); f.passo = (f.passo || 0) + 2.2 * dt; f.face = Math.sign(dx); } else if (f.est === 'entrada') { f.est = 'idle'; f.alvoX = null; } } });
     if (quadroCb) quadroCb(dt, dt0);
-    L.forEach(f => desenharLutador(f, dt0));
-    animarPlateia(dt0);
-    empolgacao = Math.max(.04, empolgacao - dt0 * .12); if (arena) arena.povo.pulo = empolgacao;
-    if (arena && cena.raizes.indexOf(arena.povo) >= 0) Arena3D.animar(arena, tempoCena, dt0);   // só na arena (não na cena dos selos)
-    FX3D.atualizar(dt);
-    const c = atualizarCamera(dt0);
-    VP = Motor3D.desenhar(cena, c, FX3D.lista);
+    L.forEach(f => efeitosDoLutador(f, dt0));
+    plateia.forEach(n => n.falandoT -= dt0);
+    empolgacao = Math.max(.04, empolgacao - dt0 * .12);
+    cam.linhas = Math.max(0, cam.linhas - dt0 * 1.5);
+    FX2D.atualizar(dt);
+    desenharTudo(dt0);
     atualizarBaloes(dt0); hud();
   }
-
+  function desenharTudo(dt0) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = Math.round(cv.clientWidth * dpr), ch = Math.round(cv.clientHeight * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const g = g2, [k, ox, oy] = aplicarCamera(dt0, cw, ch);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false;
+    const C = cenario.fundo ? cenario : null;
+    g.fillStyle = cenario.corCeu || '#000'; g.fillRect(0, 0, cw, ch);
+    g.setTransform(k, 0, 0, k, ox, oy);
+    cenario.desenhar(g, tempoCena, empolgacao);
+    g.fillStyle = cenario.corChao || '#7a6e5c'; g.fillRect(-50, 200, CENA_W + 100, 400);
+    if (ganchos.fundo) ganchos.fundo(g, tempoCena);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    const todos = plateia.map(n => ({ n, p: n.prof, pl: true })).concat(L.map(f => ({ n: f, p: f.prof + (f.base ? -1 : 0) }))).sort((a, b) => a.p - b.p);
+    for (const it of todos) it.pl ? desenharPlateia(g, [it.n]) : desenharLutador(g, it.n);
+    FX2D.desenhar(g);
+    if (ganchos.frente) ganchos.frente(g, tempoCena);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (cam.linhas > 0) linhasVelocidade(g, cw, ch, Math.min(1, cam.linhas), k / 1.5);
+  }
   /* ---------- uma luta (melhor de 3 rounds) ----------
      cfg: { a, b (ids), oficial, rounds, tempo, vencedor (exibição: quem deve ganhar), escHp } -> Promise com o id do vencedor */
   function passoLuta(dt) {
@@ -9296,10 +8966,10 @@ const Luta3D = (() => {
     if (!venc) venc = luta.vencedor ? L.find(l => l.id === luta.vencedor) : (a.hp / a.hpMax >= b.hp / b.hpMax ? a : b);
     perde = venc === a ? b : a;
     const ko = perde.hp <= 0;
-    if (ko) { lento(1.1, .25); flash('#ffffff', .6); cam.tremor = .3; empolgacao = .3; textoCentro('K.O.!', '', 1.6, 'l3ko'); }
+    if (ko) { lento(1.1, .25); flash('#ffffff', .6); cam.tremor = .3; cam.linhas = 1.6; camFoco(() => [perde.x, 1, 1.6], 6); empolgacao = .3; textoCentro('K.O.!', '', 1.6, 'l3ko'); }
     else textoCentro('TEMPO!', '', 1.6, 'l3ko');
     if (Som && Som.efeito) Som.efeito('impacto');
-    await espera(1.8);
+    await espera(1.8); camLado();
     venc.vitorias++; marcarPip(venc);
     luta.resolver && luta.resolver.round && luta.resolver.round(venc);
     if (venc.vitorias >= luta.precisa) { luta.rodando = false; luta.fim(venc, perde); return; }
@@ -9321,38 +8991,35 @@ const Luta3D = (() => {
   }
   function lutar(cfg) {
     return new Promise(async res => {
-      L.forEach(f => { const i = cena.raizes.indexOf(f.corpo.raiz); if (i >= 0) cena.raizes.splice(i, 1); });
       const ex = cfg.vencedor;
       const a = novoLutador(cfg.a, -6.5, 1, { ia: cfg.a !== 'akira', mult: ex ? (ex === cfg.a ? 1.5 : .55) : 1, escHp: cfg.escHp });
       const b = novoLutador(cfg.b, 6.5, -1, { ia: true, mult: ex ? (ex === cfg.b ? 1.5 : .55) : 1, escHp: cfg.escHp });
-      if (cfg.b === 'oitavo' && cfg.oficial) b.desperto = false;
-      L = [a, b]; cena.raizes.push(a.corpo.raiz, b.corpo.raiz);
+      L = [a, b];
       a.aura = 30;
       luta = { cfg, oficial: !!cfg.oficial, precisa: Math.ceil((cfg.rounds || 3) / 2), round: 1, tempo: cfg.tempo || 40, tempoRound: cfg.tempo || 40, eventos: [], travado: true, rodando: false, vencedor: cfg.vencedor, fim: null };
       prepararHud(a, b, luta.precisa); ui.topo.hidden = true;
-      // entrada: cada um caminha até sua marca e faz a reverência
+      // entrada: cada um caminha até sua marca; close no rosto de cada um com o cartão de nome (como na abertura)
       a.est = b.est = 'entrada'; a.alvoX = -1.6; b.alvoX = 1.6;
       if (!cfg.rapida) {
         faixasCinema(true);
-        camOrbita(() => [a.x, 1.2, 0], 2.6, .3, .35, -.9, true);
-        cartoes(a, b, true); await espera(1.6);
-        camOrbita(() => [b.x, 1.2, 0], 2.6, .3, -.35, .9, true); await espera(1.6);
-        cartoes(a, b, false); a.alvoX = -1.6; b.alvoX = 1.6; a.x = Math.min(a.x, -1.6); b.x = Math.max(b.x, 1.6);
-        camFixa([0, 1.7, 7.4], [0, 1.1, 0], 2.5); await espera(.4);
-        mudar(a, 'reverencia'); mudar(b, 'reverencia'); await espera(1.5);
+        camFoco(() => [a.x, 1.35, 2.3], 4, true); cam.linhas = 1;
+        cartoes(a, b, true); await espera(1.5);
+        camFoco(() => [b.x, 1.35, 2.3], 4, true); cam.linhas = 1; await espera(1.5);
+        cartoes(a, b, false); a.x = Math.max(a.x, -2.4); b.x = Math.min(b.x, 2.4);
+        camFoco([0, 1.1, 1.05], 2.5, true); await espera(.4);
+        mudar(a, 'reverencia'); mudar(b, 'reverencia'); a.face = 1; b.face = -1; await espera(1.3);
         faixasCinema(false);
       } else { a.x = -1.6; b.x = 1.6; a.alvoX = b.alvoX = null; a.est = b.est = 'idle'; camLado(); cam.corte = true; }
-      a.alvoX = b.alvoX = null; mudar(a, 'idle'); mudar(b, 'idle');
+      a.alvoX = b.alvoX = null; a.x = -1.6; b.x = 1.6; a.face = 1; b.face = -1; mudar(a, 'idle'); mudar(b, 'idle');
       if (cfg.antes) await cfg.antes(a, b);
       ui.topo.hidden = false; luta.rodando = true;
       luta.fim = async (venc, perde) => {
         ui.topo.hidden = true; luta.travado = true;
-        mudar(venc, 'vitoria'); mudar(perde, perde.hp <= 0 ? 'derrota' : 'derrota');
-        if (perde.est === 'derrota') { perde.y = 0; }
+        mudar(venc, 'vitoria'); mudar(perde, 'derrota'); perde.y = 0;
         faixasCinema(true);
-        camOrbita(() => [venc.x, 1.2, 0], 2.8, .2, .3, venc.face > 0 ? -.6 : .6, true);
+        camFoco(() => [venc.x, 1.25, 1.9], 3, true); cam.linhas = 1.2;
         textoCentro(venc.nome.toUpperCase(), 'VENCEU!', 2.4, 'l3venceu'); empolgacao = .3;
-        for (let k = 0; k < 3; k++) setTimeout(() => FX3D.confete(-4, 4, 4.5, -3, 1, 30), k * 400);
+        for (let k = 0; k < 3; k++) setTimeout(() => FX2D.confete(venc.x - 3, venc.x + 3, 3.4, 30), k * 400);
         await espera(2.6);
         faixasCinema(false);
         const r = { vencedor: venc.id, perdedor: perde.id, a, b };
@@ -9369,21 +9036,22 @@ const Luta3D = (() => {
     ui.cards.classList.remove('l3anima'); void ui.cards.offsetWidth; ui.cards.classList.add('l3anima');
   }
 
-  /* ---------- abrir / fechar o modo 3D ---------- */
-  function abrir(clima) {
+  /* ---------- abrir / fechar ---------- */
+  function cenaArena(nome) {
+    const a = Arena2D.pintar(nome);
+    return { nome, corCeu: a.clima.ceu[0], corChao: '#7a6e5c', desenhar(g, t, emp) { g.drawImage(a.fundo, 0, 0); Arena2D.desenharPovo(g, a, t, emp); Arena2D.desenharLuzes(g, a, t); } };
+  }
+  function abrir(nomeClima) {
     montarUI();
-    if (!Motor3D.iniciar(cv)) return false;
-    if (!arena || arena.q !== QUAL.nivel) { arena = Arena3D.construir(QUAL.nivel); arena.q = QUAL.nivel; }
-    cena = { raizes: arena.raizes.slice(), tempo: 0, resMax: QUAL.nivel >= 2 ? 1.25 : QUAL.nivel === 1 ? 1 : .7 };
-    Arena3D.aplicarClima(cena, arena, clima || 'tarde');
-    L = []; plateia = []; FX3D.limpar(); esperas = []; baloes.forEach(b => b.el.remove()); baloes = []; pulando = false; quadroCb = null;
+    clima = nomeClima || 'tarde'; cenario = cenaArena(clima);
+    L = []; plateia = []; FX2D.limpar(); esperas = []; baloes.forEach(b => b.el.remove()); baloes = []; pulando = false; quadroCb = null; ganchos.fundo = ganchos.frente = null;
     ui.s.hidden = false; ui.topo.hidden = true; ui.chave.hidden = true; ui.op.hidden = true; ui.pular.hidden = true; ui.leg.hidden = true; ui.cards.hidden = true;
-    document.body.classList.add('modo3d'); ativo = true; tempoCena = 0; empolgacao = .05;
-    cam.corte = true;
+    document.body.classList.add('modoTorneio'); ativo = true; tempoCena = 0; empolgacao = .05;
+    cam.corte = true; cam.modo = 'lado'; cam.linhas = 0;
     return true;
   }
-  function fechar() { ativo = false; luta = null; L = []; if (ui) ui.s.hidden = true; document.body.classList.remove('modo3d'); baloes.forEach(b => b.el.remove()); baloes = []; esperas = []; quadroCb = null; faixasCinema(false); }
-  // menu de opções dentro do 3D (setas/J ou toque)
+  function fechar() { ativo = false; luta = null; L = []; if (ui) ui.s.hidden = true; document.body.classList.remove('modoTorneio'); baloes.forEach(b => b.el.remove()); baloes = []; esperas = []; quadroCb = null; faixasCinema(false); }
+  // menu de opções dentro da cena do torneio (setas/J ou toque)
   function opcoes(lista) {
     return new Promise(r => {
       ui.op.hidden = false; let sel = 0;
@@ -9395,13 +9063,13 @@ const Luta3D = (() => {
       quadroCb = (dt, d0) => { if (antigo) antigo(dt, d0); if (pegou('ArrowDown') || pegou('KeyS')) { sel = (sel + 1) % lista.length; desenha(); } if (pegou('ArrowUp') || pegou('KeyW')) { sel = (sel + lista.length - 1) % lista.length; desenha(); } if (pegou('KeyJ') || pegou('Enter') || pegou('KeyE')) fim(sel); };
     });
   }
-  function abortar() { luta = null; esperas = []; ui.topo.hidden = true; L.forEach(f => { const i = cena.raizes.indexOf(f.corpo.raiz); if (i >= 0) cena.raizes.splice(i, 1); }); L = []; FX3D.limpar(); }
+  function abortar() { luta = null; esperas = []; ui.topo.hidden = true; L = []; FX2D.limpar(); }
   return {
-    GOLPES, LUTADORES, abortar, abrir, fechar, quadro, lutar, falas, espera, balao, opcoes, textoCentro, flash, faixasCinema, camOrbita, camFixa, camLado, montarPlateia, novoLutador, mudar,
-    get ativo() { return ativo; }, get cena() { return cena; }, get arena() { return arena; }, get ui() { return ui; }, get L() { return L; }, set L(v) { L = v; }, get plateia() { return plateia; }, get luta() { return luta; },
+    GOLPES, LUTADORES, abortar, abrir, fechar, quadro, lutar, falas, espera, balao, opcoes, textoCentro, flash, faixasCinema, camFoco, camPan, camLado, montarPlateia, novoLutador, mudar, desenharBoneco, linhas: v => { cam.linhas = v; },
+    get ativo() { return ativo; }, get ui() { return ui; }, get L() { return L; }, set L(v) { L = v; }, get plateia() { return plateia; }, set plateia(v) { plateia = v; }, get luta() { return luta; },
     set quadroCb(f) { quadroCb = f; }, get quadroCb() { return quadroCb; }, set pulando(v) { pulando = v; }, get pulando() { return pulando; }, get tempo() { return tempoCena; },
-    set empolgacao(v) { empolgacao = v; }, cam, esperaPulavel: s => new Promise(r => esperas.push({ t: s, r, pulavel: true })),
-    trocarCena(c) { cena = c; }, atualizarCamera
+    set empolgacao(v) { empolgacao = v; }, cam, ganchos, esperaPulavel: s => new Promise(r => esperas.push({ t: s, r, pulavel: true })),
+    get cenario() { return cenario; }, trocarCenario(c) { cenario = c; }, clima(n) { clima = n; cenario = cenaArena(n); }, cenaArena
   };
 })();
 
@@ -9426,7 +9094,7 @@ const LOCAL_COMPETIDOR = {
 };
 const COMPETIDORES = ['akira', 'luna', 'renji', 'goro', 'nicolas', 'mei', 'oitavo', 'henrique'];
 const NOME_COMP = { akira: 'Akira', luna: 'Luna', renji: 'Renji', goro: 'Goro', nicolas: 'Nicolas', mei: 'Mei', oitavo: 'O Oitavo Dragão', henrique: 'Henrique' };
-const PAL_COMP = {                                                       // aparência no mapa isométrico (mesmas cores do 3D)
+const PAL_COMP = {                                                       // aparência dos competidores (a mesma no mapa e no torneio)
   renji: PN('#1f6f62', '#e8b890', '#e4e6ee', 'espeto', '#222222', { testa: '#e8e8e8', iris: '#2a8a6a' }),
   goro: PN('#8a3a1a', '#c08a60', '#151010', 'curto', '#222222', { olho: 'angry', esc: 1.18 }),
   mei_torneio: PN('#3a2a4a', '#f1c9a5', '#1a1010', 'coque', '#d96b8a', { iris: '#6a2a4a', esc: .92 }),
@@ -9510,18 +9178,20 @@ function colocarCompetidores(m) {
   }
 }
 
-/* ---------- o torneio em 3D ---------- */
+/* ---------- o torneio (lutas laterais e cenas no estilo da abertura) ---------- */
 const Torneio = (() => {
-  const L3 = () => Luta3D;
+  const L3 = () => Luta2D;
   let rodando = false;
   const PLATEIA = () => [
-    ['pietra', 'Pietra', PAL_PIETRA, -1.1, -4.75], ['alana', 'Alana', PAL_NPC.alana, -3.3, -4.85], ['davi', 'Davi', PAL_DAVI, 1.2, -4.7],
-    ['rita', 'Rita', PAL_RITA, 3.2, -4.85], ['david', 'David', PAL_NPC.david, -5.3, -4.7], ['miguel', 'Miguel', PAL_NPC.miguel, 5.2, -4.7], ['gil', 'Gil', PAL_NPC.gil, -6.5, 1.8, 'braços']
+    // [id, nome, paleta, x (metros), linha do chão na cena (127 = atrás do tatame, 186 = na frente), jeito]
+    ['pietra', 'Pietra', PAL_PIETRA, -1.1, 124], ['alana', 'Alana', PAL_NPC.alana, -3.3, 123], ['davi', 'Davi', PAL_DAVI, 1.3, 124],
+    ['rita', 'Rita', PAL_RITA, 3.3, 123], ['david', 'David', PAL_NPC.david, -5.6, 124], ['miguel', 'Miguel', PAL_NPC.miguel, 5.6, 124], ['gil', 'Gil', PAL_NPC.gil, -6.5, 170, 'braços']
   ];
+  const FOCO_GIL = [-6.5, 1.3, 2.0, -20], FOCO_PIETRA = [-1.1, .95, 2.2, 26];     // close-ups (x, altura, zoom, ajuste da linha do chão)
   const pietra = () => L3().plateia.find(n => n.pid === 'pietra');
   async function entrar(clima) {
-    if (!L3().abrir(clima)) { aviso('Este aparelho não conseguiu abrir o modo 3D (WebGL).'); return false; }
-    MODO_TELA = 'luta3d'; for (const k in teclas) teclas[k] = false; edge = {};
+    L3().abrir(clima);
+    MODO_TELA = 'torneio'; for (const k in teclas) teclas[k] = false; edge = {};
     if (dlg.ativo) fecharConversa();
     L3().montarPlateia(PLATEIA());
     L3().flash('#000', 1);
@@ -9537,14 +9207,14 @@ const Torneio = (() => {
   // abertura da sessão: passeio de câmera e anúncio do Gil
   async function abertura(m) {
     const L = L3(); L.faixasCinema(true);
-    L.camFixa([-9, 4.5, 9], [0, 1.2, -4], 1, true); L.camFixa([9, 3.2, 8], [0, 1, -3], .35);
+    L.camPan([-8, 2.3, .95], [7, 1.9, .95], 3.2); L.linhas(0);
     L.textoCentro('TORNEIO DO GRANDE TEMPLO', NOME_RODADA[rodadaDe(m)], 3, 'l3titulo'); L.empolgacao = .25;
     await L.espera(2.6);
-    L.camFixa([-4.6, 1.6, 2.6], [-6.5, 1.3, 1.8], 2, true);
+    L.camFoco(FOCO_GIL, 3, true);
     const [a, b] = ladosDe(m);
     await L.falas([F('gil', 'confiante', NOME_RODADA[rodadaDe(m)] + '! De um lado, ' + NOME_COMP[a] + '! Do outro, ' + NOME_COMP[b] + '!')]);
-    if (!tor().res.qf1 && !estado.flags.pietra_torneio) { estado.flags.pietra_torneio = true; L.camFixa([-1.1, .9, -1.6], [-1.1, 1, -4.75], 2, true); L.balao(pietra(), FALAS_TORNEIO.pietraArquibancada.entra, 3); await L.espera(2.8); }
-    if (m === 'final') { L.camFixa([-1.1, .9, -1.6], [-1.1, 1, -4.75], 2, true); L.balao(pietra(), FALAS_TORNEIO.pietraArquibancada.final, 3.2); await L.espera(3); }
+    if (!tor().res.qf1 && !estado.flags.pietra_torneio) { estado.flags.pietra_torneio = true; L.camFoco(FOCO_PIETRA, 3, true); L.balao(pietra(), FALAS_TORNEIO.pietraArquibancada.entra, 3); await L.espera(2.8); }
+    if (m === 'final') { L.camFoco(FOCO_PIETRA, 3, true); L.balao(pietra(), FALAS_TORNEIO.pietraArquibancada.final, 3.2); await L.espera(3); }
     L.faixasCinema(false);
   }
   // luta entre dois NPCs (dá pra pular)
@@ -9571,12 +9241,12 @@ const Torneio = (() => {
   }
   async function mostrarChave(destaque, seg) {
     const L = L3(); L.ui.chave.innerHTML = htmlChave(destaque); L.ui.chave.hidden = false;
-    L.camOrbita([0, 1.5, -3], 9, 2.5, .08, 0);
+    L.camFoco([0, 2.1, .9], 1);
     await L.espera(seg || 3); L.ui.chave.hidden = true;
   }
   async function verChave() {
     if (rodando || !(await entrar('tarde'))) return; rodando = true;
-    const L = L3(); L.ui.chave.innerHTML = htmlChave(); L.ui.chave.hidden = false; L.camOrbita([0, 1.5, -3], 9, 2.5, .08, 0, true);
+    const L = L3(); L.ui.chave.innerHTML = htmlChave(); L.ui.chave.hidden = false; L.camFoco([0, 2.1, .9], 1, true);
     await L.opcoes(['Voltar']); sair();
   }
   async function comecar() {
@@ -9595,13 +9265,13 @@ const Torneio = (() => {
     const r = await L.lutar(cfg);
     const p = pietra();
     if (r.vencedor === 'akira') {
-      tor().res[m] = 'akira'; tor().elim = null; estado.vitorias++;   // resultado salvo na hora ganharXp(REGRAS_TORNEIO.xp[m] || 60);
+      tor().res[m] = 'akira'; tor().elim = null; estado.vitorias++; ganharXp(REGRAS_TORNEIO.xp[m] || 60);   // resultado salvo na hora
       if (RELACOES[op]) ganharRespeito(op, 10, true);
       autoSalvar('torneio', true);
       if (p) { p.humor = 'festa'; L.balao(p, FALAS_TORNEIO.pietraArquibancada.vence, 3); }
       if (op === 'goro') L.balao(r.b, FALAS_TORNEIO.goro.derrota, 3);
       await L.espera(1.6);
-      if (op === 'oitavo') { L.camFixa([0, 1.6, 3.6], [0, 1.2, 0], 2, true); await L.falas(FALAS_DRAGAO.torneio.vitoria); }
+      if (op === 'oitavo') { L.camFoco(() => [(r.a.x + r.b.x) / 2, 1.3, 1.6], 2, true); await L.falas(FALAS_DRAGAO.torneio.vitoria); }
       if (m === 'final') { await cerimonia(); return; }
       const prox = m === 'qf1' ? 'sf1' : 'final';
       for (const e of pendentesAntes(prox)) await exibicao(e);
@@ -9609,46 +9279,54 @@ const Torneio = (() => {
       L.ui.chave.innerHTML = htmlChave(); L.ui.chave.hidden = false;
       const i = await L.opcoes(['Próxima luta: ' + NOME_RODADA[rodadaDe(prox)] + ' contra ' + NOME_COMP[ladosDe(prox)[1]], 'Voltar (continuar depois com o Gil)']);
       L.ui.chave.hidden = true;
-      if (i === 0) { Arena3D.aplicarClima(L.cena, L.arena, climaDe(prox)); if (p) p.humor = 'calmo'; await sessao(prox); }
+      if (i === 0) { L.clima(climaDe(prox)); if (p) p.humor = 'calmo'; await sessao(prox); }
       else sair();
     } else {
       tor().elim = m; autoSalvar('torneio', true);
       if (p) { p.humor = 'tenso'; L.balao(p, FALAS_TORNEIO.pietraArquibancada.perde, 3); }
       await L.espera(1.4);
-      if (op === 'oitavo') { L.camFixa([0, 1.6, 3.6], [0, 1.2, 0], 2, true); await L.falas(FALAS_DRAGAO.torneio.derrota); }
+      if (op === 'oitavo') { L.camFoco(() => [(r.a.x + r.b.x) / 2, 1.3, 1.6], 2, true); await L.falas(FALAS_DRAGAO.torneio.derrota); }
       L.textoCentro('ELIMINADO', 'Fale com o Gil para pedir revanche', 2.6, 'l3ko'); await L.espera(2.4);
       sair(() => aviso('Treine e peça revanche ao Gil.'));
     }
   }
-  // cerimônia de vitória: pódio, troféu, fogos, falas finais
+  // cerimônia de vitória: pódio em pixel art, troféu, fogos, falas finais
   async function cerimonia() {
-    const L = L3(), { No, caixa, cilindro, esfera, toro } = Motor3D, cena = L.cena;
-    Arena3D.aplicarClima(cena, L.arena, 'noite');
-    const podio = new No(null), ouro = [.95, .75, .25], prata = [.8, .82, .88], bronze = [.8, .52, .3];
-    [[0, .9, ouro], [-1.5, .6, prata], [1.5, .4, bronze], [2.6, .4, bronze]].forEach(([x, h, c]) => podio.add(new No(caixa(1.1, h, 1), c, { projetaSombra: false }).em(x, h / 2, -.6)));
-    const trofeu = new No(null).em(0, 2.75, -.6);
-    trofeu.add(new No(cilindro(.12, .05, .18, 12), ouro, { emis: [.25, .18, 0] }), new No(cilindro(.05, .22, .32, 14), ouro, { emis: [.3, .22, 0] }).em(0, .18, 0), new No(toro(.13, .025, 12, 4), ouro).em(.22, .36, 0).gira(Math.PI / 2, 0, 0), new No(toro(.13, .025, 12, 4), ouro).em(-.22, .36, 0).gira(Math.PI / 2, 0, 0), new No(esfera(.05, 8, 6), [1, .95, .7], { emis: [.8, .7, .3] }).em(0, .55, 0));
-    cena.raizes.push(podio, trofeu);
-    const r = tor().res, terceiros = [ladosDe('sf1')[1], ladosDe('sf2')[0]];
-    const ak = L.novoLutador('akira', 0, 1), dr = L.novoLutador('oitavo', -1.5, 1, { ia: true }), t1 = L.novoLutador(terceiros[0], 1.5, 1, { ia: true }), t2 = L.novoLutador(terceiros[1], 2.6, 1, { ia: true });
-    const lista = [[ak, .9, 'vitoria'], [dr, .6, 'bracos'], [t1, .4, 'vitoria'], [t2, .4, 'bracos']];
-    L.L.forEach(f => { const i = cena.raizes.indexOf(f.corpo.raiz); if (i >= 0) cena.raizes.splice(i, 1); });   // tira os lutadores da final (agora todos vão para o pódio)
-    L.L = lista.map(([f, h, jeito]) => { f.base = h; f.z = -.6; f.rotY = 0; f.est = 'pose'; f.poseFixa = jeito === 'vitoria' ? Boneco3D.POSES.vitoria : Boneco3D.POSES.bracosCruzados; cena.raizes.push(f.corpo.raiz); return f; });
-    L.faixasCinema(true); L.camFixa([0, 2.4, 6.5], [0, 1.6, -.6], 1, true); L.camFixa([0, 1.9, 4.6], [0, 1.8, -.6], .4);
-    L.empolgacao = .3; L.textoCentro('CAMPEÃO!', 'Akira vence o Torneio do Grande Templo', 3.5, 'l3venceu');
-    L.quadroCb = (dt) => { trofeu.rot[1] += dt * 1.5; if (Math.random() < dt * 1.6) FX3D.fogos(-6 + Math.random() * 12, 5 + Math.random() * 2.5, -9, [[1, .4, .3], [1, .85, .3], [.4, .8, 1], [.6, 1, .5]][Math.random() * 4 | 0]); if (Math.random() < dt * 4) FX3D.confete(-4, 4, 4, -2, 1, 4); L.empolgacao = .3; };
+    const L = L3(), px = Arena2D.px;
+    L.clima('noite');
+    const PODIO = [[0, .75, '#e8c045', '#b8902a', '1'], [-1.5, .5, '#d8dce4', '#a0a6b0', '2'], [1.5, .35, '#d8905a', '#a8683a', '3'], [2.7, .35, '#d8905a', '#a8683a', '3']], PROF = 140;
+    L.ganchos.fundo = g => {                                               // blocos do pódio (frente + tampa), numerados
+      for (const [x, h, c1, c2, n] of PODIO) {
+        const xs = cenaX(x), top = PROF - h * CENA_M;
+        px(g, xs - 24, top - 5, 48, 6, c1); px(g, xs - 24, top + 1, 48, PROF - top + 6, c2); px(g, xs - 24, top + 1, 48, 1, '#fff6c8');
+        g.fillStyle = '#fff6c8'; g.font = 'bold 11px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.fillText(n, xs, top + 14);
+      }
+    };
+    const trofeu = (g, t) => {                                              // troféu dourado girando em cima do campeão
+      const xs = cenaX(0), ys = PROF - .75 * CENA_M - 92 + Math.sin(t * 2) * 1.5, w = Math.abs(Math.cos(t * 1.4));
+      g.save(); g.translate(xs, ys); g.scale(.5 + w * .5, 1);
+      px(g, -6, 10, 12, 3, '#8a6a1a'); px(g, -2, 4, 4, 6, '#d8b040'); px(g, -7, -8, 14, 12, '#ffd84a'); px(g, -7, -8, 3, 12, '#fff2a0'); px(g, -10, -6, 3, 6, '#d8b040'); px(g, 7, -6, 3, 6, '#d8b040'); px(g, -8, -9, 16, 2, '#fff2a0');
+      g.restore();
+      g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(xs, ys, 0, xs, ys, 26); gr.addColorStop(0, 'rgba(255,220,120,.5)'); gr.addColorStop(1, 'rgba(255,200,80,0)'); g.fillStyle = gr; g.fillRect(xs - 26, ys - 26, 52, 52); g.restore();
+    };
+    L.ganchos.frente = trofeu;
+    const terceiros = [ladosDe('sf1')[1], ladosDe('sf2')[0]];
+    const lista = [['akira', 0, .75, 'victory', 1], ['oitavo', -1.5, .5, 'idle', 1], [terceiros[0], 1.5, .35, 'victory', -1], [terceiros[1], 2.7, .35, 'idle', -1]];
+    L.L = lista.map(([id, x, h, an, face]) => { const f = L.novoLutador(id, x, face, { ia: id !== 'akira' }); f.base = h; f.prof = PROF; f.est = 'pose'; f.animFixa = an; return f; });
+    L.faixasCinema(true); L.camPan([0, 1.2, 1], [0, 1.6, 1.7], 3);
+    L.empolgacao = .3; L.textoCentro('CAMPEÃO!', 'Akira vence o Torneio do Grande Templo', 3.5, 'l3venceu'); L.linhas(1.4);
+    L.quadroCb = (dt) => { if (Math.random() < dt * 1.8) FX2D.fogos(-7 + Math.random() * 14, 2.4 + Math.random() * 1, [[1, .4, .3], [1, .85, .3], [.4, .8, 1], [.6, 1, .5]][Math.random() * 4 | 0]); if (Math.random() < dt * 4) FX2D.confete(-4, 4, 3.4, 4); L.empolgacao = .3; };
     await L.espera(3.4);
-    L.camFixa([-4.6, 1.6, 2.6], [-6.5, 1.3, 1.8], 2, true);
+    L.camFoco(FOCO_GIL, 3, true);
     await L.falas([F('gil', 'confiante', 'Senhoras e senhores... o campeão do Torneio do Grande Templo: AKIRA!')]);
-    const p = pietra(); if (p) { p.humor = 'festa'; L.camFixa([-1.1, .9, -1.6], [-1.1, 1, -4.75], 2, true); L.balao(p, FALAS_TORNEIO.pietraArquibancada.vence, 3); await L.espera(3); }
-    L.camFixa([-.75, 2.1, 3.9], [-.75, 1.85, -.6], 2, true);
+    const p = pietra(); if (p) { p.humor = 'festa'; L.camFoco(FOCO_PIETRA, 3, true); L.balao(p, FALAS_TORNEIO.pietraArquibancada.vence, 3); await L.espera(3); }
+    L.camFoco([-.75, 2.1, 1.7], 3, true);
     await L.falas(FALAS_DRAGAO.torneio.depois);
-    L.quadroCb = null; L.faixasCinema(false);
+    L.quadroCb = null; L.faixasCinema(false); L.ganchos.fundo = L.ganchos.frente = null;
     // registra a vitória (só agora o evento conta como concluído)
     const t = tor(); t.campeao = true; estado.flags.torneio_concluido = true; estado.missoes.grande_torneio = 'concluida';
     ganharXp(REGRAS_TORNEIO.xp.final); autoSalvar('torneio', true);
     aviso('Missão concluída: O Torneio do Grande Templo');
-    cena.raizes.splice(cena.raizes.indexOf(podio), 1); cena.raizes.splice(cena.raizes.indexOf(trofeu), 1);
     await CenaSelos.tocar();
     estado.fase = 'selos'; MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null; autoSalvar('fase', true);
     sair(() => { aviso('Nova fase: os selos foram rompidos! Os chefes despertaram nas regiões.'); });
@@ -9656,97 +9334,108 @@ const Torneio = (() => {
   return { comecar, verChave, get rodando() { return rodando; }, htmlChave };
 })();
 
-/* ---------- cena 3D: O Oitavo Dragão rompe os oito selos ---------- */
+/* ---------- cena: O Oitavo Dragão rompe os oito selos (mesmo estilo da abertura: pixel art + zoom + cortes) ---------- */
 const CenaSelos = (() => {
-  const { No, caixa, esfera, cilindro, toro, plano, geo, textura, hex } = Motor3D;
-  let texSelo = null, texRachado = null;
-  function texturas() {
-    if (texSelo) return;
-    const desenha = rach => (g, s) => {
-      g.fillStyle = '#6a6a72'; g.fillRect(0, 0, s, s * 2);
-      for (let k = 0; k < 300; k++) { g.fillStyle = `rgba(${Math.random() < .5 ? '30,30,40' : '160,160,170'},.12)`; g.fillRect(Math.random() * s, Math.random() * s, 3, 3); }
-      g.strokeStyle = '#ffd86a'; g.lineWidth = s * .03; g.strokeRect(s * .15, s * .1, s * .7, s * .8);
-      g.fillStyle = '#ffe28a'; g.font = `bold ${s * .32}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('封', s / 2, s * .34); g.fillText('印', s / 2, s * .68);
-      if (rach) { g.strokeStyle = '#fff1b0'; g.lineWidth = s * .025; for (let k = 0; k < 6; k++) { g.beginPath(); let x = s / 2, y = s * .1; g.moveTo(x, y); for (let j = 0; j < 7; j++) { x += (Math.random() - .5) * s * .25; y += s * .12; g.lineTo(x, y); } g.stroke(); } }
-    };
-    texSelo = textura(desenha(false), 128); texRachado = textura(desenha(true), 128);
+  const px = Arena2D.px, off = Arena2D.off;
+  let fundo = null;
+  // clareira na montanha, à noite: lua, estrelas, pinheiros, círculo de pedra
+  function pintar() {
+    if (fundo) return fundo;
+    const W = CENA_W, H = 200; fundo = off(W, H); const g = fundo.getContext('2d'), r = mulberry32(808);
+    const ceu = ['#03040e', '#070a1c', '#0d1030', '#181838', '#24204a'];
+    for (let y = 0; y < 120; y++) { const k = y / 120 * (ceu.length - 1), i = Math.min(ceu.length - 2, Math.floor(k)); px(g, 0, y, W, 1, (k - i) > .5 && y % 2 ? ceu[i + 1] : ceu[i]); }
+    for (let k = 0; k < 260; k++) px(g, r() * W, r() * 100, 1, 1, r() < .25 ? '#fff4c0' : '#aab4ff');
+    g.fillStyle = '#e8ecff'; g.beginPath(); g.arc(640, 34, 18, 0, 7); g.fill(); g.fillStyle = '#c8cce8'; [[634, 30, 3], [646, 40, 4], [640, 26, 2]].forEach(([x, y, rr]) => { g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill(); });
+    g.globalAlpha = .15; g.fillStyle = '#c8d0ff'; g.beginPath(); g.arc(640, 34, 30, 0, 7); g.fill(); g.globalAlpha = 1;
+    [[80, 70, 160], [330, 58, 190], [600, 66, 170], [860, 60, 180]].forEach(([x, y, w], i) => { g.fillStyle = i % 2 ? '#141a34' : '#10142c'; g.beginPath(); g.moveTo(x - w, 120); g.lineTo(x, y); g.lineTo(x + w, 120); g.fill(); });
+    for (let x = -10; x < W; x += 9) { const h = 16 + r() * 22, y = 118 + r() * 4; g.fillStyle = r() < .5 ? '#081410' : '#0a1a14'; g.beginPath(); g.moveTo(x - 7, y); g.lineTo(x, y - h); g.lineTo(x + 7, y); g.fill(); }
+    for (let y = 118; y < H; y++) px(g, 0, y, W, 1, y % 3 ? '#1a2230' : '#161c2a');
+    // círculo de pedra (plataforma em perspectiva)
+    g.fillStyle = '#2e3446'; g.beginPath(); g.ellipse(CENA_CX, 146, 300, 26, 0, 0, 7); g.fill();
+    g.strokeStyle = '#c9a24a'; g.lineWidth = 1; g.beginPath(); g.ellipse(CENA_CX, 146, 296, 24, 0, 0, 7); g.stroke();
+    for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; px(g, CENA_CX + Math.cos(a) * 250, 146 + Math.sin(a) * 20, 1, 1, '#4a5068'); }
+    return fundo;
+  }
+  // estela de pedra com selo (inteira, rachada ou quebrada)
+  function estela(g, s, t) {
+    const e = s.esc, w = 14 * e, h = 40 * e, x = cenaX(s.x) - w / 2, y = s.prof - h;
+    px(g, x - 3 * e, s.prof - 4 * e, w + 6 * e, 5 * e, '#3a3e50');                                   // base
+    if (s.estado === 2) { px(g, x, s.prof - h * .38, w, h * .38, '#6a6e80'); px(g, x, s.prof - h * .38, w, 2, '#9a9eb0'); return; }   // quebrada: só o toco
+    px(g, x, y, w, h, '#6a6e80'); px(g, x, y, 2 * e, h, '#8a8ea0'); px(g, x + w - 2 * e, y, 2 * e, h, '#4a4e60'); px(g, x - e, y - 2 * e, w + 2 * e, 3 * e, '#4a4e60');
+    const brilho = s.estado === 1 ? .7 + Math.sin(t * 30) * .3 : .45 + Math.sin(t * 2 + s.x) * .15;
+    g.fillStyle = s.estado === 1 ? FX2D.rgba(s.cor, brilho) : 'rgba(255,220,120,' + brilho + ')';
+    g.font = 'bold ' + Math.round(9 * e) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('封', x + w / 2, y + h * .32); g.fillText('印', x + w / 2, y + h * .66);
+    if (s.estado === 1) { g.strokeStyle = '#fff4c0'; g.lineWidth = 1; g.beginPath(); let cx = x + w / 2, cy = y; g.moveTo(cx, cy); for (let k = 0; k < 6; k++) { cx += ((k * 7919 + s.x * 13) % 7 - 3) * e; cy += h / 6; g.lineTo(cx, cy); } g.stroke(); }
   }
   async function tocar() {
-    const L = Luta3D; texturas();
-    const cores = ORDEM_CHEFES.map(id => hex(CHEFES[id].aura));
-    // cenário noturno próprio: clareira de pedra com oito estelas em círculo
-    const raizes = [];
-    raizes.push(new No(plano(260, 260, 10), [.17, .18, .24], { contorno: false }).em(0, 0, 0));
-    raizes.push(new No(cilindro(3.6, 3.8, .2, 32), [.42, .42, .46], { contorno: false }).em(0, 0, 0));
-    raizes.push(new No(toro(3.7, .05, 40, 4), [.85, .7, .3], { contorno: false, emis: [.4, .3, .05] }).em(0, .21, 0));
-    const estelas = ORDEM_CHEFES.map((id, k) => {
-      const a = k / 8 * Math.PI * 2, x = Math.sin(a) * 5.4, z = Math.cos(a) * 5.4;
-      const e = new No(caixa(.8, 2.4, .35), [1, 1, 1], { tex: texSelo, projetaSombra: true, linha: .02 }).em(x, 1.2, z).gira(0, a, 0);
-      const base = new No(caixa(1.2, .3, .7), [.35, .35, .4], { contorno: false }).em(x, .15, z).gira(0, a, 0);
-      raizes.push(e, base); return { e, base, x, z, cor: cores[k], quebrou: false, id };
-    });
-    for (let k = 0; k < 40; k++) { const a = Math.random() * 6.28, r = 9 + Math.random() * 18; raizes.push(new No(cilindro(.5 + Math.random() * .8, 0, 3 + Math.random() * 4, 7), [.08, .14, .12], { contorno: false }).em(Math.sin(a) * r, 0, Math.cos(a) * r)); }   // pinheiros escuros em volta
-    const dr = L.novoLutador('oitavo', 0, 1, { ia: true }); dr.desperto = false; dr.z = -9; dr.rotY = 0; dr.est = 'pose'; dr.poseFixa = Boneco3D.POSES.bracosCruzados;
-    raizes.push(dr.corpo.raiz);
-    const cenaAnt = L.cena, Lant = L.L;
-    const cena = { raizes, tempo: 0, ceu: [[.01, .01, .05], [.05, .05, .14], [.14, .1, .2]], sol: [.55, .75], luz: [.3, -1, .4], luzCor: [.45, .5, .8], amb: [.22, .22, .34], nevoa: [.08, .07, .16], nevoaD: 9, rim: [.6, .7, 1], corSombra: [.02, .02, .06], resMax: cenaAnt.resMax };
-    L.trocarCena(cena); L.L = [dr];
-    L.faixasCinema(true); L.ui.pular.hidden = false; L.pulando = false;
-    let fase = 0, t = 0, pilares = [], vermelho = 0;
-    L.quadroCb = (dt) => {
-      t += dt;
-      if (Math.random() < dt * 8) FX3D.add({ x: (Math.random() - .5) * 16, y: .3 + Math.random() * 2.5, z: (Math.random() - .5) * 16, vx: (Math.random() - .5) * .3, vy: .1, vz: (Math.random() - .5) * .3, vida: 2.5, tam: .07, cor: [.8, 1, .5], alfa: .9, fadeIn: true });   // vaga-lumes
-      if (fase === 1) { dr.z = Math.min(0, dr.z + dt * 1.6); dr.est = dr.z < 0 ? 'entrada' : 'pose'; dr.passo = (dr.passo || 0) + dt * 1.6; }
-      if (dr.desperto) FX3D.aura(0, 0, dr.z, [1, .8, .3], 2);
-      for (const p of pilares) {                                            // colunas de energia subindo das estelas quebradas
-        p.t += dt; if (p.no.vis === false && Math.random() < .6) continue;
-        for (let k = 0; k < 3; k++) FX3D.add({ x: p.x + (Math.random() - .5) * .6, y: Math.random() * 1.5, z: p.z + (Math.random() - .5) * .6, vx: 0, vy: 6 + Math.random() * 6, vz: 0, vida: 1.1, tam: .35, tamF: .1, cor: p.cor, alfa: .7, esticar: 2.5 });
-        p.no.esc[1] = Math.min(1, p.t * 1.5); p.no.alfa = .35 + Math.sin(t * 9 + p.x) * .08;
+    const L = Luta2D, fd = pintar(), cores = ORDEM_CHEFES.map(id => FX2D.hexA(CHEFES[id].aura));
+    const xs = [-6.4, -4.5, -2.6, -.9, .9, 2.6, 4.5, 6.4];
+    const estelas = ORDEM_CHEFES.map((id, k) => { const a = Math.abs(xs[k]) / 6.4; return { id, x: xs[k], prof: Math.round(128 + a * 14), esc: .85 + a * .3, cor: cores[k], estado: 0, pilar: 0 }; });
+    let vermelho = 0, t0 = L.tempo;
+    const cenAnt = L.cenario, Lant = L.L, plAnt = L.plateia; L.plateia = [];   // a plateia fica na arena
+    L.trocarCenario({ corCeu: '#03040e', corChao: '#161c2a', desenhar(g, t) {
+      g.drawImage(fd, 0, 0);
+      if (vermelho > 0) { g.fillStyle = 'rgba(200,30,40,' + (vermelho * .35) + ')'; g.fillRect(0, 0, CENA_W, 120); }
+      // colunas de energia das estelas quebradas (cor de cada chefe)
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (const s of estelas) if (s.pilar > 0) {
+        const xc = cenaX(s.x), w = (8 + Math.sin(t * 25 + s.x) * 2) * s.esc, alto = Math.min(1, s.pilar) * (s.prof + 220);
+        const gr = g.createLinearGradient(xc - w, 0, xc + w, 0); gr.addColorStop(0, FX2D.rgba(s.cor, 0)); gr.addColorStop(.5, FX2D.rgba(s.cor, .8 * s.fade)); gr.addColorStop(1, FX2D.rgba(s.cor, 0));
+        g.fillStyle = gr; g.fillRect(xc - w, s.prof - alto, w * 2, alto); g.fillStyle = 'rgba(255,255,255,' + .7 * s.fade + ')'; g.fillRect(xc - 1, s.prof - alto, 2, alto);
       }
-      cena.ceu[2] = [.14 + vermelho * .5, .1 + vermelho * .05, .2]; cena.amb = [.22 + vermelho * .2, .22, .34];
+      g.restore();
+      estelas.filter(s => s.prof < 140).forEach(s => estela(g, s, t));
+      estelas.filter(s => s.prof >= 140).forEach(s => estela(g, s, t));
+    } });
+    const dr = L.novoLutador('oitavo', 9, -1, { ia: true }); dr.est = 'entrada'; dr.alvoX = 0; dr.prof = 146;
+    L.L = [dr];
+    L.faixasCinema(true); L.ui.pular.hidden = false; L.pulando = false; L.empolgacao = 0;
+    L.quadroCb = (dt) => {
+      if (Math.random() < dt * 6) FX2D.add({ x: (Math.random() - .5) * 16, y: .2 + Math.random() * 2.2, vx: (Math.random() - .5) * .3, vy: .1, vida: 2.5, tam: .05, cor: [.8, 1, .5], alfa: .9, fadeIn: true });   // vaga-lumes
+      for (const s of estelas) if (s.pilar > 0) { s.pilar += dt * 1.5; if (Math.random() < dt * 16 * s.fade) FX2D.add({ x: s.x + (Math.random() - .5) * .3, y: (CENA_GY - s.prof) / CENA_M + Math.random(), vx: 0, vy: 6 + Math.random() * 5, vida: 1, tam: .08, cor: s.cor, alfa: .9, esticar: 4 }); }
     };
-    const pulou = () => L.pulando;
-    const esp = async s => { if (!pulou()) await L.esperaPulavel(s); };
-    // 1. calmaria
-    L.camOrbita([0, 1.2, 0], 11, 3.5, .12, 0, true);
+    const esp = async s => { if (!L.pulando) await L.esperaPulavel(s); };
+    // 1. calmaria: a câmera passeia pela clareira
+    L.camPan([-6, 1.9, 1.05], [2, 1.7, 1.05], 3.4);
     L.textoCentro('', 'Naquela mesma noite, longe da arena...', 3);
-    await esp(3.2);
+    await esp(3.4);
     // 2. ele chega ao centro do círculo
-    fase = 1; L.camFixa([2.6, 1.4, 4.2], [0, 1.4, -2], 1.2, true);
-    await esp(4.2);
-    fase = 2; dr.est = 'pose'; dr.poseFixa = Boneco3D.POSES.aura; dr.desperto = true;
-    L.flash('#ffcf4a', .35); FX3D.impacto(0, 1.4, 0, [1, .8, .3], true);
-    L.camFixa([0, .7, 3], [0, 1.5, 0], 2, true);
-    await esp(1.6);
-    // 3. os selos se partem um a um
-    L.camOrbita([0, 1.5, 0], 8.5, 2.2, .35, 0, true);
-    for (const s of estelas) {
-      if (pulou()) break;
-      s.e.tex = texRachado; s.e.emis = s.cor.map(v => v * .6); Luta3D.cam.tremor = Math.min(.45, Luta3D.cam.tremor + .14);
-      FX3D.impacto(s.x, 1.3, s.z, s.cor, true);
-      for (let k = 0; k < 18; k++) FX3D.add({ x: s.x, y: 1 + Math.random() * 1.4, z: s.z, vx: (Math.random() - .5) * 5, vy: 2 + Math.random() * 4, vz: (Math.random() - .5) * 5, vida: 1.2, tam: .14, cor: [.6, .6, .65], alfa: 1, modo: 'normal', g: 9, chao: .05, rot: Math.random() * 6, vrot: 8 });
-      const col = new No(cilindro(.55, .55, 30, 16, false), s.cor, { contorno: false, solido: true, alfa: .35, emis: [0, 0, 0] }).em(s.x, 0, s.z).escala(1, 0, 1);
-      cena.raizes.push(col); pilares.push({ no: col, x: s.x, z: s.z, cor: s.cor, t: 0 });
-      s.e.vis = false; vermelho = Math.min(1, vermelho + .12);
+    L.camFoco(() => [dr.x, 1.2, 1.7], 3, true);
+    await esp(3.6);
+    dr.alvoX = null; dr.x = 0; dr.est = 'pose'; dr.animFixa = 'aura'; dr.t = 0;
+    // 3. close no chapéu: os olhos dourados acendem (forma desperta)
+    L.camFoco([0, 1.5, 2.5], 4, true); await esp(.7);
+    dr.desperto = true; L.flash('#ffcf4a', .45); L.linhas(1.3); FX2D.impacto(0, 1.55, [1, .8, .3], true);
+    await esp(1.5);
+    // 4. os selos se partem um a um
+    L.camFoco([0, 1.5, .95], 3, true);
+    const ordem = [3, 4, 2, 5, 1, 6, 0, 7];
+    for (const k of ordem) {
+      if (L.pulando) break;
+      const s = estelas[k]; s.estado = 1; L.cam.tremor = Math.min(.5, L.cam.tremor + .12);
+      await esp(.32);
+      s.estado = 2; s.pilar = .01; s.fade = 1; vermelho = Math.min(1, vermelho + .12);
+      const y = (CENA_GY - s.prof) / CENA_M + .6;
+      FX2D.impacto(s.x, y, s.cor, true);
+      for (let j = 0; j < 14; j++) FX2D.add({ x: s.x, y: y + Math.random() * .4, vx: (Math.random() - .5) * 5, vy: 2 + Math.random() * 4, vida: 1.2, tam: .09, cor: [.55, .57, .65], alfa: 1, modo: 'normal', g: 9, chao: (CENA_GY - s.prof) / CENA_M });
       if (Som && Som.efeito) Som.efeito('impacto');
-      await esp(.75);
+      await esp(.45);
     }
     L.textoCentro('', 'Os oito selos antigos se romperam.', 3);
-    // 4. clarão e as ameaças partem para as regiões
-    L.camFixa([0, 3, 11], [0, 3, 0], 1.5, true);
-    await esp(1.2);
-    L.flash('#ffffff', .9); Luta3D.cam.tremor = .5;
-    pilares.forEach(p => { for (let k = 0; k < 30; k++) { const a = Math.atan2(p.x, p.z); FX3D.add({ x: p.x, y: 3 + Math.random() * 8, z: p.z, vx: Math.sin(a) * (14 + Math.random() * 6), vy: 1 + Math.random() * 2, vz: Math.cos(a) * (14 + Math.random() * 6), vida: 1.6, tam: .5, tamF: .1, cor: p.cor, alfa: .9, esticar: 3 }); } p.no.vis = false; });
+    await esp(1.4);
+    // 5. clarão: as ameaças partem para as regiões
+    L.flash('#ffffff', .95); L.cam.tremor = .55; L.linhas(1.8);
+    for (const s of estelas) { s.fade = .35; for (let j = 0; j < 16; j++) { const lado = s.x < 0 ? -1 : 1; FX2D.add({ x: s.x, y: 2 + Math.random() * 2.5, vx: lado * (10 + Math.random() * 8), vy: 1 + Math.random() * 2, vida: 1.4, tam: .12, cor: s.cor, alfa: 1, esticar: 1 }); } }
+    L.camFoco([0, 1.7, .9], 1.5, true);
     L.textoCentro('', 'As ameaças aprisionadas despertaram nas regiões.', 3.4);
     await esp(3.6);
     L.textoCentro('NOVA FASE', 'Os Selos Rompidos', 2.6, 'l3titulo');
     await esp(2.6);
     L.quadroCb = null; L.ui.pular.hidden = true; L.pulando = false; L.faixasCinema(false);
-    L.trocarCena(cenaAnt); L.L = Lant;
+    L.trocarCenario(cenAnt); L.L = Lant; L.plateia = plAnt;
   }
   return { tocar };
 })();
-
 
 /* =====================================================================
    15. LOOP PRINCIPAL E INÍCIO
@@ -9757,7 +9446,7 @@ function loop(agora) {                                                // um loop
   ultimo = agora;
   if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
   else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
-  else if (MODO_TELA === 'luta3d') { try { Luta3D.quadro(dt); } catch (e) { console.error(e); } }
+  else if (MODO_TELA === 'torneio') { try { Luta2D.quadro(dt); } catch (e) { console.error(e); } }
   else {
     const a = performance.now(); atualizar(dt); const b = performance.now(); renderizar(dt); const c = performance.now();
     perfQuadro(Math.min(250, agora - (loop.ant || agora - 16.7)), b - a, c - b);
@@ -9784,7 +9473,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta3D, CenaSelos, Motor3D, Boneco3D, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
