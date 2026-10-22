@@ -123,6 +123,7 @@
   #ctxAcoes { position: fixed; left: 50%; bottom: 112px; transform: translateX(-50%); z-index: 7; display: flex; gap: 8px; }
   #ctxAcoes button { font: bold 13px monospace; padding: 9px 14px; border-radius: 8px; border: 2px solid #fff; background: rgba(20,30,50,.9); color: #fff; cursor: pointer; }
   #ctxAcoes button.final { background: linear-gradient(90deg, #ff6a2a, #ffcf4a); color: #1a1008; border-color: #fff6d0; animation: pulsoFinal .6s infinite alternate; }
+  @media (max-width: 900px) { #hudChefe { width: 42vw; left: 41%; bottom: 40px; } #ctxAcoes { bottom: 96px; } #ctxAcoes button { font-size: 11px; padding: 7px 10px; } }
   @keyframes pulsoFinal { from { transform: scale(1); } to { transform: scale(1.08); } }
   #painelPerf { position: fixed; right: 6px; top: 34px; z-index: 50; white-space: pre; font: 11px/1.35 monospace; color: #c8ffd0; background: rgba(6, 10, 18, .78); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
   #aviso {
