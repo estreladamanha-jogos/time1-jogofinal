@@ -139,6 +139,10 @@
   #dlgOpcoes button.sel, #dlgOpcoes button:hover { background: #46d4ff; color: #071020; }
   #dlgOpcoes button.sel::before { content: '▶'; position: absolute; left: 6px; font-size: 11px; top: 7px; }
 
+  /* minimapa circular (canto superior direito) — mesma moldura do HUD */
+  #minimapa { position: fixed; top: 8px; right: 8px; z-index: 5; width: clamp(78px, 17vmin, 132px); height: clamp(78px, 17vmin, 132px); border-radius: 50%; border: 2px solid #c9d0e6; background: #0d1027; box-shadow: 0 0 0 2px #000, 0 0 14px rgba(0, 229, 255, .45), inset 0 0 0 1px #5a6490; pointer-events: none; image-rendering: pixelated; }
+  #minimapa[hidden] { display: none; }
+  body.gotico #minimapa { border: 3px solid #9096a6; background: #0b0508; box-shadow: 0 0 0 2px #000, 0 0 22px rgba(190, 20, 50, .55), inset 0 0 0 2px #14080c; }
   #salvando { position: fixed; right: 10px; top: 58px; z-index: 6; margin: 0; padding: 3px 9px; border-radius: 10px; background: rgba(10,16,30,.8); color: #bfe9ff; font-size: 11px; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #salvando.on { opacity: 1; }
   /* ===== Tela inicial (menu principal) ===== */
@@ -328,6 +332,7 @@
 
 <main>
   <canvas id="jogo" tabindex="0"></canvas>
+  <canvas id="minimapa" width="132" height="132" aria-hidden="true" hidden></canvas>
 </main>
 
 <section id="dialogo" hidden aria-live="polite">
@@ -9440,6 +9445,58 @@ const CenaSelos = (() => {
 /* =====================================================================
    15. LOOP PRINCIPAL E INÍCIO
    ===================================================================== */
+/* =====================================================================
+   MINIMAPA CIRCULAR (canto superior direito)
+   Usa os dados do próprio mapa: mapa.tiles (tipo do chão), mapa.bloq (paredes, árvores, pedras),
+   jog.x / jog.y (posição do jogador em tiles) e a mesma orientação isométrica da tela.
+   As cores de cada tipo de chão são a média das texturas do jogo (grama, terra, água...).
+   ===================================================================== */
+const Minimapa = (() => {
+  const el = document.getElementById('minimapa'), g = el.getContext('2d'), RAIO = 26;   // tiles visíveis do centro até a borda
+  let cores = null, cache = null, cacheMapa = null, cacheT = 0;
+  // cor média de cada tipo de chão, tirada das texturas do jogo
+  function corDasTexturas() {
+    const fonte = TEX3.pronto ? [TEX3.v, TEX_TIPO3] : TEX.pronto ? [TEX.v, TEX_TIPO] : null; if (!fonte) return null;
+    const c = document.createElement('canvas'); c.width = c.height = 1; const cg = c.getContext('2d', { willReadFrequently: true }), r = {};
+    for (const tipo in fonte[1]) { const img = fonte[0][fonte[1][tipo][0]]; if (!img) continue; cg.clearRect(0, 0, 1, 1); cg.drawImage(img, 0, 0, 1, 1); const d = cg.getImageData(0, 0, 1, 1).data; r[tipo] = [d[0], d[1], d[2]]; }
+    if (!r[T.TATAME]) r[T.TATAME] = [0xd4, 0xcd, 0x88];                       // tatame não tem textura: usa a cor do desenho do tatame (#cfc982/#d9d28e)
+    return r;
+  }
+  // pinta o mapa inteiro, 1 pixel por tile (refeito quando troca de mapa e de tempos em tempos no mundo aberto)
+  function pintarMapa(M) {
+    const c = cache && cache.width === M.w && cache.height === M.h ? cache : document.createElement('canvas'); c.width = M.w; c.height = M.h;
+    const cg = c.getContext('2d'), img = cg.createImageData(M.w, M.h), d = img.data;
+    for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) {
+      const t = M.tiles[j][i], k = (j * M.w + i) * 4, cor = t == null ? null : cores[t]; if (!cor) continue;
+      const esc = M.bloq[j] && M.bloq[j][i] && t !== T.AGUA ? .55 : 1;                 // obstáculos ficam mais escuros
+      d[k] = cor[0] * esc; d[k + 1] = cor[1] * esc; d[k + 2] = cor[2] * esc; d[k + 3] = 255;
+    }
+    cg.putImageData(img, 0, 0); return c;
+  }
+  function desenhar(dt) {
+    const visivel = MODO_TELA === 'jogo' && mapa && jogoIniciado;
+    if (el.hidden === visivel) el.hidden = !visivel;
+    if (!visivel) return;
+    if (!cores) { cores = corDasTexturas(); if (!cores) return; }
+    cacheT -= dt;
+    if (cacheMapa !== mapa || (mapa.grande && cacheT <= 0)) { cache = pintarMapa(mapa); cacheMapa = mapa; cacheT = 3; }
+    const raio = mapa.grande ? RAIO : Math.min(RAIO, Math.max(mapa.w, mapa.h) * .75), W = el.width, s = W / 2 / raio / Math.SQRT2;   // pixels por tile (salas pequenas aparecem maiores)
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
+    g.save(); g.beginPath(); g.arc(W / 2, W / 2, W / 2, 0, Math.PI * 2); g.clip();
+    // mesma projeção isométrica da tela: tile (i, j) -> ((i - j), (i + j) / 2); o jogador fica no centro
+    g.setTransform(s, s / 2, -s, s / 2, W / 2 - (jog.x - jog.y) * s, W / 2 - (jog.x + jog.y) * s / 2);
+    g.imageSmoothingEnabled = false; g.drawImage(cache, 0, 0);
+    g.restore();
+    // marcador do jogador (sempre no centro, aponta para onde ele está virado)
+    const a = (jog.dir || 0) * Math.PI / 4;                                   // mesma direção de dirDeVetor (0 = direita, 2 = baixo...)
+    g.setTransform(1, 0, 0, 1, W / 2, W / 2); g.rotate(a);
+    g.fillStyle = '#fdfbf6'; g.strokeStyle = '#0d1027'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -5); g.lineTo(-2, 0); g.lineTo(-5, 5); g.closePath(); g.stroke(); g.fill();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  return { desenhar };
+})();
+
 let ultimo = 0;
 function loop(agora) {                                                // um loop só: abertura, menu ou jogo
   const dt = Math.min(.05, (agora - ultimo) / 1000 || .016);
@@ -9453,6 +9510,7 @@ function loop(agora) {                                                // um loop
     if (c - a < 9 && (loop.k = (loop.k || 0) + 1) % 3 === 0) preaquecer(null, 3);   // sobrou tempo no quadro: adianta um pouco do que vem pela frente
   }
   loop.ant = agora;
+  try { Minimapa.desenhar(dt); } catch (e) {}
   requestAnimationFrame(loop);
 }
 
