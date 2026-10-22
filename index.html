@@ -113,6 +113,7 @@
     #dlgNome { font-size: 13px; }
   }
   .dlg-dica { position: absolute; left: 26px; bottom: 5px; font-size: 10px; color: #6f86a8; letter-spacing: .5px; }
+  #painelPerf { position: fixed; right: 6px; top: 34px; z-index: 50; white-space: pre; font: 11px/1.35 monospace; color: #c8ffd0; background: rgba(6, 10, 18, .78); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
   #aviso {
     position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
     background: rgba(244, 208, 63, .95); color: #3a2a00; padding: 5px 12px;
@@ -277,6 +278,8 @@
     <label>Volume dos efeitos <input type="range" id="opSfx" min="0" max="100"></label>
     <label class="caixa"><input type="checkbox" id="opMusOn"> Música ligada</label>
     <label class="caixa"><input type="checkbox" id="opSfxOn"> Efeitos sonoros ligados</label>
+    <label>Qualidade gráfica <select id="opQual"><option value="auto">Automática</option><option value="2">Alta</option><option value="1">Média</option><option value="0">Baixa</option></select></label>
+    <label>Painel de desempenho (F3) <input type="checkbox" id="opPerf"></label>
     <label>Controles de toque <select id="opToque"><option value="auto">Automático</option><option value="sempre">Sempre mostrar</option><option value="nunca">Esconder</option></select></label>
     <p class="teclas">Teclado: WASD/Setas andar • J bater • K aura • Espaço esquivar • L defender • E interagir • M menu</p>
     <button type="button" data-a="voltar">VOLTAR</button>
@@ -1434,6 +1437,23 @@ function atualizarAtivos(M, forcar) {
   for (const o of M.dyn) if (!o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0) && o.x >= x0 && o.x < x1 && o.y >= y0 && o.y < y1) lista.push(o);
   M.objs = lista; M.arvores = lista.filter(o => o.spr && o.spr.copa);
 }
+// Pré-aquecimento: quando o navegador está folgado, prepara os chunks e desenhos que estão logo além da tela
+// (assim o jogo não engasga quando o Akira entra numa área nova).
+function preaquecer(prazo, orcamento) {
+  const M = mapa; if (!M || !M.grande || MODO_TELA !== 'jogo') return;
+  const tem = () => (prazo && prazo.timeRemaining ? prazo.timeRemaining() > 2 : performance.now() - ini < (orcamento || 6));
+  const ini = performance.now(), ci = Math.floor(jog.x / CHUNK), cj = Math.floor(jog.y / CHUNK);
+  for (let r = 0; r <= 2 && tem(); r++) for (let dj = -r; dj <= r && tem(); dj++) for (let di = -r; di <= r && tem(); di++) {
+    if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+    const a = ci + di, b = cj + dj; if (a < 0 || b < 0 || a * CHUNK >= M.w || b * CHUNK >= M.h) continue;
+    const c = chunkDe(M, a, b); if (!c.gerado) gerarChunk(M, c);
+    for (const o of c.objs) { if (!tem()) break; const sp = Array.isArray(o.spr) ? o.spr[0] : o.spr; if (!sp || !sp.hi) continue; if (sp.fn && !sp.dyn && sp.w) Cen.asar(sp); else if (sp.pre) for (const q of (typeof sp.pre === 'function' ? sp.pre() : sp.pre)) { if (q && q.fn) Cen.asar(q); } }
+  }
+}
+(function agendarPreaquecer() {
+  const ric = window.requestIdleCallback || (f => setTimeout(() => f(null), 200));
+  ric(p => { try { preaquecer(p); } catch (e) {} setTimeout(agendarPreaquecer, 250); });
+})();
 function removerObj(M, o) { o.removido = true; M.objs = M.objs.filter(x => x !== o); }
 // inimigos derrotados voltam depois de um tempo (só longe do Akira)
 function renascerInimigos(M) {
@@ -1840,22 +1860,44 @@ function chaoChunk(m, fi, fj) {
   while (m.fchunks.size > lim) m.fchunks.delete(m.fchunks.keys().next().value);
   return ch;
 }
-function desenharChaoGrande(g, m, vx0, vx1, vy0, vy1) {
+// O chão visível fica pronto num "buffer" um pouco maior que a tela. A cada quadro desenha UMA imagem;
+// o buffer só é refeito quando a câmera chega perto da beirada dele (ou quando chunks novos ficam prontos).
+const FBUF_MARGEM = 112;
+function chunksNaArea(m, vx0, vx1, vy0, vy1, fn) {
   const it = (x, y) => [(x / 16 + y / 8) / 2, (y / 8 - x / 16) / 2];   // tela -> tile
   const cs = [it(vx0, vy0), it(vx1, vy0), it(vx0, vy1), it(vx1, vy1)];
-  const fi0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[0])) / FC) - 1), fi1 = Math.min(Math.ceil(m.w / FC) - 1, Math.floor(Math.max(...cs.map(c => c[0])) / FC) + 1);
-  const fj0 = Math.max(0, Math.floor(Math.min(...cs.map(c => c[1])) / FC) - 1), fj1 = Math.min(Math.ceil(m.h / FC) - 1, Math.floor(Math.max(...cs.map(c => c[1])) / FC) + 1);
-  let novos = 0; const prim = !m.jaDesenhou; m.jaDesenhou = true; g.imageSmoothingEnabled = false;
+  const fi0 = Math.max(0, Math.floor(Math.min(cs[0][0], cs[1][0], cs[2][0], cs[3][0]) / FC) - 1), fi1 = Math.min(Math.ceil(m.w / FC) - 1, Math.floor(Math.max(cs[0][0], cs[1][0], cs[2][0], cs[3][0]) / FC) + 1);
+  const fj0 = Math.max(0, Math.floor(Math.min(cs[0][1], cs[1][1], cs[2][1], cs[3][1]) / FC) - 1), fj1 = Math.min(Math.ceil(m.h / FC) - 1, Math.floor(Math.max(cs[0][1], cs[1][1], cs[2][1], cs[3][1]) / FC) + 1);
   for (let fj = fj0; fj <= fj1; fj++) for (let fi = fi0; fi <= fi1; fi++) {
     const bx0 = (fi * FC - (fj * FC + FC - 1)) * 16 - 19, bx1 = ((fi * FC + FC - 1) - fj * FC) * 16 + 19, by0 = (fi * FC + fj * FC) * 8 - 9, by1 = (fi * FC + fj * FC + 2 * FC - 2) * 8 + 19;
-    if (bx1 < vx0 || bx0 > vx1 || by1 + ALT_PENHASCO < vy0 || by0 > vy1 + 60) continue;
-    const key = fi + ',' + fj; let ch = m.fchunks.get(key);
-    if (ch) { m.fchunks.delete(key); m.fchunks.set(key, ch); }           // marca como usado agora
-    else if (prim || novos < 4) { ch = chaoChunk(m, fi, fj); novos++; }
-    if (!ch) continue;
-    g.drawImage(ch.c, ch.x, ch.y, ch.w, ch.h);
-    for (const [i, j] of ch.aguas) { const x = (i - j) * 16 - 16, y = (i + j) * 8; if (x > vx0 - 32 && x < vx1 && y > vy0 - 16 && y < vy1) Cen.aguaAnim(g, i, j, x, y, tempo); }
+    if (bx1 < vx0 || bx0 > vx1 || by1 + ALT_PENHASCO < vy0 || by0 > vy1 + 20) continue;
+    fn(fi, fj);
   }
+}
+function desenharChaoGrande(g, m, vx0, vx1, vy0, vy1) {
+  // área realmente visível (sem as margens largas usadas para os objetos)
+  const tx0 = camera.x - W / 2, ty0 = camera.y - H / 2, tx1 = tx0 + W, ty1 = ty0 + H;
+  let B = m.fbuf;
+  const precisa = !B || B.sc !== SC || B.W !== W || B.H !== H || B.pend || B.gotico !== GOT.on || B.fc !== m.fchunks || tx0 < B.x + 8 || ty0 < B.y + 8 || tx1 > B.x + B.w - 8 || ty1 > B.y + B.h - 8;
+  if (precisa) {
+    const bw = W + FBUF_MARGEM * 2, bh = H + FBUF_MARGEM * 2;
+    if (!B || B.W !== W || B.H !== H || B.sc !== SC) { B = m.fbuf = { c: document.createElement('canvas'), W, H, sc: SC, w: bw, h: bh }; B.c.width = Math.ceil(bw * SC); B.c.height = Math.ceil(bh * SC); B.g = B.c.getContext('2d'); }
+    B.x = Math.round(camera.x - bw / 2); B.y = Math.round(camera.y - bh / 2); B.gotico = GOT.on; B.fc = m.fchunks;
+    const bg = B.g; bg.setTransform(1, 0, 0, 1, 0, 0); bg.clearRect(0, 0, B.c.width, B.c.height); bg.setTransform(SC, 0, 0, SC, -B.x * SC, -B.y * SC); bg.imageSmoothingEnabled = false;
+    let novos = 0; const prim = !m.jaDesenhou; m.jaDesenhou = true; B.pend = false; B.aguas = [];
+    chunksNaArea(m, B.x, B.x + bw, B.y, B.y + bh, (fi, fj) => {
+      const key = fi + ',' + fj; let ch = m.fchunks.get(key);
+      if (ch) { m.fchunks.delete(key); m.fchunks.set(key, ch); }       // marca como usado agora
+      else if (prim || novos < 6) { ch = chaoChunk(m, fi, fj); novos++; }
+      if (!ch) { B.pend = true; return; }                              // ainda falta chunk: refaz o buffer no próximo quadro
+      bg.drawImage(ch.c, ch.x, ch.y, ch.w, ch.h);
+      for (const a of ch.aguas) B.aguas.push(a);
+    });
+    PERF.refazChao++;
+  }
+  g.imageSmoothingEnabled = false;
+  g.drawImage(B.c, B.x, B.y, B.w, B.h);
+  if (QUAL.agua) for (const [i, j] of B.aguas) { const x = (i - j) * 16 - 16, y = (i + j) * 8; if (x > tx0 - 32 && x < tx1 && y > ty0 - 16 && y < ty1) Cen.aguaAnim(g, i, j, x, y, tempo); }
 }
 // muda o nome da região no HUD, as partículas do ambiente e salva ao trocar de região
 function atualizarRegiao() {
@@ -1866,7 +1908,7 @@ function atualizarRegiao() {
   if (!primeira) { aviso(R.nome); if (typeof autoSalvar === 'function') autoSalvar('regiao'); }
 }
 function prepararCache(m) {
-  if (m.grande) { m.fchunks = new Map(); m.cacheSC = SC; m.cache = null; m.grade = null; return; }
+  if (m.grande) { m.fchunks = new Map(); m.fbuf = null; m.cacheSC = SC; m.cache = null; m.grade = null; return; }
   const margem = m.interior ? 60 : 6;
   m.ox = m.h * 16; m.oy = margem;
   m.aguas = [];
@@ -1920,6 +1962,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyR' && e.shiftKey) reiniciar();
     if (e.code === 'KeyP' && e.shiftKey) exportarSprites();
     if (e.code === 'KeyB') alternarVisual();
+    if (e.code === 'F3') { e.preventDefault(); alternarPainelPerf(); }
     if (e.code === 'KeyG') { gradeNeon = !gradeNeon; if (mapa && mapa.grande) mapa.fchunks = new Map(); aviso(gradeNeon ? 'Grade neon: ligada' : 'Grade neon: desligada'); }
   }
   teclas[e.code] = true;
@@ -1957,6 +2000,35 @@ let gradeNeon = true, MODO = 'hd', fundoGot = null;
 try { MODO = localStorage.getItem('karate-visual2') || 'hd'; } catch (e) {}     // padrão: manhã (anime HD)
 const aplicarModo = () => { PIX.on = MODO === 'retro'; GOT.on = MODO === 'gotico'; };
 aplicarModo();
+/* ---------- qualidade gráfica (alta/média/baixa) e painel de desempenho (F3) ----------
+   Qualidade baixa tira primeiro o que é só enfeite (luz entre as folhas, névoa, nuvens, folhas ao vento, água animada).
+   No modo automático o jogo só baixa a qualidade se ficar lento por alguns segundos seguidos (e sobe de novo devagar). */
+const QUAL = { modo: 'auto', nivel: 2, folhas: 14, agua: true };
+function aplicarQualidade(n) {
+  QUAL.nivel = Math.max(0, Math.min(2, n));
+  QUAL.folhas = [4, 9, 14][QUAL.nivel]; QUAL.agua = QUAL.nivel >= 1;
+}
+const PERF = { on: false, quadros: 0, acc: 0, upd: 0, ren: 0, t0: 0, refazChao: 0, desenhados: 0, ultimo: 0, el: null, janela: [], lento: 0, rapido: 0 };
+function perfQuadro(dtMs, updMs, renMs) {                            // chamado todo quadro (barato): média para o painel e para a qualidade automática
+  PERF.quadros++; PERF.acc += dtMs; PERF.upd += updMs; PERF.ren += renMs;
+  const agora = performance.now(); if (agora - PERF.ultimo < 2000) return;
+  const n = PERF.quadros || 1, med = PERF.acc / n, fps = 1000 / med;
+  if (QUAL.modo === 'auto' && MODO_TELA === 'jogo' && !document.hidden) {                 // só reage depois de 2 janelas lentas (4 s) ou 4 rápidas (8 s)
+    if (med > 26) { PERF.lento++; PERF.rapido = 0; if (PERF.lento >= 2 && QUAL.nivel > 0) { aplicarQualidade(QUAL.nivel - 1); PERF.lento = 0; } }
+    else if (med < 17.5) { PERF.rapido++; PERF.lento = 0; if (PERF.rapido >= 4 && QUAL.nivel < 2) { aplicarQualidade(QUAL.nivel + 1); PERF.rapido = 0; } }
+    else { PERF.lento = 0; PERF.rapido = 0; }
+  }
+  if (PERF.on && PERF.el) PERF.el.textContent = `FPS ${fps.toFixed(0)}  •  quadro ${med.toFixed(1)} ms (lógica ${(PERF.upd / n).toFixed(1)} + desenho ${(PERF.ren / n).toFixed(1)})\n` +
+    `objetos na tela ${PERF.desenhados} / ativos ${mapa && mapa.objs ? mapa.objs.length : 0}  •  partículas ${fagulhas.length + textos.length + fx.length + Math.min(folhas.length, QUAL.folhas)}\n` +
+    `chão refeito ${PERF.refazChao}x  •  pedaços de chão em cache ${mapa && mapa.fchunks ? mapa.fchunks.size : '-'}  •  qualidade ${['baixa', 'média', 'alta'][QUAL.nivel]}${QUAL.modo === 'auto' ? ' (auto)' : ''}` +
+    (performance.memory ? `  •  memória JS ${Math.round(performance.memory.usedJSHeapSize / 1e6)} MB` : '');
+  PERF.quadros = 0; PERF.acc = 0; PERF.upd = 0; PERF.ren = 0; PERF.refazChao = 0; PERF.ultimo = agora;
+}
+function alternarPainelPerf() {
+  PERF.on = !PERF.on;
+  if (!PERF.el) { PERF.el = document.createElement('div'); PERF.el.id = 'painelPerf'; document.body.appendChild(PERF.el); }
+  PERF.el.hidden = !PERF.on; PERF.el.textContent = 'medindo...'; PERF.ultimo = 0;
+}
 let W = 480, H = 270, SC = 2, vinheta = null;      // SC = zoom do mundo pixelado; o canvas tem resolução cheia (Akira não é pixel art)
 const camera = { x: 0, y: 0 };
 let shake = 0, hitstop = 0, tempo = 0;
@@ -4543,22 +4615,35 @@ function aguaBase(g, i, j, x, y, viz) {
   g.restore();
 }
 // água em movimento (desenhada todo quadro por cima do cache): ondas, brilhos e faíscas
-function aguaAnim(g, i, j, x, y, t) {                 // água viva: faixas de luz que correm, ondinhas e brilhos (em pixel)
-  const h = hsh(i, j, 1);
-  g.save(); rombo(g, x, y, 0); g.clip();
-  for (let k = 0; k < 3; k++) {                                  // cáusticas: linhas onduladas que andam pela água (continuam entre tiles)
-    const fase = (t * 5 + k * 6 + (i + j) * 8) % 18;
-    for (let px = 0; px < 32; px += 1) {
-      const wx = x + px, wy = y + fase - 2 + Math.sin((wx + t * 14) * .28 + k * 2) * 1.6 + (px - 16) * .0;
-      if (((px + Math.floor(t * 6) + k * 3) % 5) === 0) continue;
-      g.fillStyle = k === 1 ? 'rgba(220,250,255,.42)' : 'rgba(170,230,255,.32)'; g.fillRect(wx, Math.round(wy), 1, 1);
+// cáusticas da água: 16 quadros prontos de um tile (antes eram ~100 retângulos de 1 pixel por tile a cada quadro)
+const AGUA_NQ = 16, AGUA_PER = 3.6; let aguaQ = null;
+function aguaQuadros() {
+  const sc = SCg(); if (aguaQ && aguaQ.sc === sc) return aguaQ.q;
+  const q = [];
+  for (let f = 0; f < AGUA_NQ; f++) {
+    const c = document.createElement('canvas'); c.width = 32 * sc; c.height = 16 * sc; const g = c.getContext('2d'); g.scale(sc, sc);
+    rombo(g, 0, 0, 0); g.clip(); const t = f / AGUA_NQ * AGUA_PER;
+    for (let k = 0; k < 3; k++) {
+      const fase = (t * 5 + k * 6) % 18;
+      for (let px = 0; px < 32; px++) {
+        const wy = fase - 2 + Math.sin((px + t * 14) * .28 + k * 2) * 1.6;
+        if (((px + Math.floor(t * 6) + k * 3) % 5) === 0) continue;
+        g.fillStyle = k === 1 ? 'rgba(220,250,255,.42)' : 'rgba(170,230,255,.32)'; g.fillRect(px, Math.round(wy), 1, 1);
+        if (fase > 14) { g.fillRect(px, Math.round(wy) - 18, 1, 1); }   // a linha que sai embaixo volta em cima (emenda entre quadros)
+      }
     }
+    q.push(c);
   }
+  aguaQ = { sc, q }; return q;
+}
+function aguaAnim(g, i, j, x, y, t) {                 // água viva: faixas de luz que correm, ondinhas e brilhos
+  const h = hsh(i, j, 1), q = aguaQuadros();
+  const f = Math.floor(((t + (i + j) * 1.6) / AGUA_PER) * AGUA_NQ) % AGUA_NQ;
+  g.drawImage(q[(f + AGUA_NQ) % AGUA_NQ], x, y, 32, 16);
   for (let k = 0; k < 2; k++) {                                  // ondinhas
     const hh = hsh(i, j, 10 + k), ph = t * (.8 + hh * .6) + hh * 6.28, a = .5 + .5 * Math.sin(ph), p = PX(x, y, .2 + hh * .6, .25 + hsh(i, j, 20 + k) * .5);
     g.fillStyle = 'rgba(235,252,255,' + (.25 + .45 * a) + ')'; g.fillRect(Math.round(p[0] - 3), Math.round(p[1]), 3, 1); g.fillRect(Math.round(p[0]), Math.round(p[1] - 1), 3, 1);
   }
-  g.restore();
   const s = Math.sin(t * 2.4 + h * 50);                          // brilho do sol piscando
   if (s > .975 && h < .4) { const p = PX(x, y, .2 + h * .6, .3 + hsh(i, j, 4) * .4), r = Math.round(1 + 2 * (s - .9) / .1); g.fillStyle = '#ffffff'; g.fillRect(p[0] - r, p[1], r * 2 + 1, 1); g.fillRect(p[0], p[1] - r, 1, r * 2 + 1); }
 }
@@ -4737,9 +4822,9 @@ function madeira(g, x, y, w, h, c, r) {              // tábua com contorno, bri
   g.restore();
 }
 // textura de pedra por cima de uma forma já desenhada (use dentro de um clip): grão, manchas, rachaduras, lascas, líquen e musgo
-function texPedraSobre(g, x0, y0, w, h, seed, musgo) {
+function texPedraSobre(g, x0, y0, w, h, seed, musgo, dens) {
   const r = mul(seed);
-  for (let k = 0; k < w * h * .5; k++) { const x = x0 + r() * w, y = y0 + r() * h, v = r(); g.fillStyle = v < .45 ? 'rgba(40,36,52,.22)' : v < .85 ? 'rgba(255,255,245,.2)' : 'rgba(120,110,90,.3)'; g.fillRect(x, y, v < .9 ? .7 : 1.2, v < .9 ? .7 : 1); }
+  for (let k = 0; k < w * h * .5 * (dens || 1); k++) { const x = x0 + r() * w, y = y0 + r() * h, v = r(); g.fillStyle = v < .45 ? 'rgba(40,36,52,.22)' : v < .85 ? 'rgba(255,255,245,.2)' : 'rgba(120,110,90,.3)'; g.fillRect(x, y, v < .9 ? .7 : 1.2, v < .9 ? .7 : 1); }
   for (let k = 0; k < w * h / 160; k++) { const x = x0 + r() * w, y = y0 + r() * h, rr = 1 + r() * 3; g.beginPath(); g.ellipse(x, y, rr, rr * .7, r() * 3, 0, TAU); g.fillStyle = r() < .5 ? 'rgba(60,54,70,.14)' : 'rgba(255,250,235,.12)'; g.fill(); }
   for (let k = 0; k < 2 + w * h / 400; k++) {                         // rachaduras (escuro com borda clara)
     let x = x0 + r() * w, y = y0 + r() * h; g.beginPath(); g.moveTo(x, y);
@@ -5147,7 +5232,7 @@ function desenhaMontanha(g, o) {
   faixa(ar2, [[px, -Hp], [B + 10, -Hp - 10], [B + 10, 0]], 'rgba(18,14,40,.26)');
   faixa(ar3, [[px + B * .22, -Hp * .62], [B + 10, -Hp], [B + 10, 0]], 'rgba(18,14,40,.18)');
   [ar1, ar2, ar3].forEach(A => { g.beginPath(); A.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.lineWidth = 1; g.strokeStyle = 'rgba(26,24,46,.5)'; g.stroke(); g.save(); g.translate(-1, 0); g.lineWidth = .6; g.strokeStyle = 'rgba(255,255,240,.35)'; g.stroke(); g.restore(); });
-  texPedraSobre(g, -B, -Hp, B * 2, Hp, o.seed + 7, false);
+  texPedraSobre(g, -B, -Hp, B * 2, Hp, o.seed + 7, false, .3);
   for (let k = 0; k < Hp / 9; k++) {                                // estratos e penhascos (rochas saltando)
     const y = -12 - r() * (Hp - 20), x = -B + r() * B * 2, w = 8 + r() * 26;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * .4, y - 4 - r() * 4); g.lineTo(x + w, y + r() * 2); g.closePath(); g.fillStyle = r() < .5 ? 'rgba(255,250,235,.16)' : 'rgba(20,16,40,.22)'; g.fill();
@@ -5193,7 +5278,7 @@ function paredaoQueda(g, o) {                                         // paredã
   const forma = () => { g.beginPath(); g.moveTo(-W - 6, 2); top.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W + 6, 2); g.closePath(); };
   forma(); g.fillStyle = lin(g, -W, 0, W, 0, ['#8a8ea6', '#6c7088', '#4a4c64', '#383a50']); g.fill();
   g.save(); forma(); g.clip();
-  texPedraSobre(g, -W - 6, TOPp - 10, W * 2 + 12, -TOPp + 14, o.seed + 9, true);
+  texPedraSobre(g, -W - 6, TOPp - 10, W * 2 + 12, -TOPp + 14, o.seed + 9, true, .5);
   let y = 0;
   while (y > TOPp) {                                                  // camadas de rocha (ressaltos claros, sombra embaixo)
     const h = 8 + r() * 9; y -= h;
@@ -5332,7 +5417,7 @@ function serraSpr(v, incl, agua) {
   });
   const lab = agua ? hi(40, 80, 20, 72, g => { g.translate(20, 72); labiosQueda(g, { seed: v * 7 + 2, top: -62, fenda: 7.5 }); }) : null;
   const s = agua ? { hi: true, w: 0, h: 0, ax: 0, ay: 0, dyn: (g, t) => { desenhaHi(g, base, 0, 0, t); g.save(); g.transform(1, incl, 0, 1, 0, 0); rioAnim(g, t, rio, 4); g.restore(); quedaAgua(g, t, { top: -62, w0: 6.5, w1: 8, k: .6, lados: () => desenhaHi(g, lab, 0, 0, t) }); } } : base;
-  s.ext = { l: B + 12, r: B + 12, t: Hm + ext + 34, b: ext + 12 };
+  s.ext = { l: B + 12, r: B + 12, t: Hm + ext + 34, b: ext + 12 }; s.pre = [base].concat(lab ? [lab] : []);   // desenhos que podem ser preparados antes
   return (SERRA_CACHE[ch] = s);
 }
 
@@ -5815,36 +5900,45 @@ function luzSolar(g, W, H, t) {
   g.restore();
 }
 // luz do sol filtrada pela folhagem: manchas de luz quente que respiram + leve tom quente/frio na tela
-function atmosfera(g, W, H, t) {
-  g.save(); g.globalCompositeOperation = 'soft-light';             // MANHÃ: sol baixo, dourado-rosado vindo do canto, sombras azuladas
-  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, 'rgba(255,180,130,.7)'); gr.addColorStop(.5, 'rgba(255,236,210,.16)'); gr.addColorStop(1, 'rgba(110,150,230,.4)');
-  g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  g.globalCompositeOperation = 'lighter';
-  const sol = g.createRadialGradient(W * .08, -H * .1, 0, W * .08, -H * .1, Math.max(W, H) * .75);            // brilho do sol nascendo
-  sol.addColorStop(0, 'rgba(255,214,160,.36)'); sol.addColorStop(.45, 'rgba(255,190,150,.07)'); sol.addColorStop(1, 'rgba(255,190,150,0)');
-  g.fillStyle = sol; g.fillRect(0, 0, W, H);
+let atmCache = null;
+function atmosfera(g, W, H, t, nivel) {                             // nivel: 2 = alta, 1 = média
+  if (!atmCache || atmCache.W !== W || atmCache.H !== H) {           // tom da manhã + brilho do sol: pintados uma vez (meia resolução)
+    const mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil(W / 2); c.height = Math.ceil(H / 2); return c; };
+    const tom = mk(), tg = tom.getContext('2d'), w2 = tom.width, h2 = tom.height;
+    const gr = tg.createLinearGradient(0, 0, w2, h2); gr.addColorStop(0, 'rgba(255,180,130,.7)'); gr.addColorStop(.5, 'rgba(255,236,210,.16)'); gr.addColorStop(1, 'rgba(110,150,230,.4)'); tg.fillStyle = gr; tg.fillRect(0, 0, w2, h2);
+    const sol = mk(), sg = sol.getContext('2d'), sr = sg.createRadialGradient(w2 * .08, -h2 * .1, 0, w2 * .08, -h2 * .1, Math.max(w2, h2) * .75);
+    sr.addColorStop(0, 'rgba(255,214,160,.36)'); sr.addColorStop(.45, 'rgba(255,190,150,.07)'); sr.addColorStop(1, 'rgba(255,190,150,0)'); sg.fillStyle = sr; sg.fillRect(0, 0, w2, h2);
+    atmCache = { W, H, tom, sol };
+  }
+  g.save(); g.imageSmoothingEnabled = true;
+  if (nivel < 2) {                                                   // média: o mesmo tom, mas misturado do jeito simples (bem mais leve)
+    g.globalAlpha = .22; g.drawImage(atmCache.tom, 0, 0, W, H); g.globalAlpha = .8; g.drawImage(atmCache.sol, 0, 0, W, H); g.globalAlpha = 1; g.restore(); return;
+  }
+  g.globalCompositeOperation = 'soft-light'; g.drawImage(atmCache.tom, 0, 0, W, H);   // MANHÃ: sol baixo, dourado-rosado vindo do canto, sombras azuladas
+  g.globalCompositeOperation = 'lighter'; g.drawImage(atmCache.sol, 0, 0, W, H);
   g.globalCompositeOperation = 'source-over';
+  if (!atmCache.blob) {                                             // manchas prontas (pequenas): esticar uma imagem custa bem menos que um gradiente na tela toda
+    const blob = (cor, a) => { const c = document.createElement('canvas'); c.width = c.height = 32; const bg = c.getContext('2d'), rg = bg.createRadialGradient(16, 16, 0, 16, 16, 16); rg.addColorStop(0, rgba(cor, a)); rg.addColorStop(1, rgba(cor, 0)); bg.fillStyle = rg; bg.fillRect(0, 0, 32, 32); return c; };
+    atmCache.blob = blob('#faf6ff', .12); atmCache.luz = blob('#ffecaa', 1);
+  }
   for (let k = 0; k < 5; k++) {                                     // névoa da manhã passando baixinho
     const x = ((t * (4 + k * 1.3) + k * 260) % (W + 400)) - 200, y = H * (.55 + k * .09) + Math.sin(t * .2 + k) * 8, r = 120 + k * 30;
-    g.save(); g.translate(x, y); g.scale(2.4, .45);
-    const ng = g.createRadialGradient(0, 0, 0, 0, 0, r); ng.addColorStop(0, 'rgba(250,246,255,.12)'); ng.addColorStop(1, 'rgba(250,246,255,0)');
-    g.fillStyle = ng; g.fillRect(-r, -r, r * 2, r * 2); g.restore();
+    g.drawImage(atmCache.blob, x - r * 2.4, y - r * .45, r * 4.8, r * .9);
   }
   g.globalCompositeOperation = 'lighter';
-  for (let k = 0; k < 9; k++) {
+  for (let k = 0; k < 9; k++) {                                     // manchas de luz entre as folhas (respiram devagar)
     const x = ((k * 173.3 + Math.sin(t * .07 + k) * 26) % W + W) % W, y = ((k * 97.7 + Math.cos(t * .05 + k * 1.7) * 18) % H + H) % H;
-    const r = 26 + (k % 4) * 11, a = .045 + .03 * Math.sin(t * .6 + k * 1.3);
-    g.save(); g.translate(x, y); g.scale(1.5, .7);
-    const rg = g.createRadialGradient(0, 0, 0, 0, 0, r); rg.addColorStop(0, 'rgba(255,236,170,' + a + ')'); rg.addColorStop(1, 'rgba(255,236,170,0)');
-    g.fillStyle = rg; g.fillRect(-r, -r, r * 2, r * 2); g.restore();
+    const r = 26 + (k % 4) * 11; g.globalAlpha = .045 + .03 * Math.sin(t * .6 + k * 1.3);
+    g.drawImage(atmCache.luz, x - r * 1.5, y - r * .7, r * 3, r * 1.4);
   }
-  g.restore();
+  g.globalAlpha = 1; g.restore();
 }
 function nuvens(g, W, H, t) {
   for (let k = 0; k < 3; k++) {
     const x = ((t * (3 + k) + k * 190) % (W + 260)) - 130, y = (k * .37 + .15) * H + Math.sin(t * .1 + k) * 12, r = 80 + k * 22;
     g.save(); g.translate(x, y); g.scale(1.6, .75);
-    const gr = g.createRadialGradient(0, 0, 0, 0, 0, r); gr.addColorStop(0, 'rgba(10,30,50,.13)'); gr.addColorStop(1, 'rgba(10,30,50,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill(); g.restore();
+    if (!nuvens.c) { const c = nuvens.c = document.createElement('canvas'); c.width = c.height = 32; const bg = c.getContext('2d'), gr = bg.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(10,30,50,.13)'); gr.addColorStop(1, 'rgba(10,30,50,0)'); bg.fillStyle = gr; bg.fillRect(0, 0, 32, 32); }
+    g.imageSmoothingEnabled = true; g.drawImage(nuvens.c, -r, -r, r * 2, r * 2); g.restore();
   }
 }
 // folha / pétala (partícula de ambiente) com cor e giro
@@ -5970,7 +6064,7 @@ function criarSprites(SPR) {
   for (const k of ['tocha', 'carrinho', 'caixote', 'barril', 'folhasMonte', 'tronco']) SPR[k] = SP2[k]();
   SPR.estandarte = [SP2.estandarte('#c8322a'), SP2.estandarte('#2f5fb8')]; SPR.tufo = [SP2.tufo(0), SP2.tufo(1)];
   SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false); SPR.cavernaBoca = SP.cavernaBoca();
-  SPR.cachoeira = { hi: true, dyn: cachoeiraDyn, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 176, r: 176, t: 316, b: 14 } };
+  SPR.cachoeira = { pre: () => { if (!cachMonte) montanhaSprite(); return [cachMonte, cachLabios]; }, hi: true, dyn: cachoeiraDyn, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 176, r: 176, t: 316, b: 14 } };
   SPR.cachoeiraSo = { hi: true, dyn: (g, t) => cachoeiraDyn(g, t, true), w: 0, h: 0, ax: 0, ay: 0 };   // sem montanha (abertura)
 }
 
@@ -6135,11 +6229,14 @@ function nevoaGotica(g) {                                              // névoa
 let fundoPar = null;
 const SW_PAR = 512;                                                    // largura da faixa que se repete (sem emenda)
 function criarFundoParallax(cav) {
-  const ceu = document.createElement('canvas'); ceu.width = 4; ceu.height = 256; let g = ceu.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256);
+  const ceu = document.createElement('canvas'); ceu.width = Math.ceil(W / 2); ceu.height = Math.ceil(H / 2); let g = ceu.getContext('2d');   // meia resolução (gradiente não precisa de mais)
+  const gr = g.createLinearGradient(0, 0, 0, ceu.height);
   if (cav) { gr.addColorStop(0, '#06050f'); gr.addColorStop(.6, '#141030'); gr.addColorStop(1, '#221a40'); }
   else { gr.addColorStop(0, '#7fb2e2'); gr.addColorStop(.45, '#bcd8f0'); gr.addColorStop(.7, '#ffd8b4'); gr.addColorStop(1, '#ffe6c2'); }
-  g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
+  g.fillStyle = gr; g.fillRect(0, 0, ceu.width, ceu.height);
+  if (!cav) { const w2 = ceu.width, h2 = ceu.height, sol = g.createRadialGradient(w2 * .15, h2 * .12, 0, w2 * .15, h2 * .12, h2 * .6); sol.addColorStop(0, 'rgba(255,244,210,.9)'); sol.addColorStop(.2, 'rgba(255,226,170,.35)'); sol.addColorStop(1, 'rgba(255,220,170,0)'); g.fillStyle = sol; g.fillRect(0, 0, w2, h2); }
+  const nevoa = document.createElement('canvas'); nevoa.width = 4; nevoa.height = Math.ceil(H / 2);
+  { const ng = nevoa.getContext('2d'), nv = ng.createLinearGradient(0, nevoa.height * .35, 0, nevoa.height * .7); nv.addColorStop(0, 'rgba(255,246,236,0)'); nv.addColorStop(.6, 'rgba(255,246,236,.35)'); nv.addColorStop(1, 'rgba(255,246,236,0)'); ng.fillStyle = nv; ng.fillRect(0, 0, 4, nevoa.height); }
   const P = Math.PI * 2 / SW_PAR, camadas = [];
   const faixa = (h, f, desenha) => { const c = document.createElement('canvas'); c.width = SW_PAR; c.height = h; desenha(c.getContext('2d'), h); camadas.push({ c, f }); };
   if (!cav) {
@@ -6160,27 +6257,34 @@ function criarFundoParallax(cav) {
       for (let k = 0; k < 30; k++) { const x = (k * 97) % SW_PAR, y = 120 + (k * 53) % 90; g.fillStyle = k % 2 ? 'rgba(127,224,255,.6)' : 'rgba(208,138,255,.6)'; g.fillRect(x, y, 2, 2); } });
     faixa(256, .14, (g, h) => { for (let x = 0; x < SW_PAR; x++) { const a = 18 + 26 * Math.max(0, Math.sin(x * P * 9 + 2)) ** 3 * 2; g.fillStyle = '#2a2250'; g.fillRect(x, 0, 1, a); const b = 26 + 22 * Math.max(0, Math.sin(x * P * 5)) ** 2; g.fillRect(x, h - b, 1, b); } });
   }
-  return { ceu, camadas, W, H, cav };
+  return { ceu, nevoa, camadas, W, H, cav };
+}
+// o fundo (céu/montanhas) só precisa ser pintado se algum canto da tela ficar fora do chão do mapa
+function fundoVisivel() {
+  if (!mapa || !mapa.grande) return true;
+  const m = mapa, x0 = camera.x - W / 2, y0 = camera.y - H / 2, it = (x, y) => [(x / 16 + y / 8) / 2, (y / 8 - x / 16) / 2];
+  for (const [x, y] of [[x0, y0], [x0 + W, y0], [x0, y0 + H], [x0 + W, y0 + H]]) { const [i, j] = it(x, y); if (i < 1 || j < 1 || i > m.w - 1 || j > m.h - 1) return true; }
+  return false;
 }
 function desenharParallax(g) {
   const cav = !!mapa.escuro;
   if (!fundoPar || fundoPar.W !== W || fundoPar.H !== H || fundoPar.cav !== cav) fundoPar = criarFundoParallax(cav);
   g.save(); g.imageSmoothingEnabled = false;
-  g.drawImage(fundoPar.ceu, 0, 0, W, H);
-  if (!cav) { const sol = g.createRadialGradient(W * .15, H * .12, 0, W * .15, H * .12, H * .6); sol.addColorStop(0, 'rgba(255,244,210,.9)'); sol.addColorStop(.2, 'rgba(255,226,170,.35)'); sol.addColorStop(1, 'rgba(255,220,170,0)'); g.fillStyle = sol; g.fillRect(0, 0, W, H); }
+  g.drawImage(fundoPar.ceu, 0, 0, W, H);                             // céu + sol já pintados juntos (uma imagem só)
   fundoPar.camadas.forEach((L, k) => {
     const off = -(((camera.x * L.f) % SW_PAR) + SW_PAR) % SW_PAR;
     const y = cav ? (H - L.c.height) / 2 - camera.y * L.f * .2 % 40 : H * (.42 + k * .05) - L.c.height + Math.max(-30, Math.min(30, -camera.y * L.f * .15));
     for (let x = off - SW_PAR; x < W + SW_PAR; x += SW_PAR) g.drawImage(L.c, Math.round(x), Math.round(y));
     if (!cav) { const base = Math.round(y + L.c.height); g.fillStyle = ['#a7bcd9', '#86a2c6', '#6f9c88'][k]; g.fillRect(0, base, W, H - base); }
   });
-  if (!cav) { const nv = g.createLinearGradient(0, H * .35, 0, H * .7); nv.addColorStop(0, 'rgba(255,246,236,0)'); nv.addColorStop(.6, 'rgba(255,246,236,.35)'); nv.addColorStop(1, 'rgba(255,246,236,0)'); g.fillStyle = nv; g.fillRect(0, 0, W, H); }   // névoa entre as montanhas
+  if (!cav) g.drawImage(fundoPar.nevoa, 0, 0, W, H);                  // névoa entre as montanhas (pronta)
   g.restore();
 }
 function renderizar(dt) {
   const g = ctx;
   g.setTransform(SC, 0, 0, SC, 0, 0);
-  if (GOT.on) desenharFundoGotico(g); else if (mapa.interior) { g.fillStyle = '#1a1420'; g.fillRect(0, 0, W, H); } else desenharParallax(g);
+  if (PERF.on) PERF.t0 = performance.now();
+  if (GOT.on) desenharFundoGotico(g); else if (mapa.interior) { g.fillStyle = '#1a1420'; g.fillRect(0, 0, W, H); } else if (fundoVisivel()) desenharParallax(g);
   const shx = shake > 0 ? Math.round((Math.random() - .5) * shake) : 0, shy = shake > 0 ? Math.round((Math.random() - .5) * shake) : 0;
   const camTx = Math.round(W / 2 - camera.x) + shx, camTy = Math.round(H / 2 - camera.y) + shy;
   g.setTransform(SC, 0, 0, SC, camTx * SC, camTy * SC);
@@ -6216,6 +6320,7 @@ function renderizar(dt) {
     if (e ? (sx + e.r >= vx0 && sx - e.l <= vx1 && sy + e.b >= vy0 && sy - e.t <= vy1) : (sx >= vx0 && sx <= vx1 && sy >= vy0 && sy <= vy1 + 120)) lista.push(o);
   }
   lista.sort((a, b) => (a.dk != null ? a.dk : a.x + a.y) - (b.dk != null ? b.dk : b.x + b.y));
+  PERF.desenhados = lista.length;
   for (const o of lista) {
     const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y);
     if (o.tipo === 'casa') spr(o.spr, sx, sy); else desenharObj(o, sx, sy);
@@ -6274,9 +6379,10 @@ function renderizar(dt) {
   g.setTransform(SC, 0, 0, SC, 0, 0);
   if (!mapa.interior) {                                                // partículas do ambiente (folhas, pétalas, vaga-lumes...)
     const am = mapa.amb || {};
-    if (!mapa.escuro && !GOT.on) { Cen.nuvens(g, W, H, tempo); Cen.luzSolar(g, W, H, tempo); if (!PIX.on) Cen.atmosfera(g, W, H, tempo); }
+    if (!mapa.escuro && !GOT.on) { if (QUAL.nivel >= 1) Cen.nuvens(g, W, H, tempo); if (QUAL.nivel >= 2) Cen.luzSolar(g, W, H, tempo); if (!PIX.on && QUAL.nivel >= 1) Cen.atmosfera(g, W, H, tempo, QUAL.nivel); }
     if (GOT.on) nevoaGotica(g);
     else folhas.forEach((f, i) => {
+      if (i >= QUAL.folhas) return;
       f.x += (f.vx * (am.kx != null ? am.kx : 1) + Math.sin(tempo * 2 + i) * 6) * dt; f.y += f.vy * dt * (am.ky != null ? am.ky : 1);
       if (f.x > W + 5) f.x = -5; if (f.x < -5) f.x = W + 5;
       if (f.y > H + 5) f.y = -5; if (f.y < -5) f.y = H + 5;
@@ -6303,7 +6409,8 @@ function renderizar(dt) {
    ===================================================================== */
 const MUSICA_MENU_ARQUIVO = null;                 // ex.: 'audio/menu.mp3' (deixe null enquanto não existir o arquivo)
 const CHAVE_OPCOES = 'karate-opcoes';
-const OPCOES = Object.assign({ musica: .6, sfx: .8, musicaOn: true, sfxOn: true, toque: 'auto' }, (() => { try { return JSON.parse(localStorage.getItem(CHAVE_OPCOES) || '{}') || {}; } catch (e) { return {}; } })());
+const OPCOES = Object.assign({ musica: .6, sfx: .8, musicaOn: true, sfxOn: true, toque: 'auto', qualidade: 'auto' }, (() => { try { return JSON.parse(localStorage.getItem(CHAVE_OPCOES) || '{}') || {}; } catch (e) { return {}; } })());
+function aplicarOpcaoQualidade() { QUAL.modo = OPCOES.qualidade === 'auto' ? 'auto' : 'fixa'; aplicarQualidade(OPCOES.qualidade === 'auto' ? 2 : +OPCOES.qualidade); }
 function salvarOpcoes() { try { localStorage.setItem(CHAVE_OPCOES, JSON.stringify(OPCOES)); } catch (e) {} Som.aplicar(); aplicarToque(); }
 const Som = (() => {
   let ac = null, mestre, gMus, gSfx, ruido = null, timer = null, prox = 0, passo = 0, tocando = false, audioEl = null, gesto = false;
@@ -6400,7 +6507,8 @@ const Som = (() => {
     o.start(t); o.stop(t + 1.2);
   }
   document.addEventListener('visibilitychange', () => { if (!ac) return; if (document.hidden) ac.suspend(); else if (ac.state === 'suspended') ac.resume(); });
-  return { iniciar, aplicar, tocarMusica, pararMusica, efeito, ativo: () => !!ac && ac.state === 'running', ganhos: () => ac ? { musica: +gMus.gain.value.toFixed(3), sfx: +gSfx.gain.value.toFixed(3), estado: ac.state } : null };
+  const pausar = esc => { if (!ac) return; if (esc) ac.suspend(); else if (gesto) ac.resume(); };   // aba escondida: som parado
+  return { iniciar, aplicar, tocarMusica, pararMusica, efeito, pausar, ativo: () => !!ac && ac.state === 'running', ganhos: () => ac ? { musica: +gMus.gain.value.toFixed(3), sfx: +gSfx.gain.value.toFixed(3), estado: ac.state } : null };
 })();
 // controles de toque: automático (só em tela de toque), sempre ou nunca
 function aplicarToque() { document.body.classList.toggle('toque-sempre', OPCOES.toque === 'sempre'); document.body.classList.toggle('toque-nunca', OPCOES.toque === 'nunca'); }
@@ -6591,6 +6699,7 @@ const MenuP = (() => {
   function lerOpcoes() {
     $('opMus').value = Math.round(OPCOES.musica * 100); $('opSfx').value = Math.round(OPCOES.sfx * 100);
     $('opMusOn').checked = OPCOES.musicaOn; $('opSfxOn').checked = OPCOES.sfxOn; $('opToque').value = OPCOES.toque;
+    $('opQual').value = OPCOES.qualidade; $('opPerf').checked = PERF.on;
   }
   let apertado = null;                                                   // botão onde o dedo/mouse desceu (o clique vale mesmo se escorregar um pouco)
   el.addEventListener('pointerdown', e => { apertado = e.target.closest('button[data-a]'); });
@@ -6599,6 +6708,8 @@ const MenuP = (() => {
     const id = e.target.id;
     if (id === 'opMus') OPCOES.musica = +e.target.value / 100; if (id === 'opSfx') { OPCOES.sfx = +e.target.value / 100; Som.efeito('menu'); }
     if (id === 'opMusOn') OPCOES.musicaOn = e.target.checked; if (id === 'opSfxOn') OPCOES.sfxOn = e.target.checked; if (id === 'opToque') OPCOES.toque = e.target.value;
+    if (id === 'opQual') { OPCOES.qualidade = e.target.value; aplicarOpcaoQualidade(); }
+    if (id === 'opPerf') { if (e.target.checked !== PERF.on) alternarPainelPerf(); }
     salvarOpcoes();
   });
   el.addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
@@ -6694,6 +6805,7 @@ function voltarAoMenu() {                                                // salv
   jogoIniciado = false; for (const k in teclas) teclas[k] = false; edge = {};
   irParaMenu();
 }
+document.addEventListener('visibilitychange', () => { try { Som.pausar && Som.pausar(document.hidden); } catch (e) {} PERF.quadros = 0; PERF.acc = 0; PERF.ultimo = performance.now(); });
 function pularAbertura(e) { if (MODO_TELA === 'abertura') { if (e && e.type === 'keydown' && e.code !== 'Escape') return; Abertura.pular(); } }
 addEventListener('keydown', pularAbertura);
 addEventListener('pointerdown', e => { if (MODO_TELA === 'abertura') pularAbertura(e); });
@@ -6709,7 +6821,12 @@ function loop(agora) {                                                // um loop
   ultimo = agora;
   if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
   else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
-  else { atualizar(dt); renderizar(dt); }
+  else {
+    const a = performance.now(); atualizar(dt); const b = performance.now(); renderizar(dt); const c = performance.now();
+    perfQuadro(Math.min(250, agora - (loop.ant || agora - 16.7)), b - a, c - b);
+    if (c - a < 9 && (loop.k = (loop.k || 0) + 1) % 3 === 0) preaquecer(null, 3);   // sobrou tempo no quadro: adianta um pouco do que vem pela frente
+  }
+  loop.ant = agora;
   requestAnimationFrame(loop);
 }
 
@@ -6940,6 +7057,7 @@ Cen.setSC(() => SC);
 Cen.setPixel(c => { if (PIX.on) pixelarCv(c); });
 gerarSprites();
 gerarSprites2();
+aplicarOpcaoQualidade();
 Cen.criarSprites(SPR);                                                // troca árvores, bambus, pedras, objetos e cachoeira pelos desenhos anime
 carregarSave();
 redimensionar();
