@@ -3146,7 +3146,7 @@ function atualizarPerigos(dt) {
         const al = chefeAtual && chefeAtual.al;
         if (al && !al.caido && !p.atingidos.has(al) && dentroPerigo(p, al.x, al.y, .25)) { p.atingidos.add(al); atingirAliado(al, p.dano, p.x, p.y, p.efeito); }
       }
-      if (!p.feito) { p.feito = true; if (p.som !== false) Som.efeito('golpe'); if (p.tremer) shake = Math.max(shake, p.tremer); }
+      if (!p.feito) { p.feito = true; if (p.som !== false) Som.efeito('golpe'); if (p.tremer) shake = Math.max(shake, p.tremer); EFX.perigoAtivou(p); }
     }
     if (p.t >= p.tele + p.dur + .18) perigos.splice(i, 1);
   }
@@ -3178,6 +3178,7 @@ function atualizarProjeteis(dt) {
     const p = projeteis[i]; p.t += dt;
     if (p.persegue) { const ang = Math.atan2(jog.y - p.y, jog.x - p.x), cur = Math.atan2(p.vy, p.vx); let da = ((ang - cur) % TAU + TAU * 1.5) % TAU - Math.PI; const v = Math.hypot(p.vx, p.vy), na = cur + Math.max(-1.6 * dt, Math.min(1.6 * dt, da)); p.vx = Math.cos(na) * v; p.vy = Math.sin(na) * v; }
     p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.tipo !== 'kunai' && Math.random() < dt * 25) EFX.add({ tipo: 'chama', pal: ch && ch.def.desperto ? 'sombria' : 'aura', x: p.x, y: p.y, z: 12, vz: 10, vida: .3, tam: 3 });   // rastro de energia
     let some = p.t > p.vida || (ch && Math.hypot(p.x - ch.cx, p.y - ch.cy) > ch.R + 1.5);
     if (!some && ch && ch.muralha > 0 && Math.hypot(p.x - jog.x, p.y - jog.y) < 1.4) { some = true; fagulha(p.x, p.y, '#c9a06a', 6); }   // muralha de pedra segura os projéteis
     if (!some && Math.hypot(p.x - jog.x, p.y - jog.y) < .35 + p.r) { atingirAkira(p.dano, p.x - p.vx * .1, p.y - p.vy * .1, null); some = true; }
@@ -3430,9 +3431,191 @@ function usarTecnica(al, t, b) {
     default: return false;
   }
   al.energia -= t.custo; al.cdTec = 3.6 - al.grau * .35; al.calaT = 0; falar(al, t.fala, 1.8);
+  EFX.tecnica(al, t, b);                                                    // visual do elemento (só desenho)
   return true;
 }
 const raios = [];                                                         // raios da Descarga em Cadeia (efeito visual)
+/* =====================================================================
+   EFEITOS ELEMENTAIS DESENHADOS À MÃO (lutas contra chefes, técnicas dos parceiros e finalizações)
+   Cada elemento tem formas próprias, com contorno e camadas de cor (não é só bolinha colorida):
+   fogo = línguas de chama | gelo = cristais | terra = rochas e rachaduras | raio = descargas em zigue-zague
+   água = ondas, gotas e espuma | vento = cortes em meia-lua e folhas | aura = chama azul | aura sombria = chama roxa com dourado
+   Posição em tiles do mundo (x, y) + altura em pixels (z). Só visual: não mexe em dano, vida nem tempo dos golpes.
+   ===================================================================== */
+const EFX = (() => {
+  const lista = [], LINHA = '#221033';
+  const ELEM_ALIADO = { henrique: 'fogo', nicolas: 'gelo', pietra: 'terra', luna: 'raio', gemeo_agua: 'agua', gemeo_vento: 'vento' };
+  const ELEM_CHEFE = { samurai_oni: 'corteVermelho', mestre_cachoeira: 'agua', general_ancestral: 'terra', ninja_ancestral: 'fumaca', ronin_ancestral: 'folha', mestra_cerejeiras: 'petala', colosso_sumo: 'poeira', oitavo_dragao: 'sombria' };
+  const PAL = {
+    fogo: ['#c8281a', '#ff8a1e', '#ffe680'], aura: ['#1a46c8', '#5fe0ff', '#eafcff'], sombria: ['#2a0a3a', '#7a3ab0', '#ffcf4a'],
+    gelo: ['#2a5a9a', '#a8e8ff', '#ffffff'], terra: ['#5a3a20', '#9a7048', '#d8b07a'], raio: ['#c8a010', '#ffe45e', '#ffffff'],
+    agua: ['#1a5aa8', '#4fb8f0', '#e8fbff'], vento: ['#2a8a6a', '#bff8e0', '#ffffff']
+  };
+  const R = () => Math.random();
+  function add(p) { if (lista.length > 500) lista.shift(); p.t = 0; p.z = p.z || 0; p.vx = p.vx || 0; p.vy = p.vy || 0; p.vz = p.vz || 0; p.rot = p.rot || 0; lista.push(p); return p; }
+  function atualizar(dt) {
+    for (let i = lista.length - 1; i >= 0; i--) {
+      const p = lista[i]; p.t += dt;
+      if (p.t >= p.vida) { lista.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; if (p.g) p.vz -= p.g * dt; if (p.chao && p.z < 0) { p.z = 0; p.vz *= -.3; p.vx *= .5; p.vy *= .5; }
+      p.rot += (p.vrot || 0) * dt; if (p.arrasto) { const a = Math.pow(p.arrasto, dt * 60); p.vx *= a; p.vy *= a; p.vz *= a; }
+    }
+    // aura do Akira durante a Onda de Aura e a finalização: chamas azuis subindo do corpo
+    if (typeof jog !== 'undefined' && (jog.est === 'especial' || jog.est === 'final') && R() < dt * 14) add({ tipo: 'chama', pal: 'aura', x: jog.x + (R() - .5) * .6, y: jog.y + (R() - .5) * .3, z: 4 + R() * 30, vz: 30 + R() * 30, vida: .4, tam: 2.5 + R() * 2.5 });
+  }
+  /* ---------- formas desenhadas ---------- */
+  function chama(g, x, y, s, k, pal, rot) {                                // língua de fogo: 3 camadas + contorno, encolhe no fim
+    const c = PAL[pal] || PAL.fogo, e = s * (1 - k * .7), w = Math.sin((x + y) * .3 + k * 9) * e * .25;
+    const corpo = (f) => { g.beginPath(); g.moveTo(-e * .55 * f, 0); g.bezierCurveTo(-e * .7 * f, -e * .8 * f, w - e * .2 * f, -e * 1.4 * f, w + e * .15, -e * 2.3 * f); g.bezierCurveTo(e * .3 * f, -e * 1.3 * f, e * .75 * f, -e * .7 * f, e * .55 * f, 0); g.quadraticCurveTo(0, e * .5 * f, -e * .55 * f, 0); g.closePath(); };
+    g.save(); g.translate(x, y); g.rotate(rot || 0);
+    corpo(1); g.fillStyle = c[0]; g.fill(); g.lineWidth = .7; g.strokeStyle = LINHA; g.globalAlpha *= .8; g.stroke(); g.globalAlpha /= .8;
+    corpo(.72); g.fillStyle = c[1]; g.fill(); corpo(.42); g.fillStyle = c[2]; g.fill();
+    g.restore();
+  }
+  function cristal(g, x, y, s, rot, alfa) {                               // estaca/cristal de gelo translúcido
+    g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha *= alfa == null ? 1 : alfa;
+    g.beginPath(); g.moveTo(0, -s * 1.6); g.lineTo(s * .45, -s * .2); g.lineTo(s * .25, s * .6); g.lineTo(-s * .3, s * .55); g.lineTo(-s * .45, -s * .3); g.closePath();
+    g.fillStyle = 'rgba(170,232,255,.78)'; g.fill(); g.lineWidth = .8; g.strokeStyle = '#2a5a9a'; g.stroke();
+    g.beginPath(); g.moveTo(-s * .12, -s * 1.2); g.lineTo(-s * .2, s * .3); g.lineWidth = .9; g.strokeStyle = 'rgba(255,255,255,.95)'; g.stroke();   // brilho
+    g.restore();
+  }
+  function rocha(g, x, y, s, rot) {                                      // pedra com face iluminada e sombra
+    g.save(); g.translate(x, y); g.rotate(rot);
+    const P = [[-1, -.4], [-.4, -1], [.6, -.8], [1, .1], [.5, .8], [-.6, .7]];
+    g.beginPath(); P.forEach(([a, b], i) => i ? g.lineTo(a * s, b * s) : g.moveTo(a * s, b * s)); g.closePath(); g.fillStyle = PAL.terra[0]; g.fill(); g.lineWidth = .8; g.strokeStyle = LINHA; g.stroke();
+    g.beginPath(); g.moveTo(-1 * s, -.4 * s); g.lineTo(-.4 * s, -s); g.lineTo(.6 * s, -.8 * s); g.lineTo(.2 * s, .1 * s); g.closePath(); g.fillStyle = PAL.terra[1]; g.fill();
+    g.beginPath(); g.moveTo(-.35 * s, -.85 * s); g.lineTo(.45 * s, -.7 * s); g.lineWidth = .8; g.strokeStyle = PAL.terra[2]; g.stroke();
+    g.restore();
+  }
+  function bolt(g, ax, ay, bx, by, pal, larg) {                            // descarga elétrica: brilho + cor + miolo branco, ramos
+    const c = PAL[pal] || PAL.raio, n = Math.max(4, Math.round(Math.hypot(bx - ax, by - ay) / 7)), pts = [[ax, ay]];
+    for (let k = 1; k < n; k++) { const t = k / n; pts.push([ax + (bx - ax) * t + (R() - .5) * 9, ay + (by - ay) * t + (R() - .5) * 9]); }
+    pts.push([bx, by]);
+    const linha = (w, cor) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.lineWidth = w; g.strokeStyle = cor; g.stroke(); };
+    g.save(); g.lineJoin = 'round'; g.lineCap = 'round'; g.globalCompositeOperation = 'lighter';
+    g.globalCompositeOperation = 'source-over'; linha((larg || 1) * 3.4, 'rgba(40,24,0,.55)');   // contorno escuro (lê bem em chão claro)
+    g.globalCompositeOperation = 'lighter'; linha((larg || 1) * 5, rgbaHex(c[1], .25)); linha((larg || 1) * 2.2, c[1]); linha((larg || 1) * .9, c[2]);
+    if (pts.length > 3) { const m = pts[Math.floor(pts.length / 2)]; g.beginPath(); g.moveTo(m[0], m[1]); g.lineTo(m[0] + (R() - .5) * 18, m[1] + R() * 12); g.lineWidth = .8; g.strokeStyle = c[1]; g.stroke(); }
+    g.restore();
+  }
+  function corte(g, x, y, s, rot, k, cor, borda) {                        // meia-lua de corte (vento, espada)
+    g.save(); g.translate(x, y); g.rotate(rot); const e = s * (1 + k * .3);
+    g.beginPath(); g.arc(0, 0, e, -1.1, 1.1); g.arc(-e * .16, 0, e * .93, 1.05, -1.05, true); g.closePath();   // meia-lua fina
+    g.globalAlpha *= .9; g.fillStyle = cor || '#efffff'; g.fill(); g.lineWidth = .6; g.strokeStyle = borda || '#2a8a6a'; g.stroke();
+    g.restore();
+  }
+  function folha(g, x, y, s, rot, cor, nervura) {                         // folha / pétala
+    g.save(); g.translate(x, y); g.rotate(rot);
+    g.beginPath(); g.moveTo(-s, 0); g.quadraticCurveTo(0, -s * .7, s, 0); g.quadraticCurveTo(0, s * .7, -s, 0); g.closePath(); g.fillStyle = cor; g.fill(); g.lineWidth = .5; g.strokeStyle = LINHA; g.stroke();
+    if (nervura) { g.beginPath(); g.moveTo(-s * .8, 0); g.lineTo(s * .8, 0); g.strokeStyle = nervura; g.stroke(); }
+    g.restore();
+  }
+  function gota(g, x, y, s, rot) { g.save(); g.translate(x, y); g.rotate(rot); g.beginPath(); g.moveTo(0, -s * 1.5); g.quadraticCurveTo(s, 0, 0, s); g.quadraticCurveTo(-s, 0, 0, -s * 1.5); g.fillStyle = 'rgba(80,190,245,.85)'; g.fill(); g.lineWidth = .5; g.strokeStyle = '#1a5aa8'; g.stroke(); g.fillStyle = '#fff'; g.fillRect(-s * .3, -s * .4, Math.max(.6, s * .3), Math.max(.6, s * .3)); g.restore(); }
+  function nuvem(g, x, y, s, cor, alfa) { g.save(); g.globalAlpha *= alfa; g.fillStyle = cor; for (const [a, b, r] of [[0, 0, 1], [-.7, .2, .7], [.7, .25, .75], [0, -.5, .65]]) { g.beginPath(); g.arc(x + a * s, y + b * s, r * s, 0, TAU); g.fill(); } g.restore(); }
+  function desenhar(g) {
+    for (const p of lista) {
+      const k = p.t / p.vida, [sx, sy0] = iso(p.x, p.y), sy = sy0 - p.z, fade = Math.min(1, (1 - k) * 3);
+      g.save(); g.globalAlpha = fade * (p.alfa || 1);
+      switch (p.tipo) {
+        case 'chama': chama(g, sx, sy, p.tam, k, p.pal, p.rot); break;
+        case 'cristal': cristal(g, sx, sy, p.tam * (p.cresce ? Math.min(1, p.t / p.cresce) : 1), p.rot, .95); break;
+        case 'rocha': rocha(g, sx, sy, p.tam, p.rot); break;
+        case 'pilar': { const h = p.tam * Math.min(1, p.t / .18) * (k > .85 ? (1 - k) / .15 : 1); g.fillStyle = PAL.terra[0]; g.strokeStyle = LINHA; g.lineWidth = .8; g.beginPath(); g.moveTo(sx - 5, sy); g.lineTo(sx - 4, sy - h); g.lineTo(sx + 1, sy - h - 3); g.lineTo(sx + 5, sy - h + 1); g.lineTo(sx + 5, sy); g.closePath(); g.fill(); g.stroke(); g.fillStyle = PAL.terra[1]; g.fillRect(sx - 3.5, sy - h + 1, 3, h - 2); g.fillStyle = PAL.terra[2]; g.fillRect(sx - 3, sy - h, 6, 1.2); break; }
+        case 'rachadura': { g.strokeStyle = '#2a1a10'; g.lineWidth = 1.4; g.globalAlpha *= .8; g.beginPath(); let [x, y] = [sx, sy]; g.moveTo(x, y); const L = p.tam * Math.min(1, p.t / .15); for (let q = 1; q <= 5; q++) { x = sx + Math.cos(p.rot) * L * q / 5 + Math.sin(q * 7 + p.rot) * 3; y = sy + Math.sin(p.rot) * L * q / 5 * .5 + Math.cos(q * 5) * 1.5; g.lineTo(x, y); } g.stroke(); g.strokeStyle = 'rgba(255,200,120,.5)'; g.lineWidth = .5; g.stroke(); break; }
+        case 'raio': { const [bx, by0] = iso(p.x2, p.y2); bolt(g, sx, sy, bx, by0 - (p.z2 || 0), p.pal, p.larg); break; }
+        case 'corte': corte(g, sx, sy, p.tam, p.rot, k, p.cor, p.borda); break;
+        case 'folha': folha(g, sx, sy, p.tam, p.rot, p.cor || '#e8742a', '#8a3a10'); break;
+        case 'petala': folha(g, sx, sy, p.tam, p.rot, '#ffb8d0'); break;
+        case 'gota': gota(g, sx, sy, p.tam, p.rot); break;
+        case 'nuvem': nuvem(g, sx, sy, p.tam * (1 + k * .8), p.cor || '#e8dcc0', .7); break;
+        case 'onda': {                                                     // onda d'água: corpo azul + crista de espuma
+          g.save(); g.translate(sx, sy); g.rotate(p.rot); const L = p.tam, h = p.tam * .45 * Math.sin(Math.min(1, k * 1.4) * Math.PI);
+          g.beginPath(); g.moveTo(-L, 0); g.quadraticCurveTo(-L * .2, -h * 1.6, L * .5, -h); g.quadraticCurveTo(L * .9, -h * .6, L, 0); g.closePath();
+          g.fillStyle = 'rgba(60,170,235,.75)'; g.fill(); g.lineWidth = .8; g.strokeStyle = '#1a5aa8'; g.stroke();
+          g.beginPath(); g.moveTo(-L * .5, -h * .7); g.quadraticCurveTo(0, -h * 1.45, L * .5, -h); g.lineWidth = 1.6; g.strokeStyle = '#ffffff'; g.stroke();
+          for (let q = 0; q < 4; q++) { g.fillStyle = '#fff'; g.fillRect(-L * .3 + q * L * .25, -h * 1.1 - (q % 2) * 2, 1.2, 1.2); }
+          g.restore(); break;
+        }
+        case 'redemoinho': {                                               // redemoinho d'água girando (bandas + espuma)
+          const r = p.tam;
+          for (let q = 0; q < 3; q++) { const a = p.t * (5 + q) + q * 2; g.lineWidth = 2.4 - q * .5; g.strokeStyle = q ? 'rgba(80,190,245,.8)' : 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(sx, sy - q * 5, r * (1 - q * .22), r * .45 * (1 - q * .22), 0, a, a + 4); g.stroke(); }
+          break;
+        }
+        case 'chicote': {                                                  // chicote de correnteza: fita ondulante
+          const [bx, by0] = iso(p.x2, p.y2), by = by0 - 16, ay = sy - 16;
+          g.lineCap = 'round'; for (const [w, c] of [[5, 'rgba(30,90,170,.8)'], [3, 'rgba(80,190,245,.9)'], [1, '#fff']]) { g.beginPath(); g.moveTo(sx, ay); for (let q = 1; q <= 12; q++) { const t = q / 12; g.lineTo(sx + (bx - sx) * t, ay + (by - ay) * t + Math.sin(t * 9 + p.t * 30) * 5 * (1 - t)); } g.lineWidth = w; g.strokeStyle = c; g.stroke(); }
+          break;
+        }
+        case 'dragao': dragao(g, p, sx, sy, k); break;
+      }
+      g.restore();
+    }
+  }
+  // dragão espectral (forma desperta do Oitavo Dragão): corpo de fumaça escura com escamas e olhos dourados, enrolando atrás dele
+  function dragao(g, p, sx, sy, k) {
+    const t = p.t + (p.fase || 0), n = 16, pts = [];
+    for (let q = 0; q < n; q++) { const u = q / n; pts.push([sx + Math.sin(t * 2 + u * 6) * (14 + u * 8), sy - 18 - u * 34 + Math.cos(t * 2.4 + u * 5) * 4]); }
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let q = n - 1; q >= 0; q--) { const [x, y] = pts[q], r = 5.5 - q * .25; g.fillStyle = q % 3 ? 'rgba(122,58,176,.35)' : 'rgba(255,207,74,.3)'; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+    const [hx, hy] = pts[n - 1], [px, py] = pts[n - 2], a = Math.atan2(hy - py, hx - px);
+    g.translate(hx, hy); g.rotate(a); g.fillStyle = 'rgba(255,207,74,.55)'; g.beginPath(); g.moveTo(8, 0); g.lineTo(-3, -4); g.lineTo(-6, -7); g.lineTo(-4, 0); g.lineTo(-6, 6); g.lineTo(-3, 4); g.closePath(); g.fill();
+    g.fillStyle = '#fff2b0'; g.fillRect(2, -2, 1.5, 1.2);
+    g.restore();
+  }
+  /* ---------- explosões por elemento ---------- */
+  function estouro(el, x, y, z, n) {
+    n = n || 10;
+    for (let q = 0; q < n; q++) {
+      const a = R() * TAU, v = .8 + R() * 2.2, vx = Math.cos(a) * v, vy = Math.sin(a) * v * .6, vz = 20 + R() * 60;
+      switch (el) {
+        case 'fogo': add({ tipo: 'chama', pal: 'fogo', x, y, z, vx: vx * .6, vy: vy * .6, vz: vz * .8, vida: .45 + R() * .25, tam: 3 + R() * 3.5, rot: (R() - .5) * .6 }); break;
+        case 'aura': add({ tipo: 'chama', pal: 'aura', x, y, z, vx: vx * .5, vy: vy * .5, vz, vida: .45, tam: 3 + R() * 3 }); break;
+        case 'sombria': add({ tipo: 'chama', pal: 'sombria', x, y, z, vx: vx * .5, vy: vy * .5, vz, vida: .5, tam: 3 + R() * 3 }); break;
+        case 'gelo': add({ tipo: 'cristal', x, y, z, vx, vy, vz, g: 160, chao: 1, vida: .7, tam: 2 + R() * 2.5, rot: R() * 6, vrot: (R() - .5) * 12 }); break;
+        case 'terra': add({ tipo: 'rocha', x, y, z, vx, vy, vz, g: 200, chao: 1, vida: .8, tam: 1.6 + R() * 2.2, rot: R() * 6, vrot: (R() - .5) * 10 }); if (q % 3 === 0) add({ tipo: 'nuvem', x, y, z: 2, vx: vx * .3, vy: vy * .3, vida: .6, tam: 4 }); break;
+        case 'raio': if (q % 3 === 0) add({ tipo: 'raio', pal: 'raio', x, y, z, x2: x + vx * .9, y2: y + vy * .9, z2: z + vz * .2, vida: .12, larg: .8 }); break;
+        case 'agua': add({ tipo: 'gota', x, y, z, vx, vy, vz: vz * 1.2, g: 200, vida: .6, tam: 1.3 + R(), rot: 0 }); break;
+        case 'vento': add({ tipo: 'corte', x: x + vx * .2, y: y + vy * .2, z: z + (R() - .5) * 12, vida: .22, tam: 5 + R() * 3, rot: R() * 6 }); if (q % 2) add({ tipo: 'folha', cor: '#7ad87a', x, y, z, vx, vy, vz: vz * .5, vrot: 8, vida: .6, tam: 2 }); break;
+        case 'corteVermelho': if (q % 2 === 0) add({ tipo: 'corte', cor: '#ffe0d8', borda: '#a01818', x, y, z: z + (R() - .5) * 10, vida: .25, tam: 9 + R() * 4, rot: R() * 6 }); break;
+        case 'fumaca': add({ tipo: 'nuvem', cor: '#3a2a5a', x, y, z: z * .5, vx: vx * .4, vy: vy * .4, vz: 8, vida: .7, tam: 3 + R() * 2 }); break;
+        case 'folha': add({ tipo: 'folha', cor: q % 2 ? '#e8742a' : '#c8401e', x, y, z, vx: vx * 1.3, vy: vy * 1.3, vz: vz * .5, g: 30, vrot: 10, vida: .9, tam: 2.2, rot: R() * 6 }); break;
+        case 'petala': add({ tipo: 'petala', x, y, z, vx: vx * 1.2, vy: vy * 1.2, vz: vz * .4, g: 25, vrot: 9, vida: 1, tam: 2, rot: R() * 6 }); break;
+        case 'poeira': add({ tipo: 'nuvem', x, y, z: 2, vx: vx * .8, vy: vy * .8, vida: .7, tam: 4 + R() * 3 }); break;
+      }
+    }
+  }
+  /* ---------- técnicas dos parceiros (visual sincronizado com cada técnica que já existe) ---------- */
+  function tecnica(al, t, b) {
+    const el = ELEM_ALIADO[al.pid] || 'aura', ang = Math.atan2(b.y - al.y, b.x - al.x), dB = Math.hypot(b.x - al.x, b.y - al.y);
+    const depois = (ms, f) => setTimeout(() => { if (chefeAtual) f(); }, ms);
+    estouro(el, al.x, al.y, 22, 5);                                         // energia acumulando no punho/corpo
+    switch (t.tipo) {
+      case 'soco': depois(160, () => estouro(el, b.x, b.y, 22, 16)); break;
+      case 'investida': case 'passo': for (let q = 0; q < 6; q++) depois(q * 45, () => estouro(el, al.x, al.y, 16, 4)); depois(260, () => estouro(el, b.x, b.y, 22, 14)); break;
+      case 'estacas': for (let q = 0; q < 6; q++) depois(q * 50, () => { const s = .3 + q * .15; add({ tipo: 'cristal', x: al.x + Math.cos(ang) * s, y: al.y + Math.sin(ang) * s, z: 14, vx: Math.cos(ang) * 9, vy: Math.sin(ang) * 9, vida: Math.min(.7, (dB + 1.5) / 9), tam: 4.5, rot: Math.atan2(Math.sin(ang) * .5, Math.cos(ang)) + Math.PI / 2 }); }); depois(450, () => estouro('gelo', b.x, b.y, 18, 12)); break;
+      case 'prisao': for (let q = 0; q < 9; q++) { const a = q / 9 * TAU; add({ tipo: 'cristal', x: b.x + Math.cos(a) * .55, y: b.y + Math.sin(a) * .55, z: 0, vida: 2.7, tam: 6 + (q % 3) * 2, cresce: .35, rot: Math.cos(a) * .35 }); } break;
+      case 'muralha': { const ca = Math.atan2(b.y - jog.y, b.x - jog.x); for (let q = -2; q <= 2; q++) add({ tipo: 'pilar', x: jog.x + Math.cos(ca) * .9 - Math.sin(ca) * q * .35, y: jog.y + Math.sin(ca) * .9 + Math.cos(ca) * q * .35, vida: 3.2, tam: 22 - Math.abs(q) * 3 }); estouro('terra', jog.x + Math.cos(ca) * .9, jog.y + Math.sin(ca) * .9, 4, 10); break; }
+      case 'tremor': depois(400, () => { for (let q = 0; q < 7; q++) add({ tipo: 'rachadura', x: al.x, y: al.y, vida: 1, tam: 30 + R() * 16, rot: q / 7 * TAU }); estouro('terra', al.x, al.y, 4, 18); }); break;
+      case 'cadeia': for (const o of mapa.objs) if (o.tipo === 'inimigo' && o.vivo && Math.hypot(o.x - al.x, o.y - al.y) < 7) { add({ tipo: 'raio', pal: 'raio', x: al.x, y: al.y, z: 20, x2: o.x, y2: o.y, z2: 20, vida: .3, larg: 1.2 }); estouro('raio', o.x, o.y, 22, 9); } break;
+      case 'onda': for (let q = 0; q < 3; q++) depois(350 + q * 70, () => add({ tipo: 'onda', x: al.x + Math.cos(ang) * (.6 + q * .6), y: al.y + Math.sin(ang) * (.6 + q * .6), vx: Math.cos(ang) * 3.5, vy: Math.sin(ang) * 3.5, vida: .5, tam: 14 + q * 3, rot: Math.atan2(Math.sin(ang) * .5, Math.cos(ang)) * 0 })); depois(420, () => estouro('agua', b.x, b.y, 10, 12)); break;
+      case 'chicote': add({ tipo: 'chicote', x: al.x, y: al.y, x2: b.x, y2: b.y, vida: .3 }); depois(120, () => estouro('agua', b.x, b.y, 18, 10)); break;
+      case 'redemoinho': depois(450, () => { add({ tipo: 'redemoinho', x: b.x, y: b.y, vida: 2.5, tam: 22 }); estouro('agua', b.x, b.y, 6, 10); }); break;
+      case 'rajada': case 'milGolpes': { const n = t.tipo === 'rajada' ? 4 : 8; for (let q = 0; q < n; q++) depois(80 + q * 95, () => { add({ tipo: 'corte', x: b.x, y: b.y, z: 14 + R() * 20, vida: .2, tam: 7 + R() * 3, rot: R() * 6 }); if (q % 2) estouro('vento', b.x, b.y, 18, 3); }); break; }
+    }
+  }
+  // quando um ataque do chefe acerta (ou um golpe de área do parceiro ativa), o elemento aparece na área
+  function perigoAtivou(p) {
+    const el = p.amigo ? (chefeAtual && chefeAtual.al ? ELEM_ALIADO[chefeAtual.al.pid] : null) : (chefeAtual ? ELEM_CHEFE[chefeAtual.id] : null);
+    if (!el) return;
+    const n = p.forma === 'anel' ? 14 : p.forma === 'linha' ? 10 : 8;
+    if (p.forma === 'linha') for (let q = 0; q < 5; q++) { const s = (q + .5) / 5 * p.len; estouro(el, p.x + Math.cos(p.ang) * s, p.y + Math.sin(p.ang) * s, 8, 2); }
+    else if (p.forma === 'cone') for (let q = 0; q < 4; q++) { const a = p.ang + (q / 3 - .5) * p.abre; estouro(el, p.x + Math.cos(a) * p.r * .6, p.y + Math.sin(a) * p.r * .6, 8, 3); }
+    else estouro(el, p.x, p.y, 6, n);
+    if (el === 'terra' || el === 'poeira') for (let q = 0; q < 5; q++) add({ tipo: 'rachadura', x: p.x, y: p.y, vida: .9, tam: 16 + R() * 14, rot: R() * TAU });
+  }
+  return { dragaoEspectral: (g, sx, sy, t) => dragao(g, { t }, sx, sy, 0), add, atualizar, desenhar, estouro, tecnica, perigoAtivou, chama, cristal, rocha, bolt, corte, ELEM_ALIADO, ELEM_CHEFE, lista, limpar: () => { lista.length = 0; } };
+})();
+
 
 /* ---------- começar, reanimar, finalizar e terminar a luta ---------- */
 function abrirSelo(o) {
@@ -3495,13 +3678,14 @@ function tickFinal(dt) {
   const ch = chefeAtual; if (!ch || ch.fase !== 'final') return;
   ch.tf += dt; const b = ch.b, al = ch.al;
   al.est = 'tecnica'; al.anim = ch.tf < 1.2 ? 'aura' : 'punch'; al.t = ch.tf; al.dur = 99;
-  if (ch.tf > 1.7 && !ch.impacto) { ch.impacto = true; hitstop = .2; shake = 12; b.est = 'tonto'; fxImpacto(b.x, b.y, true); fagulha(b.x, b.y, corElem(al.pid), 30); fagulha(b.x, b.y, '#7fdcff', 30); aneis.push({ x: b.x, y: b.y, t: 0 }); Som.efeito('golpe'); }
+  if (ch.tf > 1.7 && !ch.impacto) { ch.impacto = true; EFX.estouro(EFX.ELEM_ALIADO[al.pid] || 'aura', b.x, b.y, 20, 28); EFX.estouro('aura', b.x, b.y, 22, 14); hitstop = .2; shake = 12; b.est = 'tonto'; fxImpacto(b.x, b.y, true); fagulha(b.x, b.y, corElem(al.pid), 30); fagulha(b.x, b.y, '#7fdcff', 30); aneis.push({ x: b.x, y: b.y, t: 0 }); Som.efeito('golpe'); }
   if (ch.tf > 3) { al.est = 'livre'; jog.est = 'livre'; vencerChefe(); }
 }
 function vencerChefe() {
   const ch = chefeAtual; if (!ch) return;
   const b = ch.b, al = ch.al, id = ch.id;
   b.vivo = false; b.t = .5; b.est = 'ko'; perigos.length = 0; projeteis.length = 0;
+  EFX.estouro(EFX.ELEM_CHEFE[id] || 'aura', b.x, b.y, 18, 24);                   // derrota: o elemento do chefe se desfaz
   estado.chefes[id] = true; estado.vitorias++; ganharXp(b.xp); popup(b.x, b.y, '+' + b.xp + ' XP', '#f4d03f');
   if (al) { ganharRespeito(al.pid, REGRAS_RESPEITO.vitoriaChefe); (estado.flags.parceiroVenceu || (estado.flags.parceiroVenceu = {}))[al.pid] = 1; al.caido = false; al.est = 'livre'; falaAliado(al, 'vitoria', true); }
   aviso(ch.def.nome + ' foi vencido! O selo foi restaurado.'); jog.vit = .5;
@@ -3561,20 +3745,20 @@ function animChefe(o) {
   if (o.est === 'ataque' && o.atq) {
     const a = o.atq, ar = /onda|redemoinho|queda|impacto|pisao|explosao|folhas|petalas|projeteis|clones/.test(a.nome);
     if (ar) return ['aura', Math.min(5, Math.floor(a.t * 6) % 6)];
-    const ciclo = (a.t % .55) / .55; return [(/tapa|socos|precisos|sequencia|agarrao/.test(a.nome) ? 'punch' : 'kick') + S, Math.min(4, Math.floor(ciclo * 5))];
+    const ciclo = (a.t % .55) / .55; return [(/tapa|socos|precisos|sequencia|agarrao/.test(a.nome) ? 'punch' : 'kick') + S, Math.min(4, Math.floor(ciclo * 15) / 3)];
   }
-  if (o.contra || o.leitura) return ['block', Math.floor(tempo * 10) % 4];
-  if (o.anda) return [o.vel > 2.2 ? 'run' : 'walk', Math.floor(o.fase / 6.283 * 8) % 8];
-  return ['idle', Math.floor(tempo * 8) % 6];
+  if (o.contra || o.leitura) return ['block', (Math.floor(tempo * 30) / 3) % 4];
+  if (o.anda) return [o.vel > 2.2 ? 'run' : 'walk', (Math.floor(o.fase / 6.283 * 24) / 3) % 8];
+  return ['idle', (Math.floor(tempo * 24) / 3) % 6];
 }
 function animAliado(o) {
-  const S = o.dir === 2 ? 'S' : o.dir === 6 ? 'N' : '', A = Akira.ANIM, fr = (n, q) => Math.max(0, Math.min(A[n].frames - 1, Math.round(q * (A[n].frames - 1))));
+  const S = o.dir === 2 ? 'S' : o.dir === 6 ? 'N' : '', A = Akira.ANIM, fr = (n, q) => Math.max(0, Math.min(A[n].frames - 1, Math.round(q * (A[n].frames - 1) * 3) / 3));
   if (o.caido) return ['ko', A.ko.frames - 1];
   if (o.est === 'dano') return ['hit', fr('hit', (.3 - o.t) / .3)];
   if (o.est === 'esquiva') return ['dodge', fr('dodge', o.t / .26)];
   if (o.est === 'ataque' || o.est === 'tecnica') { const n = o.anim === 'aura' || o.anim === 'block' ? o.anim : o.anim + S; return [n, fr(n, Math.min(1, o.t / Math.min(o.dur, 1)))]; }
-  if (o.anda) return ['run', Math.floor(o.fase / 6.283 * 8) % 8];
-  return ['idle', Math.floor(tempo * 8 + 3) % 6];
+  if (o.anda) return ['run', (Math.floor(o.fase / 6.283 * 24) / 3) % 8];
+  return ['idle', (Math.floor((tempo * 8 + 3) * 3) / 3) % 6];
 }
 function desenharArena(g) {
   const ch = chefeAtual; if (!ch) return;
@@ -3635,6 +3819,7 @@ function desenharChefeObj(o, sx, sy) {
   if (o.rastro > 0 && CHEFES[o.chefe] && CHEFES[o.chefe].desperto) for (let k = 1; k <= 3; k++) { const [rx, ry] = iso(o.x - (o.kx || 0) * 0, o.y); ctx.globalAlpha = .18 / k; ctx.fillStyle = k % 2 ? '#ffcf4a' : '#000'; ctx.beginPath(); ctx.ellipse(rx - k * 6 * (o.face || 1), ry - 24, 8, 18, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = o.invisivel ? .1 : 1; }
   const [an, fr] = o.chefe ? animChefe(o) : animInimigo(o); virarObj(o);
   const est = estiloPal(o.pal), aura = (CHEFES[o.chefe] || {}).aura;
+  if (o.vivo && !o.invisivel && !o.clone && CHEFES[o.chefe] && CHEFES[o.chefe].desperto) EFX.dragaoEspectral(ctx, sx, sy, tempo);   // aura de dragão espectral (forma desperta)
   if (o.vivo && aura && !o.invisivel) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 22 * (o.pal.esc || 1), 26 * (o.pal.esc || 1), aura, o.est === 'ataque' ? .28 : .14); ctx.restore(); }
   desenharAkira(sx, sy, an, fr, o.face, 0, o.invisivel ? .12 : o.clone ? .78 : 1, o.flash > 0 ? true : o.congelado > 0 ? 'r' : false, est, o.costas);
   if (!o.invisivel) acessorioChefe(o, sx, sy);
@@ -3664,19 +3849,59 @@ function desenharFinal(g) {
   g.save(); g.globalCompositeOperation = 'lighter';
   brilhoCtx(g, ax, ay - 22, 16 + carga * 22, '#7fdcff', .25 + carga * .45);                     // aura do Akira (azul) carregando
   for (let k = 0; k < 10; k++) { const a = k / 10 * TAU + t * 5; g.fillStyle = '#bff4ff'; g.fillRect(ax + Math.cos(a) * (20 - carga * 10), ay - 22 + Math.sin(a) * (20 - carga * 10) * .6, 1.6, 1.6); }
-  const pre = Math.min(1, t / 1.7);
+  const pre = Math.min(1, t / 1.7), sai = Math.max(0, (t - 1.7) / 1.3);   // pre: preparação até o impacto | sai: dissipação depois
+  g.globalCompositeOperation = 'source-over';
   switch (ch.efeito) {
-    case 'dragaoFogo': {                                                       // dragão de fogo em espiral que mergulha no chefe
-      for (let k = 0; k < 22; k++) { const s = pre - k * .025; if (s < 0) continue; const a = s * 10, r = 40 * (1 - s) + 6, x = bx + Math.cos(a) * r, y = by - 40 * (1 - s) + Math.sin(a) * r * .45, rr = (k === 0 ? 7 : 5.5 - k * .2); brilhoCtx(g, x, y, rr * 2.2, k < 4 ? cor2 : cor, .9); }
+    case 'dragaoFogo': {                                                       // Impacto do Dragão Flamejante: dragão de fogo enrola e mergulha no chefe
+      if (sai > 0) { for (let k = 0; k < 6; k++) EFX.chama(g, bx + Math.sin(k * 2.3 + t * 3) * 14, by0 - k * 2, 9 - k + 6 * (1 - sai), sai * .9, 'fogo'); break; }
+      const pos = s => { const a = s * 9, r = 46 * (1 - s) + 4; return [bx + Math.cos(a) * r, by - 46 * (1 - s) + Math.sin(a) * r * .45]; };
+      for (let k = 26; k >= 1; k--) { const s = pre - k * .022; if (s < 0) continue; const [x, y] = pos(s), [x2, y2] = pos(Math.max(0, s - .01)); EFX.chama(g, x, y, 7.5 - k * .2, .15, 'fogo', Math.atan2(y - y2, x - x2) - Math.PI / 2); }
+      const [hx, hy] = pos(pre), [qx, qy] = pos(Math.max(0, pre - .02)), ang = Math.atan2(hy - qy, hx - qx);
+      g.save(); g.translate(hx, hy); g.rotate(ang); g.lineJoin = 'round';            // cabeça: mandíbula aberta, chifres e olho
+      g.beginPath(); g.moveTo(14, -3); g.lineTo(2, -8); g.lineTo(-6, -12); g.lineTo(-4, -5); g.lineTo(-9, 0); g.lineTo(-4, 5); g.lineTo(2, 7); g.lineTo(13, 6); g.lineTo(5, 1); g.closePath();
+      g.fillStyle = '#ff8a1e'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#3a0a06'; g.stroke();
+      g.beginPath(); g.moveTo(-3, -6); g.lineTo(-12, -14); g.lineTo(-6, -7); g.fillStyle = '#ffe680'; g.fill(); g.stroke();
+      g.fillStyle = '#fff6c0'; g.fillRect(2, -5, 3, 2); g.fillStyle = '#c8281a'; g.beginPath(); g.moveTo(5, 1); g.lineTo(13, 6); g.lineTo(6, 4); g.fill();
+      g.restore(); break;
+    }
+    case 'gelo': {                                                             // Ruptura Glacial: cristais crescem e prendem o chefe numa prisão de gelo
+      if (sai > 0) break;
+      for (let k = 0; k < 10; k++) { const s = Math.min(1, Math.max(0, (pre - k * .05) * 2.2)); if (!s) continue; const a = k / 10 * TAU, x = bx + Math.cos(a) * 15, y = by0 + Math.sin(a) * 7; EFX.cristal(g, x, y - 6 * s, (7 + (k % 3) * 3) * s, Math.cos(a) * .4, .95); }
+      if (pre > .55) { const k = (pre - .55) / .45; g.save(); g.globalAlpha = .45 * k; g.beginPath(); g.moveTo(bx - 14, by0); g.lineTo(bx - 10, by0 - 46 * k); g.lineTo(bx + 2, by0 - 54 * k); g.lineTo(bx + 13, by0 - 40 * k); g.lineTo(bx + 14, by0); g.closePath(); g.fillStyle = '#bff0ff'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#2a5a9a'; g.stroke(); g.beginPath(); g.moveTo(bx - 6, by0 - 6); g.lineTo(bx - 4, by0 - 40 * k); g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.stroke(); g.restore(); }
       break;
     }
-    case 'gelo': for (let k = 0; k < 8; k++) { const s = Math.min(1, Math.max(0, (pre - k * .08) * 3)); if (!s) continue; const a = k / 8 * TAU, x = bx + Math.cos(a) * 16, y = by + 14 + Math.sin(a) * 8; g.fillStyle = 'rgba(190,240,255,' + (.8 * s) + ')'; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x, y - 18 * s); g.lineTo(x + 3, y); g.closePath(); g.fill(); } brilhoCtx(g, bx, by, 26 * pre, cor, .4); break;
-    case 'terra': { const [px, py] = iso(al.x, al.y); g.strokeStyle = cor; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(px, py); const n = 8; for (let q = 1; q <= n * pre; q++) g.lineTo(px + (bx - px) * q / n + (k - 1) * 4 + Math.sin(q * 3 + k) * 3, py + (by0 - py) * q / n + Math.cos(q * 2 + k) * 2); g.stroke(); }
-      for (let k = 0; k < 6; k++) { const s = Math.max(0, (pre - .5) * 2); const a = k / 6 * TAU, x = bx + Math.cos(a) * 14, y = by0 + Math.sin(a) * 7; g.fillStyle = 'rgba(200,160,106,' + s + ')'; g.beginPath(); g.moveTo(x - 4, y); g.lineTo(x, y - 16 * s); g.lineTo(x + 4, y); g.closePath(); g.fill(); } break; }
-    case 'vortice': for (let k = 0; k < 4; k++) { g.strokeStyle = 'rgba(80,200,255,' + (.7 - k * .12) + ')'; g.lineWidth = 2; g.beginPath(); g.ellipse(bx, by + 6 - k * 6, (28 - k * 5) * pre, (10 - k * 2) * pre, 0, t * (5 + k) , t * (5 + k) + 4.5); g.stroke(); } g.fillStyle = 'rgba(127,220,255,' + (.35 * carga) + ')'; g.fillRect(bx - 4, by - 60, 8, 80); break;
-    case 'vento': for (let k = 0; k < 14 * pre; k++) { const a = k * 2.4 + t * 9, r = 12 + (k % 4) * 4; g.strokeStyle = 'rgba(230,255,240,.85)'; g.lineWidth = 1.3; g.beginPath(); g.arc(bx + Math.cos(a) * 4, by + Math.sin(a) * 4, r, a, a + 1.1); g.stroke(); } break;
-    case 'trovao': for (let k = 0; k < 3; k++) { if (Math.random() > .5 + pre * .5) continue; g.strokeStyle = k ? cor : '#ffffff'; g.lineWidth = k ? 1.4 : 2.2; g.beginPath(); let x = bx + (Math.random() - .5) * 30, y = by - 120; g.moveTo(x, y); while (y < by) { y += 12; x += (Math.random() - .5) * 14; g.lineTo(x, y); } g.lineTo(bx, by); g.stroke(); } brilhoCtx(g, bx, by, 22 * pre, cor, .45); break;
+    case 'terra': {                                                            // Quebra-Terra: rachadura corre até o chefe e pilares de pedra explodem do chão
+      const [px, py] = iso(al.x, al.y);
+      g.strokeStyle = '#2a1a10'; g.lineWidth = 2.2; g.lineJoin = 'round';
+      for (let k = 0; k < 2; k++) { g.beginPath(); g.moveTo(px, py); const n = 10; for (let q = 1; q <= n * Math.min(1, pre * 1.4); q++) g.lineTo(px + (bx - px) * q / n + (k - .5) * 5 + Math.sin(q * 3 + k) * 3, py + (by0 - py) * q / n + Math.cos(q * 2 + k) * 2); g.stroke(); }
+      const s = Math.max(0, (pre - .55) / .45) * (1 - sai);
+      for (let k = 0; k < 7; k++) { const a = k / 7 * TAU, x = bx + Math.cos(a) * 16, y = by0 + Math.sin(a) * 8, h = (14 + (k % 3) * 6) * s; if (h < 1) continue; g.beginPath(); g.moveTo(x - 4, y); g.lineTo(x - 3, y - h); g.lineTo(x + 1, y - h - 3); g.lineTo(x + 4, y - h + 1); g.lineTo(x + 4, y); g.closePath(); g.fillStyle = '#9a7048'; g.fill(); g.lineWidth = .8; g.strokeStyle = '#221033'; g.stroke(); g.fillStyle = '#d8b07a'; g.fillRect(x - 2.5, y - h, 5, 1.2); }
+      for (let k = 0; k < 5 * pre; k++) EFX.rocha(g, bx + Math.cos(k * 1.7 + t * 2) * 22, by - 8 - Math.sin(t * 3 + k) * 6 - pre * 10, 2.4, t * 3 + k);
+      break;
+    }
+    case 'vortice': {                                                          // Vórtice Espiritual: coluna d'água girando + aura azul do Akira entrando no giro
+      const k1 = pre * (1 - sai);
+      g.save(); g.globalAlpha = .5 * k1; const gr = g.createLinearGradient(bx - 16, 0, bx + 16, 0); gr.addColorStop(0, 'rgba(30,90,170,0)'); gr.addColorStop(.5, 'rgba(80,190,245,.9)'); gr.addColorStop(1, 'rgba(30,90,170,0)'); g.fillStyle = gr; g.fillRect(bx - 16, by0 - 80 * k1, 32, 80 * k1); g.restore();
+      for (let k = 0; k < 6; k++) { const a = t * (6 + k) + k, yy = by0 - k * 12 * k1, r = (26 - k * 2.5) * k1; g.lineWidth = 2.2; g.strokeStyle = k % 2 ? 'rgba(80,190,245,.85)' : 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(bx, yy, r, r * .38, 0, a, a + 3.6); g.stroke(); }
+      for (let k = 0; k < 8 * k1; k++) { const a = t * 5 + k; EFX.chama(g, bx + Math.cos(a) * 18, by - Math.sin(t * 2 + k) * 20, 4, .2, 'aura'); }
+      break;
+    }
+    case 'vento': {                                                            // Tempestade de Mil Golpes: imagens residuais do Gêmeo do Vento cortando de vários lados
+      if (sai > 0) break;
+      const est = estiloPal(al.pal), n = Math.floor(8 * pre);
+      for (let k = 0; k < n; k++) { const a = k * 2.4, x = bx + Math.cos(a) * 22, y = by0 + Math.sin(a) * 9; desenharAkira(x, y, 'kick', 3 + (k % 3), Math.cos(a) > 0 ? -1 : 1, 0, k === n - 1 ? .8 : .32, false, est); }
+      for (let k = 0; k < 6 * pre; k++) EFX.corte(g, bx + Math.sin(k * 3.1 + t * 7) * 10, by - 4 + Math.cos(k * 2.2 + t * 5) * 12, 8 + (k % 3) * 2, k * 1.3 + t * 9, (t * 4 + k * .3) % 1);
+      break;
+    }
+    case 'trovao': {                                                           // Colisão do Trovão: raios caem do céu no chefe e se ligam à aura do Akira
+      const k1 = pre * (1 - sai);
+      for (let k = 0; k < 3; k++) if (Math.random() < .35 + k1 * .6) EFX.bolt(g, bx + (Math.random() - .5) * 40, by - 140, bx + (Math.random() - .5) * 6, by, 'raio', 1 + k1);
+      if (Math.random() < k1) EFX.bolt(g, ax, ay - 22, bx, by, 'aura', .9);
+      g.save(); g.globalCompositeOperation = 'lighter'; brilhoCtx(g, bx, by, 26 * k1, cor, .45); g.restore();
+      break;
+    }
   }
+  g.globalCompositeOperation = 'lighter';
   if (ch.impacto) { const s = Math.min(1, (t - 1.7) / .6); brilhoCtx(g, bx, by, 30 + s * 70, '#ffffff', .9 * (1 - s)); g.strokeStyle = 'rgba(255,255,255,' + (1 - s) + ')'; g.lineWidth = 3; g.beginPath(); g.ellipse(bx, by0, 20 + s * 90, 10 + s * 45, 0, 0, TAU); g.stroke(); }
   g.restore();
 }
@@ -4204,7 +4429,7 @@ function atualizar(dt0) {
   }
   mapa.objs = mapa.objs.filter(o => !o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0));
   tickExame(dtM);
-  tickChefe(dtM, ix, iy); atualizarPerigos(dtM); atualizarProjeteis(dtM);
+  tickChefe(dtM, ix, iy); atualizarPerigos(dtM); atualizarProjeteis(dtM); EFX.atualizar(dtM);
   for (let i = baloes.length - 1; i >= 0; i--) { baloes[i].t += dt0; if (baloes[i].t > baloes[i].vida) baloes.splice(i, 1); }
 
   for (const t of textos) t.t += dt0;
@@ -4461,29 +4686,31 @@ function personagem(sx, sy, dir, anim, f, palAntiga, flash) {
 // Qual animação/quadro cada lutador usa agora
 function animJogador() {
   const t = jog.t, A = Akira.ANIM;
-  const fr = (n, q) => Math.max(0, Math.min(A[n].frames - 1, Math.round(q * (A[n].frames - 1))));
+  // animação mais fluida: 3 desenhos por quadro (os tempos dos golpes e as hitboxes não mudam)
+  const fr = (n, q) => Math.max(0, Math.min(A[n].frames - 1, Math.round(q * (A[n].frames - 1) * 3) / 3));
+  const ciclo = (v, n) => (Math.floor(v * 3) / 3) % n;
   switch (jog.est) {
     case 'ataque': {                                                  // o tempo do golpe é "esticado" pra o soco/chute acertar no quadro certo
       const tk = jog.tec, n0 = TKANIM[jog.tkId] || (tk.pose === 'chute' ? 'kick' : 'punch'), n = n0 + (jog.dir === 2 ? 'S' : jog.dir === 6 ? 'N' : ''), an = A[n];   // virado pro sul = vista de frente
       const q = t < tk.prep ? t / tk.prep * an.imp : t < tk.prep + tk.ativo ? an.imp + (t - tk.prep) / tk.ativo * (an.seg - an.imp) : an.seg + (t - tk.prep - tk.ativo) / tk.rec * (1 - an.seg);
       return [n, fr(n, q)];
     }
-    case 'rajada': return [jog.dir === 2 ? 'comboS' : jog.dir === 6 ? 'comboN' : 'combo', Math.min(11, Math.floor(t / .72 * 12))];
+    case 'rajada': return [jog.dir === 2 ? 'comboS' : jog.dir === 6 ? 'comboN' : 'combo', Math.min(11, Math.floor(t / .72 * 36) / 3)];
     case 'esquiva': return ['dodge', fr('dodge', t / .26)];
     case 'dano': return ['hit', fr('hit', (.28 - t) / .28)];
     case 'ko': return ['ko', fr('ko', t / .8)];
     case 'especial': return ['aura', fr('aura', t < ESPECIAL.prep ? t / ESPECIAL.prep * .55 : .6 + (t - ESPECIAL.prep) / .35 * .4)];
-    case 'vitoria': return ['victory', Math.floor(t * 10) % 8];
-    case 'reanimando': return ['block', Math.floor(t * 6) % 4];
+    case 'vitoria': return ['victory', ciclo(t * 10, 8)];
+    case 'reanimando': return ['block', ciclo(t * 6, 4)];
     case 'final': return t < 1.55 ? ['aura', fr('aura', Math.min(.55, t / 1.55 * .55))] : [jog.dir === 2 ? 'kickS' : jog.dir === 6 ? 'kickN' : 'kick', fr('kick', Math.min(1, (t - 1.55) / .5))];
     case 'pulo':
       if (jog.pre > 0) return ['jump', 0];
       if (!jog.ar) return ['jump', 5];
       return ['jump', jog.vz > 70 ? 1 : jog.vz > 25 ? 2 : jog.vz > -25 ? 3 : 4];
     default:
-      if (jog.def) return ['block', Math.floor(tempo * 10) % 4];
-      if (jog.anda) return jog.corre ? ['run', Math.floor(jog.fase / 6.283 * 8) % 8] : ['walk', Math.floor(jog.fase / 6.283 * 8) % 8];
-      return ['idle', Math.floor(tempo * 8) % 6];
+      if (jog.def) return ['block', ciclo(tempo * 10, 4)];
+      if (jog.anda) return jog.corre ? ['run', ciclo(jog.fase / 6.283 * 8, 8)] : ['walk', ciclo(jog.fase / 6.283 * 8, 8)];
+      return ['idle', ciclo(tempo * 8, 6)];
   }
 }
 function virarObj(o) { const v = DIRV[o.dir][0]; if (v) o.face = v > 0 ? 1 : -1; else if (!o.face) o.face = 1; o.costas = DIRV[o.dir][1] < 0; }   // olha pra esquerda/direita da tela
@@ -5164,6 +5391,30 @@ function capaFrente(g, T, P) {
   capaLinhas(g, c => suave(c, pts), null, [[T(24, -16), T(0, -22), T(-24, -18)], [T(24, 16), T(0, 22), T(-24, 18)], [T(20, 0), T(-10, 0), T(-28, 0)]], [T(34, -15), T(34, 15)]);
 }
 
+/* Rastro do golpe (smear): o membro que mais se moveu entre meio quadro atrás e agora deixa uma "meia-lua"
+   da cor da roupa, com linhas de velocidade — é o borrão de movimento das animações desenhadas à mão. */
+function rastroGolpe(g, J, J0) {
+  const cands = [[J.fa_.h, J0.fa_.h, J.S], [J.ba_.h, J0.ba_.h, J.Sb], [J.fa, J0.fa, J.fq], [J.ba, J0.ba, J.bq]];
+  let m = null, dm = 6;
+  for (const c of cands) { const d = Math.hypot(c[0][0] - c[1][0], c[0][1] - c[1][1]); if (d > dm) { dm = d; m = c; } }
+  if (!m) return;
+  const [cur, ant, raiz] = m, a1 = Math.atan2(cur[1] - raiz[1], cur[0] - raiz[0]); let a0 = Math.atan2(ant[1] - raiz[1], ant[0] - raiz[0]);
+  let da = a1 - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; a0 = a1 - da;
+  const r1 = Math.hypot(cur[0] - raiz[0], cur[1] - raiz[1]) + 5, r0 = r1 * .5, hor = da < 0;
+  if (Math.abs(da) < .12) {                                               // golpe reto (soco direto): borrão reto atrás do punho
+    const dx = cur[0] - ant[0], dy = cur[1] - ant[1], l = Math.hypot(dx, dy), nx = -dy / l * 5, ny = dx / l * 5;
+    g.beginPath(); g.moveTo(ant[0] - dx * .4, ant[1] - dy * .4); g.lineTo(cur[0] + nx, cur[1] + ny); g.lineTo(cur[0] - nx, cur[1] - ny); g.closePath();
+    g.fillStyle = rgbaRig(COR.gi, .55); g.fill();
+    for (const k of [-2.5, 0, 2.5]) { g.beginPath(); g.moveTo(ant[0] - dx * .6 + nx * k / 5, ant[1] - dy * .6 + ny * k / 5); g.lineTo(cur[0] - dx * .2 + nx * k / 5, cur[1] - dy * .2 + ny * k / 5); g.lineWidth = .9; g.strokeStyle = rgbaRig(COR.giSS, .7); g.stroke(); }
+    return;
+  }
+  g.beginPath(); g.arc(raiz[0], raiz[1], r1, a0, a1, hor); g.arc(raiz[0], raiz[1], r0, a1, a0, !hor); g.closePath();
+  const gr = g.createLinearGradient(raiz[0] + Math.cos(a0) * r1, raiz[1] + Math.sin(a0) * r1, cur[0], cur[1]);
+  gr.addColorStop(0, rgbaRig(COR.gi, 0)); gr.addColorStop(1, rgbaRig(COR.gi, .92)); g.fillStyle = gr; g.fill();
+  g.beginPath(); g.arc(raiz[0], raiz[1], r1, a0 + da * .35, a1, hor); g.lineWidth = 1.2; g.strokeStyle = rgbaRig(OUT, .55); g.stroke();
+  for (const f of [.68, .84]) { g.beginPath(); g.arc(raiz[0], raiz[1], r1 * f, a0 + da * .25, a1 - da * .1, hor); g.lineWidth = .9; g.strokeStyle = rgbaRig(COR.giSS, .75); g.stroke(); }
+}
+function rgbaRig(c, a) { const n = parseInt(c.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
 /* Desenha o Akira inteiro virado pra direita; a origem (0,0) é o chão entre os pés */
 function desenhar(g, P, est) {
   EST = est; COR = est.cor; const faixa = est.faixa;
@@ -5173,6 +5424,7 @@ function desenhar(g, P, est) {
   if (P.rot) { g.translate(J.H[0], J.H[1]); g.rotate(-P.rot * D2R); g.translate(-J.H[0], -J.H[1]); }
   g.lineJoin = 'round'; g.lineCap = 'round';
   { const gl = Math.max(P.glow, CONF.got && EST.aura ? .3 : 0); if (gl > 0) aura(g, J, Object.assign({}, P, { glow: gl })); }
+  if (P.soRastro) { rastroGolpe(g, J, juntas(Object.assign({}, P.smear, { costas: P.costas }))); g.restore(); return; }   // só o rastro (vai por trás, sem contorno)
   if (CONF.got && EST.capa) capaSide(g, J, P);
   if (!P.bTop) braco(g, J.Sb, J.ba_, P.bU, P.bF);
   perna(g, J.bq, J.bk, J.ba, P, 0, P.bFt);
@@ -5420,16 +5672,24 @@ function quadro(nome, i, sc, est, costas) {
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
   if (usaExt) {
     const m = externo.meta, a = externo.anims[nome], fw = m.frameW, fh = m.frameH;
-    const ex = (i % a.frames) * fw, ey = a.row * fh;
+    const ex = (Math.floor(i) % a.frames) * fw, ey = a.row * fh;            // folha externa só tem quadros inteiros
     g.drawImage(externo.img, ex, ey, fw, fh, 0, 0, c.width, c.height);
   } else {
     g.scale(sc, sc); g.translate(AK.OX, AK.OY);
     const P = posePorQuadro(nome, i); P.costas = (costas || AKIRA_ANIMATIONS[nome].norte) ? 1 : 0;
+    if (AKIRA_ANIMATIONS[nome].imp != null && !AKIRA_ANIMATIONS[nome].frente && i >= .5) P.smear = posePorQuadro(nome, i - .5);   // pose de meio quadro atrás: vira o rastro do golpe
+    quadro.P = P;
     if (est.olho && P.eye === 'open') { P.eye = est.olho; P.brow = Math.max(P.brow, 1); }
     if (est.boca && P.mouth === 'closed') P.mouth = est.boca;
     (AKIRA_ANIMATIONS[nome].frente ? desenharFrente : desenhar)(g, P, est);
   }
   if (!usaExt) acabamento(c, sc);
+  if (!usaExt && quadro.P && quadro.P.smear) {                          // rastro do golpe por trás do corpo, limpo (sem o contorno grosso)
+    const r = novoCanvas(c.width, c.height), rg = r.getContext('2d'); rg.scale(sc, sc); rg.translate(AK.OX, AK.OY);
+    desenhar(rg, Object.assign({}, quadro.P, { soRastro: true }), est);
+    const cg = c.getContext('2d'); cg.save(); cg.globalCompositeOperation = 'destination-over'; cg.drawImage(r, 0, 0); cg.restore();
+  }
+  quadro.P = null;
   if (CONF.pixel) pixelarCv(c);
   return (cacheQ[key] = c);
 }
@@ -7776,7 +8036,7 @@ function renderizar(dt) {
     g.globalAlpha = 1 - f.t / f.vida; g.strokeStyle = f.cor; g.lineWidth = 1.2; g.lineCap = 'round';
     g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x - f.vx * .045, f.y - f.vy * .045); g.stroke();
   } g.globalAlpha = 1;
-  desenharFx(g); desenharProjeteis(g); desenharRaios(g); desenharFinal(g); desenharBaloes(g);
+  desenharFx(g); desenharProjeteis(g); desenharRaios(g); EFX.desenhar(g); desenharFinal(g); desenharBaloes(g);
 
   // Camada 4: efeitos de tela (folhas ao vento, vinheta, fade)
   g.setTransform(SC, 0, 0, SC, 0, 0);
@@ -8766,12 +9026,12 @@ const Luta2D = (() => {
   const RIG = .477;                                                     // pixels de cena por unidade do desenho do personagem (≈ 1,75 m de altura)
   const ANIM_GOLPE = { jab: 'punch', direto: 'punchHeavy', gancho: 'punchHeavy', cotovelo: 'elbow', chuteAlto: 'highKick', chute: 'kick', lateral: 'kick', giro: 'spinKick', investida: 'punchHeavy',
     marreta: 'punchHeavy', empurrao: 'punchHeavy', contra: 'punch', palma: 'punchHeavy', sombra: 'punchHeavy', voadora: 'highKick', onda: 'punchHeavy' };
-  const quadroLoop = (n, t) => { const a = Akira.ANIM[n]; const i = Math.floor(t * a.fps); return a.loop ? i % a.frames : Math.min(a.frames - 1, i); };
+  const quadroLoop = (n, t) => { const a = Akira.ANIM[n]; const i = Math.floor(t * a.fps * 3) / 3; return a.loop ? i % a.frames : Math.min(a.frames - 1, i); };   // 3 desenhos por quadro
   // quadro do golpe: a preparação vai até o quadro do impacto, o ativo até "seg", a recuperação até o fim
   function quadroGolpe(n, g, t) {
     const a = Akira.ANIM[n], imp = a.imp || .45, seg = a.seg || .65;
     const k = t < g.prep ? t / g.prep * imp : t < g.prep + g.ativo ? imp + (t - g.prep) / g.ativo * (seg - imp) : seg + Math.min(1, (t - g.prep - g.ativo) / g.rec) * (1 - seg);
-    return Math.min(a.frames - 1, Math.floor(k * a.frames));
+    return Math.min(a.frames - 1, Math.floor(k * a.frames * 3) / 3);
   }
   function animDe(f) {
     const t = f.t, g = f.golpe;
@@ -8782,7 +9042,7 @@ const Luta2D = (() => {
         const n = ANIM_GOLPE[g.id] || (g.rajada ? 'punch' : 'punch');
         return [n, quadroGolpe(n, g, t)];
       }
-      case 'andar': { const fr = Math.floor(Math.abs(f.passo || 0) * 6.5) % 8; return ['walk', f.tras ? 7 - fr : fr]; }
+      case 'andar': { const fr = (Math.floor(Math.abs(f.passo || 0) * 19.5) / 3) % 8; return ['walk', f.tras ? (8 - fr) % 8 : fr]; }
       case 'bloq': case 'bloqStun': return ['block', Math.min(3, Math.floor(t * 20))];
       case 'esq': return ['dodge', Math.min(5, Math.floor(t / .42 * 6))];
       case 'dano': return ['hit', Math.min(3, Math.floor(t / Math.max(.1, f.dur) * 4))];
@@ -9573,7 +9833,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
