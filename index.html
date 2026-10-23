@@ -56,6 +56,7 @@
   body.gotico .barra span { font-family: 'Cinzel', serif; font-weight: 800; letter-spacing: 1px; }
   body.gotico #menu { font-family: 'Cinzel', 'Times New Roman', serif; border-color: #8a8f9e; box-shadow: 0 0 0 2px #000, 0 0 20px rgba(190, 20, 50, .45); }
   body.gotico #aviso { font-family: 'Cinzel', serif; background: rgba(40, 10, 20, .95); color: #f0d890; border: 2px solid #c9a24a; }
+  #hHora { color: #ffe9a8; font-weight: bold; text-shadow: 2px 2px 0 #000; font-size: .9em; }
   #hLoc { font-family: inherit; color: #5ff3ff; font-weight: bold; text-shadow: 0 0 6px #00e5ff, 2px 2px 0 #000; }
   #hMissao { color: #f4d03f; font-size: 11px; }
   #hCombo { color: #bcd; font-size: 11px; }
@@ -353,6 +354,7 @@
   <div class="barra aura"><i id="bAura"></i><span id="tAura"></span></div>
   <div class="barra xp"><i id="bXp"></i><span id="tXp"></span></div>
   <div id="hLoc">Bambuzal</div>
+  <div id="hHora">☀ 08:00 • dia</div>
   <div id="hCombo"></div>
   <div id="hMissao"></div>
 </header>
@@ -407,7 +409,6 @@
     <label>Volume dos efeitos <input type="range" id="opSfx" min="0" max="100"></label>
     <label class="caixa"><input type="checkbox" id="opMusOn"> Música ligada</label>
     <label class="caixa"><input type="checkbox" id="opSfxOn"> Efeitos sonoros ligados</label>
-    <label>Qualidade gráfica <select id="opQual"><option value="auto">Automática</option><option value="2">Alta</option><option value="1">Média</option><option value="0">Baixa</option></select></label>
     <label>Painel de desempenho (F3) <input type="checkbox" id="opPerf"></label>
     <label>Controles de toque <select id="opToque"><option value="auto">Automático</option><option value="sempre">Sempre mostrar</option><option value="nunca">Esconder</option></select></label>
     <p class="teclas">Teclado: WASD/Setas andar • J bater • K aura • Espaço esquivar • L defender • E interagir • M menu</p>
@@ -427,7 +428,7 @@
 
 <footer id="dica">
   WASD/Setas andar • J bater • K técnica de aura • Espaço esquivar • L defender<br>
-  B visual gótico/retrô/HD • G grade neon • Shift correr • V pular • C rajada de socos • T comemorar • Shift+P exportar sprites<br>
+  G grade neon • Shift correr • V pular • C rajada de socos • T comemorar • Shift+P exportar sprites<br>
   E interagir • M menu • H respeito e missões • 1-4 trocar combo • Q comer • Shift+R apagar save
 </footer>
 
@@ -563,7 +564,7 @@ const PAL_NPC = {
 })();
 function desenharVisNPC(g, o, sx, sy) {
   const vis = o.pal && o.pal.vis; if (!vis || !vis.length) return;
-  const e = o.pal.esc || 1, f = o.face || 1, hx = sx + f * 1 * e, hy = sy - 35 * e, costas = o.costas;
+  const e = o.pal.esc || 1, f = o.face || 1, po = poseOff(o._an, o._fr, f, e), hx = sx + f * 1 * e + po.dhx, hy = sy - 35 * e + po.dhy, costas = o.costas;
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
   const OL = '#1a1220';
   for (const [tipo, c1, c2] of vis) {
@@ -917,6 +918,7 @@ function estadoInicial() {
     respeito: {}, parceiro: null, chefes: {},                          // relações (4 graus), parceiro escolhido e chefes vencidos
     fase: 'treino',                                                    // história: 'treino' (até vencer o torneio) -> 'selos' (chefes liberados)
     torneio: { inscrito: false, res: {}, elim: null, campeao: false }, // chave do torneio (resultados salvos)
+    relogio: 200, chuva: false,                                        // relógio do dia (começa às 8h) e se está chovendo
     flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}                                               // marcas de diálogo e progresso dos objetivos de missão
   };
 }
@@ -951,6 +953,7 @@ function validarSave(d) {
   ['pontos', 'vitorias', 'combo', 'aura'].forEach(k => { if (!numOk(e[k], 0, 1e9)) e[k] = 0; });
   if (e.combo >= COMBOS.length) e.combo = 0;
   if (!numOk(e.hp, 0, 1e6)) e.hp = null;
+  if (!numOk(e.relogio, 0, 2400)) e.relogio = 200; e.chuva = e.chuva === true;
   const lugarOk = l => l && typeof l.mapa === 'string' && (MAPAS[l.mapa] || CELULA[l.mapa] || l.mapa === 'mundo' || l.mapa === 'caverna' || l.mapa === 'cavernas') && numOk(l.x, -1, 1e4) && numOk(l.y, -1, 1e4);
   if (!lugarOk(e.respawn)) e.respawn = estadoInicial().respawn;
   if (!lugarOk(e.local)) e.local = null;
@@ -2938,7 +2941,6 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyR' && e.shiftKey) reiniciar();
     if (e.code === 'KeyP' && e.shiftKey) exportarSprites();
     if (e.code === 'KeyO' && e.shiftKey) baixarFichaDragao();
-    if (e.code === 'KeyB') alternarVisual();
     if (e.code === 'F3') { e.preventDefault(); alternarPainelPerf(); }
     if (e.code === 'KeyG') { gradeNeon = !gradeNeon; if (mapa && mapa.grande) mapa.fchunks = new Map(); aviso(gradeNeon ? 'Grade neon: ligada' : 'Grade neon: desligada'); }
   }
@@ -2974,7 +2976,7 @@ document.querySelectorAll('.btn').forEach(b => {                       // botõe
 const canvas = document.getElementById('jogo'), ctx = canvas.getContext('2d');
 const PIX = { on: false }, GOT = { on: true };       // PIX = visual retrô KOF/SNK (pixel nítido); GOT = visual gótico (Castlevania); nenhum dos dois = anime HD
 let gradeNeon = true, MODO = 'hd', fundoGot = null;
-try { MODO = localStorage.getItem('karate-visual2') || 'hd'; } catch (e) {}     // padrão: manhã (anime HD)
+// visual fixo (anime HD); dia e noite agora vêm do relógio do jogo
 const aplicarModo = () => { PIX.on = MODO === 'retro'; GOT.on = MODO === 'gotico'; };
 aplicarModo();
 /* ---------- qualidade gráfica (alta/média/baixa) e painel de desempenho (F3) ----------
@@ -3578,6 +3580,129 @@ dlgEl.addEventListener('pointerdown', e => {
   if (!dlg.mostrandoOp) avancarDialogo();
 });
 function aviso(txt) { avisoEl.textContent = txt; avisoEl.hidden = false; avisoT = 2.8; }
+
+/* =====================================================================
+   RELÓGIO DO JOGO: 20 minutos de dia + 20 minutos de noite (tempo real)
+   - estado.relogio: segundos no ciclo (0–1200 dia das 6h às 18h, 1200–2400 noite das 18h às 6h)
+   - à noite pode chover (chance sorteada a cada noite, e pode começar/parar no meio)
+   ===================================================================== */
+const RELOGIO = { CICLO: 2400, DIA: 1200, chanceChuva: .45 };
+let chuvaI = 0, gotas = [], respingos = [], chuvaSorteioT = 0;
+function horaJogo() { const r = ((estado.relogio || 0) % RELOGIO.CICLO + RELOGIO.CICLO) % RELOGIO.CICLO; return r < RELOGIO.DIA ? 6 + r / RELOGIO.DIA * 12 : (18 + (r - RELOGIO.DIA) / RELOGIO.DIA * 12) % 24; }
+const ehNoite = () => (estado.relogio || 0) % RELOGIO.CICLO >= RELOGIO.DIA;
+function escuridao() {                                               // 0 = dia claro, 1 = noite fechada (com entardecer e amanhecer suaves)
+  const h = horaJogo();
+  if (h >= 7 && h < 17) return 0;
+  if (h >= 17 && h < 19) return (h - 17) / 2;                        // pôr do sol
+  if (h >= 5 && h < 7) return 1 - (h - 5) / 2;                       // nascer do sol
+  return 1;
+}
+function textoHora() { const h = horaJogo(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
+function tickRelogio(dt) {
+  if (MODO_TELA !== 'jogo' || dlg.ativo || cine || fade) return;
+  const antes = estado.relogio || 0; estado.relogio = (antes + dt) % RELOGIO.CICLO;
+  const virouNoite = antes < RELOGIO.DIA && estado.relogio >= RELOGIO.DIA, virouDia = antes >= RELOGIO.DIA && estado.relogio < RELOGIO.DIA;
+  if (virouNoite) { estado.chuva = Math.random() < RELOGIO.chanceChuva; aviso(estado.chuva ? 'Anoiteceu... e começou a chover.' : 'Anoiteceu. As lanternas se acendem.'); chuvaSorteioT = 0; }
+  if (virouDia) { if (estado.chuva) aviso('Amanheceu. A chuva passou.'); else aviso('Amanheceu! Um novo dia começa.'); estado.chuva = false; }
+  if (ehNoite() && (chuvaSorteioT += dt) > 90) {                     // a cada 1,5 min de noite: a chuva pode começar ou parar
+    chuvaSorteioT = 0;
+    if (!estado.chuva && Math.random() < .2) { estado.chuva = true; aviso('Começou a chover.'); }
+    else if (estado.chuva && Math.random() < .25) { estado.chuva = false; aviso('A chuva parou.'); }
+  }
+  if (!ehNoite()) estado.chuva = false;
+  chuvaI += ((estado.chuva ? 1 : 0) - chuvaI) * Math.min(1, dt * .5);   // a chuva aumenta e diminui devagar
+  const el = document.getElementById('hHora');
+  if (el) { const t = (ehNoite() ? '🌙 ' : '☀ ') + textoHora() + (ehNoite() ? ' • noite' : ' • dia') + (estado.chuva ? ' 🌧' : ''); if (el.textContent !== t) el.textContent = t; }
+}
+const chuvaVisivel = () => chuvaI > .02 && mapa && !mapa.interior && !mapa.escuro && MODO_TELA === 'jogo';
+function desenharChuva(g, dt) {                                       // chuva na tela: pingos inclinados, respingos no chão e céu mais escuro
+  if (!chuvaVisivel()) { gotas.length = 0; return; }
+  g.save(); g.setTransform(SC, 0, 0, SC, 0, 0);
+  g.fillStyle = 'rgba(18,26,44,' + (.22 * chuvaI) + ')'; g.fillRect(0, 0, W, H);
+  const alvo = Math.round(220 * chuvaI * (QUAL.nivel + 1) / 3);
+  while (gotas.length < alvo) gotas.push({ x: Math.random() * (W + 80) - 40, y: Math.random() * H - H, v: 260 + Math.random() * 160, l: 7 + Math.random() * 7, a: .25 + Math.random() * .35 });
+  if (gotas.length > alvo) gotas.length = alvo;
+  g.lineWidth = 1; g.lineCap = 'round';
+  for (const p of gotas) {
+    p.y += p.v * dt; p.x -= p.v * dt * .18;
+    if (p.y > H * (.25 + Math.random() * .75) && Math.random() < .08 || p.y > H) {     // bateu no chão: respingo
+      if (respingos.length < 90) respingos.push({ x: p.x, y: Math.min(p.y, H - 2), t: 0 });
+      p.y = -10 - Math.random() * 40; p.x = Math.random() * (W + 80) - 20;
+    }
+    g.strokeStyle = 'rgba(190,210,240,' + (p.a * chuvaI) + ')'; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x + p.l * .18, p.y - p.l); g.stroke();
+  }
+  for (let i = respingos.length - 1; i >= 0; i--) {
+    const r = respingos[i]; r.t += dt; if (r.t > .3) { respingos.splice(i, 1); continue; }
+    g.strokeStyle = 'rgba(200,220,250,' + ((1 - r.t / .3) * .5 * chuvaI) + ')'; g.beginPath(); g.ellipse(r.x, r.y, 1 + r.t * 9, .5 + r.t * 3, 0, 0, TAU); g.stroke();
+  }
+  if (Math.random() < .0015 * chuvaI) relampagoT = .35;                // relâmpago de vez em quando
+  if (relampagoT > 0) { relampagoT -= dt; g.fillStyle = 'rgba(230,236,255,' + Math.max(0, relampagoT) * .9 + ')'; g.fillRect(0, 0, W, H); }
+  g.restore();
+}
+let relampagoT = 0;
+function desenharCeuNoturno(g) {                                       // estrelas e lua aparecem no céu quando escurece
+  const n = escuridao(); if (n < .05 || mapa.interior || mapa.escuro) return;
+  g.save(); g.setTransform(SC, 0, 0, SC, 0, 0); const rnd = mulberry32(11);
+  g.fillStyle = '#fff';
+  for (let k = 0; k < 60; k++) { const x = rnd() * W, y = rnd() * H * .45; g.globalAlpha = n * (1 - chuvaI) * (.3 + .6 * rnd()) * (.7 + .3 * Math.sin(tempo * 2 + k)); g.fillRect(x, y, 1, 1); }
+  g.globalAlpha = n * (1 - chuvaI * .8); const mx = W * .8, my = H * .14;
+  const gr = g.createRadialGradient(mx, my, 4, mx, my, 40); gr.addColorStop(0, 'rgba(220,230,255,.5)'); gr.addColorStop(1, 'rgba(220,230,255,0)'); g.fillStyle = gr; g.fillRect(mx - 40, my - 40, 80, 80);
+  g.fillStyle = '#eef2ff'; g.beginPath(); g.arc(mx, my, 9, 0, TAU); g.fill(); g.fillStyle = 'rgba(160,170,210,.45)'; g.beginPath(); g.arc(mx - 3, my - 2, 2.2, 0, TAU); g.arc(mx + 3, my + 3, 1.4, 0, TAU); g.fill();
+  g.restore();
+}
+/* ---------- Akira atrás de árvores, casas e cenário: aparece em silhueta (não some) ---------- */
+const XRAY_IGNORA = { inimigo: 1, npc: 1, aliado: 1, item: 1, flor: 1, projetil: 1, rotulo: 1, selo: 0 };
+function akiraCoberto(lista) {
+  if (jog.morto || (typeof embarcado === 'function' && embarcado())) return false;
+  const [jx, jy] = iso(jog.x, jog.y), pj = jog.x + jog.y, topo = jy - 34, base = jy - 4;
+  for (const o of lista) {
+    if (o === jog || XRAY_IGNORA[o.tipo] || o.cortina) continue;
+    const k = o.dk != null ? o.dk : o.x + o.y; if (k <= pj + .05) continue;
+    const e = extDe(o); if (!e || e.t < 20) continue;               // só o que é alto o bastante para esconder o Akira
+    const [ox, oy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y);
+    const l = ox - e.l + 6, r = ox + e.r - 6, t = oy - e.t + 6, b = oy + e.b - 4;
+    if (jx > l && jx < r && base > t && topo < b) {
+      if (o.spr && o.spr.copa && Math.abs(jx - ox) > (e.l + e.r) * .42) continue;   // árvore: só a copa/tronco no meio esconde de verdade
+      return true;
+    }
+  }
+  return false;
+}
+function desenharSilhuetaAkira(g) {
+  const [jx, jy] = iso(jog.x, jog.y), [an, fr] = animJogador();
+  desenharAkira(jx, jy, an, fr, jog.face, jog.z, .5, false, null, jog.costas);
+  g.save(); g.globalAlpha = .55 + .15 * Math.sin(tempo * 4); g.strokeStyle = '#7ff3ff'; g.lineWidth = 1.2;
+  g.beginPath(); g.ellipse(jx, jy, 7, 3.5, 0, 0, TAU); g.stroke(); g.restore();   // anel no pé para achar o Akira
+}
+/* ---------- saídas da caverna bem marcadas (luz, seta e no minimapa) ---------- */
+function desenharSaidasVisiveis(g) {
+  if (!mapa || !mapa.escuro) return;
+  for (const e of mapa.exits) {
+    if (/^(ed_|gt_|tg_|cav_)/.test(e.alvo) || EDIF_ALVO(e.alvo)) continue;           // portas de construções já têm a porta de pedra
+    const cx = e.x + e.w / 2, cy = e.y + e.h / 2; if (Math.hypot(cx - jog.x, cy - jog.y) > 26) continue;
+    const [sx, sy] = iso(cx, cy);
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const gr = g.createLinearGradient(sx, sy - 90, sx, sy); gr.addColorStop(0, 'rgba(255,240,180,0)'); gr.addColorStop(1, 'rgba(255,230,160,.45)');
+    g.fillStyle = gr; g.beginPath(); g.moveTo(sx - 10, sy - 90); g.lineTo(sx + 10, sy - 90); g.lineTo(sx + 18, sy); g.lineTo(sx - 18, sy); g.closePath(); g.fill();   // raio de luz do lado de fora
+    Cen.brilho(g, sx, sy - 6, 34, '#ffe9a8', .35);
+    g.restore();
+    const b = Math.sin(tempo * 4) * 3; g.save(); g.fillStyle = '#ffe36a'; g.strokeStyle = '#1a1220'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(sx, sy - 30 + b); g.lineTo(sx - 6, sy - 40 + b); g.lineTo(sx - 2.5, sy - 40 + b); g.lineTo(sx - 2.5, sy - 48 + b); g.lineTo(sx + 2.5, sy - 48 + b); g.lineTo(sx + 2.5, sy - 40 + b); g.lineTo(sx + 6, sy - 40 + b); g.closePath(); g.fill(); g.stroke();
+    g.font = 'bold 7px monospace'; g.textAlign = 'center'; const txt = 'SAÍDA → ' + e.nome, w = g.measureText(txt).width + 6;
+    g.fillStyle = 'rgba(15,20,35,.85)'; g.fillRect(Math.round(sx - w / 2), Math.round(sy - 60 + b), Math.round(w), 10); g.fillStyle = '#ffe36a'; g.fillText(txt, Math.round(sx), Math.round(sy - 52 + b));
+    g.restore();
+  }
+}
+const EDIF_ALVO = id => typeof SALA_DE !== 'undefined' && !!SALA_DE[id];
+// destrava: se o Akira ficar preso dentro de algo (rocha que nasceu em cima, porta, etc.), empurra para o lugar livre mais perto
+let presoT = 0;
+function destravarAkira(dt) {
+  if (jog.morto || MODO_TELA !== 'jogo' || dlg.ativo || fade || (typeof embarcado === 'function' && embarcado()) || jog.z > 0) { presoT = 0; return; }
+  if (!colide(jog.x, jog.y, jog.r, jog)) { presoT = 0; return; }
+  if ((presoT += dt) < .6) return; presoT = 0;
+  for (let r = .3; r < 6; r += .3) for (let a = 0; a < TAU; a += .4) { const x = jog.x + Math.cos(a) * r, y = jog.y + Math.sin(a) * r; if (!colide(x, y, jog.r, jog)) { jog.x = x; jog.y = y; return; } }
+  if (mapa.spawn) { jog.x = mapa.spawn.x; jog.y = mapa.spawn.y; }
+}
 
 function atualizarHud() {
   const q = estado.missoes.papeis_perdidos;
@@ -4856,7 +4981,7 @@ function rastroArma(g, cx, cy, f, raio, a0, a1, cor, alfa) {  // meia-lua de ras
 function desenharArmaChefe(o, sx, sy) {
   const cfg = CHEFE_CFG[o.chefe]; if (!cfg || !o.vivo || o.invisivel || !armaViva(o)) return;
   const g = ctx, e = (o.pal && o.pal.esc) || 1, f = o.face || 1, pg = progressoGolpe(o), ang = anguloArma(pg);
-  const mx = sx + f * 7 * e, my = sy - 25 * e;                              // mão da frente
+  const po = poseOff(o._an, o._fr, f, e), mx = sx + po.mx, my = sy + po.my;   // mão da frente (segue o soco/chute do corpo)
   const rotTela = f > 0 ? ang : Math.PI - ang;
   const fogo = o.f2 && o.chefe === 'samurai_oni';
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
@@ -5754,9 +5879,173 @@ function desenharArena(g) {
 }
 // acessórios desenhados por cima do personagem (cada chefe tem a sua silhueta)
 const armaViva = o => !!(chefeAtual && chefeAtual.b === o && CHEFE_CFG[o.chefe]);
+/* =====================================================================
+   O OITAVO DRAGÃO — visual completo (mapa, torneio e ficha)
+   - chapéu cônico laqueado com trama, borda dourada, pingente de dragão e cordões com borlas
+   - véu de gaze preta caindo da aba: o rosto NUNCA aparece (só olhos dourados na forma desperta)
+   - haori preto com lapelas douradas, faixa (obi) vinho com medalhão do dragão, colar de contas
+   - ombreira com garras, braceletes dourados, faixas nas canelas, cachecol longo e abas do casaco ao vento
+   - forma desperta: escamas brilhando, chamas douradas subindo e o dragão bordado se mexendo
+   Tudo segue as juntas do boneco (cabeça, ombro, mão, quadril, joelho) quadro a quadro.
+   ===================================================================== */
+const DRG = { bl: '#0d0a13', bl2: '#1b1626', bl3: '#2a2238', ouro: '#c9a24a', ouroC: '#f2d27a', ouroE: '#8a6a26', vinho: '#6a1422', vinhoC: '#9a2434', gaze: 'rgba(6,4,10,.86)' };
+function juntasDragao(o, sx, sy, e, f) {
+  let J = Akira.juntasDe(o._an || 'idle', o._fr || 0); const frente = !J; if (!J) J = Akira.juntasDe('idle', 0);
+  const k = Akira.AK.K * e, P = v => [sx + f * v[0] * k, sy + v[1] * k];
+  return { k, C: P(J.C), N: P(J.N), S: P(J.S), Sb: P(J.Sb), H: P(J.H), fe: P(J.fa_.e), fh: P(J.fa_.h), be: P(J.ba_.e), bh: P(J.ba_.h), fk: P(J.fk), fa: P(J.fa), bk: P(J.bk), ba: P(J.ba), frente };
+}
+const drgSeg = (g, a, b, w, cor) => { g.strokeStyle = cor; g.lineWidth = w; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); };
+const drgLerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+// camada de TRÁS (antes do corpo): cachecol, abas do casaco, ponta do chapéu por trás e chamas
+function dragaoTras(o, sx, sy, gg) {
+  const g = gg || ctx, e = (o.pal && o.pal.esc) || 1, f = o.face || 1, J = juntasDragao(o, sx, sy, e, f), desp = !!o.f2 || o.forma === 'desperto', t = tempo;
+  const vento = o.est === 'ataque' || o.anda || o.rastro > 0 ? 1.6 : 1;
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+  if (desp) {                                                          // chamas douradas subindo do chão (atrás do corpo)
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 9; k++) { const fase = (t * 1.3 + k * .37) % 1, x = sx + (k - 4) * 2.8 * e + Math.sin(t * 5 + k) * 2 * e, y = sy - fase * 46 * e, r = (1 - fase) * 2.6 * e + .6;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r * 2.2); gr.addColorStop(0, 'rgba(255,230,140,' + (.55 * (1 - fase)) + ')'); gr.addColorStop(1, 'rgba(255,170,40,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 2.2, 0, 0, TAU); g.fill(); }
+    g.restore();
+  }
+  // abas do haori (atrás das pernas), balançando
+  const H = J.H, bal = Math.sin(t * 3.4 * vento) * 2.4 * e * vento;
+  g.beginPath(); g.moveTo(H[0] - f * 6 * e, H[1] - 2 * e); g.lineTo(H[0] + f * 3 * e, H[1] - 2 * e);
+  g.quadraticCurveTo(H[0] - f * 2 * e + bal * .3, H[1] + 9 * e, H[0] - f * (5 * e) + bal, H[1] + 15 * e);
+  g.lineTo(H[0] - f * 13 * e + bal * 1.4, H[1] + 13 * e); g.quadraticCurveTo(H[0] - f * 10 * e, H[1] + 5 * e, H[0] - f * 6 * e, H[1] - 2 * e); g.closePath();
+  const gr = g.createLinearGradient(0, H[1], 0, H[1] + 15 * e); gr.addColorStop(0, DRG.bl2); gr.addColorStop(1, DRG.bl); g.fillStyle = gr; g.fill();
+  g.strokeStyle = DRG.ouro; g.lineWidth = .8; g.beginPath(); g.moveTo(H[0] - f * 5 * e + bal, H[1] + 15 * e); g.lineTo(H[0] - f * 13 * e + bal * 1.4, H[1] + 13 * e); g.stroke();   // barra dourada
+  g.strokeStyle = desp ? 'rgba(255,207,74,.8)' : 'rgba(201,162,74,.45)'; g.lineWidth = .5;      // escamas bordadas na aba
+  for (let k = 0; k < 3; k++) { const y = H[1] + (5 + k * 3.2) * e, x = H[0] - f * (7 + k * 1.2) * e + bal * (.4 + k * .3); g.beginPath(); g.arc(x, y, 1.6 * e, Math.PI * .1, Math.PI * .9); g.stroke(); g.beginPath(); g.arc(x - f * 3 * e, y, 1.6 * e, Math.PI * .1, Math.PI * .9); g.stroke(); }
+  // cachecol longo saindo do pescoço e voando para trás
+  const N = J.N, pts = [];
+  for (let k = 0; k <= 12; k++) { const u = k / 12; pts.push([N[0] - f * (2 + u * 26 * e * (.8 + .2 * vento)), N[1] + 1 * e + u * 6 * e + Math.sin(t * 6 * vento - u * 5) * u * 4 * e]); }
+  g.beginPath(); pts.forEach((p, k) => { const w = (2.6 - k / 12 * 1.4) * e; k ? g.lineTo(p[0], p[1] - w) : g.moveTo(p[0], p[1] - w); });
+  for (let k = pts.length - 1; k >= 0; k--) { const w = (2.6 - k / 12 * 1.4) * e; g.lineTo(pts[k][0], pts[k][1] + w); }
+  g.closePath(); g.fillStyle = DRG.bl3; g.fill(); g.strokeStyle = DRG.ouro; g.lineWidth = .6; g.stroke();
+  g.strokeStyle = desp ? DRG.ouroC : DRG.ouroE; g.lineWidth = .5; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();   // fio dourado no meio
+  const pf = pts[12]; g.fillStyle = DRG.ouro; for (let q = -1; q <= 1; q++) { g.fillRect(pf[0] - f * 1 * e, pf[1] + q * 1.4 * e, f * -2.4 * e, .6); }   // franja na ponta
+  g.restore();
+}
+// camada da FRENTE (depois do corpo)
+function dragaoFrente(o, sx, sy, g) {
+  const e = (o.pal && o.pal.esc) || 1, f = o.face || 1, J = juntasDragao(o, sx, sy, e, f), desp = !!o.f2 || o.forma === 'desperto', costas = o.costas, t = tempo;
+  const brilhoE = desp ? .65 + .35 * Math.sin(t * 6) : 0, ouroV = desp ? 'rgba(255,214,90,' + (.75 + .25 * Math.sin(t * 6)) + ')' : DRG.ouro;
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+  const { N, S, H, C } = J;
+  if (!costas) {
+    // lapelas do haori (V dourado do pescoço até a faixa) e camisa vinho por baixo
+    g.fillStyle = DRG.vinho; g.beginPath(); g.moveTo(N[0] - f * 1.5 * e, N[1] + 1 * e); g.lineTo(N[0] + f * 2.6 * e, N[1] + 1 * e); g.lineTo(drgLerp(N, H, .45)[0] + f * .6 * e, drgLerp(N, H, .45)[1]); g.closePath(); g.fill();
+    g.strokeStyle = ouroV; g.lineWidth = 1.1;
+    g.beginPath(); g.moveTo(N[0] - f * 2.4 * e, N[1] + .4 * e); g.quadraticCurveTo(N[0] + f * 0 * e, N[1] + 5 * e, H[0] + f * 1.4 * e, H[1] - 2.6 * e); g.stroke();
+    g.beginPath(); g.moveTo(N[0] + f * 3.4 * e, N[1] + .4 * e); g.quadraticCurveTo(N[0] + f * 2.6 * e, N[1] + 6 * e, H[0] + f * 3.4 * e, H[1] - 2.6 * e); g.stroke();
+    // dragão bordado no peito (serpenteia; mexe na forma desperta)
+    g.strokeStyle = desp ? 'rgba(255,207,74,' + (.7 + .3 * Math.sin(t * 6)) + ')' : DRG.ouroE; g.lineWidth = .8;
+    g.beginPath(); for (let k = 0; k <= 12; k++) { const u = k / 12, p = drgLerp([S[0] - f * 3 * e, S[1] + 1 * e], [H[0] - f * 3 * e, H[1] - 3 * e], u); const x = p[0] + Math.sin(u * 8 + (desp ? t * 4 : 0)) * 1.8 * e, y = p[1]; k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+    g.fillStyle = desp ? DRG.ouroC : DRG.ouro; g.beginPath(); g.arc(S[0] - f * 3 * e + Math.sin(desp ? t * 4 : 0) * 1.8 * e, S[1] + 1 * e, .9 * e, 0, TAU); g.fill();   // cabeça do dragão bordado
+    // colar de contas (juzu) pelo peito
+    for (let k = 0; k < 9; k++) { const u = k / 8, x = N[0] - f * 2.8 * e + f * u * 6.4 * e, y = N[1] + 1.5 * e + Math.sin(u * Math.PI) * 4 * e; g.fillStyle = k === 4 ? DRG.ouroC : '#3a2a20'; g.beginPath(); g.arc(x, y, (k === 4 ? 1.1 : .75) * e, 0, TAU); g.fill(); }
+  } else {
+    // costas: grande dragão dourado bordado no haori
+    g.strokeStyle = desp ? 'rgba(255,207,74,' + (.75 + .25 * Math.sin(t * 5)) + ')' : DRG.ouro; g.lineWidth = 1;
+    g.beginPath(); for (let k = 0; k <= 22; k++) { const u = k / 22, x = sx + Math.sin(u * 11 + (desp ? t * 3 : 0)) * 4.5 * e * (1 - u * .4), y = S[1] + 1 * e + u * (H[1] - S[1] + 6 * e); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+    g.fillStyle = desp ? DRG.ouroC : DRG.ouro; g.beginPath(); g.arc(sx + Math.sin(desp ? t * 3 : 0) * 4.5 * e, S[1] + 1 * e, 1.3 * e, 0, TAU); g.fill();
+    for (let k = 0; k < 4; k++) { const u = .2 + k * .18, x = sx + Math.sin(u * 11 + (desp ? t * 3 : 0)) * 4.5 * e * (1 - u * .4), y = S[1] + 1 * e + u * (H[1] - S[1] + 6 * e); [-1, 1].forEach(s => drgSeg(g, [x, y], [x + s * 1.8 * e, y - 1.4 * e], .6, DRG.ouroE)); }   // garrinhas
+  }
+  // faixa (obi) vinho com bordas douradas, nó com pontas e medalhão do dragão
+  const a = Math.atan2(S[1] - H[1], S[0] - H[0]) + Math.PI / 2;
+  g.save(); g.translate(H[0], H[1] - 1.6 * e); g.rotate(a * .35);
+  g.fillStyle = DRG.vinho; g.fillRect(-5.6 * e, -1.7 * e, 11.2 * e, 3.4 * e); g.fillStyle = DRG.vinhoC; g.fillRect(-5.6 * e, -1.7 * e, 11.2 * e, .9 * e);
+  g.fillStyle = ouroV; g.fillRect(-5.6 * e, -2.1 * e, 11.2 * e, .55 * e); g.fillRect(-5.6 * e, 1.6 * e, 11.2 * e, .55 * e);
+  if (!costas) {
+    const bal = Math.sin(t * 4) * 1.2 * e;
+    g.fillStyle = DRG.vinho; g.beginPath(); g.moveTo(f * 4 * e, 1 * e); g.lineTo(f * 6 * e + bal, 9 * e); g.lineTo(f * 3.6 * e + bal, 9.4 * e); g.lineTo(f * 2.6 * e, 1.6 * e); g.closePath(); g.fill(); g.strokeStyle = DRG.ouro; g.lineWidth = .5; g.stroke();
+    g.beginPath(); g.moveTo(f * 5 * e, 1 * e); g.lineTo(f * 8 * e + bal * .7, 7.6 * e); g.lineTo(f * 6.4 * e + bal * .7, 8.2 * e); g.lineTo(f * 4 * e, 1.6 * e); g.closePath(); g.fillStyle = DRG.vinhoC; g.fill(); g.stroke();
+    g.fillStyle = DRG.ouro; g.fillRect(f * 5.6 * e + bal - .6 * e, 8.6 * e, 1.2 * e, 1.6 * e);   // borla
+    // medalhão: dragão enrolado num círculo
+    g.fillStyle = '#1a1208'; g.beginPath(); g.arc(0, 0, 2.1 * e, 0, TAU); g.fill(); g.strokeStyle = ouroV; g.lineWidth = .9; g.stroke();
+    g.lineWidth = .6; g.beginPath(); g.arc(0, 0, 1.2 * e, .4, 5.6); g.stroke(); g.fillStyle = desp ? DRG.ouroC : DRG.ouro; g.beginPath(); g.arc(Math.cos(.4) * 1.2 * e, Math.sin(.4) * 1.2 * e, .5 * e, 0, TAU); g.fill();
+    if (desp) { g.globalCompositeOperation = 'lighter'; brilhoCtx(g, 0, 0, 6 * e, '#ffcf4a', .45 * brilhoE); g.globalCompositeOperation = 'source-over'; }
+  }
+  g.restore();
+  if (!J.frente) {
+    // braceletes dourados e faixas nas mãos (seguem os antebraços)
+    [[J.fe, J.fh, 1], [J.be, J.bh, .75]].forEach(([el, mh, al]) => {
+      const p = drgLerp(el, mh, .62), q = drgLerp(el, mh, .88), ang = Math.atan2(mh[1] - el[1], mh[0] - el[0]);
+      g.save(); g.globalAlpha *= al; g.translate(p[0], p[1]); g.rotate(ang);
+      g.fillStyle = DRG.bl3; g.fillRect(-2.2 * e, -2 * e, 5 * e, 4 * e); g.fillStyle = ouroV; g.fillRect(-2.2 * e, -2.1 * e, .8 * e, 4.2 * e); g.fillRect(2 * e, -2.1 * e, .8 * e, 4.2 * e);
+      g.strokeStyle = DRG.ouroE; g.lineWidth = .4; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(-1 * e + k * 1.2 * e, -2 * e); g.lineTo(-.4 * e + k * 1.2 * e, 2 * e); g.stroke(); }
+      g.restore();
+      g.strokeStyle = 'rgba(232,224,200,.55)'; g.lineWidth = .5; for (let k = 0; k < 2; k++) { const r = drgLerp(q, mh, k * .5); g.beginPath(); g.arc(r[0], r[1], 1.6 * e, ang - 1.2, ang + 1.2); g.stroke(); }   // ataduras
+    });
+    // faixas nas canelas (kyahan) com amarras douradas
+    [[J.fk, J.fa], [J.bk, J.ba]].forEach(([kn, an], i) => { for (let k = 1; k <= 3; k++) { const p = drgLerp(kn, an, .2 + k * .2), ang = Math.atan2(an[1] - kn[1], an[0] - kn[0]) + Math.PI / 2; drgSeg(g, [p[0] - Math.cos(ang) * 2.6 * e, p[1] - Math.sin(ang) * 2.6 * e], [p[0] + Math.cos(ang) * 2.6 * e, p[1] + Math.sin(ang) * 2.6 * e], .7, i ? DRG.ouroE : DRG.ouro); } });
+    // ombreira com garras de dragão no ombro da frente
+    if (!costas) {
+      const ang = Math.atan2(J.fe[1] - S[1], J.fe[0] - S[0]);
+      g.save(); g.translate(S[0] + f * 1 * e, S[1] + .6 * e); g.rotate(ang - Math.PI / 2);
+      g.beginPath(); g.ellipse(0, 1.4 * e, 4.4 * e, 3.4 * e, 0, Math.PI, 0); g.closePath(); g.fillStyle = DRG.bl2; g.fill(); g.strokeStyle = ouroV; g.lineWidth = .8; g.stroke();
+      g.strokeStyle = DRG.ouroE; g.lineWidth = .5; g.beginPath(); g.ellipse(0, 1.4 * e, 2.6 * e, 2 * e, 0, Math.PI, 0); g.stroke();
+      g.fillStyle = desp ? DRG.ouroC : '#e8e0c8'; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(k * 2.4 * e - .8 * e, 1.6 * e); g.lineTo(k * 2.8 * e, 4.4 * e); g.lineTo(k * 2.4 * e + .8 * e, 1.6 * e); g.closePath(); g.fill(); }
+      g.restore();
+    }
+  }
+  // CHAPÉU cônico laqueado + véu: o rosto nunca aparece
+  const hx = C[0] - f * 1.2 * e, hy = C[1] - .3 * e, aba = 13 * e, topo = hy - 12 * e, base = hy - 1.6 * e;
+  g.fillStyle = 'rgba(3,2,6,.97)'; g.beginPath(); g.ellipse(hx + f * .8 * e, hy + 1.2 * e, 6.6 * e, 6.2 * e, 0, 0, TAU); g.fill();     // sombra que engole o rosto
+  if (!costas) {                                                      // véu de gaze caindo da aba (com franja que balança)
+    const bal = Math.sin(t * 3) * .8 * e;
+    g.beginPath(); g.moveTo(hx - 8.6 * e, base + .6 * e); g.lineTo(hx + 8.6 * e, base + .6 * e); g.lineTo(hx + 8 * e + bal, hy + 8.6 * e); g.quadraticCurveTo(hx + bal, hy + 10 * e, hx - 8 * e + bal, hy + 8.6 * e); g.closePath();
+    g.fillStyle = DRG.gaze; g.fill();
+    g.strokeStyle = 'rgba(201,162,74,.35)'; g.lineWidth = .4; for (let k = -3; k <= 3; k++) { g.beginPath(); g.moveTo(hx + k * 2.4 * e, base + .8 * e); g.lineTo(hx + k * 2.3 * e + bal, hy + 8.8 * e); g.stroke(); }   // trama da gaze
+    g.fillStyle = DRG.ouro; for (let k = -3; k <= 3; k++) g.fillRect(hx + k * 2.3 * e + bal - .3, hy + 8.8 * e + Math.abs(k) * -.1 * e, .7, 1.4 * e);   // franja
+    if (desp) {                                                       // olhos dourados atrás do véu
+      g.save(); g.globalCompositeOperation = 'lighter';
+      [-1.8, 1.8].forEach(s => { brilhoCtx(g, hx + s * e + f * 1 * e, hy + 1.6 * e, 4.2 * e, '#ffcf4a', .85 * brilhoE + .15); g.fillStyle = '#fff2b0'; g.fillRect(hx + s * e + f * 1 * e - .8, hy + 1.2 * e, 1.6, .9); });
+      g.restore();
+    } else { g.fillStyle = 'rgba(201,162,74,.35)'; [-1.8, 1.8].forEach(s => g.fillRect(hx + s * e + f * 1 * e - .6, hy + 1.4 * e, 1.2, .5)); }   // só um reflexo fraco
+  }
+  // cone do chapéu (laca preta com trama radial e anéis)
+  g.beginPath(); g.moveTo(hx - aba, base); g.lineTo(hx, topo); g.lineTo(hx + aba, base); g.quadraticCurveTo(hx, base + 3.6 * e, hx - aba, base); g.closePath();
+  let gc = g.createLinearGradient(hx - aba, topo, hx + aba, base); gc.addColorStop(0, '#2c2438'); gc.addColorStop(.5, '#16121c'); gc.addColorStop(1, '#08060c'); g.fillStyle = gc; g.fill();
+  g.save(); g.clip();
+  g.strokeStyle = 'rgba(201,162,74,.22)'; g.lineWidth = .45; for (let k = -6; k <= 6; k++) { g.beginPath(); g.moveTo(hx, topo); g.lineTo(hx + k * aba / 6, base + 2 * e); g.stroke(); }   // trama de palha laqueada
+  for (let k = 1; k <= 3; k++) { const y = topo + (base - topo) * k / 3.6, w = aba * k / 3.6; g.strokeStyle = desp ? 'rgba(255,214,90,' + (.45 + .35 * Math.sin(t * 5 + k)) + ')' : 'rgba(201,162,74,.38)'; g.lineWidth = .6; g.beginPath(); g.moveTo(hx - w, y); g.quadraticCurveTo(hx, y + 1.2 * e * k / 3, hx + w, y); g.stroke(); }
+  g.fillStyle = 'rgba(255,255,255,.07)'; g.beginPath(); g.moveTo(hx, topo); g.lineTo(hx - aba * .55, base); g.lineTo(hx - aba * .3, base); g.closePath(); g.fill();   // brilho da laca
+  g.restore();
+  g.strokeStyle = ouroV; g.lineWidth = 1.1; g.beginPath(); g.moveTo(hx - aba, base); g.quadraticCurveTo(hx, base + 3.6 * e, hx + aba, base); g.stroke();   // aba dourada
+  g.strokeStyle = '#1a1220'; g.lineWidth = .6; g.beginPath(); g.moveTo(hx - aba, base); g.lineTo(hx, topo); g.lineTo(hx + aba, base); g.stroke();
+  // pingente no topo: pérola do dragão com garra
+  g.fillStyle = DRG.ouro; g.beginPath(); g.moveTo(hx - 1.6 * e, topo + 1.2 * e); g.lineTo(hx, topo - 1.4 * e); g.lineTo(hx + 1.6 * e, topo + 1.2 * e); g.closePath(); g.fill();
+  g.fillStyle = desp ? '#fff2b0' : '#e8d8a0'; g.beginPath(); g.arc(hx, topo - 2.4 * e, 1.3 * e, 0, TAU); g.fill(); g.strokeStyle = DRG.ouroE; g.lineWidth = .5; g.stroke();
+  if (desp) { g.save(); g.globalCompositeOperation = 'lighter'; brilhoCtx(g, hx, topo - 2.4 * e, 6 * e, '#ffcf4a', .6 * brilhoE); g.restore(); }
+  // cordões com borlas vermelhas pendurados nas pontas da aba
+  [-1, 1].forEach(s => { const bx = hx + s * (aba - 1.2 * e), by = base + .8 * e, bal = Math.sin(t * 3.2 + s) * 1.4 * e, ex = bx + bal, ey = by + 6.5 * e;
+    g.strokeStyle = DRG.vinhoC; g.lineWidth = .6; g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(bx + bal * .4, by + 3 * e, ex, ey); g.stroke();
+    g.fillStyle = DRG.ouro; g.beginPath(); g.arc(ex, ey, .8 * e, 0, TAU); g.fill();
+    g.fillStyle = DRG.vinho; g.beginPath(); g.moveTo(ex - 1 * e, ey + .6 * e); g.lineTo(ex + 1 * e, ey + .6 * e); g.lineTo(ex + 1.4 * e, ey + 4 * e); g.lineTo(ex - 1.4 * e, ey + 4 * e); g.closePath(); g.fill(); });
+  if (desp) {                                                          // partículas douradas e silhueta do dragão às vezes
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 10; k++) { const a2 = t * 1.8 + k * .63, r = 12 + 3 * Math.sin(t * 3 + k); g.fillStyle = 'rgba(255,207,74,.75)'; g.fillRect(sx + Math.cos(a2) * r * e, sy - 24 * e + Math.sin(a2) * r * .5 * e - (k % 3) * 4, 1.2, 1.2); }
+    if (Math.sin(t * .9) > .55) { g.globalAlpha = (Math.sin(t * .9) - .55) * 1.4; g.strokeStyle = '#ffcf4a'; g.lineWidth = 2.2; g.beginPath(); for (let k = 0; k <= 30; k++) { const u = k / 30, x = sx - 26 * e + u * 52 * e, y = sy - 56 * e + Math.sin(u * 8 + t * 2) * 6 * e - Math.sin(u * Math.PI) * 10 * e; k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+    g.restore();
+  }
+  g.restore();
+}
+
+const ehDragao = o => { const d = CHEFES[o.chefe] || (o.clone && CHEFES[o.clone.chefe]); return !!d && d.acess === 'dragao'; };
+// quanto a cabeça, o peito e a mão da frente saíram do lugar neste quadro da animação (para os enfeites não "soltarem" do corpo)
+function poseOff(an, fr, f, e) {
+  const J = an != null && Akira.juntasDe(an, fr || 0), I = Akira.juntasDe('idle', 0), k = Akira.AK.K * e;
+  if (!J || !I) return { dhx: 0, dhy: 0, dtx: 0, dty: 0, mx: f * 7 * e, my: -25 * e };
+  return { dhx: f * (J.C[0] - I.C[0]) * k, dhy: (J.C[1] - I.C[1]) * k, dtx: f * (J.S[0] - I.S[0]) * k, dty: (J.S[1] - I.S[1]) * k,
+    mx: f * J.fa_.h[0] * k, my: J.fa_.h[1] * k, ang: Math.atan2(J.fa_.h[1] - J.fa_.e[1], J.fa_.h[0] - J.fa_.e[0]) };
+}
 function acessorioChefe(o, sx, sy, gg) {
   const d = CHEFES[o.chefe] || (o.clone && CHEFES[o.clone.chefe]); if (!d) return;
-  const e = (o.pal && o.pal.esc) || 1, g = gg || ctx, hx = sx + (o.face || 1) * 1 * e, hy = sy - 35 * e, f = o.face || 1, ac = d.acess;   // hy = centro da cabeça
+  if (d.acess === 'dragao') { dragaoFrente(o, sx, sy, gg || ctx); return; }   // O Oitavo Dragão tem o visual completo próprio
+  const e = (o.pal && o.pal.esc) || 1, g = gg || ctx, f = o.face || 1, ac = d.acess, po = poseOff(o._an, o._fr, f, e);
+  const hx = sx + f * 1 * e + po.dhx, hy = sy - 35 * e + po.dhy;      // hy = centro da cabeça (segue o quadro da animação)
+  sx += po.dtx; sy += po.dty;                                         // peito/cinto seguem o tronco
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
   if (ac === 'oni') {                                                         // chifres de oni e ombreiras de armadura
     [-1, 1].forEach(s => { g.beginPath(); g.moveTo(hx + s * 3 * e, hy - 4 * e); g.quadraticCurveTo(hx + s * 7 * e, hy - 9 * e, hx + s * 5 * e, hy - 14 * e); g.lineTo(hx + s * 2 * e, hy - 6 * e); g.closePath(); g.fillStyle = '#e8e0c8'; g.fill(); g.strokeStyle = '#3a2a1a'; g.lineWidth = .6; g.stroke(); });
@@ -5803,12 +6092,13 @@ function desenharChefeObj(o, sx, sy) {
   if (o.sumindo) return;                                               // depois da explosão de derrota
   if (o.invisivel) { ctx.globalAlpha = .1; }
   if (o.rastro > 0 && CHEFES[o.chefe] && CHEFES[o.chefe].desperto) for (let k = 1; k <= 3; k++) { const [rx, ry] = iso(o.x - (o.kx || 0) * 0, o.y); ctx.globalAlpha = .18 / k; ctx.fillStyle = k % 2 ? '#ffcf4a' : '#000'; ctx.beginPath(); ctx.ellipse(rx - k * 6 * (o.face || 1), ry - 24, 8, 18, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = o.invisivel ? .1 : 1; }
-  const [an, fr] = o.chefe ? animChefe(o) : animInimigo(o); virarObj(o);
+  const [an, fr] = o.chefe ? animChefe(o) : animInimigo(o); virarObj(o); o._an = an; o._fr = fr;
   const est = estiloPal(o.pal), aura = (CHEFES[o.chefe] || {}).aura;
   if (o.vivo && !o.invisivel && !o.clone && CHEFES[o.chefe] && CHEFES[o.chefe].desperto && (o.f2 || o.forma === 'desperto')) EFX.dragaoEspectral(ctx, sx, sy, tempo);   // aura de dragão espectral (forma desperta)
   if (o.vivo && o.f2 && !o.invisivel && CHEFE_CFG[o.chefe]) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 24 * (o.pal.esc || 1), 34 * (o.pal.esc || 1), CHEFE_CFG[o.chefe].rastro, .22 + .08 * Math.sin(tempo * 8)); ctx.restore(); }
   if (o.vivo && o.armaduraT > 0 && !o.invisivel) { ctx.save(); ctx.globalAlpha = .55 + .25 * Math.sin(tempo * 10); ctx.strokeStyle = '#ffd86a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(sx, sy - 24 * (o.pal.esc || 1), 14 * (o.pal.esc || 1), 28 * (o.pal.esc || 1), 0, 0, TAU); ctx.stroke(); ctx.restore(); }
   if (o.vivo && aura && !o.invisivel) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 22 * (o.pal.esc || 1), 26 * (o.pal.esc || 1), aura, o.est === 'ataque' ? .28 : .14); ctx.restore(); }
+  if (!o.invisivel && ehDragao(o)) dragaoTras(o, sx, sy);              // cachecol e abas do casaco atrás do corpo
   desenharAkira(sx, sy, an, fr, o.face, 0, o.invisivel ? .12 : o.clone ? .78 : 1, o.flash > 0 ? true : o.congelado > 0 ? 'r' : false, est, o.costas);
   if (!o.invisivel) { acessorioChefe(o, sx, sy); desenharArmaChefe(o, sx, sy); }
   ctx.globalAlpha = 1;
@@ -5820,7 +6110,7 @@ function desenharChefeObj(o, sx, sy) {
 }
 function desenharEstrela(g, x, y, r) { g.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * .45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }
 function desenharAliadoObj(o, sx, sy) {
-  const [an, fr] = animAliado(o); virarObj(o);
+  const [an, fr] = animAliado(o); virarObj(o); o._an = an; o._fr = fr;
   const cor = corElem(o.pid), est = estiloPal(o.pal);
   if (!o.caido) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 20, 18, cor, o.est === 'tecnica' ? .35 : .12); ctx.restore(); }
   desenharAkira(sx, sy, an, fr, o.face, 0, o.iframes > 0 && Math.floor(tempo * 20) % 2 ? .5 : 1, o.flash > 0, est, o.costas);
@@ -5932,8 +6222,9 @@ function gerarFichaDragao() {
     const o = { chefe: 'oitavo_dragao', pal, face: face || 1, costas: !!costas, forma: desperto ? 'desperto' : 'antes' };
     g.save(); g.translate(x, y);
     if (desperto) { g.globalCompositeOperation = 'lighter'; brilhoCtx(g, 0, -24 * Z, 34 * Z, '#ffcf4a', .22); g.globalCompositeOperation = 'source-over'; }
+    o._an = an; o._fr = f; g.save(); g.scale(Z, Z); dragaoTras(o, 0, 0, g); g.restore();
     g.save(); g.scale(face || 1, 1); g.drawImage(q, Math.round(-Akira.AK.OX * k * Z), Math.round(-Akira.AK.OY * k * Z), q.width, q.height); g.restore();
-    if (!costas) { g.save(); g.scale(Z, Z); acessorioChefe(o, 0, 0, g); g.restore(); }
+    if (true) { g.save(); g.scale(Z, Z); acessorioChefe(o, 0, 0, g); g.restore(); }
     else { g.save(); g.scale(Z, Z); const e = pal.esc; g.fillStyle = '#16121c'; g.beginPath(); g.moveTo(-15 * e, -36 * e); g.lineTo(0, -47 * e); g.lineTo(15 * e, -36 * e); g.quadraticCurveTo(0, -32.5 * e, -15 * e, -36 * e); g.fill(); g.strokeStyle = desperto ? '#ffcf4a' : '#c9a24a'; g.lineWidth = .8; g.stroke();
       g.strokeStyle = desperto ? 'rgba(255,207,74,.9)' : '#a8862e'; g.lineWidth = .9; g.beginPath(); for (let i = 0; i <= 16; i++) { const t = i / 16, xx = -6 * e + t * 12 * e, yy = -34 * e + Math.sin(t * 10) * 2.4 * e + t * 10 * e; i ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); g.restore(); }   // costas: dragão bordado nas costas
     g.restore();
@@ -7070,7 +7361,7 @@ function atmosferaYokai(g) {
 /* ---------- desenho dos inimigos regionais (corpo do rig + roupas, armas e partes de yokai em código) ---------- */
 function desenharArqObj(o, sx, sy) {
   const A = ARQ[o.arq], est = estiloPal(o.pal), e = o.pal.esc || 1;
-  const [an, fr] = animArq(o); virarObj(o);
+  const [an, fr] = animArq(o); virarObj(o); o._an = an; o._fr = fr;
   const f = o.face || 1, g = ctx, vivo = o.vivo;
   let alfa = A.alfa || 1; if (o.intang > 0) alfa = .2 + .08 * Math.sin(tempo * 30);
   // rastro do dash (imagens que ficam para trás)
@@ -7103,7 +7394,8 @@ function desenharArqObj(o, sx, sy) {
 
 // partes extras desenhadas por cima do corpo (ou atrás dele)
 function acessorioArq(o, A, sx, sy, e, f, camada) {
-  const g = ctx, hx = sx + f * 1 * e, hy = sy - 35 * e, costas = o.costas, vis = A.visual, elite = o.variante === 'elite', exp = o.variante === 'experiente';
+  const po = poseOff(o._an, o._fr, f, e), g = ctx, hx = sx + f * 1 * e + po.dhx, hy = sy - 35 * e + po.dhy, costas = o.costas, vis = A.visual, elite = o.variante === 'elite', exp = o.variante === 'experiente';
+  sx += po.dtx; sy += po.dty;                                         // ombreiras, cintos e peito seguem o tronco
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
   const L = '#1a1220';
   const olhos = (cor, r) => { if (costas) return; g.save(); g.globalCompositeOperation = 'lighter'; [-1.6, 1.6].forEach(s => { brilhoCtx(g, hx + s * e + f * 1.2 * e, hy + 1 * e, (r || 3) * e, cor, .9); }); g.restore(); g.fillStyle = '#ffffff'; [-1.6, 1.6].forEach(s => g.fillRect(hx + s * e + f * 1.2 * e - .5, hy + .5 * e, 1, 1)); };
@@ -7162,7 +7454,7 @@ function acessorioArq(o, A, sx, sy, e, f, camada) {
 // armas: seguem o golpe (prepara, corta, volta) — mesma lógica das armas dos chefes
 function armaArq(o, A, sx, sy, e, f) {
   const arma = (o.est === 'esp' && o.espId === 'duasEspadas') ? 'duas' : A.arma; if (!arma) return;
-  const g = ctx, pg = pgArq(o), ang = anguloArma(pg), mx = sx + f * 7 * e, my = sy - 25 * e, rotTela = f > 0 ? ang : Math.PI - ang;
+  const po = poseOff(o._an, o._fr, f, e), g = ctx, pg = pgArq(o), ang = anguloArma(pg), mx = sx + po.mx, my = sy + po.my, rotTela = f > 0 ? ang : Math.PI - ang;
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
   const smear = (raio, cor) => { if (pg && pg.fase === 'golpe') rastroArma(g, mx, my, f, raio, ARMA_TRAS + .3, ang, cor, .75); };
   const naMao = () => { g.translate(mx, my); g.rotate(rotTela); if (f < 0) g.scale(1, -1); };
@@ -7197,7 +7489,7 @@ function armaArq(o, A, sx, sy, e, f) {
     }
     case 'arco': {
       const k = o.est === 'prep' ? clamp(1 - o.t / (o.tT || 1), 0, 1) : o.est === 'esp' ? Math.min(1, o.espT / 1) : 0;
-      const bx = sx + f * 9 * e, by = sy - 26 * e, pux = k * 7 * e;
+      const bx = mx + f * 2 * e, by = my - 1 * e, pux = k * 7 * e;
       g.strokeStyle = '#5a2a10'; g.lineWidth = 1.6 * e; g.beginPath(); g.moveTo(bx, by - 13 * e); g.quadraticCurveTo(bx + f * 6 * e, by, bx, by + 13 * e); g.stroke();
       g.strokeStyle = '#e8e0c8'; g.lineWidth = .6; g.beginPath(); g.moveTo(bx, by - 13 * e); g.lineTo(bx - f * pux, by); g.lineTo(bx, by + 13 * e); g.stroke();
       if (k > 0) { g.strokeStyle = o.est === 'esp' ? '#ffe45e' : '#d8c8a0'; g.lineWidth = 1; g.beginPath(); g.moveTo(bx - f * pux, by); g.lineTo(bx + f * 10 * e, by); g.stroke(); g.fillStyle = '#c8c8d8'; g.beginPath(); g.moveTo(bx + f * 10 * e, by - 1.4); g.lineTo(bx + f * 13 * e, by); g.lineTo(bx + f * 10 * e, by + 1.4); g.fill(); if (o.est === 'esp') { g.globalCompositeOperation = 'lighter'; brilhoCtx(g, bx + f * 10 * e, by, 8 * e, '#ffe45e', .6); } }
@@ -7358,6 +7650,7 @@ function atualizar(dt0) {
   if (socialBloq && performance.now() - socialBloq < 300) { edge.Escape = edge.KeyM = edge.Tab = false; }   // fechou o menu de respeito: não abre o menu M junto
   if (!dlg.ativo && !fade && !cine && (pegou('KeyM') || pegou('Tab') || pegou('Escape'))) alternarMenu();
   if (menuAberto || socialAberto) { edge = {}; return; }
+  tickRelogio(dt0); destravarAkira(dt0);                               // relógio do dia/noite + destrava se ficar preso
 
   let dt = dt0;
   if (hitstop > 0) { hitstop -= dt0; dt = 0; }
@@ -8806,7 +9099,9 @@ function carregarExterno(urlPng, meta) {
 }
 function usarProcedural() { externo = null; limparCache(); }
 
-return { ANIM: AKIRA_ANIMATIONS, AK, quadro, poseFrente: (g, o, est) => desenharFrente(g, pf(o), est), limparCache, montarFolha, carregarExterno, usarProcedural, fazEstilo, ESTILO_AKIRA, externoAtivo: () => !!externo };
+const cacheJ = {};                                               // juntas do esqueleto por quadro (para chapéus, máscaras e armas seguirem o corpo)
+function juntasDe(nome, i) { const a = AKIRA_ANIMATIONS[nome]; if (!a || a.frente) return null; const k = nome + '|' + Math.round(i * 4) / 4; return cacheJ[k] || (cacheJ[k] = juntas(posePorQuadro(nome, i))); }
+return { ANIM: AKIRA_ANIMATIONS, AK, quadro, juntasDe, poseFrente: (g, o, est) => desenharFrente(g, pf(o), est), limparCache, montarFolha, carregarExterno, usarProcedural, fazEstilo, ESTILO_AKIRA, externoAtivo: () => !!externo };
 })();
 
 /* =====================================================================
@@ -11299,7 +11594,9 @@ function desenharObj(o, sx, sy) {
     }
     case 'npc': {
       virarObj(o);
-      desenharAkira(sx, sy, 'relax', Math.floor(tempo * 3 + o.x) % 4, o.face, 0, 1, false, estiloPal(o.pal), o.costas);
+      o._an = 'relax'; o._fr = Math.floor(tempo * 3 + o.x) % 4;
+      if (o.chefe && ehDragao(o)) dragaoTras(o, sx, sy);
+      desenharAkira(sx, sy, o._an, o._fr, o.face, 0, 1, false, estiloPal(o.pal), o.costas);
       desenharVisNPC(ctx, o, sx, sy);                                     // cabelo/barba/óculos de cada personagem
       if (o.chefe) acessorioChefe(o, sx, sy);                                // O Oitavo Dragão: chapéu cônico e rosto oculto
       const ey = Math.round(sy - 48 * (o.pal.esc || 1));
@@ -11396,17 +11693,18 @@ function desenharFundoGotico(g) {
   for (let x = off - fw; x < W; x += fw) g.drawImage(f, Math.round(x), Math.round(y), fw, f.height / SC);
   g.fillStyle = 'rgba(8,6,24,.45)'; g.fillRect(0, 0, W, H);          // escurece o fundo pra o cenário se destacar
 }
-function luzesGoticas(g, tx, ty) {
+function luzesGoticas(g, tx, ty, forca) {
+  if (forca == null) forca = 1;
   if (LCV.width !== canvas.width || LCV.height !== canvas.height) { LCV.width = canvas.width; LCV.height = canvas.height; }
   LCX.setTransform(1, 0, 0, 1, 0, 0); LCX.globalCompositeOperation = 'source-over'; LCX.clearRect(0, 0, LCV.width, LCV.height);
-  LCX.fillStyle = mapa.interior ? 'rgba(8,5,26,.6)' : 'rgba(8,12,44,.46)'; LCX.fillRect(0, 0, LCV.width, LCV.height);
+  LCX.fillStyle = mapa.interior ? 'rgba(8,5,26,' + (.6 * forca) + ')' : 'rgba(6,10,40,' + (.74 * forca) + ')'; LCX.fillRect(0, 0, LCV.width, LCV.height);
   LCX.setTransform(SC, 0, 0, SC, tx * SC, ty * SC); LCX.globalCompositeOperation = 'destination-out';
   const furo = (x, y, r, a) => { const gr = LCX.createRadialGradient(x, y, r * .08, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,' + a + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); LCX.fillStyle = gr; LCX.fillRect(x - r, y - r, r * 2, r * 2); };
   for (const l of LUZES) furo(l.x, l.y, l.r * 3.4 * (.92 + .08 * Math.sin(tempo * 9 + l.k)), .95);
-  const [px, py] = iso(jog.x, jog.y); furo(px, py - 14, 78, .85);
+  const [px, py] = iso(jog.x, jog.y); furo(px, py - 14, GOT.on ? 78 : 56, GOT.on ? .85 : .72);
   g.save(); g.setTransform(SC, 0, 0, SC, 0, 0); g.drawImage(LCV, 0, 0, W, H); g.restore();
   g.save(); g.globalCompositeOperation = 'lighter';                    // brilho colorido (laranja de tocha, azul de lua)
-  for (const l of LUZES) Cen.brilho(g, l.x, l.y, l.r * 2.6, l.c, .3 * (.85 + .15 * Math.sin(tempo * 9 + l.k * 2)));
+  for (const l of LUZES) Cen.brilho(g, l.x, l.y, l.r * 2.6, l.c, .3 * forca * (.85 + .15 * Math.sin(tempo * 9 + l.k * 2)));
   Cen.brilho(g, px, py - 14, 60, '#8fa8ff', .1);
   g.restore();
 }
@@ -11483,11 +11781,12 @@ function renderizar(dt) {
   const g = ctx;
   g.setTransform(SC, 0, 0, SC, 0, 0);
   if (PERF.on) PERF.t0 = performance.now();
-  if (GOT.on) desenharFundoGotico(g); else if (mapa.interior) { g.fillStyle = mapa.fundo || '#1a1420'; g.fillRect(0, 0, W, H); } else if (fundoVisivel()) desenharParallax(g);
+  if (GOT.on) desenharFundoGotico(g); else if (mapa.interior) { g.fillStyle = mapa.fundo || '#1a1420'; g.fillRect(0, 0, W, H); } else if (fundoVisivel()) { desenharParallax(g); desenharCeuNoturno(g); }
   const shx = shake > 0 ? Math.round((Math.random() - .5) * shake) : 0, shy = shake > 0 ? Math.round((Math.random() - .5) * shake) : 0;
   const camTx = Math.round(W / 2 - camera.x) + shx, camTy = Math.round(H / 2 - camera.y) + shy;
   g.setTransform(SC, 0, 0, SC, camTx * SC, camTy * SC);
-  if (GOT.on) LUZES = luzesDoMapa();
+  const noiteN = GOT.on ? 1 : escuridao();
+  if (noiteN > .02) LUZES = luzesDoMapa();
   const vx0 = camera.x - W / 2 - 70, vx1 = camera.x + W / 2 + 70, vy0 = camera.y - H / 2 - 130, vy1 = camera.y + H / 2 + 90;
 
   // Camada 1: chão (imagem pronta) + água animada
@@ -11526,12 +11825,13 @@ function renderizar(dt) {
     const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y);
     if (o.tipo === 'casa') spr(o.spr, sx, sy); else desenharObj(o, sx, sy);
   }
-  if (mapa.grandes && mapa.grandes.length && !jog.morto && !embarcado()) {   // Akira atrás da montanha: aparece em silhueta transparente (não some)
+  if (!jog.morto && !embarcado()) {                                    // Akira atrás de árvores, casas, montanhas e cenário: aparece em silhueta (não some)
     const [jx, jy] = iso(jog.x, jog.y), pj = jog.x + jog.y;
-    const cobre = mapa.grandes.some(o => { if (o.cortina || o.dk == null) return false; const [ox, oy] = iso(o.x, o.y), e = o.spr.ext; return Math.abs(jx - ox) < 9 && pj < o.dk - .15 && jy - 30 > oy - e.t && jy - 30 < oy + 4; });
-    if (cobre) { const [an, fr] = animJogador(); desenharAkira(jx, jy, an, fr, jog.face, jog.z, .42, false, null, jog.costas); }
+    const cobreM = mapa.grandes && mapa.grandes.some(o => { if (o.cortina || o.dk == null) return false; const [ox, oy] = iso(o.x, o.y), e = o.spr.ext; return Math.abs(jx - ox) < 9 && pj < o.dk - .15 && jy - 30 > oy - e.t && jy - 30 < oy + 4; });
+    if (cobreM || akiraCoberto(lista)) desenharSilhuetaAkira(g);
   }
-  if (GOT.on && !mapa.escuro) luzesGoticas(g, camTx, camTy);          // luz de tochas por cima de tudo (menos dos textos)
+  desenharSaidasVisiveis(g);
+  if (noiteN > .02 && !mapa.escuro) luzesGoticas(g, camTx, camTy, noiteN * (mapa.interior ? .55 : 1));          // luz de tochas por cima de tudo (menos dos textos)
   if (mapa.escuro) {                                                   // cavernas: escuro, com brilho dos cristais
     g.fillStyle = 'rgba(10,8,34,.3)'; g.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0 + 120);
     g.globalCompositeOperation = 'lighter';
@@ -11590,7 +11890,7 @@ function renderizar(dt) {
   g.setTransform(SC, 0, 0, SC, 0, 0);
   if (!mapa.interior) {                                                // partículas do ambiente (folhas, pétalas, vaga-lumes...)
     const am = mapa.amb || {};
-    if (!mapa.escuro && !GOT.on) { if (QUAL.nivel >= 1) Cen.nuvens(g, W, H, tempo); if (QUAL.nivel >= 2) Cen.luzSolar(g, W, H, tempo); if (!PIX.on && QUAL.nivel >= 1) Cen.atmosfera(g, W, H, tempo, QUAL.nivel); }
+    if (!mapa.escuro && !GOT.on) { if (QUAL.nivel >= 1 && chuvaI < .5) Cen.nuvens(g, W, H, tempo); if (QUAL.nivel >= 2 && escuridao() < .3) Cen.luzSolar(g, W, H, tempo); if (!PIX.on && QUAL.nivel >= 1) Cen.atmosfera(g, W, H, tempo, QUAL.nivel); }
     if (GOT.on) nevoaGotica(g);
     else folhas.forEach((f, i) => {
       if (i >= QUAL.folhas) return;
@@ -11605,6 +11905,7 @@ function renderizar(dt) {
   if (GOT.on && mapa.interior) nevoaGotica(g);
   if (mapa.interior && mapa.corrompido && mundoYokai()) atmosferaYokai(g);   // lugares escuros mudam depois da quebra dos selos
   if (!mapa.interior && mapa.grande && mundoYokai() && QUAL.nivel >= 1) atmosferaYokai(g);
+  desenharChuva(g, dt || 1 / 60);
   g.fillStyle = vinheta; g.fillRect(0, 0, W, H);
   desenharTarjas(g); desenharCineTela(g);
   if (fade) {
@@ -11624,7 +11925,7 @@ function renderizar(dt) {
 const MUSICA_MENU_ARQUIVO = null;                 // ex.: 'audio/menu.mp3' (deixe null enquanto não existir o arquivo)
 const CHAVE_OPCOES = 'karate-opcoes';
 const OPCOES = Object.assign({ musica: .6, sfx: .8, musicaOn: true, sfxOn: true, toque: 'auto', qualidade: 'auto' }, (() => { try { return JSON.parse(localStorage.getItem(CHAVE_OPCOES) || '{}') || {}; } catch (e) { return {}; } })());
-function aplicarOpcaoQualidade() { QUAL.modo = OPCOES.qualidade === 'auto' ? 'auto' : 'fixa'; aplicarQualidade(OPCOES.qualidade === 'auto' ? 2 : +OPCOES.qualidade); }
+function aplicarOpcaoQualidade() { OPCOES.qualidade = 'auto'; QUAL.modo = 'auto'; aplicarQualidade(2); }   // sem opção de gráficos: o jogo ajusta sozinho
 function salvarOpcoes() { try { localStorage.setItem(CHAVE_OPCOES, JSON.stringify(OPCOES)); } catch (e) {} Som.aplicar(); aplicarToque(); }
 const Som = (() => {
   let ac = null, mestre, gMus, gSfx, ruido = null, timer = null, prox = 0, passo = 0, tocando = false, audioEl = null, gesto = false;
@@ -11913,7 +12214,7 @@ const MenuP = (() => {
   function lerOpcoes() {
     $('opMus').value = Math.round(OPCOES.musica * 100); $('opSfx').value = Math.round(OPCOES.sfx * 100);
     $('opMusOn').checked = OPCOES.musicaOn; $('opSfxOn').checked = OPCOES.sfxOn; $('opToque').value = OPCOES.toque;
-    $('opQual').value = OPCOES.qualidade; $('opPerf').checked = PERF.on;
+    $('opPerf').checked = PERF.on;
   }
   let apertado = null;                                                   // botão onde o dedo/mouse desceu (o clique vale mesmo se escorregar um pouco)
   el.addEventListener('pointerdown', e => { apertado = e.target.closest('button[data-a]'); });
@@ -12651,13 +12952,14 @@ const Luta2D = (() => {
     const u = RIG * est.esc * escala, sc = Math.max(.5, Math.min(6, Math.round(u * cam.k * 4) / 4)), q = Akira.quadro(an, fr, sc, est, false);
     let img = q;
     if (flash) { BRANCO.width = q.width; BRANCO.height = q.height; const b = BRANCO.getContext('2d'); b.drawImage(q, 0, 0); b.globalCompositeOperation = 'source-atop'; b.fillStyle = flash; b.fillRect(0, 0, q.width, q.height); img = BRANCO; }
+    if (chefe) { const k = u / (Akira.AK.K * est.esc); g.save(); g.translate(xs, ys); g.scale(k, k); dragaoTras({ chefe, face, pal: { esc: est.esc }, forma: desperto ? 'desperto' : null, _an: an, _fr: fr, est: an === 'idle' ? '' : 'ataque' }, 0, 0, g); g.restore(); }
     g.save(); g.translate(xs, ys); g.scale(face, 1); if (alfa != null) g.globalAlpha = alfa;
     g.drawImage(img, -Akira.AK.OX * u, -Akira.AK.OY * u, q.width / sc * u, q.height / sc * u);
     g.restore();
     if (chefe) {                                                         // chapéu cônico e rosto oculto do Oitavo Dragão (o mesmo do mapa)
       const k = u / (Akira.AK.K * est.esc);
       g.save(); g.translate(xs, ys); g.scale(k, k);
-      acessorioChefe({ chefe, face, pal: { esc: est.esc }, forma: desperto ? 'desperto' : null }, 0, 0, g); g.restore();
+      acessorioChefe({ chefe, face, pal: { esc: est.esc }, forma: desperto ? 'desperto' : null, _an: an, _fr: fr, torneio: true }, 0, 0, g); g.restore();
     }
   }
   function sombra(g, xs, ys, larg, alt) { const s = Math.max(.35, 1 - alt * .35); g.fillStyle = 'rgba(20,10,30,' + (.35 * s) + ')'; g.beginPath(); g.ellipse(xs, ys, larg * s, larg * .28 * s, 0, 0, 7); g.fill(); }
@@ -13728,7 +14030,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
