@@ -1108,7 +1108,7 @@ const CASAS_DECO = [
 ];
 function colocarCasa(m, c) {
   for (let j = c.y; j < c.y + c.d; j++) for (let i = c.x; i < c.x + c.w; i++) m.bloq[j][i] = true;
-  m.objs.push({ tipo: 'casa', tel: c.tel, par: c.par, nome: c.nome, x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var, funcao: c.funcao }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
+  m.objs.push({ tipo: 'casa', tel: c.tel, par: c.par, nome: c.nome, x: c.x + c.w / 2, y: c.y + c.d / 2, r: 0, ax: c.x + c.w, ay: c.y + c.d, spr: casaSpr(c.w, c.d, c.H, c.tel, c.par, { tiers: c.tiers, palha: c.palha, var: c.var, funcao: c.funcao, letreiro: c.letreiro }), dk: c.x + c.w / 2 + c.y + c.d / 2 + .01, deco: !!c.deco || !c.alvo && !c.fechada });
   if (c.alvo) m.exits.push({ x: c.x + c.w / 2 - .5, y: c.y + c.d + .05, w: 1, h: .6, alvo: c.alvo, nome: c.nome, req: c.req });
   else if (c.fechada) placa(m, c.x + c.w / 2 - 1.5, c.y + c.d + .5, c.fechada);
 }
@@ -1467,6 +1467,8 @@ function construirHospedaria() {
   pm(m, 'mesa', 3.4, 6); [[2.2, 6.9], [4.6, 6.9]].forEach(([x, y]) => pm(m, 'almofada', x, y)); pm(m, 'tapete', 3.4, 6.3);
   prop(m, 'lanterna', .9, 7.8, .15); prop(m, 'lanterna', 6.6, .9, .15);
   npc(m, { nome: 'Hospedeira Hana', x: 5.7, y: 2.2, dir: 2, pal: PAL_HANA, fala: 'hana' });
+  npc(m, { nome: 'Ana Clara', x: 1.9, y: 5.2, dir: 1, pal: palED('Ana Clara'), fala: 'ed', ed: 'vil_suprimentos', edLinhas: () => [{ p: null, nome: 'Ana Clara', t: 'Sou a dona desta pousada! A Hana cuida da recepção e dos quartos.' }, { p: null, nome: 'Ana Clara', t: 'Descanse nas camas sempre que precisar — e tenha cuidado lá fora.' }] });
+  m.objs.filter(o => o.tipo === 'cama').forEach(o => { o.tipo = 'cama'; o.ed = 'hospedaria'; });
   return m;
 }
 function construirCasaCha() {
@@ -1535,7 +1537,8 @@ function construirOficina() {                                             // ofi
   const m = interior('oficina', 'Oficina', 10, 8, T.PISO, saidaDe('oficina'));
   pm(m, 'ferramentasParede', 1.8, .8); pm(m, 'ferramentasParede', 8.2, .8); pm(m, 'bancadaTrabalho', 5, 1.9);
   pm(m, 'caixote', .8, 3); pm(m, 'caixote', .9, 4.1); pm(m, 'barril', .8, 5.4); pm(m, 'tronco', 8.6, 4.2); pm(m, 'caixote', 9.2, 5.6); pm(m, 'armario', 9.3, 2.4);
-  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de artesãos. O artesão ainda não chegou (serviço em breve).' });
+  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de Equipamentos. Conserto e venda de equipamentos ficam pendentes: o jogo ainda não tem sistema de equipamentos nem dinheiro.' });
+  npc(m, { nome: 'Ferreiro Kanji', x: 6.6, y: 3.2, dir: 2, pal: palED('Ferreiro Kanji'), fala: 'ed', edLinhas: () => [{ p: null, nome: 'Ferreiro Kanji', t: 'Eu cuido das ferramentas do vilarejo. Equipamentos para lutadores? Isso ainda não existe por aqui — quando existir, eu aviso!' }] });
   return m;
 }
 
@@ -1546,6 +1549,530 @@ const MAPAS = {
   casa_cha: construirCasaCha, flor_de_liz: construirFlorDeLiz, oficina: construirOficina
 };
 Object.keys(CFG).forEach(k => { MAPAS[k] = () => regiao(CFG[k]()); });
+/* =====================================================================
+   CONSTRUÇÕES FUNCIONAIS E INTERIORES COM CÔMODOS (todas as regiões)
+   - cada construção tem um id único, uma fachada no mundo e 1 ou mais cômodos ligados por portas
+   - cômodos são mapas de interior (o mesmo sistema de entrar/sair dos interiores que já existia)
+   - cada região tem estilo próprio (piso, paredes, enfeites) e cada tipo de cômodo tem planta própria
+   - interações reais: ler, descansar, treinar, meditar, ser tratado, banho, abrir baú (uma vez), tocar sino...
+   - NÃO existe dinheiro no jogo: balcões mostram os produtos e dão uma amostra grátis (uma vez); a compra fica pendente
+   ===================================================================== */
+const ESTILO_INT = {
+  bambuzal:   { piso: T.PISO,    alt: T.TATAME, parede: ['#e4e8c4', '#4a6a2a'], tel: '#5a8a3a', par: ['#e9e4c0', '#d2cca0'], palha: true,  deco: ['vasoGrande', 'tronco', 'lanterna', 'vasoPequeno'] },
+  cachoeira:  { piso: T.LAJE,    alt: T.PISO,   parede: ['#d8e4e4', '#3a5a6a'], tel: '#3a6a8a', par: ['#e0e6e2', '#c8d2cc'], palha: false, deco: ['lanternaPedra', 'vasoGrande', 'pedra', 'vasoPequeno'] },
+  templos:    { piso: T.PEDRA,   alt: T.LAJE,   parede: ['#e2d8c4', '#6a4a2a'], tel: '#8a3a2a', par: ['#e6dcc6', '#d2c7ac'], palha: false, deco: ['estatua', 'colunaQuebrada', 'velas', 'lanternaPedra'] },
+  cavernas:   { piso: T.CAVERNA, alt: T.PEDRA,  parede: ['#9a96a8', '#2a2a36'], tel: '#4a4a5a', par: ['#b8b4c4', '#9a96a8'], palha: false, deco: ['cristal', 'estalagmite', 'tocha', 'caixote'] },
+  outono:     { piso: T.PISO,    alt: T.OUTONO, parede: ['#ead2b0', '#7a3a14'], tel: '#c8541a', par: ['#ecdcc0', '#d8c4a0'], palha: false, deco: ['folhasMonte', 'tronco', 'vasoGrande', 'lanterna'] },
+  cerejeiras: { piso: T.PISO,    alt: T.TATAME, parede: ['#f4e6ea', '#8a4a5a'], tel: '#d8608f', par: ['#f4e8ec', '#e2d2d8'], palha: false, deco: ['vasoGrande', 'vasoPequeno', 'lanterna', 'biombo'] },
+  vilarejo:   { piso: T.PISO,    alt: T.TERRA,  parede: ['#e6d6b0', '#7a5230'], tel: '#6b5b4a', par: ['#e9dcc0', '#d6c6a4'], palha: true,  deco: ['barril', 'caixote', 'vasoPequeno', 'lanterna'] },
+  gt_patio:   { piso: T.LAJE,    alt: T.TATAME, parede: ['#f0e4c8', '#8a2a24'], tel: '#d4a020', par: ['#ece2cc', '#d8cdb2'], palha: false, deco: ['estandarte', 'velas', 'vasoGrande', 'lanternaPedra'] },
+  tangerinas: { piso: T.PISO,    alt: T.TANGER, parede: ['#f2dcb8', '#a8501a'], tel: '#e8742a', par: ['#f4e4c8', '#e2ccaa'], palha: false, deco: ['cestoTangerinas', 'barril', 'lanterna', 'vasoGrande'] }
+};
+// textos de história/consulta por região (podem ser lidos de novo quando quiser)
+const LORE = {
+  bambuzal: ['O Primeiro Clã treinava entre os bambus: diziam que quem aprende a dobrar como o bambu nunca quebra.', 'Os bambus mais antigos foram plantados pelos fundadores do vilarejo, há mais de trezentos anos.', 'Regra do Dojo dos Primeiros Passos: respeito primeiro, força depois.'],
+  cachoeira: ['A água da Cachoeira Sagrada nasce no topo do monte e nunca congela, nem no inverno.', 'Os mestres da água ensinam: a força que flui é mais difícil de parar que a força que bate.', 'Os ribeirinhos guardam as redes no pavilhão quando o rio sobe.'],
+  templos: ['Cinco eras de mestres passaram pelos Templos Antigos. Cada andar do pagode guarda o nome de uma delas.', 'As estátuas de pedra do pátio são guardiões: dizem que olham para quem treina sem honra.', 'Os discípulos antigos dormiam pouco e meditavam muito. Os alojamentos ainda guardam as esteiras deles.'],
+  cavernas: ['Os cristais das cavernas brilham mais quando alguém com aura forte passa perto.', 'A Vila Esquecida foi abandonada quando a mina desabou. Ninguém se feriu: todos se mudaram para o vilarejo.', 'Os guerreiros perdidos treinavam no escuro para lutar só pelos sons e pela aura.'],
+  outono: ['As folhas da floresta ficam vermelhas o ano inteiro desde que um ronin chorou aqui, diz a lenda.', 'O Ronin Esquecido deixou cartas sem destinatário. Nelas, fala de um mestre que nunca voltou.', 'Ferro Vermelho: as lâminas daqui são temperadas na água do riacho de outono.'],
+  cerejeiras: ['As mil cerejeiras do santuário foram plantadas uma para cada aluno que se formou.', 'A Mestra das Cerejeiras ensinava que a defesa perfeita é um passo de dança.', 'A Floricultura Flor de Liz, da Lane, vende as flores mais bonitas da região.'],
+  vilarejo: ['O vilarejo nasceu em volta do dojo. Primeiro vieram os alunos, depois as lojas.', 'O mural do salão comunitário sempre anuncia o próximo torneio.', 'A biblioteca do Davi guarda registros de todas as regiões (quando os papéis não estão espalhados por aí).'],
+  gt_patio: ['O Grande Templo é o coração marcial e administrativo do mundo. A Imperatriz Rita recebe todos com bondade.', 'A Câmara dos Selos guarda os nomes dos oito guardiões antigos e o estado de cada selo.', 'No Grande Templo, cada área se abre conforme a faixa do aluno.'],
+  tangerinas: ['O Grande Templo das Tangerinas é o maior templo de artes marciais do mundo — diferente do Grande Templo da Imperatriz.', 'Os agricultores colhem tangerinas o ano todo; a casca seca vira chá para os discípulos.', 'Um eremita vive na floresta e diz que já viu uma sombra de dragão entre as árvores.']
+};
+// tipos de construção → cômodos (de = cômodo de onde sai a porta; padrão: do cômodo 0)
+const TIPO_EDIF = {
+  dojo: ['dojo', 'vestiario'], loja: ['loja', 'deposito'], pousada: ['recepcao', 'quartos'], santuario: ['santuario'], cha: ['pavilhaoCha'],
+  casa: ['casaSala', 'casaQuarto'], cabana: ['cabana'], ruinas: ['ruinas', 'ruinasCamara'], ervas: ['ervas', 'estufa'], pavilhao: ['pavilhao'],
+  camara: ['camaraSelo'], biblioteca: ['biblioteca', 'acervo'], arquivo: ['arquivo'], moinho: ['moinho'], forja: ['forja'], torre: ['torreBase', 'torreTopo'],
+  catacumba: [{ k: 'catacumbaEntrada' }, { k: 'catacumbaGaleria' }, { k: 'catacumbaCripta', de: 1 }], tesouro: ['tesouro'], laboratorio: ['laboratorio'], mina: ['mina', 'minaFundo'],
+  fortaleza: ['fortaleza', 'fortalezaArmas'], arenaNucleo: ['arenaNucleo'], oficina: ['oficinaArt'], alfaiataria: ['alfaiataria'], ceramica: ['ceramica'], banhos: ['banhosEntrada', 'banhosTanque'],
+  salaoCom: ['salaoCom'], guarda: ['postoGuarda'], armazem: ['armazem'], enfermaria: ['enfermaria'], alojamento: ['alojamento'], residencia: ['residencia', 'casaQuarto'],
+  palacio: ['palacioAudiencia', 'palacioReuniao', 'palacioPrivado'], administrativo: ['administrativo'], refeitorio: ['refeitorio', 'cozinhaServico'], tunel: [{ k: 'tunel' }, { k: 'tunelCamara' }],
+  pagode: ['pagode', 'pagodeAlto'], abrigo: ['abrigo'],
+  restaurante: [{ k: 'restEntrada' }, { k: 'restSalao' }, { k: 'restBalcao', de: 1 }, { k: 'restCha', de: 1 }, { k: 'restCozinha', de: 1 }, { k: 'restPreparo', de: 4 }, { k: 'restDespensa', de: 4 }, { k: 'restUtensilios', de: 4 }, { k: 'restJardim', de: 1 }, { k: 'restPrivativa', de: 1 }, { k: 'restDepTraseiro', de: 4 }],
+  grandeTemploTang: [{ k: 'tgPatio' }, { k: 'tgCerimonial' }, { k: 'tgDojo' }, { k: 'tgTreino', de: 2 }, { k: 'tgArena' }, { k: 'tgAlojamento' }, { k: 'tgMestres' }, { k: 'tgBiblioteca' }, { k: 'tgArquivo', de: 7 }, { k: 'tgRefeitorio' }, { k: 'tgEnfermaria' }, { k: 'tgJardim' }, { k: 'tgReliquias', de: 1 }, { k: 'tgLideranca', de: 1 }]
+};
+// [id, nome, tipo, letreiro, opções]  (opções: casa = usa uma casa que já existe; marco = só monumento externo; npc = [nome, papel])
+const EDIFICIOS = {
+  bambuzal: [
+    ['bam_guardiao', 'Casa do Guardião dos Bambuzais', 'casa', 'GUARDIÃO', { npc: ['Guardião Tetsuo', 'guardião'] }],
+    ['bam_dojo', 'Dojo dos Primeiros Passos', 'dojo', 'DOJO', { npc: ['Sensei Haru', 'mestre'] }],
+    ['bam_santuario', 'Santuário dos Ventos Verdes', 'santuario', 'SANTUÁRIO', { npc: ['Sacerdotisa Aoi', 'monge'] }],
+    ['bam_cha', 'Pavilhão do Chá Verde', 'cha', 'CHÁ VERDE', { npc: ['Velho Kuma', 'morador'] }],
+    ['bam_loja', 'Loja da Trilha', 'loja', 'LOJA', { npc: ['Mercador Daigo', 'loja'], estoque: ['Onigiri da trilha', 'Bandagens', 'Corda de bambu', 'Cantil'] }],
+    ['bam_ponte', 'Ponte dos Bambus Curvados', 'marco', '', { marco: 'ponte' }],
+    ['bam_lenhador', 'Cabana do Lenhador', 'cabana', 'LENHADOR', { npc: ['Lenhador Goichi', 'morador'] }],
+    ['bam_ruinas', 'Ruínas do Primeiro Clã', 'ruinas', '', { npc: null }],
+    ['bam_pousada', 'Pousada do Bambu Sereno', 'pousada', 'POUSADA', { npc: ['Pousadeira Yume', 'pousada'] }],
+    ['bam_ervas', 'Cabana das Ervas Silvestres', 'ervas', 'ERVAS', { npc: ['Ervanária Suzu', 'cura'] }],
+    ['bam_brisa', 'Pavilhão da Brisa', 'pavilhao', 'BRISA', { npc: null }],
+    ['bam_camara', 'Câmara do Primeiro Selo', 'camara', 'SELO', { selo: 'samurai_oni' }]
+  ],
+  cachoeira: [
+    ['cac_santuario', 'Santuário da Cachoeira Sagrada', 'santuario', 'SANTUÁRIO', { npc: ['Monja Shizuku', 'monge'] }],
+    ['cac_dojo', 'Dojo das Águas', 'dojo', 'DOJO', { npc: ['Mestre Ryu', 'mestre'] }],
+    ['cac_moinho', 'Moinho das Corredeiras', 'moinho', 'MOINHO', { npc: ['Moleiro Taro', 'morador'] }],
+    ['cac_pousada', 'Pousada das Águas Claras', 'pousada', 'POUSADA', { npc: ['Pousadeiro Kenta', 'pousada'] }],
+    ['cac_ervas', 'Casa das Ervas Medicinais', 'ervas', 'ERVAS', { npc: ['Curandeira Mio', 'cura'] }],
+    ['cac_ponte', 'Ponte dos Mil Véus', 'marco', '', { marco: 'ponte' }],
+    ['cac_guardiao', 'Cabana do Guardião da Cachoeira', 'cabana', 'GUARDIÃO', { npc: ['Guardião Isamu', 'guardião'] }],
+    ['cac_lago', 'Câmara do Lago Espiritual', 'camara', 'LAGO', { selo: 'mestre_cachoeira', lago: true }],
+    ['cac_ribeira1', 'Casa Ribeirinha dos Nakano', 'casa', '', { npc: ['Pescador Nakano', 'morador'] }],
+    ['cac_ribeira2', 'Casa Ribeirinha da Avó Fumi', 'casa', '', { npc: ['Avó Fumi', 'morador'] }],
+    ['cac_silencio', 'Pavilhão do Silêncio', 'pavilhao', 'SILÊNCIO', { npc: ['Monge Kaze', 'monge'] }]
+  ],
+  templos: [
+    ['tem_grande', 'Grande Templo Ancestral', 'santuario', 'TEMPLO', { npc: ['Abade Genzo', 'monge'], w: 5, d: 4, H: 40, tiers: 2 }],
+    ['tem_dojo', 'Dojo dos Primeiros Mestres', 'dojo', 'DOJO', { npc: ['Mestra Kiyo', 'mestre'] }],
+    ['tem_pagode', 'Pagode das Cinco Eras', 'pagode', 'PAGODE', { w: 3, d: 3, H: 34, tiers: 3 }],
+    ['tem_arquivo', 'Arquivo dos Mestres Perdidos', 'biblioteca', 'ARQUIVO', { npc: ['Escriba Hiroshi', 'leitura'] }],
+    ['tem_patio', 'Pátio dos Guardiões de Pedra', 'marco', '', { marco: 'estatuas' }],
+    ['tem_sino', 'Torre do Sino Ancestral', 'torre', 'SINO', { w: 2, d: 2, H: 46, tiers: 3 }],
+    ['tem_catacumbas', 'Catacumbas dos Discípulos', 'catacumba', '', {}],
+    ['tem_camara', 'Câmara do Selo Ancestral', 'camara', 'SELO', { selo: 'general_ancestral' }],
+    ['tem_ponte', 'Ponte dos Mil Anos', 'marco', '', { marco: 'ponte' }],
+    ['tem_alojamentos', 'Alojamentos dos Antigos Discípulos', 'alojamento', 'ALOJAMENTO', { npc: ['Zelador Botan', 'morador'] }],
+    ['tem_tesouro', 'Tesouro das Relíquias Marciais', 'tesouro', 'RELÍQUIAS', {}]
+  ],
+  cavernas: [
+    ['cav_fortaleza', 'Fortaleza da Rocha Negra', 'fortaleza', '', { npc: ['Capitão Iwao', 'guarda'] }],
+    ['cav_dojo', 'Dojo das Profundezas', 'dojo', '', { npc: ['Mestre Kuro', 'mestre'] }],
+    ['cav_mina', 'Mina dos Cristais Antigos', 'mina', '', { npc: ['Mineiro Hachi', 'morador'] }],
+    ['cav_santuario', 'Santuário do Cristal Espiritual', 'santuario', '', { npc: ['Vidente Rei', 'monge'] }],
+    ['cav_biblioteca', 'Biblioteca Subterrânea', 'biblioteca', '', { npc: ['Bibliotecário Mugen', 'leitura'] }],
+    ['cav_vila1', 'Vila Esquecida — Casa do Ferreiro', 'casa', '', { npc: null }],
+    ['cav_vila2', 'Vila Esquecida — Casa da Família Ono', 'casa', '', { npc: null }],
+    ['cav_forja', 'Forja do Núcleo Vulcânico', 'forja', '', { npc: ['Ferreira Akane-no-Hi', 'forja'] }],
+    ['cav_catacumbas', 'Catacumbas dos Guerreiros Perdidos', 'catacumba', '', {}],
+    ['cav_ponte', 'Ponte do Abismo', 'tunel', '', {}],
+    ['cav_abrigo', 'Abrigo do Lago Cristalino', 'abrigo', '', { npc: ['Andarilha Nami', 'morador'] }],
+    ['cav_lab', 'Laboratório dos Cristais', 'laboratorio', '', { npc: ['Estudiosa Tama', 'leitura'] }],
+    ['cav_arena', 'Arena do Núcleo Profundo', 'arenaNucleo', '', { selo: 'ninja_ancestral' }]
+  ],
+  outono: [
+    ['out_guardiao', 'Casa do Guardião das Folhas', 'casa', 'GUARDIÃO', { npc: ['Guardiã Momiji', 'guardião'] }],
+    ['out_dojo', 'Dojo da Folha Carmesim', 'dojo', 'DOJO', { npc: ['Mestre Kaede', 'mestre'] }],
+    ['out_santuario', 'Santuário das Folhas Eternas', 'santuario', 'SANTUÁRIO', { npc: ['Sacerdote Aki', 'monge'] }],
+    ['out_pousada', 'Pousada das Folhas Douradas', 'pousada', 'POUSADA', { npc: ['Pousadeira Kin', 'pousada'] }],
+    ['out_forja', 'Forja do Ferro Vermelho', 'forja', 'FORJA', { npc: ['Ferreiro Tetsu', 'forja'] }],
+    ['out_ervas', 'Casa das Ervas de Outono', 'ervas', 'ERVAS', { npc: ['Curandeiro Shiro', 'cura'] }],
+    ['out_arquivo', 'Arquivo do Ronin', 'arquivo', 'ARQUIVO', {}],
+    ['out_ronin', 'Residência do Ronin Esquecido', 'casa', '', { npc: null, ronin: true }],
+    ['out_ponte', 'Ponte das Folhas Flutuantes', 'marco', '', { marco: 'ponte' }],
+    ['out_ruinas', 'Ruínas da Árvore Ancestral', 'ruinas', '', { raiz: true }],
+    ['out_crepusculo', 'Pavilhão do Crepúsculo', 'pavilhao', 'CREPÚSCULO', {}],
+    ['out_camara', 'Câmara do Selo Carmesim', 'camara', 'SELO', { selo: 'ronin_ancestral' }]
+  ],
+  cerejeiras: [
+    ['cer_santuario', 'Santuário das Mil Cerejeiras', 'santuario', 'SANTUÁRIO', { npc: ['Sacerdotisa Hana-e', 'monge'] }],
+    ['cer_dojo', 'Dojo da Flor Cadente', 'dojo', 'DOJO', { npc: ['Mestra Yuzu', 'mestre'] }],
+    ['cer_cha', 'Casa de Chá das Pétalas', 'cha', 'CHÁ', { npc: ['Anfitriã Chiyo', 'morador'] }],
+    ['cer_pousada', 'Pousada das Pétalas Rosadas', 'pousada', 'POUSADA', { npc: ['Pousadeira Nanami', 'pousada'] }],
+    ['cer_oficina', 'Oficina dos Artesãos de Sakura', 'oficina', 'ARTESÃOS', { npc: ['Artesão Sou', 'artesao'] }],
+    ['cer_biblioteca', 'Biblioteca das Flores Antigas', 'biblioteca', 'BIBLIOTECA', { npc: ['Bibliotecária Fuji', 'leitura'] }],
+    ['cer_mestres', 'Residência dos Mestres das Cerejeiras', 'residencia', 'MESTRES', { npc: ['Mestre Ume', 'mestre'] }],
+    ['cer_ponte', 'Ponte do Reflexo Rosado', 'marco', '', { marco: 'ponte' }],
+    ['cer_cripta', 'Cripta das Raízes Rosadas', 'catacumba', '', {}],
+    ['cer_casa1', 'Casa da Família Sakurai', 'casa', '', { npc: ['Senhora Sakurai', 'morador'] }],
+    ['cer_casa2', 'Casa do Jardineiro Ren-ji', 'casa', '', { npc: ['Jardineiro Hideo', 'morador'] }],
+    ['cer_ultima', 'Pavilhão da Última Pétala', 'pavilhao', 'ÚLTIMA PÉTALA', {}]
+  ],
+  vilarejo: [
+    ['vil_suprimentos', 'Loja de Suprimentos', 'loja', 'SUPRIMENTOS', { casa: 'cha', npc: ['Comerciante Saburo', 'loja'], estoque: ['Onigiri', 'Chá verde', 'Tochas', 'Cordas', 'Bandagens'] }],
+    ['vil_ervas', 'Casa de Ervas e Remédios', 'ervas', 'REMÉDIOS', { npc: ['Boticária Ume-ko', 'cura'] }],
+    ['vil_alfaiate', 'Loja de Tecidos e Alfaiataria', 'alfaiataria', 'ALFAIATE', { npc: ['Alfaiate Nui', 'artesao'] }],
+    ['vil_ceramica', 'Oficina de Cerâmica e Artesanato', 'ceramica', 'CERÂMICA', { npc: ['Ceramista Toki', 'artesao'] }],
+    ['vil_banhos', 'Casa de Banhos', 'banhos', 'BANHOS', { npc: ['Atendente Yu', 'pousada'] }],
+    ['vil_salao', 'Salão Comunitário', 'salaoCom', 'SALÃO', { npc: ['Ancião Kazuo', 'morador'] }],
+    ['vil_guarda', 'Posto de Guarda', 'guarda', 'GUARDA', { npc: ['Guarda Masa', 'guarda'] }],
+    ['vil_casa1', 'Casa dos Tanaka', 'casa', '', { npc: ['Senhora Tanaka', 'morador'] }],
+    ['vil_casa2', 'Casa do Agricultor Ine', 'casa', '', { npc: ['Agricultor Ine', 'morador'] }],
+    ['vil_casa3', 'Casa do Pescador Umi', 'casa', '', { npc: ['Pescador Umi', 'morador'] }],
+    ['vil_casa4', 'Casa dos Viajantes', 'pousada', 'VIAJANTES', { npc: ['Viajante Sora-no', 'pousada'] }],
+    ['vil_santuario', 'Santuário do Vilarejo', 'santuario', 'SANTUÁRIO', { npc: ['Sacerdote Jin', 'monge'] }],
+    ['vil_enfermaria', 'Enfermaria do Vilarejo', 'enfermaria', 'ENFERMARIA', { npc: ['Enfermeira Aya', 'cura'] }],
+    ['vil_armazem', 'Armazém Comunitário', 'armazem', 'ARMAZÉM', { npc: ['Estoquista Bun', 'morador'] }]
+  ],
+  gt_patio: [
+    ['gt_palacio', 'Palácio da Imperatriz Rita', 'palacio', 'PALÁCIO', { npc: ['Guarda Imperial Kaname', 'guarda'], w: 6, d: 4, H: 40, tiers: 2 }],
+    ['gt_admin', 'Pavilhão Administrativo', 'administrativo', 'ADMINISTRAÇÃO', { npc: ['Escrivã Mai', 'leitura'] }],
+    ['gt_treino', 'Pavilhão de Treinamento Avançado', 'dojo', 'TREINO', { npc: ['Instrutor Raiden', 'mestre'] }],
+    ['gt_alojamento', 'Alojamento dos Discípulos', 'alojamento', 'ALOJAMENTO', { npc: ['Discípula Kei', 'morador'] }],
+    ['gt_mestres', 'Residência dos Mestres', 'residencia', 'MESTRES', { npc: ['Mestra Okami', 'mestre'] }],
+    ['gt_refeitorio', 'Refeitório do Templo', 'refeitorio', 'REFEITÓRIO', { npc: ['Cozinheiro Goro-san', 'morador'] }],
+    ['gt_biblioteca', 'Grande Biblioteca', 'biblioteca', 'BIBLIOTECA', { npc: ['Bibliotecário Sen', 'leitura'], w: 4, d: 4, H: 34 }],
+    ['gt_historico', 'Arquivo Histórico', 'arquivo', 'HISTÓRIA', {}],
+    ['gt_santuario', 'Santuário Principal', 'santuario', 'SANTUÁRIO', { npc: ['Sumo Sacerdote Hoshi', 'monge'], tiers: 2 }],
+    ['gt_selos', 'Câmara dos Selos Antigos', 'camara', 'SELOS', { selo: 'todos' }],
+    ['gt_enfermaria', 'Enfermaria do Templo', 'enfermaria', 'ENFERMARIA', { npc: ['Médica Sayo', 'cura'] }],
+    ['gt_guarda', 'Pavilhão da Guarda', 'guarda', 'GUARDA', { npc: ['Capitã Rin-to', 'guarda'] }],
+    ['gt_sino', 'Torre do Sino do Templo', 'torre', 'SINO', { w: 2, d: 2, H: 46, tiers: 3 }],
+    ['gt_subterraneo', 'Passagens Subterrâneas', 'tunel', '', {}],
+    ['gt_restaurante', 'Restaurante e Casa de Chá', 'restaurante', 'RESTAURANTE', { w: 5, d: 4, H: 32 }]
+  ],
+  tangerinas: [
+    ['tg_templo', 'Grande Templo das Tangerinas', 'grandeTemploTang', 'GRANDE TEMPLO', { w: 8, d: 6, H: 52, tiers: 3 }],
+    ['tg_agricultores', 'Casa dos Agricultores de Tangerinas', 'casa', 'AGRICULTORES', { npc: ['Agricultora Mikan', 'morador'] }],
+    ['tg_armazem', 'Armazém das Tangerinas', 'armazem', 'ARMAZÉM', { npc: ['Carregador Yuzu-ta', 'morador'] }],
+    ['tg_eremita', 'Cabana do Eremita', 'cabana', '', { npc: ['Eremita Mukashi', 'eremita'] }],
+    ['tg_santuario', 'Santuário das Raízes', 'santuario', 'RAÍZES', { npc: ['Guardiã Ne', 'monge'] }],
+    ['tg_oficina', 'Oficina dos Artesãos', 'oficina', 'ARTESÃOS', { npc: ['Entalhador Kiri', 'artesao'] }],
+    ['tg_mestres', 'Residência dos Mestres Antigos', 'residencia', 'MESTRES', { npc: ['Mestre Ancião Tora', 'mestre'] }],
+    ['tg_pousada', 'Pousada da Floresta', 'pousada', 'POUSADA', { npc: ['Pousadeira Kaki', 'pousada'] }],
+    ['tg_ruinas', 'Ruínas Subterrâneas da Floresta', 'catacumba', '', {}]
+  ]
+};
+// casas que já existiam e foram aproveitadas (mantêm interior, NPCs e missões)
+const EDIF_EXISTENTES = { dojo: 'Dojo (Mestre Kenji)', biblioteca: 'Biblioteca de Davi', arena: 'Arena Marcial (Pietra e Henrique)', hospedaria: 'Pousada da Ana Clara (Hospedaria da Hana)', oficina: 'Oficina de Equipamentos',
+  flor_de_liz: 'Floricultura Flor de Liz (Lane)', meditacao: 'Pavilhão da Respiração Ancestral (Templo de Meditação)', salao: 'Dojo Principal / Salão de Graduação', arena_mestres: 'Arena Cerimonial', arquivo: 'Arquivo de Técnicas' };
+
+/* ---------- índice: construção → cômodos (ids de mapa estáveis) ---------- */
+const EDIF = {}, SALA_DE = {}, EDIF_POS = {};
+for (const reg in EDIFICIOS) for (const [id, nome, tipo, letreiro, op] of EDIFICIOS[reg]) {
+  const lista = (TIPO_EDIF[tipo] || []).map(s => typeof s === 'string' ? { k: s } : s);
+  const salas = lista.map((s, i) => ({ id: 'ed_' + id + '_' + i, k: s.k, de: i === 0 ? null : (s.de != null ? s.de : 0), i }));
+  EDIF[id] = { id, nome, tipo, letreiro, op: op || {}, reg, salas };
+  salas.forEach(s => { SALA_DE[s.id] = { ed: id, i: s.i }; });
+}
+
+/* ---------- plantas dos cômodos (cada tipo tem móveis e funções próprias) ---------- */
+const NOME_SALA = { dojo: 'Salão de treino', vestiario: 'Vestiário', loja: 'Loja', deposito: 'Depósito', recepcao: 'Recepção', quartos: 'Quartos', santuario: 'Santuário', pavilhaoCha: 'Salão do chá',
+  casaSala: 'Sala', casaQuarto: 'Quarto', cabana: 'Cabana', ruinas: 'Ruínas', ruinasCamara: 'Câmara escondida', ervas: 'Balcão de ervas', estufa: 'Estufa', pavilhao: 'Pavilhão', camaraSelo: 'Câmara do selo',
+  biblioteca: 'Salão de leitura', acervo: 'Acervo', arquivo: 'Arquivo', moinho: 'Moinho', forja: 'Forja', torreBase: 'Base da torre', torreTopo: 'Alto da torre', catacumbaEntrada: 'Entrada', catacumbaGaleria: 'Galeria',
+  catacumbaCripta: 'Cripta', tesouro: 'Sala das relíquias', laboratorio: 'Laboratório', mina: 'Galeria da mina', minaFundo: 'Fundo da mina', fortaleza: 'Salão da guarda', fortalezaArmas: 'Arsenal', arenaNucleo: 'Arena',
+  oficinaArt: 'Oficina', alfaiataria: 'Alfaiataria', ceramica: 'Ateliê', banhosEntrada: 'Entrada', banhosTanque: 'Banho quente', salaoCom: 'Salão', postoGuarda: 'Posto', armazem: 'Armazém', enfermaria: 'Enfermaria',
+  alojamento: 'Dormitório', residencia: 'Sala dos mestres', palacioAudiencia: 'Salão de audiência', palacioReuniao: 'Sala de reuniões', palacioPrivado: 'Aposentos', administrativo: 'Administração', refeitorio: 'Refeitório',
+  cozinhaServico: 'Cozinha e armazém', tunel: 'Passagem', tunelCamara: 'Câmara escondida', pagode: 'Térreo do pagode', pagodeAlto: 'Andar das eras', abrigo: 'Abrigo',
+  restEntrada: 'Entrada e recepção', restSalao: 'Salão principal', restBalcao: 'Balcão de atendimento', restCha: 'Sala de cerimônia do chá', restCozinha: 'Cozinha', restPreparo: 'Área de preparo', restDespensa: 'Despensa',
+  restUtensilios: 'Depósito de utensílios', restJardim: 'Jardim interno', restPrivativa: 'Sala privativa', restDepTraseiro: 'Depósito de alimentos',
+  tgPatio: 'Pátio externo', tgCerimonial: 'Salão cerimonial', tgDojo: 'Dojo central', tgTreino: 'Salas de treino', tgArena: 'Arena', tgAlojamento: 'Alojamentos', tgMestres: 'Residência dos mestres',
+  tgBiblioteca: 'Biblioteca marcial', tgArquivo: 'Arquivo de técnicas lendárias', tgRefeitorio: 'Refeitório e cozinha', tgEnfermaria: 'Enfermaria', tgJardim: 'Jardins de meditação', tgReliquias: 'Câmara de relíquias', tgLideranca: 'Salão da liderança' };
+const TAM_SALA = { santuario: [10, 8], dojo: [12, 9], tgPatio: [15, 11], tgDojo: [13, 10], tgArena: [13, 10], restSalao: [13, 9], palacioAudiencia: [13, 10], catacumbaGaleria: [13, 8], tgCerimonial: [13, 9], quartos: [11, 8], alojamento: [12, 8], refeitorio: [12, 9], tgRefeitorio: [12, 9], restEntrada: [11, 8] };
+const SALA_SOMBRIA = { ruinas: 1, ruinasCamara: 1, catacumbaEntrada: 1, catacumbaGaleria: 1, catacumbaCripta: 1, tunel: 1, tunelCamara: 1, mina: 1, minaFundo: 1, camaraSelo: 1, arenaNucleo: 1 };
+
+const PAL_ED = [['#3a5a7a', '#f1c9a5', '#2a1a10', 'curto', '#222'], ['#7a3a2a', '#e0a070', '#1a1010', 'coque', '#c9a24a'], ['#4a6a3a', '#c08a60', '#151515', 'longo', '#3a2a1a'], ['#6a4a7a', '#f6c19a', '#3a2010', 'tranca', '#f4d03f'],
+  ['#8a6a3a', '#7a4a32', '#14100e', 'curto', '#5a3a1a'], ['#2a4a5a', '#d9a37c', '#e8e8e8', 'coque', '#1a3a5a'], ['#c84a6a', '#f1c9a5', '#1a1010', 'longo', '#f6f6f2'], ['#5a5a6a', '#b88a60', '#2a1a10', 'espeto', '#8a1a1a']];
+function palED(nome) { let h = 0; for (const c of nome) h = (h * 31 + c.charCodeAt(0)) | 0; const p = PAL_ED[Math.abs(h) % PAL_ED.length]; return PN(p[0], p[1], p[2], p[3], p[4]); }
+// falas dos NPCs (antes e depois da quebra dos selos)
+function falasED(nome, papel, ed) {
+  const L = LORE[ed.reg] || [], n = ed.nome, pos = mundoYokai();
+  const base = {
+    mestre: ['Bem-vindo ao ' + n + '. Os bonecos estão aí para treinar à vontade — leia a placa de treino para cronometrar.', 'Treinar não dá experiência, mas deixa o corpo pronto para a luta de verdade.'],
+    monge: ['Este é o ' + n + '. Sente-se na almofada e medite: a aura volta a encher.', L[0] || 'A calma também é uma técnica.'],
+    loja: ['Seja bem-vindo à ' + n + '!', 'Ainda não aceitamos moedas — o sistema de compras está pendente. Mas olhe o balcão: tem uma amostra grátis para quem visita pela primeira vez.'],
+    pousada: ['Bem-vindo à ' + n + '. As camas estão prontas: descansar recupera vida e aura e marca este lugar como seu ponto de retorno.'],
+    cura: ['Sou responsável pelos tratamentos aqui. Quer que eu cuide dos seus ferimentos?'],
+    leitura: ['As estantes estão abertas para consulta. Pode ler quantas vezes quiser.', L[1] || ''],
+    guarda: ['Posto de vigia. O mural tem os avisos de perigo da região.'],
+    forja: ['A forja está acesa, mas ainda não faço armas para alunos — o jogo não tem sistema de equipamentos. Fique à vontade para olhar.'],
+    artesao: ['Aqui trabalhamos com as mãos e com paciência. Não vendemos nada ainda: as encomendas ficam para quando houver comércio.'],
+    eremita: ['Hmm... visitas. Vivo longe de todos para ouvir a floresta.', 'Uma vez vi uma sombra enorme, como um dragão, passando entre as árvores. Não sei de quem era. E não quero saber.'],
+    'guardião': ['Eu cuido desta região há muitos anos. ' + (L[0] || '')],
+    morador: ['Olá, Akira! Seja bem-vindo à ' + n + '.', L[2] || L[0] || '']
+  }[papel] || ['Olá!'];
+  const extra = pos ? (papel === 'guarda' ? ['Depois que os selos se romperam, yokais aparecem nas estradas. As lojas e serviços continuam abertos, fique tranquilo.'] : ['Desde que os selos se romperam, a noite ficou estranha... mas nós continuamos aqui, trabalhando.']) : [];
+  return base.filter(Boolean).concat(extra).map(t => ({ p: null, nome, t }));
+}
+
+// ajudante que monta um cômodo: guarda as portas e só põe móvel onde não atrapalha a passagem
+function ctxSala(m, ed, sala, E, rnd) {
+  const portas = [];
+  const livre = (x, y, r) => {
+    if (x < .6 || y < .55 || x > m.w - .6 || y > m.h - 1.5) return false;
+    if (Math.abs(x - m.w / 2) < 1.1 && y > m.h * .5) return false;              // corredor da entrada
+    for (const p of portas) if (Math.hypot(x - p[0], y - p[1]) < 1.5 + r) return false;
+    for (const o of m.objs) if (o.r > 0 && Math.hypot(x - o.x, y - o.y) < r + o.r + .08) return false;
+    return true;
+  };
+  const C = {
+    m, ed, sala, E, rnd, portas,
+    p(k, x, y, ex) { const r = (DEF_OBJ[k] && DEF_OBJ[k].r) || .3; if (!livre(x, y, r)) return null; const o = mkObj(k, rnd, Object.assign({ x, y }, ex)); m.objs.push(o); return o; },
+    i(tipo, sprK, x, y, r, ex) { if (!livre(x, y, r)) { for (let t = 0; t < 12; t++) { const xx = x + (rnd() - .5) * 2, yy = y + (rnd() - .5) * 1.2; if (livre(xx, yy, r)) { x = xx; y = yy; break; } if (t === 11) return null; } }
+      let s = SPR[sprK]; if (Array.isArray(s)) s = s[0]; const o = Object.assign({ tipo, x, y, r, spr: s }, ex); m.objs.push(o); return o; },
+    npc(nome, papel, x, y, ex) { if (!nome) return null; const o = Object.assign({ tipo: 'npc', nome, x, y, r: .3, dir: 2, pal: palED(nome), fala: 'ed', edPapel: papel, ed: ed.id }, ex); m.objs.push(o); return o; },
+    deco(n) { for (let k = 0; k < n; k++) { const lado = k % 3; const x = lado === 0 ? .8 + rnd() * .2 : lado === 1 ? m.w - .9 : 1.5 + rnd() * (m.w - 3); const y = lado === 2 ? .8 : 1.6 + rnd() * (m.h - 3.6); C.p(E.deco[k % E.deco.length], x, y); } },
+    linhaFundo(k, n, ex) { for (let q = 0; q < n; q++) C.p(k, 1.4 + q * (m.w - 2.8) / Math.max(1, n - 1), .85, ex); },
+    leitura(sprK, x, y, titulo, textos) { return C.i('leitura', sprK, x, y, .45, { titulo, textos }); }
+  };
+  return C;
+}
+const NARR = t => ({ p: null, nome: '', t });
+const SALAS = {
+  dojo: C => { const { m } = C; pisoMeio(m, 2, 2, m.w - 2, m.h - 2, T.TATAME); C.linhaFundo('bandeiraFaixas', 2); C.p('altar', m.w / 2, .9); C.p('sacoPancada', .8, 3.2); C.p('sacoPancada', .8, 5.4); C.p('suporteArmas', m.w - .9, 2.4);
+    C.i('boneco', 'boneco', 3.2, 4.4, .3, { hp: 9999, wob: 0, alvo: true }); C.i('boneco', 'boneco', m.w - 3.2, 4.4, .3, { hp: 9999, wob: 0, alvo: true }); C.i('boneco', 'boneco', m.w / 2 + 2.4, 5.8, .3, { hp: 9999, wob: 0, alvo: true });
+    C.i('treino', 'placa', m.w / 2 - 2.2, 2.2, .22, { idTreino: C.ed.id }); const n = C.ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + .3, 2.2); },
+  vestiario: C => { const { m } = C; C.linhaFundo('armario', 3); C.p('biombo', m.w - 1.2, 3); C.p('mesa', 2.6, 4.6); C.p('cesto', m.w - 1, 5.6); C.deco(2); },
+  loja: C => { const { m, ed } = C; C.linhaFundo('prateleiraUtensilios', 3); C.p('caixote', .8, 3); C.p('barril', .8, 4.3); C.p('cesto', m.w - .9, 3.4);
+    C.i('balcao', 'balcao_recepcao', m.w / 2, 2.6, .9, { estoque: ed.op.estoque || ['Onigiri', 'Chá verde', 'Bandagens'], idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.6, 1.7); C.deco(2); },
+  deposito: C => { const { m } = C; for (let k = 0; k < 7; k++) C.p(['caixote', 'barril', 'cesto', 'caixote'][k % 4], .9 + (k % 4) * .9, .9 + Math.floor(k / 4) * 1.1); C.p('prateleiraUtensilios', m.w - 1.4, .85); C.i('bau', 'bau', m.w - 1.3, 3.2, .45, { idBau: C.ed.id }); },
+  recepcao: C => { const { m, ed } = C; C.p('balcao_recepcao', 3.4, 2.4); C.p('armario', .8, 1.2); C.p('mesaBaixa', m.w - 3, 4.4); C.p('almofada', m.w - 4.3, 5.3); C.p('almofada', m.w - 1.7, 5.3); C.i('mural', 'mural', m.w - 1.6, .9, .4, {});
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], 5.2, 1.9); C.deco(3); },
+  quartos: C => { const { m } = C; for (let k = 0; k < 3; k++) { C.i('cama', 'futon', 2.2 + k * 3.3, 2, .6, { ed: C.ed.id }); C.p('lanterna', 3.6 + k * 3.3, .9); } C.p('biombo', 3.9, 4.6); C.p('biombo', 7.2, 4.6); C.deco(2); },
+  santuario: C => { const { m, ed, E } = C; pisoMeio(m, 2, 2, m.w - 2, m.h - 2, E.alt === T.TATAME ? T.TATAME : T.LAJE); C.p('altar', m.w / 2, 1); C.i('incensario', 'incensario', m.w / 2 - 1.6, 1.1, .25, {}); C.p('velas', m.w / 2 + 1.6, 1.1);
+    C.p('meditar', m.w / 2 - 2, 3.8); C.p('meditar', m.w / 2 + 2, 3.8); C.p('estatua', .9, 1.4); C.p('lanternaPedra', m.w - .9, 1.4);
+    C.leitura('pergaminhos', 1, 4, 'Pergaminho do santuário', [LORE[ed.reg][0]]); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2, 3); C.deco(2); },
+  pavilhaoCha: C => { const { m, ed } = C; for (let k = 0; k < 3; k++) { const x = 2.8 + k * 3, y = 3.2 + (k % 2) * 1.6; C.p('mesaBaixa', x, y); C.p('almofada', x - 1.1, y + .8); C.p('almofada', x + 1.1, y + .8); }
+    C.p('balcao_cha', m.w / 2, 1.1); C.p('lareira', m.w - 1.6, 1.2); C.i('contemplar', 'vasoGrande', .9, 1.2, .3, { textos: ['Pela janela, a paisagem da região. Um bom lugar para pensar antes de uma luta.'] });
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.6, 1.9); },
+  casaSala: C => { const { m, ed, rnd } = C; C.p('mesaBaixa', m.w / 2 - 1.8, 3.6); C.p('almofada', m.w / 2 - 3, 4.4); C.p('almofada', m.w / 2 - .6, 4.4); C.p('lareira', m.w - 2, 2);
+    C.p(['armario', 'prateleiraUtensilios', 'prateleiraCeramica'][Math.floor(rnd() * 3)], 1.2, .85); C.p('vasoPequeno', m.w - .8, 4.6);
+    if (ed.op.ronin) C.leitura('mesaEstudo', 3, 1.6, 'Carta do Ronin Esquecido', ['"Mestre, se um dia ler isto: guardei a lâmina, mas não a raiva."', '"As folhas caem todo ano e eu continuo esperando um sinal seu."']);
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.6, 2.6); else C.leitura('pilhaLivros', m.w / 2 + 2, 1.2, 'Diário esquecido', [LORE[ed.reg][2] || LORE[ed.reg][0]]); C.deco(2); },
+  casaQuarto: C => { const { m, ed } = C; C.i('cama', 'futon', 3, 2, .6, { ed: ed.id }); C.p('armario', m.w - 1.2, .85); C.p('biombo', m.w - 1.6, 3.4); C.p('vasoPequeno', .8, 3.6); C.i('bau', 'bau', m.w - 1.2, 5, .45, { idBau: ed.id }); C.deco(1); },
+  cabana: C => { const { m, ed } = C; C.p('lareira', m.w / 2, 2.4); C.p('tronco', .9, 1.5); C.p('cesto', .9, 3.4); C.p('ferramentasParede', m.w - 1.4, .85); C.i('cama', 'futon', m.w - 2.6, 4, .6, { ed: ed.id });
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 - 1.8, 3.2); C.deco(2); },
+  ruinas: C => { const { m, ed } = C; for (let k = 0; k < 4; k++) C.p('escombros', 1.6 + k * 2.4, .9 + (k % 2) * 2); C.p('colunaQuebrada', .9, 3.2); C.p('estatua', m.w - 1, 2.4); if (ed.op.raiz) { C.p('raiz', m.w / 2, 3.6); C.p('raiz', 2.4, 5); }
+    C.i('inscricao', 'altar', m.w / 2 + 2.6, 1.2, .5, { textos: [LORE[ed.reg][0], 'As marcas na pedra mostram golpes treinados há séculos.'] }); C.inimigos(2); },
+  ruinasCamara: C => { const { m, ed } = C; C.p('estatuaGuardiao', 2, 1); C.p('estatuaGuardiao', m.w - 2, 1); C.i('bau', 'bau', m.w / 2, 1.4, .45, { idBau: ed.id + '_camara' }); C.p('velas', m.w / 2 - 1.6, 1.2); C.leitura('pergaminhos', .9, 3.4, 'Registro antigo', [LORE[ed.reg][1]]); },
+  ervas: C => { const { m, ed } = C; C.linhaFundo('prateleiraErvas', 3); C.p('fogao', m.w - 1.2, 2.6); C.p('bancadaBuque', 2.6, 3.4); C.p('vasoGrande', .8, 4.6); const n = ed.op.npc; if (n) C.npc(n[0], 'cura', m.w / 2, 2.2, { servico: 'cura' }); },
+  estufa: C => { const { m } = C; for (let k = 0; k < 8; k++) C.p(k % 2 ? 'vasoGrande' : 'vasoPequeno', 1 + (k % 4) * 2.4, 1 + Math.floor(k / 4) * 2.2); C.p('prateleiraFlores', m.w - 1.4, .85); C.p('cesto', m.w - 1, 3.4); },
+  pavilhao: C => { const { m, ed } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.TATAME); C.p('meditar', m.w / 2, 3.2); C.p('lanternaPedra', 1, 1); C.p('lanternaPedra', m.w - 1, 1); C.p('mesaBaixa', 2.8, 4.6); C.p('almofada', 1.6, 5.4);
+    C.i('contemplar', 'vasoGrande', m.w - 1.2, 3.6, .3, { textos: ['O vento passa pelas aberturas do pavilhão. Aqui os mestres conversavam antes das decisões importantes.', LORE[ed.reg][1]] }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2.4, 2); },
+  camaraSelo: C => { const { m, ed } = C; pisoMeio(m, 2, 1, m.w - 2, m.h - 2, T.LAJE); C.p('plataforma', m.w / 2, 1.4); C.p('estatuaGuardiao', 1.2, 1.2); C.p('estatuaGuardiao', m.w - 1.2, 1.2); C.p('velas', 2.6, 3.6); C.p('velas', m.w - 2.6, 3.6);
+    C.i('inscricao', 'altar', m.w / 2, 3, .5, { selo: ed.op.selo }); if (ed.op.lago) C.i('contemplar', 'tanque', 2.4, 5, .9, { textos: ['A água do lago espiritual reflete a sua aura. Por um instante, você vê o caminho que já percorreu.'] }); },
+  biblioteca: C => { const { m, ed } = C; const L = LORE[ed.reg]; [1.4, 3.1, m.w - 3.1, m.w - 1.4].forEach((x, k) => C.leitura('estanteAlta', x, .85, 'Estante ' + (k + 1), [L[k % L.length]]));
+    C.p('balcao_livros', m.w / 2, 2.6); C.p('mesaLeitura', 3, 4.8); C.p('almofada', 1.9, 5.6); C.p('almofada', 4.1, 5.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.7, 3); },
+  acervo: C => { const { m, ed } = C; const L = LORE[ed.reg].concat(LORE.gt_patio); for (let k = 0; k < 4; k++) C.leitura('pergaminhos', 1.4 + k * 2.3, .85, 'Rolo de registro', [L[(k + 2) % L.length]]); C.p('escadinha', m.w - 1.2, 1); C.p('pilhaLivros', .9, 3.2); C.p('mesaEstudo', m.w - 2.4, 4.2); },
+  arquivo: C => { const { m, ed } = C; const L = LORE[ed.reg]; [1.5, 3.3, m.w - 3.3, m.w - 1.5].forEach((x, k) => C.leitura('pergaminhos', x, .85, 'Arquivo', [L[k % L.length]])); C.p('suporteTecnica', m.w / 2, .9); C.p('mesaEstudo', 3.2, 4.4); C.p('mesaEstudo', m.w - 3.2, 4.4); C.p('velas', m.w / 2, 3); },
+  moinho: C => { const { m, ed } = C; C.p('rodaMoinho', m.w - 2.2, 1.6); C.p('caixote', .9, 1.1); C.p('caixote', 1.8, 1.1); C.p('tronco', .9, 3); C.p('barril', .9, 4.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], 3.4, 2.4); },
+  forja: C => { const { m, ed } = C; C.p('forja', m.w / 2, 1.3); C.p('bancadaTrabalho', 2.4, 3.6); C.p('ferramentasParede', 1.2, .85); C.p('suporteArmas', m.w - 1, 2); C.p('barril', m.w - 1, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.4); },
+  torreBase: C => { const { m } = C; pisoMeio(m, 2, 2, m.w - 2, m.h - 2, T.LAJE); C.p('escadinha', m.w / 2, .9); C.p('lanternaPedra', 1, 1); C.p('lanternaPedra', m.w - 1, 1); C.leitura('pergaminhos', 1, 3.4, 'Placa da torre', ['O sino marca as horas de treino e os avisos de perigo.']); },
+  torreTopo: C => { const { m, ed } = C; C.i('sino', 'sino', m.w / 2, 1.4, .5, {}); C.i('contemplar', 'lanternaPedra', 1.2, 2.6, .2, { textos: ['Do alto da torre dá para ver a região inteira. ' + (LORE[ed.reg][0] || '')] }); },
+  catacumbaEntrada: C => { const { m, ed } = C; C.p('tocha', 1, 1); C.p('tocha', m.w - 1, 1); C.p('escombros', 2.4, 3.2); C.leitura('pergaminhos', m.w - 1.2, 3.2, 'Aviso na parede', ['"Quem desce às catacumbas deve respeitar os que treinaram aqui."']); },
+  catacumbaGaleria: C => { const { m } = C; for (let k = 0; k < 4; k++) C.p(k % 2 ? 'estatua' : 'tocha', 1.4 + k * 3.2, .9); C.p('escombros', 2, 4.4); C.p('colunaQuebrada', m.w - 1.4, 4); C.inimigos(3); },
+  catacumbaCripta: C => { const { m, ed } = C; C.p('altar', m.w / 2, 1); C.p('velas', m.w / 2 - 1.6, 1.1); C.p('velas', m.w / 2 + 1.6, 1.1); C.i('bau', 'bau', m.w - 1.4, 2.6, .45, { idBau: ed.id + '_cripta', premio: { cha: 2, onigiri: 1 } }); C.leitura('pergaminhos', 1, 2.6, 'Lápide', [LORE[ed.reg][2] || LORE[ed.reg][0]]); },
+  tesouro: C => { const { m, ed } = C; const R = [['Espada partida do Primeiro Clã', 'A lâmina quebrou num treino, não numa batalha. Os mestres a guardaram como lição de humildade.'], ['Faixa negra desbotada', 'Pertenceu a um mestre que treinou oitenta anos. Ainda dá o nó perfeito.'], ['Luvas de couro antigas', 'Usadas no primeiro torneio do vilarejo.']];
+    R.forEach(([n, d], k) => C.i('reliquia', 'relicario', 2 + k * 3, 1.4, .45, { textos: [n + ': ' + d] })); C.p('estatuaGuardiao', .9, 3.4); C.p('estatuaGuardiao', m.w - .9, 3.4); C.i('bau', 'bau', m.w / 2, 4, .45, { idBau: ed.id, premio: { cha: 2, onigiri: 2 } }); },
+  laboratorio: C => { const { m, ed } = C; for (let k = 0; k < 4; k++) C.p('cristal', 1 + k * 2.6, .9); C.p('bancadaTrabalho', 3, 3.4); C.p('prateleiraErvas', m.w - 1.4, .85); C.leitura('mesaEstudo', m.w - 2.4, 3.6, 'Anotações sobre cristais', [LORE.cavernas[0], 'Os cristais guardam aura como a água guarda o frio.']); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.2); },
+  mina: C => { const { m, ed } = C; C.p('carrinho', 2.4, 1.4); C.p('tocha', 1, 1); C.p('tocha', m.w - 1, 1); C.p('cristal', m.w - 2, 3); C.p('tronco', .9, 3.4); C.p('caixote', .9, 4.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.5, 2.2); },
+  minaFundo: C => { const { m, ed } = C; for (let k = 0; k < 5; k++) C.p('cristal', 1.2 + k * 2, .9 + (k % 2) * 1.2); C.p('escombros', 2, 4); C.i('bau', 'bau', m.w - 1.4, 3, .45, { idBau: ed.id + '_fundo' }); C.inimigos(2); },
+  fortaleza: C => { const { m, ed } = C; C.linhaFundo('estandarte', 2); C.p('coluna', 2, 3); C.p('coluna', m.w - 2, 3); C.i('mural', 'mural', m.w / 2, .9, .4, {}); const n = ed.op.npc; if (n) C.npc(n[0], 'guarda', m.w / 2 + 2, 2.2); },
+  fortalezaArmas: C => { const { m, ed } = C; C.linhaFundo('suporteArmas', 3); C.p('barril', .9, 3); C.p('caixote', .9, 4.2); C.i('bau', 'bau', m.w - 1.3, 3, .45, { idBau: ed.id }); },
+  arenaNucleo: C => { const { m, ed } = C; pisoMeio(m, 3, 2, m.w - 3, m.h - 2, T.TATAME); C.p('arquibancada', 3, 1.1); C.p('arquibancada', m.w - 3, 1.1); C.i('inscricao', 'altar', m.w / 2, 1.2, .5, { selo: ed.op.selo }); },
+  oficinaArt: C => { const { m, ed } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('ferramentasParede', 1.4, .85); C.p('prateleiraCeramica', m.w - 1.4, .85); C.p('tear', .9, 3.4); C.p('tronco', m.w - 1, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.6); },
+  alfaiataria: C => { const { m, ed } = C; C.p('tear', 2, 1); C.p('tear', m.w - 2, 1); C.p('prateleiraUtensilios', m.w / 2, .85); C.p('biombo', m.w - 1.4, 3.6); C.p('mesa', 2.6, 4.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.4, 2.4); },
+  ceramica: C => { const { m, ed } = C; C.p('prateleiraCeramica', 1.4, .85); C.p('prateleiraCeramica', 3.6, .85); C.p('forja', m.w - 2, 1.3); C.p('bancadaTrabalho', 3, 3.6); C.p('vasoGrande', m.w - 1, 4); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.4); },
+  banhosEntrada: C => { const { m, ed } = C; C.p('balcao_recepcao', 3.4, 2.2); C.p('cesto', .9, 1.1); C.p('cesto', .9, 2.2); C.p('vasoGrande', m.w - 1, 1.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], 5, 1.7); },
+  banhosTanque: C => { const { m } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.LAJE); C.i('banho', 'tanque', m.w / 2 - 2, 2.6, .8, {}); C.i('banho', 'tanque', m.w / 2 + 2.6, 4.4, .8, {}); C.p('lanternaPedra', 1, 1); C.p('lanternaPedra', m.w - 1, 1); },
+  salaoCom: C => { const { m, ed } = C; for (let k = 0; k < 3; k++) { C.p('mesa', 2.6 + k * 3.2, 3.4); } C.i('mural', 'mural', m.w / 2, .9, .4, {}); C.linhaFundo('estandarte', 2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2, 2); C.npc('Moradora Hisa', 'morador', 2, 5.4); },
+  postoGuarda: C => { const { m, ed } = C; C.i('mural', 'mural', m.w / 2, .9, .4, {}); C.p('suporteArmas', 1.4, .9); C.p('mesa', m.w - 2.4, 3.4); C.p('tocha', m.w - 1, 1); const n = ed.op.npc; if (n) C.npc(n[0], 'guarda', m.w / 2 - 2, 2.4); },
+  armazem: C => { const { m, ed } = C; const t = ed.reg === 'tangerinas'; for (let k = 0; k < 10; k++) C.p(t && k % 2 ? 'cestoTangerinas' : ['caixote', 'barril', 'cesto'][k % 3], .9 + (k % 5) * 1.6, .9 + Math.floor(k / 5) * 1.4); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2, 4); },
+  enfermaria: C => { const { m, ed } = C; for (let k = 0; k < 3; k++) C.i('cama', 'futon', 2.2 + k * 3.2, 1.6, .6, { ed: ed.id }); C.p('prateleiraErvas', m.w - 1.2, 3.4); C.p('biombo', 1.2, 3.8); const n = ed.op.npc; if (n) C.npc(n[0], 'cura', m.w / 2, 3.6, { servico: 'cura' }); },
+  alojamento: C => { const { m, ed } = C; for (let k = 0; k < 4; k++) C.i(k === 0 ? 'cama' : 'enfeite', 'futon', 1.9 + k * 2.7, 1.6, .6, { ed: ed.id }); C.p('armario', .8, 3.6); C.p('armario', m.w - .8, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.5, 3.6); },
+  residencia: C => { const { m, ed } = C; C.p('mesaBaixa', m.w / 2, 3.2); C.p('almofada', m.w / 2 - 1.2, 4); C.p('almofada', m.w / 2 + 1.2, 4); C.leitura('estanteAlta', 1.4, .85, 'Cadernos dos mestres', [LORE[ed.reg][1], 'Técnicas não se aprendem lendo: se aprendem treinando. Mas ler ajuda a entender o que treinar.']); C.p('biombo', m.w - 1.4, 1.6); C.p('vasoGrande', m.w - 1, 4);
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2.2, 1.8); },
+  palacioAudiencia: C => { const { m } = C; pisoMeio(m, 4, 1, m.w - 4, m.h - 1, T.TATAME); C.p('trono', m.w / 2, 1.2); C.p('coluna', 2.4, 2.6); C.p('coluna', m.w - 2.4, 2.6); C.p('coluna', 2.4, 6); C.p('coluna', m.w - 2.4, 6); C.linhaFundo('estandarte', 2);
+    C.npc('Guarda Imperial Kaname', 'guarda', m.w / 2 + 2.2, 2.2, { edLinhas: () => [{ p: null, nome: 'Guarda Imperial Kaname', t: 'A Imperatriz Rita está recebendo visitantes no pátio do Grande Templo. Este é o salão de audiência dela.' }, { p: null, nome: 'Guarda Imperial Kaname', t: 'Ela ouve todos com bondade — alunos, mestres e moradores.' }] }); },
+  palacioReuniao: C => { const { m } = C; C.p('mesa', m.w / 2, 3); for (let k = 0; k < 4; k++) C.p('almofada', m.w / 2 - 2.4 + k * 1.6, 4.4); C.i('mural', 'mural', m.w / 2, .9, .4, {}); C.p('biombo', 1.2, 2); C.deco(2); },
+  palacioPrivado: C => { const { m } = C; C.p('futon', m.w / 2 + 1.4, 1.6); C.p('biombo', 2, 2); C.p('vasoGrande', .9, 4); C.p('vasoGrande', m.w - .9, 4); C.p('lanterna', m.w - 1, 1); C.i('contemplar', 'mesaBaixa', 3, 4.4, .6, { textos: ['Aposentos simples e organizados. Um pente de madeira e um livro de poesia sobre a mesa.'] }); },
+  administrativo: C => { const { m, ed } = C; C.leitura('mesaEstudo', 3, 2.2, 'Registros do templo', ['Cada área do Grande Templo abre conforme a faixa do aluno.', 'Inscrições do torneio são feitas na Arena dos Grandes Mestres.']); C.p('mesaEstudo', m.w - 3, 2.2); C.linhaFundo('pergaminhos', 3);
+    C.i('mural', 'mural', m.w - 1.2, 4, .4, {}); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 3.6); },
+  refeitorio: C => { const { m, ed } = C; for (let k = 0; k < 4; k++) { const x = 2.6 + (k % 2) * 6, y = 2.4 + Math.floor(k / 2) * 2.6; C.p('mesa', x, y); C.p('almofada', x - 1.2, y + .8); C.p('almofada', x + 1.2, y + .8); } const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 1.4); },
+  cozinhaServico: C => { const { m } = C; C.p('fogao', 1.2, 1); C.p('fogao', 3, 1); C.p('prateleiraUtensilios', m.w - 1.4, .85); C.p('barril', m.w - .9, 2.6); C.p('caixote', m.w - .9, 3.8); C.p('lareira', 3, 4); },
+  tunel: C => { const { m } = C; C.p('tocha', 1, 1); C.p('tocha', m.w - 1, 1); C.p('escombros', 2.4, 3.6); C.p('estalagmite', m.w - 1.4, 3.8); C.inimigos(2); },
+  tunelCamara: C => { const { m, ed } = C; C.leitura('pergaminhos', m.w / 2, .9, 'Documento escondido', [LORE[ed.reg][1], 'Estas passagens ligavam as áreas importantes em tempos de perigo.']); C.i('bau', 'bau', m.w - 1.4, 2.4, .45, { idBau: ed.id + '_camara' }); C.p('tocha', 1, 1); },
+  pagode: C => { const { m } = C; pisoMeio(m, 2, 2, m.w - 2, m.h - 2, T.LAJE); C.p('estatua', m.w / 2, 1); C.p('velas', m.w / 2 - 1.6, 1.2); C.p('velas', m.w / 2 + 1.6, 1.2); C.p('escadinha', m.w - 1.2, 1); C.p('meditar', m.w / 2, 3.6); },
+  pagodeAlto: C => { const { m } = C; const ERAS = ['Era do Bambu: os primeiros alunos treinavam com varas.', 'Era da Água: nasceram as esquivas e os desvios.', 'Era da Pedra: os mestres criaram as faixas.', 'Era do Fogo: surgiram as técnicas de aura.', 'Era do Vento: o torneio uniu todas as escolas.'];
+    ERAS.forEach((t, k) => C.leitura('pergaminhos', 1.2 + k * 2.1, .85, 'Quinta era — ' + (k + 1), [t])); C.i('contemplar', 'lanternaPedra', m.w / 2, 3.6, .2, { textos: ['Cinco eras, um caminho. A sexta ainda está sendo escrita.'] }); },
+  abrigo: C => { const { m, ed } = C; C.i('cama', 'futon', 2.6, 1.6, .6, { ed: ed.id }); C.p('lareira', m.w / 2 + 1, 2.2); C.p('cristal', m.w - 1, 1); C.i('contemplar', 'tanque', 2.6, 4.4, .9, { textos: ['A água do lago cristalino brilha com a luz dos cristais. Dá vontade de ficar olhando.'] }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2, 3.4); },
+  // ---- Restaurante e Casa de Chá (um edifício só, no Grande Templo) ----
+  restEntrada: C => { const { m } = C; C.p('balcao_recepcao', 3, 2.2); C.p('vasoGrande', .9, 1.2); C.p('vasoGrande', m.w - .9, 1.2); C.i('cardapio', 'placa', m.w - 2.6, 2.4, .22, {}); C.npc('Recepcionista Emi', 'morador', 4.8, 1.7, { edLinhas: () => [{ p: null, nome: 'Recepcionista Emi', t: 'Bem-vindo ao Restaurante e Casa de Chá do Grande Templo! O salão fica pela porta do fundo.' }] }); },
+  restSalao: C => { const { m } = C; for (let k = 0; k < 4; k++) { const x = 2.6 + (k % 2) * 7.6, y = 2.6 + Math.floor(k / 2) * 2.8; C.p('mesa', x, y); C.p('almofada', x - 1.2, y + .8); C.p('almofada', x + 1.2, y + .8); }
+    C.i('servico', 'balcao_cha', m.w / 2, 3.4, .9, {}); C.i('cardapio', 'placa', m.w / 2 - 2.2, 4, .22, {});
+    m.objs.push({ tipo: 'npc', nome: 'Pibe', x: m.w / 2 - 3.4, y: 2.4, r: .3, dir: 2, pal: PAL_NPC.pibe, fala: 'casal_cha', pid: 'pibe' }, { tipo: 'npc', nome: 'Ramor', x: m.w / 2 + 3.4, y: 2.4, r: .3, dir: 2, pal: PAL_NPC.ramor, fala: 'casal_cha', pid: 'ramor' }); C.npc('Cliente Daichi-ya', 'morador', 2.2, 5.6); },
+  restBalcao: C => { const { m } = C; C.i('servico', 'balcao_cha', m.w / 2, 2, .9, {}); C.p('prateleiraUtensilios', 1.4, .85); C.p('prateleiraUtensilios', m.w - 1.4, .85); C.npc('Atendente Kou', 'morador', m.w / 2 + 1.6, 1.4, { edLinhas: () => [{ p: null, nome: 'Atendente Kou', t: 'Aqui no balcão a gente serve chá por conta da casa. Comida de verdade, só quando existir dinheiro no jogo — palavra da Ramor.' }] }); },
+  restCha: C => { const { m } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.TATAME); C.p('lareira', m.w / 2, 2.4); C.p('almofada', m.w / 2 - 1.6, 3.4); C.p('almofada', m.w / 2 + 1.6, 3.4); C.p('vasoGrande', 1, 1); C.i('servico', 'mesaBaixa', m.w / 2, 4.4, .6, {});
+    C.npc('Mestra do Chá Matsu', 'morador', m.w / 2 + 2.6, 1.8, { edLinhas: () => [{ p: null, nome: 'Mestra do Chá Matsu', t: 'A cerimônia do chá ensina a mesma coisa que o karatê: cada gesto no tempo certo.' }] }); },
+  restCozinha: C => { const { m } = C; C.p('fogao', 1.2, 1); C.p('fogao', 3, 1); C.p('lareira', m.w - 2.2, 1.6); C.p('prateleiraUtensilios', 5.4, .85); C.p('barril', m.w - .9, 3.6); C.npc('Cozinheiro Tomo', 'morador', 4, 3.2, { edLinhas: () => [{ p: null, nome: 'Cozinheiro Tomo', t: 'Cuidado com as panelas! A Ramor conta todas.' }] }); },
+  restPreparo: C => { const { m } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('prateleiraUtensilios', 1.4, .85); C.p('cesto', .9, 3.4); C.p('cestoTangerinas', m.w - 1, 3.4); },
+  restDespensa: C => { const { m } = C; for (let k = 0; k < 8; k++) C.p(['barril', 'caixote', 'cesto', 'cestoTangerinas'][k % 4], .9 + (k % 4) * 1.5, .9 + Math.floor(k / 4) * 1.4); },
+  restUtensilios: C => { const { m } = C; C.linhaFundo('prateleiraUtensilios', 3); C.p('armario', .8, 3); C.p('armario', m.w - .8, 3); C.p('prateleiraCeramica', m.w / 2, 3.2); },
+  restJardim: C => { const { m } = C; m.tiles.forEach(l => l.fill(T.CEREJA)); C.p('fonte', m.w / 2, 2.2); C.p('mesa', 2.6, 4.6); C.p('mesa', m.w - 2.6, 4.6); C.p('vasoGrande', 1, 1); C.p('vasoGrande', m.w - 1, 1); C.p('lanternaPedra', 1, 3); C.p('lanternaPedra', m.w - 1, 3); },
+  restPrivativa: C => { const { m } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.TATAME); C.p('mesaBaixa', m.w / 2, 2.8); C.p('almofada', m.w / 2 - 1.3, 3.6); C.p('almofada', m.w / 2 + 1.3, 3.6); C.p('biombo', 1.3, 1.6); C.p('vasoGrande', m.w - 1, 1.2); },
+  restDepTraseiro: C => { const { m } = C; for (let k = 0; k < 9; k++) C.p(['caixote', 'barril', 'cestoTangerinas'][k % 3], .9 + (k % 3) * 1.5, .9 + Math.floor(k / 3) * 1.3); C.p('tronco', m.w - 1, 2); },
+  // ---- Grande Templo das Tangerinas (o maior templo de artes marciais do mundo) ----
+  tgPatio: C => { const { m } = C; m.tiles.forEach(l => l.fill(T.LAJE)); pisoMeio(m, 0, 0, m.w, 1, T.TANGER); C.p('estatuaGuardiao', 2, 4); C.p('estatuaGuardiao', m.w - 2, 4); C.p('lanternaPedra', 1, 6.6); C.p('lanternaPedra', m.w - 1, 6.6); C.p('cestoTangerinas', 1, 8.2); C.p('tangerineira', m.w - 1.4, 8.4);
+    C.npc('Porteiro Daimon', 'guarda', m.w / 2 + 2, 5.4, { edLinhas: () => [{ p: null, nome: 'Porteiro Daimon', t: 'Bem-vindo ao Grande Templo das Tangerinas, o maior templo de artes marciais do mundo!' }, { p: null, nome: 'Porteiro Daimon', t: 'Não confunda com o Grande Templo da Imperatriz Rita. Aqui, cada porta do pátio leva a uma ala diferente.' }] }); },
+  tgCerimonial: C => { const { m } = C; pisoMeio(m, 3, 1, m.w - 3, m.h - 1, T.TATAME); C.p('plataforma', m.w / 2, 1.4); C.linhaFundo('estandarte', 2); C.p('coluna', 2, 3); C.p('coluna', m.w - 2, 3); C.p('incensario', m.w / 2 - 2.4, 1.2); },
+  tgDojo: C => SALAS.dojo(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { npc: ['Mestre Shin', 'mestre'] } }) })),
+  tgTreino: C => { const { m } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.TATAME); for (let k = 0; k < 4; k++) C.p('sacoPancada', 1.4 + k * 2.6, .9); C.i('boneco', 'boneco', 3, 3.6, .3, { hp: 9999, wob: 0, alvo: true }); C.i('boneco', 'boneco', m.w - 3, 3.6, .3, { hp: 9999, wob: 0, alvo: true }); C.i('treino', 'placa', m.w / 2, 2.4, .22, { idTreino: C.ed.id + '_esp' }); },
+  tgArena: C => SALAS.arenaNucleo(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { selo: null } }) })),
+  tgAlojamento: C => SALAS.alojamento(C), tgMestres: C => SALAS.residencia(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { npc: ['Mestra Anciã Kohaku', 'mestre'] } }) })),
+  tgBiblioteca: C => SALAS.biblioteca(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { npc: ['Bibliotecária Aiko', 'leitura'] } }) })),
+  tgArquivo: C => { const { m } = C; ORDEM_TEC.forEach((id, k) => { const T0 = TEC_AKIRA[id]; C.leitura('suporteTecnica', 1.4 + k * 2.2, .9, 'Técnica lendária: ' + T0.nome, [T0.desc, tecLiberada(id) ? 'Você já domina esta técnica. Equipe no menu M.' : reqTecTexto(T0.req) + '.']); }); C.p('mesaEstudo', m.w / 2, 3.6); C.p('velas', 1, 3.6); },
+  tgRefeitorio: C => { SALAS.refeitorio(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { npc: ['Cozinheira Mikan-ba', 'morador'] } }) })); C.p('fogao', C.m.w - 1.2, 5.2); },
+  tgEnfermaria: C => SALAS.enfermaria(Object.assign(C, { ed: Object.assign({}, C.ed, { op: { npc: ['Curandeira Yori', 'cura'] } }) })),
+  tgJardim: C => { const { m } = C; m.tiles.forEach(l => l.fill(T.TANGER)); C.p('meditar', 3, 3); C.p('meditar', m.w - 3, 3); C.p('tangerineira', 1.4, 1.2); C.p('tangerineira', m.w - 1.4, 1.2); C.p('lanternaPedra', m.w / 2, 1); C.i('contemplar', 'fonte', m.w / 2, 4.6, .9, { textos: ['O perfume das tangerinas e o som da água ajudam a respirar devagar.'] }); },
+  tgReliquias: C => { const { m, ed } = C; [['Primeiro cinturão do templo', 'Tecido de tangerina tingido. Quem fundou o templo usou esta faixa.'], ['Pergaminho selado', 'Fala de uma sombra de dragão que visitou o templo há muito tempo. O nome foi apagado.'], ['Punhos de bronze cerimoniais', 'Usados só nas cerimônias, nunca em luta.']]
+    .forEach(([n, d], k) => C.i('reliquia', 'relicario', 2 + k * 3, 1.4, .45, { textos: [n + ': ' + d] })); C.i('bau', 'bau', m.w / 2, 4.2, .45, { idBau: ed.id + '_reliq', premio: { cha: 3, onigiri: 2 } }); C.p('tocha', .9, 1); C.p('tocha', m.w - .9, 1); },
+  tgLideranca: C => { const { m } = C; pisoMeio(m, 2, 1, m.w - 2, m.h - 1, T.TATAME); C.p('trono', m.w / 2, 1.2); C.linhaFundo('estandarte', 2); C.npc('Grão-Mestre Kankitsu', 'mestre', m.w / 2 + 2, 2, { edLinhas: () => [{ p: null, nome: 'Grão-Mestre Kankitsu', t: 'Este templo recebe lutadores de todo o mundo. ' + (mundoYokai() ? 'Desde que os selos se romperam, nossos discípulos patrulham a floresta.' : 'O torneio é o momento em que todas as escolas se encontram.') }] }); }
+};
+
+/* ---------- montar um cômodo (mapa de interior) ---------- */
+function construirSala(salaId) {
+  const ref = SALA_DE[salaId], ed = EDIF[ref.ed], sala = ed.salas[ref.i], E = ESTILO_INT[ed.reg] || ESTILO_INT.vilarejo;
+  garantirPosEdif(ed.id);
+  const [w, h] = TAM_SALA[sala.k] || [11, 8], sombria = SALA_SOMBRIA[sala.k];
+  const piso = sombria ? (ed.reg === 'cavernas' ? T.CAVERNA : T.PEDRA) : E.piso;
+  const m = novoMapa(salaId, ed.nome + (ed.salas.length > 1 ? ' — ' + NOME_SALA[sala.k] : ''), w, h, true);
+  m.tiles.forEach(l => l.fill(piso)); m.parede = sombria ? ['#8a8478', '#2a2620'] : E.parede; m.corrompido = !!sombria;
+  m.paredeTipo = ed.reg === 'cavernas' ? 'rocha' : sombria || ed.reg === 'templos' || ed.reg === 'cachoeira' ? 'pedra' : ed.reg === 'bambuzal' ? 'bambu' : null;
+  // saída do cômodo: o de entrada leva para fora, os outros voltam para o cômodo de onde vieram
+  if (sala.de == null) { const P = EDIF_POS[ed.id] || { mapa: 'vilarejo', x: 24.5, y: 24.6 }; m.exits.push({ x: w / 2 - 1, y: h - 1, w: 2, h: 1, alvo: P.mapa, sx: P.x, sy: P.y, nome: 'Saída', tapete: true }); }
+  else { const pai = ed.salas[sala.de], pp = portasDaSala(ed, pai).find(q => q.filho === sala.i); m.exits.push({ x: w / 2 - 1, y: h - 1, w: 2, h: 1, alvo: pai.id, sx: pp ? pp.sx : 3, sy: pp ? pp.sy : 2, nome: NOME_SALA[pai.k], tapete: true }); }
+  m.spawn = { x: w / 2, y: h - 2.3 };
+  const rnd = mulberry32(([...salaId].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) >>> 0), C = ctxSala(m, ed, sala, E, rnd);
+  for (const q of portasDaSala(ed, sala, w, h)) {                      // portas para os cômodos de dentro
+    C.portas.push([q.x, q.y]); const filho = ed.salas[q.filho], [fw, fh] = TAM_SALA[filho.k] || [11, 8];
+    if (q.parede === 'fundo') m.exits.push({ x: q.x - .6, y: 0, w: 1.2, h: .5, alvo: filho.id, sx: fw / 2, sy: fh - 2.2, nome: NOME_SALA[filho.k] });
+    else m.exits.push({ x: 0, y: q.y - .6, w: .5, h: 1.2, alvo: filho.id, sx: fw / 2, sy: fh - 2.2, nome: NOME_SALA[filho.k] });
+    m.objs.push({ tipo: 'porta', x: q.parede === 'fundo' ? q.x : .12, y: q.parede === 'fundo' ? .12 : q.y, r: 0, spr: SPR.porta, dk: -1, nome: NOME_SALA[filho.k] });
+  }
+  C.portas.push([w / 2, h - 1]);
+  C.inimigos = n => {                                                  // lugares de desafio: inimigos da região (yokais depois dos selos)
+    for (let k = 0; k < n; k++) { const x = 2 + rnd() * (w - 4), y = 2 + rnd() * (h - 4.5); if (Math.hypot(x - w / 2, y - (h - 2.3)) < 3) continue;
+      const e = novoInimigo(k === 0 && n > 2 ? 'veterano' : 'bandido', x, y); e.regiaoForcada = ed.reg; e.home = [x, y]; e.semRenascer = true; m.objs.push(e); }
+  };
+  (SALAS[sala.k] || SALAS.casaSala)(C);
+  if (mundoYokai() && sombria && !['camaraSelo', 'arenaNucleo'].includes(sala.k)) C.p('escombros', 1.6 + rnd() * (w - 3.2), h - 2.4);   // marcas da invasão depois dos selos
+  return m;
+}
+// onde ficam as portas de um cômodo para os cômodos ligados a ele (fundo primeiro, depois parede esquerda)
+function portasDaSala(ed, sala, w, h) {
+  if (w == null) [w, h] = TAM_SALA[sala.k] || [11, 8];
+  const filhos = ed.salas.filter(s => s.de === sala.i), out = [], nF = Math.max(1, Math.floor((w - 2) / 2.6));
+  filhos.forEach((f, k) => {
+    if (k < nF) { const x = 1.6 + (k + .5) * (w - 3.2) / Math.min(nF, filhos.length); out.push({ filho: f.i, parede: 'fundo', x, y: .4, sx: x, sy: 1.3 }); }
+    else { const y = 1.8 + (k - nF) * 2.2; out.push({ filho: f.i, parede: 'esq', x: .4, y, sx: 1.3, sy: y }); }
+  });
+  return out;
+}
+Object.keys(SALA_DE).forEach(id => { MAPAS[id] = () => construirSala(id); });
+MAPAS.casa_cha = () => construirSala('ed_gt_restaurante_1');           // saves antigos dentro da Casa de Chá do vilarejo vão para o salão do restaurante
+
+/* ---------- fachadas no mundo (cada região, fora do núcleo, sem cobrir rios e caminhos) ---------- */
+function garantirPosEdif(id) { if (!EDIF_POS[id]) { const ed = EDIF[id]; if (ed.reg === 'cavernas') obterCaverna(); else obterMundo(); } }
+function tamEdif(ed) { const o = ed.op; if (o.w) return [o.w, o.d, o.H, o.tiers]; return { pousada: [4, 3, 30], dojo: [4, 3, 30], biblioteca: [3, 3, 30], santuario: [3, 3, 32, 2], ervas: [3, 2, 24], loja: [3, 3, 26], cabana: [2, 2, 22], casa: [3, 2, 24], residencia: [3, 3, 28], alojamento: [4, 2, 26], refeitorio: [4, 3, 28], armazem: [4, 3, 26] }[ed.tipo] || [3, 3, 28]; }
+function reservadoGrande(m, x, y, r) {                                // ignora as reservas finas dos caminhos (r 1.2)
+  for (let a = Math.floor((x - r - 8) / 4); a <= Math.floor((x + r + 8) / 4); a++) for (let b = Math.floor((y - r - 8) / 4); b <= Math.floor((y + r + 8) / 4); b++) { const L = m.ridx.get(a + b * 1024); if (L) for (const z of L) if (z.r > 1.25 && Math.hypot(x - z.x, y - z.y) < z.r + r) return true; }
+  return false;
+}
+function colocarEdificios(M) {
+  const rnd = mulberry32(5150);
+  for (const reg in EDIFICIOS) {
+    if (reg === 'cavernas' || !CELULA[reg]) continue;
+    const R = M.cel[CELULA[reg][1]][CELULA[reg][0]], E = ESTILO_INT[reg], n = R.nucleo;
+    for (const [id] of EDIFICIOS[reg]) {
+      const ed = EDIF[id];
+      if (ed.op.casa) continue;
+      if (ed.tipo === 'marco') { colocarMarco(M, R, ed, rnd); continue; }
+      const [w, d, H, tiers] = tamEdif(ed); let ok = null;
+      for (let t = 0; t < 900 && !ok; t++) {
+        const ang = rnd() * TAU, dist = 3 + rnd() * 20, cx = (n[0] + n[2]) / 2 + Math.cos(ang) * ((n[2] - n[0]) / 2 + dist), cy = (n[1] + n[3]) / 2 + Math.sin(ang) * ((n[3] - n[1]) / 2 + dist);
+        const x = Math.floor(cx - w / 2), y = Math.floor(cy - d / 2);
+        if (x < R.x0 + 3 || y < R.y0 + 3 || x + w > R.x1 - 3 || y + d > R.y1 - 4) continue;
+        if (!(x + w + 1 < n[0] || x - 1 > n[2] || y + d + 2 < n[1] || y - 1 > n[3])) continue;
+        let livre = !reservadoGrande(M, x + w / 2, y + d / 2, Math.max(w, d) / 2 + 1.2);
+        for (let j = y - 1; j <= y + d + 2 && livre; j++) for (let i = x - 1; i <= x + w; i++) { const tt = M.tiles[j] && M.tiles[j][i]; if (tt == null || M.bloq[j][i] || tt === T.AGUA || tt === T.PONTE || ((tt === T.TERRA || tt === T.LAJE) && tt !== R.base) || M.regiaoEm(i, j) !== R) { livre = false; break; } }
+        if (livre) ok = [x, y];
+      }
+      if (!ok) continue;
+      const [x, y] = ok;
+      colocarCasa(M, { x, y, w, d, H, tel: E.tel, par: E.par, palha: E.palha && !tiers && w * d <= 9, tiers, nome: ed.nome, alvo: ed.salas[0].id, funcao: ed.letreiro ? 'ed' : undefined, letreiro: ed.letreiro });
+      reservar(M, x + w / 2, y + d / 2, Math.max(w, d) / 2 + 1.4); reservar(M, x + w / 2, y + d + 1.2, 1.4);
+      EDIF_POS[id] = { mapa: 'mundo', x: x + w / 2, y: y + d + 1.4 };
+    }
+  }
+}
+function colocarMarco(M, R, ed, rnd) {                                  // pontes e pátio de estátuas: monumento externo com placa
+  const n = R.nucleo;
+  for (let t = 0; t < 600; t++) {
+    const ang = rnd() * TAU, dist = 4 + rnd() * 16, x = (n[0] + n[2]) / 2 + Math.cos(ang) * ((n[2] - n[0]) / 2 + dist), y = (n[1] + n[3]) / 2 + Math.sin(ang) * ((n[3] - n[1]) / 2 + dist);
+    if (x < R.x0 + 4 || y < R.y0 + 4 || x > R.x1 - 4 || y > R.y1 - 4 || reservadoGrande(M, x, y, 3)) continue;
+    let livre = true; for (let j = Math.floor(y - 2); j <= y + 2 && livre; j++) for (let i = Math.floor(x - 3); i <= x + 3; i++) { const tt = M.tiles[j] && M.tiles[j][i]; if (tt == null || M.bloq[j][i] || tt === T.AGUA || M.regiaoEm(i, j) !== R) { livre = false; break; } }
+    if (!livre) continue;
+    if (ed.op.marco === 'ponte') { for (let i = Math.floor(x - 2); i <= x + 2; i++) for (let j = Math.floor(y - .5); j <= y + .5; j++) M.tiles[j][i] = T.TERRA; M.objs.push({ tipo: 'marco', x, y, r: 0, spr: SPR.ponteArco, dk: x + y - .5 }); }
+    else [[-2, -1], [2, -1], [-2, 1.4], [2, 1.4]].forEach(([dx, dy]) => { M.objs.push({ tipo: 'marco', x: x + dx, y: y + dy, r: .4, spr: SPR.estatuaGuardiao }); M.bloq[Math.floor(y + dy)][Math.floor(x + dx)] = true; });
+    M.objs.push({ tipo: 'placa', x: x + 1.2, y: y + 1.8, r: .22, spr: SPR.placa, texto: ed.nome + '. ' + (LORE[ed.reg][1] || '') });
+    reservar(M, x, y, 3.2); EDIF_POS[ed.id] = { mapa: 'mundo', x, y }; return;
+  }
+}
+// cavernas: portas escavadas na rocha, nos salões (o maior salão é a arena do chefe e fica livre)
+function colocarEdificiosCaverna(M, saloes) {
+  const lista = EDIFICIOS.cavernas, usados = saloes.slice(1);
+  lista.forEach(([id], k) => {
+    const ed = EDIF[id], s = usados[k % usados.length], a = -Math.PI / 2 - .9 + (Math.floor(k / usados.length)) * 1.8 + (k % 2) * .3;
+    const dx = s.x + Math.cos(a) * (s.r - .35), dy = s.y + Math.sin(a) * (s.r - .35), fx = s.x + Math.cos(a) * (s.r - 1.3), fy = s.y + Math.sin(a) * (s.r - 1.3);
+    M.objs.push({ tipo: 'portaCaverna', x: dx, y: dy, r: 0, spr: SPR.portaRocha, nome: ed.nome });
+    M.exits.push({ x: fx - .45, y: fy - .45, w: .9, h: .9, alvo: ed.salas[0].id, nome: ed.nome });
+    EDIF_POS[id] = { mapa: 'caverna', x: s.x + Math.cos(a) * (s.r - 2.4), y: s.y + Math.sin(a) * (s.r - 2.4) };
+  });
+}
+
+/* ---------- interações dos interiores ---------- */
+const MSG_SEM_DINHEIRO = 'Ainda não existe dinheiro no jogo: a compra fica pendente até o sistema de comércio ser criado.';
+function textoInscricao(o) {
+  if (o.selo === 'todos') return ORDEM_CHEFES.map(id => { const d = CHEFES[id], g = GUARDIOES[d.regiao]; return d.nome + ': ' + (estado.chefes[id] ? 'selo restaurado.' : estado.fase !== 'selos' ? 'selo intacto (por enquanto).' : g && !guardiaoVencido(d.regiao) ? 'selo corrompido, guardado por ' + ARQ[g].nome + '.' : 'selo rompido — o desafio espera.'); });
+  if (!o.selo || !CHEFES[o.selo]) return ['Uma inscrição antiga sobre os oito selos que protegem o mundo.'];
+  const d = CHEFES[o.selo], g = GUARDIOES[d.regiao];
+  if (estado.chefes[o.selo]) return ['A inscrição brilha em paz: o selo de ' + d.nome + ' foi restaurado.'];
+  if (estado.fase !== 'selos') return ['"Aqui repousa o selo que prende ' + d.nome + '." A pedra está fria e quieta.'];
+  return ['A inscrição está rachada: o selo de ' + d.nome + ' se rompeu.', g && !guardiaoVencido(d.regiao) ? ARQ[g].nome + ' protege o selo lá fora. Vença o guardião e depois toque o selo.' : 'O guardião foi vencido. O selo, lá fora, espera o seu desafio.'];
+}
+function textoMural() {
+  const vencidos = Object.keys(estado.chefes || {}).length, guard = Object.keys(GUARDIOES).filter(guardiaoVencido).length, L = [];
+  if (estado.fase !== 'selos') { L.push(estado.torneio && estado.torneio.inscrito ? 'GRANDE TORNEIO: inscrição confirmada. Boa sorte!' : 'GRANDE TORNEIO: inscrições na Arena dos Grandes Mestres (Grande Templo).'); L.push('Lutadores rebeldes nas estradas: viaje em grupo ou treine antes.'); }
+  else { L.push('AVISO: os selos antigos se romperam. Yokais nas estradas — lojas, pousadas e serviços continuam funcionando.'); L.push('Guardiões vencidos: ' + guard + '/8 • Chefes vencidos: ' + vencidos + '/8.'); }
+  if (estado.missoes.papeis_perdidos === 'em_andamento') L.push('O Davi, da biblioteca, procura 7 papéis perdidos. Você tem ' + nPapeis() + '/7.');
+  return L;
+}
+const INTERACOES_ED = {
+  leitura: o => abrirConversa({ falas: o.textos.filter(Boolean).map(t => ({ p: null, nome: o.titulo || 'Leitura', t })) }),
+  contemplar: o => abrirConversa({ falas: o.textos.filter(Boolean).map(NARR) }),
+  reliquia: o => abrirConversa({ falas: o.textos.map(NARR) }),
+  inscricao: o => abrirConversa({ falas: (o.textos || textoInscricao(o)).map(NARR) }),
+  mural: () => abrirConversa({ falas: textoMural().map(t => ({ p: null, nome: 'Mural de avisos', t })) }),
+  cama: o => { estado.hp = maxHp(); estado.aura = maxAura(); const P = EDIF_POS[o.ed]; if (P) estado.respawn = { mapa: P.mapa, x: P.x, y: P.y }; aviso('Você descansou: vida e aura cheias. Ponto de retorno salvo aqui.'); salvar(); },
+  banho: () => { const t = Date.now(), ult = estado.flags.banhoT || 0; if (t - ult < 120000) { aviso('A água ainda está esquentando (espere ' + Math.ceil((120000 - (t - ult)) / 1000) + ' s).'); return; }
+    estado.flags.banhoT = t; estado.hp = Math.min(maxHp(), estado.hp + Math.round(maxHp() * .5)); estado.aura = Math.min(maxAura(), estado.aura + 20); aviso('Banho quente: +50% de vida e +20 de aura.'); salvar(); },
+  servico: () => { const t = Date.now(), ult = estado.flags.chaT || 0; if (t - ult < 180000) { abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Calma! O próximo chá fica pronto em ' + Math.ceil((180000 - (t - ult)) / 1000) + ' segundos.' }] }); return; }
+    estado.flags.chaT = t; estado.aura = Math.min(maxAura(), estado.aura + 30); abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Um chá verde por conta da casa. (+30 de aura)' }, NARR(MSG_SEM_DINHEIRO)] }); salvar(); },
+  cardapio: () => abrirConversa({ falas: [{ p: null, nome: 'Cardápio', t: CARDAPIO.join(' • ') }], opcoes: 'cardapio' }),
+  balcao: o => { const k = 'amostra_' + o.idLoja, op = [];
+    if (!estado.flags[k]) op.push({ t: 'Pegar a amostra grátis', eventos: [() => { if (estado.flags[k]) return; estado.flags[k] = 1; estado.inv.onigiri = (estado.inv.onigiri || 0) + 1; aviso('Recebeu: Onigiri (amostra grátis)'); salvar(); }] });
+    op.push({ t: 'Só olhar' });
+    abrirConversa({ falas: [NARR('No balcão: ' + o.estoque.join(', ') + '.'), NARR(MSG_SEM_DINHEIRO)], opcoes: op }); },
+  bau: o => { const k = 'bau_' + o.idBau; if (estado.flags[k]) { aviso('O baú está vazio.'); return; }
+    estado.flags[k] = 1; const p = o.premio || { cha: 1 }; for (const it in p) estado.inv[it] = (estado.inv[it] || 0) + p[it];
+    aviso('Baú aberto: ' + Object.entries(p).map(([it, q]) => ITENS[it].nome + ' x' + q).join(', ')); salvar(); },
+  sino: o => { Som.efeito('impacto'); shake = 3; popup(o.x, o.y, 'DONG!', '#ffe0a0'); ondasCine.push({ x: o.x, y: o.y, t: 0, vida: .9, r: 4, cor: '#ffe0a0' }); },
+  treino: o => {
+    if (jog.treino) { aviso('Treino encerrado.'); jog.treino = null; return; }
+    jog.treino = { t: 30, n: 0, id: o.idTreino }; const rec = estado.flags['treino_' + o.idTreino] || 0;
+    aviso('Treino de 30 s: acerte os bonecos! (recorde: ' + rec + ' acertos) — não dá XP'); }
+};
+function tickTreino(dt) {
+  const T0 = jog.treino; if (!T0 || dt <= 0) return;
+  const antes = Math.ceil(T0.t); T0.t -= dt;
+  if (Math.ceil(T0.t) !== antes && Math.ceil(T0.t) % 10 === 0 && T0.t > 0) aviso('Treino: ' + Math.ceil(T0.t) + ' s • ' + T0.n + ' acertos');
+  if (T0.t <= 0) { const k = 'treino_' + T0.id, rec = estado.flags[k] || 0; if (T0.n > rec) estado.flags[k] = T0.n; aviso('Fim do treino: ' + T0.n + ' acertos' + (T0.n > rec ? ' — NOVO RECORDE!' : ' (recorde ' + rec + ')')); jog.treino = null; salvar(); }
+}
+function falarNpcED(o) {
+  if (o.servico === 'cura') { abrirConversa({ falas: falasED(o.nome, 'cura', EDIF[o.ed]), opcoes: [{ t: 'Sim, me trate', eventos: [() => { estado.hp = maxHp(); estado.aura = Math.min(maxAura(), estado.aura + 15); aviso('Tratamento completo: vida cheia e +15 de aura.'); salvar(); }] }, { t: 'Agora não' }] }); return true; }
+  if (o.edLinhas) { abrirConversa({ falas: o.edLinhas() }); return true; }
+  if (o.fala === 'ed') { abrirConversa({ falas: falasED(o.nome, o.edPapel, EDIF[o.ed]) }); return true; }
+  return false;
+}
+
+// casas que já existiam: nomes do catálogo (o interior, os NPCs e as missões continuam iguais)
+(() => { const ren = { biblioteca: 'Biblioteca de Davi', hospedaria: 'Pousada da Ana Clara', oficina: 'Oficina de Equipamentos', arena_mestres: 'Arena Cerimonial', flor_de_liz: 'Floricultura Flor de Liz' };
+  for (const c of CASAS) if (ren[c.id]) c.nome = ren[c.id];
+  const c = CASAS.find(k => k.id === 'cha'), ed = EDIF.vil_suprimentos;          // a Casa de Chá do vilarejo virou Loja de Suprimentos (o restaurante com chá fica no Grande Templo)
+  if (c && ed) { c.nome = ed.nome; c.alvo = ed.salas[0].id; c.funcao = 'ed'; c.letreiro = ed.letreiro; c.palha = true; EDIF_POS.vil_suprimentos = { mapa: c.mapa, x: c.x + c.w / 2, y: c.y + c.d + 1.4 }; }
+})();
+Object.assign(DEF_OBJ, { fonte: { r: .9 }, bau: { r: .45 }, forja: { r: .9 }, sino: { r: .5 }, mural: { r: .4 }, tanque: { r: .8 }, rodaMoinho: { r: .9 }, incensario: { r: .25 }, porta: { r: 0 }, portaRocha: { r: 0 }, cestoTangerinas: { r: .3 },
+  relicario: { r: .4 }, trono: { r: .7 }, lareira: { r: .6 }, escombros: { r: .5 }, raiz: { r: .7 }, tear: { r: .7 }, prateleiraErvas: { r: .5 }, prateleiraCeramica: { r: .5 }, ponteArco: { r: 0 }, estatuaGuardiao: { r: .4 }, futon: { r: .6 }, mesaBaixa: { r: .6 } });
 
 /* =====================================================================
    5b. MUNDO ABERTO: todas as regiões num mapa só, sem tela de transição.
@@ -1854,7 +2381,7 @@ function construirMundo() {
       reservar(M, x, y, 4.2); k++;
     }
   }
-  construirRioSagrado(M); construirCais(M);                            // rios e cais antes das arenas e das casinhas: nada nasce em cima da água
+  construirRioSagrado(M); construirCais(M); colocarEdificios(M);                            // rios e cais antes das arenas e das casinhas: nada nasce em cima da água
   // arenas dos chefes: em cada região, um selo antigo rompido no meio de um círculo de pedra (fora do núcleo, longe de portas)
   // Só existem depois do torneio (fase 'selos'): antes disso nenhum chefe aparece.
   if (estado.fase === 'selos') { const ra = mulberry32(8888);
@@ -1967,6 +2494,7 @@ function construirCaverna() {
   }
   // abre a rocha antiga onde os túneis novos encostam no labirinto
   M.objs = M.objs.filter(o => !((o.tipo === 'rocha' || o.tipo === 'estalagmite') && M.tunel.some(([x, y, r]) => Math.hypot(o.x - x, o.y - y) < r + .4)));
+  colocarEdificiosCaverna(M, saloes);                                  // portas escavadas na rocha para as construções das cavernas
   if (stM('ajudar_nicolas') !== 'concluida') {                         // Nicolas cercado por cinco inimigos
     const nx = ox + 16, ny = oy + 20;
     M.objs.push({ tipo: 'npc', nome: 'Nicolas', x: nx, y: ny, r: .3, dir: 2, pal: PAL_NPC.nicolas, fala: 'nicolas' });
@@ -2199,8 +2727,10 @@ function prepararCache(m) {
     g.beginPath(); g.arc(x, y - 3.6, .6, 0, 6.3); g.fillStyle = '#ffb02e'; g.fill();
   }
   if (m.interior) {
-    Cen.paredeHi(g, m.ox, m.oy, 1, m.w, '#e6d6b0', '#7a5230');      // parede direita (borda j=0)
-    Cen.paredeHi(g, m.ox, m.oy, -1, m.h, '#d4c29a', '#6a4528');     // parede esquerda (borda i=0)
+    const PA = m.parede || ['#e6d6b0', '#7a5230'];
+    Cen.paredeHi(g, m.ox, m.oy, 1, m.w, PA[0], PA[1], m.paredeTipo);      // parede direita (borda j=0)
+    const esc9 = c => '#' + [1, 3, 5].map(i => Math.round(parseInt(c.slice(i, i + 2), 16) * .88).toString(16).padStart(2, '0')).join('');
+    Cen.paredeHi(g, m.ox, m.oy, -1, m.h, esc9(PA[0]), esc9(PA[1]), m.paredeTipo);     // parede esquerda (borda i=0)
   }
   for (const e of m.exits) {                                           // tapete de saída
     if (!e.tapete) continue;
@@ -5211,7 +5741,8 @@ function tickMissoes(dt, antX, antY) {
   }
 }
 
-const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar' };
+const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar',
+  leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', bau: 'Abrir', sino: 'Tocar o sino', treino: 'Treinar' };
 function alvoInteracao() {
   let melhor = null, menor = 1.5;
   for (const o of mapa.objs) {
@@ -5242,6 +5773,8 @@ function interagir() {
     aviso('Você meditou: aura restaurada e um pouco de vida!'); salvar(); return;
   }
   if (o.tipo === 'npc') { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); }
+  if (INTERACOES_ED[o.tipo]) { INTERACOES_ED[o.tipo](o); return; }       // móveis e objetos dos interiores
+  if (o.tipo === 'npc' && falarNpcED(o)) return;
   if (o.tipo === 'placa') { abrirConversa({ falas: [{ p: null, nome: 'Placa', t: o.texto }] }); return; }
   if (!conversar(o.fala, o)) abrirConversa(converterLegado(falaDe(o), o));
 }
@@ -5330,6 +5863,7 @@ function danoEm(o, dano, tk, dx, dy) {
   popup(o.x, o.y, '' + dano, '#fff'); fagulha(o.x, o.y, '#ffe45e', 8); fxImpacto(o.x, o.y, !!tk.quebra);
   o.flash = .12;
   if (o.alvo) {                                                          // boneco do dojo: só balança
+    if (jog.treino) jog.treino.n++;                                      // sessão de treino cronometrada (não dá XP)
     o.wob = .35;
     if (stM('debora_alvo') === 'em_andamento' && !estado.mprog.alvo) { estado.mprog.alvo = true; aviso('Acertou o alvo ✔ — volte à Mestra Débora'); hudChave = ''; }
     return;
@@ -5805,6 +6339,7 @@ const VARIANTE_DE = { bandido: 'comum', veterano: 'experiente', mestre: 'elite' 
 
 /* ---------- escolher e aplicar o arquétipo ---------- */
 function regiaoDoInimigo(e) {
+  if (e.regiaoForcada) return e.regiaoForcada;                        // inimigos dentro de catacumbas/ruínas
   const h = e.home || [e.x, e.y], R = mapa.regiaoEm ? mapa.regiaoEm(h[0], h[1]) : null;
   return R && !R.lago ? R.id : mapa.id;
 }
@@ -6511,7 +7046,7 @@ function carregarMapa(id, sx, sy) {
   mapa = L.m; jog.x = L.x; jog.y = L.y;
   if (mapa.grande) { if (!mapa.fchunks || mapa.cacheSC !== SC) prepararCache(mapa); mapa.regAtual = null; atualizarAtivos(mapa, true); atualizarRegiao(); }
   else { prepararCache(mapa); mapa.arvores = mapa.objs.filter(o => o.spr && o.spr.copa); }
-  jog.est = 'livre'; jog.dir = 2; textos.length = 0; fagulhas.length = 0; aneis.length = 0; fx.length = 0; rastros.length = 0;
+  jog.est = 'livre'; jog.dir = 2; jog.treino = null; textos.length = 0; fagulhas.length = 0; aneis.length = 0; fx.length = 0; rastros.length = 0;
   jog.z = 0; jog.vz = 0; jog.ar = false; jog.vit = 0;
   const [px, py] = iso(jog.x, jog.y); camera.x = px; camera.y = py - 14;
   hudChave = '';
@@ -6588,7 +7123,7 @@ function atualizar(dt0) {
     else if (o.tipo === 'npc' && Math.hypot(o.x - jog.x, o.y - jog.y) < 3) { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); }
   }
   mapa.objs = mapa.objs.filter(o => !o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0));
-  tickExame(dtM);
+  tickExame(dtM); tickTreino(dtM);
   tickChefe(dtM, ix, iy); atualizarPerigos(dtM); atualizarProjeteis(dtM); atualizarProjAmigos(dtM); EFX.atualizar(cine ? dt : dtM);
   for (let i = baloes.length - 1; i >= 0; i--) { baloes[i].t += dt0; if (baloes[i].t > baloes[i].vida) baloes.splice(i, 1); }
 
@@ -9325,7 +9860,7 @@ const cacheCasa = {};
 function casaSpr(w, d, H, tel, par, op) {
   op = op || {};
   const palha = !!op.palha, nT = palha ? 1 : (op.tiers || (w * d >= 12 ? 2 : 1));
-  const chave = [w, d, H, tel, par[0], nT, palha, op.var || 0, op.funcao || ''].join('|');
+  const chave = [w, d, H, tel, par[0], nT, palha, op.var || 0, op.funcao || '', op.letreiro || ''].join('|');
   if (cacheCasa[chave]) return cacheCasa[chave];
   // --- planta: cada andar tem um retângulo (r), o beiral (ext) e o topo do telhado (inn) ---
   const ZB = palha ? 4 : 6, PB = .18, niveis = [];
@@ -9781,7 +10316,8 @@ function casaSpr(w, d, H, tel, par, op) {
       arena_mestres: { nome: 'ARENA DOS GRANDES MESTRES', cor: '#e0c070', p: [['nobori', pc - 1.2, .45, '#b8453a'], ['nobori', pc + 1.2, .45, '#b8453a'], ['braseiro', -w + .6, .6], ['braseiro', -.5, .6], ['nobori', .8, -d + 1, '#2f5fb8']] },
       arquivo: { nome: 'ARQUIVO DE TÉCNICAS', cor: '#e6c690', p: [['rolos', -w + .5, .55], ['caixaLivros', -.5, .6], ['banco', .9, -d + 1]] }
     };
-    const L0 = op.funcao && LAYOUT[op.funcao];
+    let L0 = op.funcao && LAYOUT[op.funcao];
+    if (op.letreiro) L0 = { nome: op.letreiro, cor: '#e6c690', p: L0 ? L0.p : [['vaso', pc - .9, .5], ['vaso', pc + .9, .5], ['banco', .9, -1]] };   // placa com o nome da construção
     const tiposP = palha ? ['lenha', 'sacos', 'jarra', 'barril', 'vassoura', 'vaso', 'cesto', 'tufo', 'tufo', 'caixas', 'pedrinhas']
       : ['vaso', 'vaso', 'bonsai', 'barril', 'jarra', 'tufo', 'tufo', 'caixas', 'pedrinhas', 'vassoura', 'cesto'];
     const props = [];
@@ -9809,9 +10345,18 @@ function casaSpr(w, d, H, tel, par, op) {
 }
 
 /* ---------- paredes dos interiores (madeira + papel de arroz com luz quente) ---------- */
-function paredeHi(g, x1, y1, dx, n, cor, cor2) {
+function paredeHi(g, x1, y1, dx, n, cor, cor2, tipo) {
   const WH = 44, L = 16 * n;
   g.save(); g.transform(dx, .5, 0, 1, x1, y1);
+  if (tipo === 'pedra' || tipo === 'rocha' || tipo === 'bambu') {         // paredes de cada região: blocos de pedra, rocha de caverna ou bambu
+    g.fillStyle = lin(g, 0, -WH, L, 0, [cla(cor, .1), cor, esc(cor, dx > 0 ? .7 : .8)]); g.fillRect(0, -WH, L, WH);
+    if (tipo === 'pedra') { for (let r = 0; r < 5; r++) for (let u = (r % 2) * 6; u < L; u += 12) { g.strokeStyle = 'rgba(30,24,16,.45)'; g.lineWidth = .6; g.strokeRect(u, -WH + r * 8.8, 12, 8.8); g.fillStyle = 'rgba(255,250,230,.12)'; g.fillRect(u + .6, -WH + r * 8.8 + .6, 10.8, 1); }
+      for (let u = 6; u < L; u += 23) { g.fillStyle = 'rgba(90,140,70,.35)'; g.fillRect(u, -6, 5, 6); } }
+    else if (tipo === 'rocha') { for (let k = 0; k < n * 3; k++) { const u = (k * 37) % L, v = -WH + (k * 13) % (WH - 6); g.beginPath(); g.moveTo(u, v); g.lineTo(u + 6, v + 3); g.lineTo(u + 3, v + 8); g.closePath(); g.fillStyle = 'rgba(10,8,20,.35)'; g.fill(); }
+      for (let u = 10; u < L; u += 29) { g.fillStyle = 'rgba(127,224,255,.75)'; g.beginPath(); g.moveTo(u, -18); g.lineTo(u + 3, -28); g.lineTo(u + 6, -18); g.closePath(); g.fill(); } }
+    else { for (let u = 1; u < L; u += 5) { g.fillStyle = lin(g, u, 0, u + 4, 0, ['#a8c870', '#6a9a3a', '#4a7a2a']); g.fillRect(u, -WH, 4, WH); for (let v = -WH + 9; v < 0; v += 11) { g.fillStyle = 'rgba(40,70,20,.6)'; g.fillRect(u, v, 4, 1); } } }
+    g.fillStyle = 'rgba(20,12,8,.5)'; g.fillRect(0, -WH, L, 3); g.restore(); return;
+  }
   g.fillStyle = lin(g, 0, -WH, L, 0, [cla(cor, .15), cor, esc(cor, dx > 0 ? .78 : .86)]); g.fillRect(0, -WH, L, WH);
   for (let k = 0; k < n; k++) {                                         // um painel por tile: shoji em cima, madeira embaixo
     const u = k * 16;
@@ -10030,6 +10575,124 @@ function vasoFlor(g, x, y, s, seed, cores) {                           // vaso c
   for (let k = 0; k < 8; k++) { const a = -Math.PI / 2 + (r() - .5) * 2.2, l = (6 + r() * 5) * s, fx = x + Math.cos(a) * l * .7, fy = y - 7.5 * s + Math.sin(a) * l, c = cs[Math.floor(r() * cs.length)];
     for (let p = 0; p < 5; p++) { g.beginPath(); g.arc(fx + Math.cos(p * 1.257) * 1.1 * s, fy + Math.sin(p * 1.257) * 1.1 * s, .9 * s, 0, TAU); g.fillStyle = c; g.fill(); } g.beginPath(); g.arc(fx, fy, .6 * s, 0, TAU); g.fillStyle = '#ffd040'; g.fill(); }
 }
+// móveis e objetos novos dos interiores (desenhados por código, mesmo estilo dos outros)
+const SP4 = {
+  bau: () => hi(40, 34, 20, 29, g => {                             // baú com reforços de metal
+    sombraSuave(g, 20, 29, 16, 4, .35); madeira(g, 5, 12, 30, 16, '#8a5a30', 1.4);
+    retR(g, 4, 6, 32, 9, 4); contorno(g, lin(g, 0, 6, 0, 15, ['#c98f50', '#8a5a30']), .8, '#3a2010');
+    [9, 31].forEach(x => { g.fillStyle = '#5a5a6a'; g.fillRect(x - 1.4, 6, 2.8, 22); }); g.fillStyle = '#e0b44a'; retR(g, 17, 13, 6, 6, 1); g.fill(); g.fillStyle = '#3a2a10'; g.fillRect(19.4, 15, 1.2, 2.4);
+  }),
+  forja: () => hi(56, 56, 28, 49, g => {                           // forja de pedra com brasa e bigorna
+    sombraSuave(g, 28, 49, 24, 5, .4); g.beginPath(); g.moveTo(8, 48); g.lineTo(8, 22); g.quadraticCurveTo(28, 6, 48, 22); g.lineTo(48, 48); g.closePath(); contorno(g, lin(g, 8, 0, 48, 0, ['#6a6a72', '#4a4a52', '#34343a']), 1, '#141418');
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) risco(g, 9 + c * 10 + (r % 2) * 5, 26 + r * 6, 15 + c * 10 + (r % 2) * 5, 26 + r * 6, .5, 'rgba(20,20,26,.5)');
+    retR(g, 18, 32, 20, 12, 3); contorno(g, '#1a0a04', .6, '#000'); brilho(g, 28, 40, 16, '#ff8a1e', .8); g.fillStyle = '#ffd04a'; g.beginPath(); g.ellipse(28, 41, 7, 2.4, 0, 0, TAU); g.fill();
+    madeira(g, 24, 2, 8, 12, '#4a4a52', .6);
+  }),
+  sino: () => hi(46, 64, 23, 58, g => {                            // sino de templo pendurado na trave
+    sombraSuave(g, 23, 58, 18, 4, .32); madeira(g, 4, 6, 4, 52, '#6b4423', 1); madeira(g, 38, 6, 4, 52, '#6b4423', 1); madeira(g, 1, 4, 44, 5, '#8a5a30', 1);
+    g.beginPath(); g.moveTo(15, 12); g.quadraticCurveTo(14, 34, 11, 40); g.lineTo(35, 40); g.quadraticCurveTo(32, 34, 31, 12); g.quadraticCurveTo(23, 8, 15, 12); contorno(g, lin(g, 12, 0, 34, 0, ['#c9a24a', '#8a6a24', '#5a4214']), .9, '#2a1a08');
+    for (const y of [20, 30]) risco(g, 14, y, 32, y, .6, '#5a4214'); g.fillStyle = '#e0c070'; g.fillRect(17, 14, 2, 22);
+  }),
+  mural: () => hi(48, 52, 24, 46, g => {                           // quadro de avisos com papéis pregados
+    sombraSuave(g, 24, 46, 18, 3, .3); madeira(g, 8, 30, 3, 16, '#6b4423', .6); madeira(g, 37, 30, 3, 16, '#6b4423', .6);
+    madeira(g, 3, 4, 42, 28, '#a8703c', 1.4); madeira(g, 1, 1, 46, 5, '#6b4423', 1);
+    [[7, 9, 10, 12, '#f6ecc8'], [19, 8, 9, 14, '#fff6e0'], [30, 10, 11, 10, '#f4e0c0'], [11, 22, 12, 7, '#ffe0d8']].forEach(([x, y, w, h, c]) => { g.fillStyle = c; g.fillRect(x, y, w, h); for (let k = 1; k < 4; k++) risco(g, x + 1.5, y + k * h / 4.5, x + w - 1.5, y + k * h / 4.5, .4, '#8a7a5a'); g.fillStyle = '#c8322a'; g.beginPath(); g.arc(x + w / 2, y + 1.2, .9, 0, TAU); g.fill(); });
+  }),
+  tanque: () => hi(84, 48, 42, 30, g => {                          // tina de banho quente (madeira + água fumegando)
+    sombraSuave(g, 42, 30, 38, 8, .3); g.beginPath(); g.ellipse(42, 24, 38, 16, 0, 0, TAU); contorno(g, lin(g, 4, 0, 80, 0, ['#a8703c', '#8a5a30', '#6b4423']), 1.2, '#3a2010');
+    g.beginPath(); g.ellipse(42, 22, 32, 12, 0, 0, TAU); contorno(g, lin(g, 0, 10, 0, 34, ['#9ad8f0', '#4fa0d0']), .6, '#2a5a8a');
+    for (let k = 0; k < 5; k++) { g.beginPath(); g.ellipse(22 + k * 10, 20 + (k % 2) * 3, 4, 1.2, 0, 0, TAU); g.fillStyle = 'rgba(255,255,255,.35)'; g.fill(); }
+    for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(26 + k * 10, 10); g.bezierCurveTo(22 + k * 10, 4, 30 + k * 10, 2, 26 + k * 10, -4); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.4; g.stroke(); }
+  }),
+  rodaMoinho: () => hi(70, 78, 35, 72, g => {                      // roda d'água do moinho
+    sombraSuave(g, 35, 72, 30, 5, .3); g.beginPath(); g.ellipse(35, 70, 32, 6, 0, 0, TAU); g.fillStyle = 'rgba(79,160,210,.7)'; g.fill();
+    g.save(); g.translate(35, 40); for (let k = 0; k < 10; k++) { g.save(); g.rotate(k / 10 * TAU); madeira(g, -2, 4, 4, 22, '#8a5a30', .6); madeira(g, -6, 24, 12, 5, '#a8703c', .6); g.restore(); }
+    g.beginPath(); g.arc(0, 0, 27, 0, TAU); g.lineWidth = 2.4; g.strokeStyle = '#5a3a1e'; g.stroke(); g.beginPath(); g.arc(0, 0, 5, 0, TAU); contorno(g, '#4a4a52', .6, '#141418'); g.restore();
+  }),
+  incensario: () => hi(30, 44, 15, 38, g => {                      // incensário com fumaça
+    sombraSuave(g, 15, 38, 10, 3, .3); g.beginPath(); g.moveTo(6, 26); g.lineTo(24, 26); g.lineTo(21, 37); g.lineTo(9, 37); g.closePath(); contorno(g, lin(g, 6, 0, 24, 0, ['#c9a24a', '#8a6a24']), .7, '#2a1a08');
+    retR(g, 5, 23, 20, 4, 1.4); contorno(g, '#e0c070', .5, '#5a4214');
+    for (let k = 0; k < 3; k++) { risco(g, 11 + k * 4, 24, 11 + k * 4, 14, .6, '#6a3a1a'); g.fillStyle = '#ff6a2a'; g.fillRect(10.6 + k * 4, 13, .9, 1.2); }
+    for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(11 + k * 4, 12); g.bezierCurveTo(8 + k * 4, 6, 15 + k * 4, 4, 11 + k * 4, -2); g.strokeStyle = 'rgba(230,230,240,.45)'; g.lineWidth = 1; g.stroke(); }
+  }),
+  porta: () => hi(40, 62, 20, 58, g => {                           // porta de correr (shoji) numa moldura
+    madeira(g, 2, 2, 4, 56, '#5a3a1e', 1); madeira(g, 34, 2, 4, 56, '#5a3a1e', 1); madeira(g, 2, 0, 36, 5, '#6b4423', 1);
+    g.fillStyle = '#f6efd8'; g.fillRect(6, 5, 28, 52); g.strokeStyle = '#7a5230'; g.lineWidth = .8; for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(6 + k * 7, 5); g.lineTo(6 + k * 7, 57); g.stroke(); } for (let k = 1; k < 6; k++) { g.beginPath(); g.moveTo(6, 5 + k * 8.6); g.lineTo(34, 5 + k * 8.6); g.stroke(); }
+    g.fillStyle = 'rgba(255,214,120,.3)'; g.fillRect(6, 5, 28, 52);
+  }),
+  portaRocha: () => hi(56, 66, 28, 60, g => {                      // entrada escavada na rocha (cavernas)
+    sombraSuave(g, 28, 60, 26, 5, .4); g.beginPath(); g.moveTo(2, 60); g.lineTo(4, 22); g.quadraticCurveTo(28, -2, 52, 22); g.lineTo(54, 60); g.closePath(); contorno(g, lin(g, 2, 0, 54, 0, ['#5a5a66', '#3a3a46', '#26262e']), 1, '#0e0e14');
+    g.beginPath(); g.moveTo(14, 60); g.lineTo(14, 30); g.quadraticCurveTo(28, 16, 42, 30); g.lineTo(42, 60); g.closePath(); contorno(g, lin(g, 14, 0, 42, 0, ['#7a4a22', '#5a3a1e']), .8, '#1a0a04');
+    for (let k = 0; k < 3; k++) risco(g, 18 + k * 8, 30, 18 + k * 8, 60, .6, '#3a2010'); brilho(g, 46, 24, 8, '#7fe0ff', .6); brilho(g, 8, 34, 6, '#c77dff', .5);
+  }),
+  cestoTangerinas: () => hi(36, 30, 18, 26, g => {                 // cesto cheio de tangerinas
+    sombraSuave(g, 18, 26, 13, 3, .3); g.beginPath(); g.moveTo(5, 14); g.lineTo(31, 14); g.lineTo(27, 26); g.lineTo(9, 26); g.closePath(); contorno(g, lin(g, 5, 0, 31, 0, ['#c9a06a', '#a8803c']), .7, '#5a3a14');
+    for (let k = 0; k < 3; k++) risco(g, 7 + k * 2, 17 + k * 3, 29 - k * 2, 17 + k * 3, .4, '#7a5a24');
+    [[11, 12], [17, 10], [23, 12], [14, 7], [20, 6], [26, 9]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 3.4, 0, TAU); contorno(g, lin(g, x - 3, y - 3, x + 3, y + 3, ['#ffb84a', '#f08a1e', '#c85a10']), .5, '#6a2a04'); g.fillStyle = '#3f7a2e'; g.fillRect(x - .4, y - 4, 1.4, 1.2); });
+  }),
+  relicario: () => hi(40, 54, 20, 48, g => {                       // vitrine de relíquia sobre pedestal
+    sombraSuave(g, 20, 48, 14, 3, .32); retR(g, 9, 30, 22, 18, 1.4); contorno(g, lin(g, 9, 0, 31, 0, ['#d8ccb0', '#a89a7a']), .8, '#3a3020');
+    retR(g, 8, 6, 24, 25, 1.4); contorno(g, 'rgba(190,230,255,.28)', .8, '#5a6a7a'); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(10, 8, 3, 20);
+    g.beginPath(); g.moveTo(14, 26); g.lineTo(26, 12); g.lineWidth = 2; g.strokeStyle = '#c8c8d8'; g.stroke(); g.fillStyle = '#5a1418'; g.fillRect(12, 25, 5, 3); brilho(g, 20, 18, 14, '#ffe6a0', .45);
+  }),
+  trono: () => hi(52, 60, 26, 54, g => {                           // trono imperial
+    sombraSuave(g, 26, 54, 22, 4, .35); retR(g, 6, 4, 40, 34, 4); contorno(g, lin(g, 6, 0, 46, 0, ['#a8323a', '#7a1a24']), 1, '#2a0a10');
+    for (let k = 0; k < 3; k++) { g.fillStyle = '#e0b44a'; g.fillRect(10 + k * 12, 8, 6, 2); } retR(g, 4, 34, 44, 10, 2); contorno(g, lin(g, 0, 34, 0, 44, ['#e0b44a', '#a87a24']), .8, '#3a2a08');
+    madeira(g, 6, 44, 6, 10, '#5a3a1e', .6); madeira(g, 40, 44, 6, 10, '#5a3a1e', .6); g.beginPath(); g.arc(26, 18, 6, 0, TAU); contorno(g, '#ffd86a', .6, '#6a4a10');
+  }),
+  lareira: () => hi(56, 36, 28, 26, g => {                         // irori: fogo de chão com chaleira
+    sombraSuave(g, 28, 26, 24, 6, .3); retR(g, 4, 12, 48, 18, 2); contorno(g, lin(g, 0, 12, 0, 30, ['#8a5a30', '#5a3a1e']), .8, '#2a1408');
+    retR(g, 12, 15, 32, 12, 1); contorno(g, '#6a6a66', .5, '#2a2a28'); brilho(g, 28, 21, 12, '#ff8a1e', .7); for (let k = 0; k < 4; k++) { g.fillStyle = ['#ff6a1e', '#ffd04a'][k % 2]; g.beginPath(); g.ellipse(22 + k * 4, 21, 1.6, 2.4, 0, 0, TAU); g.fill(); }
+    risco(g, 28, 0, 28, 8, .7, '#3a3a3a'); g.beginPath(); g.ellipse(28, 11, 6, 4, 0, 0, TAU); contorno(g, '#3a3a40', .6, '#121216');
+  }),
+  escombros: () => hi(50, 30, 25, 24, g => {                       // pedaços de telhado e madeira quebrada
+    sombraSuave(g, 25, 24, 20, 4, .3); [[8, 18, 10, 6, '#7a7a82'], [20, 14, 14, 8, '#6a6a72'], [34, 18, 9, 6, '#8a8a92']].forEach(([x, y, w, h, c]) => { g.beginPath(); g.moveTo(x, y + h); g.lineTo(x + 2, y); g.lineTo(x + w, y + 2); g.lineTo(x + w - 1, y + h); g.closePath(); contorno(g, c, .6, '#202024'); });
+    madeira(g, 6, 10, 24, 3, '#6b4423', .5); g.save(); g.translate(30, 8); g.rotate(.4); madeira(g, 0, 0, 16, 3, '#8a5a30', .5); g.restore();
+  }),
+  raiz: () => hi(80, 40, 40, 30, g => {                            // raiz gigante saindo do chão
+    sombraSuave(g, 40, 30, 34, 6, .3); g.beginPath(); g.moveTo(4, 32); g.bezierCurveTo(16, 8, 34, 24, 42, 10); g.bezierCurveTo(52, 0, 66, 18, 76, 30); g.lineTo(70, 34); g.bezierCurveTo(60, 22, 52, 14, 44, 22); g.bezierCurveTo(36, 30, 18, 18, 12, 34); g.closePath();
+    contorno(g, lin(g, 0, 0, 0, 34, ['#8a5a30', '#5a3a1e', '#3a2412']), 1, '#1a0c04'); for (let k = 0; k < 5; k++) risco(g, 14 + k * 12, 26 - k % 2 * 6, 20 + k * 12, 22 - k % 2 * 6, .5, '#2a1408');
+  }),
+  tear: () => hi(56, 54, 28, 48, g => {                            // tear de tecelagem com pano
+    sombraSuave(g, 28, 48, 24, 4, .3); madeira(g, 4, 6, 4, 42, '#6b4423', 1); madeira(g, 48, 6, 4, 42, '#6b4423', 1); madeira(g, 2, 4, 52, 4, '#8a5a30', 1); madeira(g, 2, 30, 52, 4, '#8a5a30', 1);
+    for (let k = 0; k < 18; k++) risco(g, 9 + k * 2.4, 8, 9 + k * 2.4, 30, .4, '#e8e0c8'); g.fillStyle = lin(g, 8, 0, 48, 0, ['#c84a7a', '#e8742a', '#3f6fb0']); g.fillRect(9, 18, 40, 12);
+    for (let k = 0; k < 4; k++) risco(g, 9, 20 + k * 3, 49, 20 + k * 3, .4, 'rgba(255,255,255,.4)');
+  }),
+  prateleiraErvas: () => hi(48, 60, 24, 54, g => {                 // prateleira com potes de ervas e maços secando
+    sombraSuave(g, 24, 54, 18, 4, .32); madeira(g, 4, 4, 40, 50, '#8a5a30', 1.4);
+    for (let r = 0; r < 3; r++) { const y = 10 + r * 15; g.fillStyle = 'rgba(25,12,8,.55)'; g.fillRect(6, y, 36, 12); madeira(g, 5, y + 12, 38, 2, '#5a3a1a', .4);
+      for (let c = 0; c < 4; c++) { const x = 10 + c * 8.6, cor = ['#6aa84a', '#c8a040', '#a84a6a', '#5a9ac8'][(r + c) % 4]; retR(g, x - 3, y + 4, 6, 8, 1.4); contorno(g, 'rgba(220,235,240,.65)', .4, '#4a5a5a'); g.fillStyle = cor; g.fillRect(x - 2.2, y + 7, 4.4, 4.4); } }
+    for (let k = 0; k < 4; k++) { risco(g, 10 + k * 9, 4, 10 + k * 9, 10, .4, '#5a4a2a'); g.fillStyle = '#5a8a3a'; g.beginPath(); g.ellipse(10 + k * 9, 11, 2, 3.4, 0, 0, TAU); g.fill(); }
+  }),
+  prateleiraCeramica: () => hi(48, 56, 24, 50, g => {              // prateleira com potes e tigelas de cerâmica
+    sombraSuave(g, 24, 50, 18, 4, .32); madeira(g, 4, 6, 40, 44, '#a8703c', 1.2);
+    for (let r = 0; r < 3; r++) { const y = 12 + r * 13; madeira(g, 5, y + 10, 38, 2, '#5a3a1a', .4);
+      for (let c = 0; c < 3; c++) { const x = 12 + c * 12, cor = ['#c87a4a', '#5a7a9a', '#e8dcc0', '#7a4a3a'][(r * 3 + c) % 4]; g.beginPath(); g.ellipse(x, y + 6, 4.2, 4.4, 0, 0, TAU); contorno(g, lin(g, x - 4, 0, x + 4, 0, [cor, esc(cor, .7)]), .5, '#2a1a10'); g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(x - 2.6, y + 3, 1.2, 4); } }
+  }),
+  ponteArco: () => hi(120, 70, 60, 46, g => {                      // ponte de madeira em arco (marco das regiões)
+    sombraSuave(g, 60, 46, 54, 9, .3);
+    g.beginPath(); g.moveTo(6, 50); g.quadraticCurveTo(60, 6, 114, 50); g.lineTo(114, 58); g.quadraticCurveTo(60, 16, 6, 58); g.closePath(); contorno(g, lin(g, 0, 10, 0, 58, ['#c8463a', '#9a2a24']), 1, '#3a0a08');
+    for (let k = 0; k <= 10; k++) { const t = k / 10, x = 6 + t * 108, y = 50 - Math.sin(t * Math.PI) * 22; madeira(g, x - 1.2, y - 14, 2.4, 14, '#9a2a24', .5); }
+    g.beginPath(); g.moveTo(6, 36); g.quadraticCurveTo(60, -8, 114, 36); g.lineWidth = 2; g.strokeStyle = '#c8463a'; g.stroke();
+  }),
+  estatuaGuardiao: () => hi(40, 70, 20, 64, g => {                 // guardião de pedra (komainu) em pedestal
+    sombraSuave(g, 20, 64, 15, 4, .35); retR(g, 6, 46, 28, 18, 1.4); contorno(g, lin(g, 6, 0, 34, 0, ['#b8b0a0', '#8a8478']), .8, '#3a3630');
+    g.beginPath(); g.moveTo(9, 46); g.lineTo(10, 26); g.quadraticCurveTo(12, 10, 22, 8); g.quadraticCurveTo(32, 10, 31, 22); g.lineTo(31, 46); g.closePath(); contorno(g, lin(g, 9, 0, 31, 0, ['#c8c0b0', '#9a9488', '#6a6458']), .9, '#2a2620');
+    g.fillStyle = '#4a463e'; [16, 26].forEach(x => { g.beginPath(); g.arc(x, 18, 1.6, 0, TAU); g.fill(); }); risco(g, 15, 25, 27, 25, .9, '#4a463e');
+    for (let k = 0; k < 4; k++) risco(g, 11 + k * 5, 12, 9 + k * 5, 6, 1.2, '#9a9488'); g.fillStyle = 'rgba(90,140,70,.5)'; g.fillRect(8, 52, 10, 3);
+  }),
+  futon: () => hi(70, 34, 35, 26, g => {                           // futon dobrado no tatame (quarto)
+    sombraSuave(g, 35, 26, 30, 5, .28); retR(g, 4, 12, 62, 14, 3); contorno(g, lin(g, 0, 12, 0, 26, ['#f6f2e8', '#d8d0c0']), .8, '#6a6050');
+    retR(g, 6, 8, 18, 9, 3); contorno(g, '#ffffff', .6, '#8a8070'); retR(g, 26, 10, 38, 13, 2); contorno(g, lin(g, 26, 0, 64, 0, ['#5a7ab0', '#3f5f98']), .7, '#1a2a4a');
+    for (let k = 0; k < 4; k++) risco(g, 30 + k * 9, 12, 30 + k * 9, 22, .5, 'rgba(255,255,255,.35)');
+  }),
+  mesaBaixa: () => hi(60, 30, 30, 22, g => {                        // mesa baixa (chabudai) com chá
+    sombraSuave(g, 30, 22, 26, 5, .3); madeira(g, 8, 14, 4, 8, '#5a3a1e', .5); madeira(g, 48, 14, 4, 8, '#5a3a1e', .5);
+    g.beginPath(); g.ellipse(30, 12, 26, 7, 0, 0, TAU); contorno(g, lin(g, 0, 5, 0, 19, ['#b07a44', '#7a4a22']), .8, '#3a2010');
+    [[20, 10], [40, 11]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 3, 1.4, 0, 0, TAU); contorno(g, '#e8e0c8', .4, '#5a5040'); }); g.beginPath(); g.ellipse(30, 9, 4, 3, 0, 0, TAU); contorno(g, '#5a7a5a', .5, '#1a2a1a');
+  })
+};
+
 const SP3 = {
   balcao: tipo => hi(70, 46, 35, 38, g => {                        // balcão de atendimento (muda o que fica em cima conforme a loja)
     sombraSuave(g, 36, 38, 30, 5, .35);
@@ -10173,6 +10836,7 @@ function criarSprites(SPR) {
   SPR.estandarte = [SP2.estandarte('#c8322a'), SP2.estandarte('#2f5fb8')]; SPR.tufo = [SP2.tufo(0), SP2.tufo(1)];
   SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false); SPR.cavernaBoca = SP.cavernaBoca();
   SPR.selo = seloSpr(false); SPR.seloOk = seloSpr(true);
+  for (const k in SP4) SPR[k] = SP4[k]();
   for (const k in SP3) if (k !== 'balcao') SPR[k] = SP3[k](); ['livros', 'flores', 'cha', 'recepcao'].forEach(t => { SPR['balcao_' + t] = SP3.balcao(t); });
   SPR.cachoeira = { pre: () => { if (!cachMonte) montanhaSprite(); return [cachMonte, cachLabios]; }, hi: true, dyn: cachoeiraDyn, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 176, r: 176, t: 316, b: 14 } };
   SPR.cachoeiraSo = { hi: true, dyn: (g, t) => cachoeiraDyn(g, t, true), w: 0, h: 0, ax: 0, ay: 0 };   // sem montanha (abertura)
@@ -10523,6 +11187,7 @@ function renderizar(dt) {
     });
   }
   if (GOT.on && mapa.interior) nevoaGotica(g);
+  if (mapa.interior && mapa.corrompido && mundoYokai()) atmosferaYokai(g);   // lugares escuros mudam depois da quebra dos selos
   if (!mapa.interior && mapa.grande && mundoYokai() && QUAL.nivel >= 1) atmosferaYokai(g);
   g.fillStyle = vinheta; g.fillRect(0, 0, W, H);
   desenharTarjas(g); desenharCineTela(g);
@@ -12634,7 +13299,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
