@@ -1268,7 +1268,7 @@ const CFG = {
       { x: 4, y: 0, w: 2, h: .9, alvo: 'bambuzal', sx: 10, sy: 23.4, nome: 'Bambuzal' },
       { x: 0, y: 19, w: .9, h: 2, alvo: 'cavernas', sx: 2.6, sy: 8.2, nome: 'Cavernas', req: { nivel: 3, msg: 'A caverna é escura e perigosa. Volte com nível 3.' } }
     ],
-    fixos: [['cachoeira', 18, 8.1, { spr: null }], ['pedra', 14.8, 8.3], ['pedra', 21.2, 8.5], ['torii', 24.5, 16], ['lanternaPedra', 22.4, 17], ['lanternaPedra', 26.4, 17], ['altar', 24.5, 13.6], ['meditar', 23, 22]],
+    fixos: [['cachoeira', 18, 8.1, { spr: null, r: 0 }], ['pedra', 14.8, 8.3], ['pedra', 21.2, 8.5], ['torii', 24.5, 16], ['lanternaPedra', 22.4, 17], ['lanternaPedra', 26.4, 17], ['altar', 24.5, 13.6], ['meditar', 23, 22]],
     placas: [[7, 3.4, 'Cachoeira Sagrada. No santuário a leste você pode meditar (E) para recuperar a aura.'], [10.6, 18, '← Cavernas (precisa de nível 3).']],
     grupos: [['bambu', 8, .16, 3, 6]], borda: 'bambu', espalhar: [['pedra', 12], ['arbusto', 12], ['arvore', 8]],
     inimigos: [['bandido', 7.5, 6.5], ['bandido', 5.5, 13.5], ['bandido', 9.5, 24.5], ['bandido', 24, 24.5], ['veterano', 15.5, 24.5], ['veterano', 6, 22]],
@@ -2319,13 +2319,16 @@ function pixelarCv(c) {
 addEventListener('resize', redimensionar);
 canvas.addEventListener('pointerdown', () => { window.focus(); canvas.focus(); });
 
-function tileBloqueado(x, y) {
+function tileBloqueado(x, y, e) {
   const i = Math.floor(x), j = Math.floor(y);
   if (i < 0 || j < 0 || i >= mapa.w || j >= mapa.h) return true;
-  return mapa.tiles[j][i] === T.AGUA || mapa.bloq[j][i];
+  if (mapa.bloq[j][i]) return true;
+  if (mapa.tiles[j][i] !== T.AGUA) return false;
+  if (e !== jog) return true;                                           // só o Akira entra na água
+  const a = aguaEm(x, y); return a === 0 || a === 3;
 }
 function colide(x, y, r, ign) {
-  if (tileBloqueado(x, y) || tileBloqueado(x + r, y) || tileBloqueado(x - r, y) || tileBloqueado(x, y + r) || tileBloqueado(x, y - r)) return true;
+  if (tileBloqueado(x, y, ign) || tileBloqueado(x + r, y, ign) || tileBloqueado(x - r, y, ign) || tileBloqueado(x, y + r, ign) || tileBloqueado(x, y - r, ign)) return true;
   for (const o of mapa.objs) {
     if (o.r > 0 && o !== ign) {
       if (Math.abs(o.x - x) > 2 || Math.abs(o.y - y) > 2) continue;
@@ -2341,6 +2344,92 @@ function mover(e, dx, dy) {                                           // um eixo
   if (!colide(e.x + dx, e.y, e.r, e)) e.x += dx;
   if (!colide(e.x, e.y + dy, e.r, e)) e.y += dy;
 }
+/* =====================================================================
+   ÁGUA NO MUNDO ABERTO (só o Akira entra; inimigos e NPCs continuam na terra)
+   - rasa: o tile de água encostado na margem → dá para andar (mais devagar)
+   - funda: só dá para nadar na lagoa da Cachoeira Sagrada; no resto do mundo continua bloqueada
+   - salas, cavernas e a beirada do mapa não mudam
+   ===================================================================== */
+function infoAgua(m) {
+  if (m.aguaInfo !== undefined) return m.aguaInfo;
+  if (!m.grande) return (m.aguaInfo = null);
+  const w = m.w, h = m.h, prof = new Uint8Array(w * h), nado = new Uint8Array(w * h), fila = new Int32Array(w * h), V = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const agua = (i, j) => i >= 0 && j >= 0 && i < w && j < h && m.tiles[j][i] === T.AGUA;
+  let a = 0, b = 0;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {                // profundidade = distância até a margem (1 = encostado na terra)
+    if (!agua(i, j)) continue;
+    if (V.some(([di, dj]) => { const ii = i + di, jj = j + dj; return ii >= 0 && jj >= 0 && ii < w && jj < h && m.tiles[jj][ii] !== T.AGUA; })) { prof[j * w + i] = 1; fila[b++] = j * w + i; }
+  }
+  while (a < b) { const k = fila[a++], i = k % w, j = (k / w) | 0, d = prof[k]; if (d >= 9) continue; for (const [di, dj] of V) { const ii = i + di, jj = j + dj, kk = jj * w + ii; if (agua(ii, jj) && !prof[kk]) { prof[kk] = d + 1; fila[b++] = kk; } } }
+  if (CELULA.cachoeira) {                                                // lagoa da Cachoeira Sagrada: a única água funda para nadar (só dentro do núcleo da região)
+    const [ox, oy] = origemNucleo('cachoeira'), [nw, nh] = tamNucleo('cachoeira'), s = [[ox + 18, oy + 12]];
+    while (s.length) { const [i, j] = s.pop(), k = j * w + i; if (i < ox || j < oy || i >= ox + nw || j >= oy + nh || !agua(i, j) || nado[k]) continue; nado[k] = 1; for (const [di, dj] of V) s.push([i + di, j + dj]); }
+  }
+  return (m.aguaInfo = { prof, nado });
+}
+function aguaEm(x, y) {                                                  // 0 terra • 1 rasa • 2 funda (dá pra nadar) • 3 funda proibida
+  const m = mapa, i = Math.floor(x), j = Math.floor(y);
+  if (!m.tiles[j] || m.tiles[j][i] !== T.AGUA) return 0;
+  const A = infoAgua(m); if (!A || i < 2 || j < 2 || i >= m.w - 2 || j >= m.h - 2) return 3;
+  const k = j * m.w + i; return A.nado[k] ? (A.prof[k] === 1 ? 1 : 2) : A.prof[k] === 1 ? 1 : 3;
+}
+const AGUA_VIS = { 0: [0, 0], 1: [9, 0], 2: [2, 23] };                  // [altura da linha d'água nos pés, quanto o corpo afunda] em px
+let avisoNado = false, avisoQueda = false;
+function sobQuedaSagrada(x, y) {                                        // pé da queda grande da Cachoeira Sagrada
+  if (!mapa.grande || !CELULA.cachoeira) return false;
+  const [ox, oy] = origemNucleo('cachoeira'), u = x - ox - MONTE_SAGRADO.OX, v = y - oy - MONTE_SAGRADO.OY;
+  return u > -.15 && u < 2.15 && v >= 0 && v < 1.15;
+}
+function gotaAgua(x, y, z, forca) { EFX.add({ tipo: 'gota', x, y, z, vx: (Math.random() - .5) * forca, vy: (Math.random() - .5) * forca * .6, vz: 30 + Math.random() * 50 * forca / 2, g: 200, vida: .5, tam: 1.1 + Math.random() * .8, rot: 0 }); }
+function atualizarAguaJogador(dt) {
+  const noAr = jog.z > 4 || (jog.est === 'pulo' && jog.ar), a = aguaEm(jog.x, jog.y), novo = noAr ? (jog.agua || 0) : a === 2 ? 2 : a === 1 ? 1 : 0, ant = jog.agua || 0;
+  if (novo !== ant && !noAr) {                                           // transições terra ⇄ rasa ⇄ funda
+    const trans = { '0-1': ['wadeIn', .42], '0-2': ['swimIn', .36], '1-2': ['swimIn', .36], '2-1': ['swimOut', .46], '2-0': ['swimOut', .46], '1-0': ['wadeOut', .42] }[ant + '-' + novo];
+    if (trans && jog.est === 'livre' && !(novo === jog.trDe && tempo - (jog.trAgua || -9) < .6)) jog.aguaAnim = { n: trans[0], t: 0, dur: trans[1] };   // na beirada não fica repetindo a transição (vai-e-volta)
+    jog.trAgua = tempo; jog.trDe = ant;
+    const n = novo > ant ? (novo === 2 ? 14 : 9) : 5; for (let k = 0; k < n; k++) gotaAgua(jog.x, jog.y, 3, novo === 2 ? 2.6 : 1.8);
+    if (novo === 2 && !avisoNado) { avisoNado = true; aviso('Nadando! Na água funda o Akira não luta (sem golpes, pulo ou esquiva).'); }
+    if (novo === 0) jog.molhado = 3;
+    jog.agua = novo; jog.faceAgua = jog.face;
+  }
+  if (jog.aguaAnim) { jog.aguaAnim.t += dt; if (jog.aguaAnim.t >= jog.aguaAnim.dur || jog.est !== 'livre') jog.aguaAnim = null; }
+  if (jog.agua === 2 && jog.faceAgua !== jog.face) { jog.virando = { t: 0, de: jog.faceAgua }; jog.faceAgua = jog.face; }   // virou de lado nadando
+  if (jog.virando) { jog.virando.t += dt; if (jog.virando.t >= .22) jog.virando = null; }
+  const [lAlvo, f0] = noAr ? [0, 0] : AGUA_VIS[jog.agua || 0], fAlvo = jog.agua === 2 && jog.andaAnt && !jog.aguaAnim ? 7 : f0, kk = Math.min(1, dt * 9);   // nadando o corpo deita: afunda menos (cabeça e braçadas aparecem)
+  jog.linhaV = (jog.linhaV || 0) + (lAlvo - (jog.linhaV || 0)) * kk; jog.afundaV = (jog.afundaV || 0) + (fAlvo - (jog.afundaV || 0)) * kk;
+  // respingos dos passos e das braçadas, gotas pingando depois de sair
+  jog.passoAg = (jog.passoAg || 0) - dt;
+  if (jog.agua && jog.andaAnt && jog.passoAg <= 0) { jog.passoAg = jog.agua === 2 ? .32 : .26; const fw = sv2w(DIRV[jog.dir][0], DIRV[jog.dir][1]); for (let k = 0; k < (jog.agua === 2 ? 6 : 4); k++) gotaAgua(jog.x + fw.x * (jog.agua === 2 ? .35 : .1), jog.y + fw.y * (jog.agua === 2 ? .35 : .1), 2, 1.4); }
+  if (jog.molhado > 0) { jog.molhado -= dt; if (Math.random() < dt * 9) EFX.add({ tipo: 'gota', x: jog.x + (Math.random() - .5) * .3, y: jog.y + (Math.random() - .5) * .2, z: 14 + Math.random() * 26, vx: 0, vy: 0, vz: -10, g: 160, vida: .4, tam: .9, rot: 0 }); }
+  // pé da cachoeira: a força da água empurra o Akira para longe da pedra
+  jog.sobQueda = !noAr && sobQuedaSagrada(jog.x, jog.y);
+  if (jog.sobQueda) {
+    if (dt > 0) mover(jog, 0, .7 * dt); jog.molhado = 3;
+    if (Math.random() < dt * 30) gotaAgua(jog.x + (Math.random() - .5) * .4, jog.y, 50 + Math.random() * 8, 3);
+    if (!avisoQueda) { avisoQueda = true; aviso('A força da Cachoeira Sagrada empurra o Akira para trás.'); }
+  }
+}
+// desenho do Akira dentro d'água: a parte submersa fica apagada e azulada, com anel de ondas na linha d'água
+function desenharAkiraNaAgua(sx, sy, an, fr, face, branco) {
+  const g = ctx, af = jog.afundaV || 0, sup = Math.round(sy - (jog.linhaV || 0)), yb = sy + af, fundo = af > 8;
+  g.save(); g.beginPath(); g.rect(sx - 80, sup, 160, 140); g.clip(); desenharAkira(sx, yb, an, fr, face, 0, fundo ? .2 : .38, branco, null, jog.costas); g.restore();
+  g.save(); g.beginPath(); g.rect(sx - 80, sup - 220, 160, 220); g.clip(); desenharAkira(sx, yb, an, fr, face, 0, .999, branco, null, jog.costas); g.restore();
+  g.save();
+  const w = fundo ? 15 : 11;
+  g.fillStyle = 'rgba(110,195,232,.38)'; g.beginPath(); g.ellipse(sx, sup, w, w * .36, 0, 0, TAU); g.fill();
+  for (let k = 0; k < 3; k++) { const p = (tempo * (jog.anda ? 1.3 : .7) + k / 3) % 1, r = w + p * 14; g.strokeStyle = 'rgba(255,255,255,' + (.6 * (1 - p)) + ')'; g.lineWidth = 1.1 - p * .6; g.beginPath(); g.ellipse(sx, sup, r, r * .36, 0, 0, TAU); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(sx, sup, w * .9, w * .32, 0, .15, Math.PI - .15); g.stroke();   // espuma em volta do corpo
+  if (jog.agua === 2 && jog.anda) {                                      // esteira atrás do nado
+    const v = DIRV[jog.dir], bx = -v[0], by = -v[1] * .5, l = Math.hypot(bx, by) || 1, ux = bx / l, uy = by / l, nx = -uy, ny = ux;
+    for (const s of [-1, 1]) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(sx + ux * 8 + nx * s * 6, sup + uy * 8 + ny * s * 3); g.lineTo(sx + ux * 30 + nx * s * 16, sup + uy * 30 + ny * s * 8); g.stroke(); }
+  }
+  if (jog.sobQueda) {                                                    // água despencando em cima dele
+    for (let k = 0; k < 12; k++) { const x = sx + (k / 11 - .5) * 26, ph = (tempo * 260 + k * 37) % 60; g.strokeStyle = 'rgba(235,250,255,' + (.35 + (k % 3) * .2) + ')'; g.lineWidth = 1 + (k % 2) * .6; g.beginPath(); g.moveTo(x, sup - 110 + ph); g.lineTo(x, sup - 90 + ph); g.stroke(); }
+    g.fillStyle = 'rgba(235,250,255,.35)'; g.fillRect(sx - 13, sup - 110, 26, 52);
+  }
+  g.restore();
+}
+
 function andar(e, ix, iy, f, dt) {                                    // converte direção da TELA em movimento no MUNDO
   const svx = ix * VEL * f, svy = iy * VEL * .5 * f;
   mover(e, dt * (svx / HW + svy / HH) / 2, dt * (svy / HH - svx / HW) / 2);
@@ -4661,8 +4750,9 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
   if (jog.bloqT > 0) jog.bloqT -= dt;
   if (jog.flash > 0) jog.flash -= dt;
   if (jog.escudo > 0) jog.escudo -= dt;
-  jog.anda = false; jog.def = false; jog.corre = false;
-  const gd = ctrl && !!teclas.KeyL && (jog.est === 'livre');            // timing da defesa: conta desde que apertou L
+  jog.andaAnt = jog.anda; jog.anda = false; jog.def = false; jog.corre = false;
+  atualizarAguaJogador(dt);
+  const gd = ctrl && !!teclas.KeyL && (jog.est === 'livre') && jog.agua !== 2;            // timing da defesa: conta desde que apertou L
   if (gd && !jog.gdAnt) jog.defT = 0;
   jog.gdAnt = gd; if (gd) jog.defT += dt;
   const agi = 1 + (estado.attr.agi - 1) * .03;
@@ -4670,16 +4760,17 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
     case 'livre': {
       jog.def = gd;
       if (ix || iy) {
-        jog.corre = !jog.def && !!(teclas.ShiftLeft || teclas.ShiftRight);
+        jog.corre = !jog.def && jog.agua !== 2 && !!(teclas.ShiftLeft || teclas.ShiftRight);
         jog.dir = dirDeVetor(ix, iy); virar(); jog.anda = true; jog.fase += dt * (jog.corre ? 14 : 10);
-        andar(jog, ix, iy, (jog.def ? .4 : 1) * agi * mag * (jog.corre ? 1.55 : 1) * (jog.lento > 0 ? .55 : 1), dt);
+        andar(jog, ix, iy, (jog.def ? .4 : 1) * agi * mag * (jog.corre ? 1.55 : 1) * (jog.lento > 0 ? .55 : 1) * (jog.agua === 1 ? .7 : jog.agua === 2 ? .55 : 1) * (jog.sobQueda ? .5 : 1), dt);
         if (jog.corre && dt > 0) {                                      // poeira e linhas de velocidade ao correr
           jog.pt -= dt; if (jog.pt <= 0) { jog.pt = .1; fxPoeira(1); fxLinhas(1, DIRV[jog.dir][0], DIRV[jog.dir][1]); }
           jog.rt -= dt; if (jog.rt <= 0) { jog.rt = .07; rastros.push({ costas: jog.costas, x: jog.x, y: jog.y, an: 'run', f: Math.floor(jog.fase / 6.283 * 8) % 8, face: jog.face, t: 0, vida: .2 }); }
         }
       }
       if (jog.vit > 0 && dt > 0) { jog.vit -= dt; if (jog.vit <= 0 && !ix && !iy) { jog.est = 'vitoria'; jog.t = 0; } }
-      if (ctrl && jog.bloqT <= 0) {
+      if (ctrl && jog.agua === 2) { ['KeyJ', 'KeyK', 'Space', 'KeyV', 'KeyC', 'KeyT'].forEach(k => pegou(k)); }   // nadando: sem golpes
+      else if (ctrl && jog.bloqT <= 0) {
         if (pegou('KeyJ')) iniciarAtaque(0, ix, iy);
         else if (pegou('KeyK')) iniciarEspecial();
         else if (pegou('Space')) iniciarEsquiva(ix, iy);
@@ -5157,6 +5248,10 @@ function animJogador() {
       if (!jog.ar) return ['jump', 5];
       return ['jump', jog.vz > 70 ? 1 : jog.vz > 25 ? 2 : jog.vz > -25 ? 3 : 4];
     default:
+      if (jog.aguaAnim) { const a = jog.aguaAnim; return [a.n, fr(a.n, Math.min(1, a.t / a.dur))]; }   // entrando / saindo da água
+      if (jog.agua === 2) { if (jog.virando) return ['swimTurn', fr('swimTurn', Math.min(1, jog.virando.t / .22))]; return jog.anda ? ['swim', ciclo(jog.fase / 6.283 * 8, 8)] : ['tread', ciclo(tempo * 6, 6)]; }
+      if (jog.sobQueda && !jog.anda && !jog.def) return ['underFall', ciclo(tempo * 8, 4)];
+      if (jog.agua === 1 && jog.anda && !jog.def) return ['wade', ciclo(jog.fase / 6.283 * 8, 8)];
       if (jog.def) return ['block', ciclo(tempo * 10, 4)];
       if (jog.anda) return jog.corre ? ['run', ciclo(jog.fase / 6.283 * 8, 8)] : ['walk', ciclo(jog.fase / 6.283 * 8, 8)];
       return ['idle', ciclo(tempo * 8, 6)];
@@ -5461,6 +5556,54 @@ KEYS.combo = [
   kf(1,   { lean: 10, dx: 6, fU: 70, fF: 120, fT: 38, fS: 20, hair: 4, brow: 1 })
 ];
 
+/* ===== ÁGUA: mesmas juntas, roupa, cabelo e cores do Akira — só muda a pose =====
+   wadeIn = entra na água • wade = anda na água rasa • wadeOut = sai da água • tread = boia parado
+   swim = nada • swimIn / swimOut = passa de pé para nadando e volta • swimTurn = vira de lado na água • underFall = segura a força da cachoeira */
+Object.assign(AKIRA_ANIMATIONS, {
+  wadeIn:    { frames: 6, fps: 14, loop: false },
+  wade:      { frames: 8, fps: 10, loop: true },
+  wadeOut:   { frames: 6, fps: 14, loop: false },
+  tread:     { frames: 6, fps: 6,  loop: true },
+  swim:      { frames: 8, fps: 10, loop: true },
+  swimIn:    { frames: 5, fps: 14, loop: false },
+  swimOut:   { frames: 6, fps: 14, loop: false },
+  swimTurn:  { frames: 4, fps: 16, loop: false },
+  underFall: { frames: 4, fps: 8,  loop: true }
+});
+function cicloAgua(p) {                                              // passo pesado na água: joelho sobe alto, braços abertos para equilibrar
+  const ph = p * Math.PI * 2, perna = o => { const t = ph + o, th = 26 * Math.sin(t) + 6, flex = 72 * Math.max(0, Math.cos(t)) + 8; return [th, th - flex]; };
+  const [fT, fS] = perna(0), [bT, bS] = perna(Math.PI), s = Math.sin(ph);
+  return pz({ lean: 11, fT, fS, bT, bS, fFt: 84 + Math.max(0, Math.cos(ph)) * 34, bFt: 84 + Math.max(0, -Math.cos(ph)) * 34,
+    fU: 52 + 14 * s, fF: 98 + 18 * s, bU: 44 - 14 * s, bF: 90 - 16 * s, lift: 1.5 * Math.abs(Math.sin(ph)), hair: 3 * Math.sin(ph * 2), belt: -4 + 6 * Math.sin(ph * 2), brow: 1 });
+}
+function cicloNado(p) {                                              // crawl: corpo deitado pra frente, braços girando alternados, pernas batendo
+  const ph = p * Math.PI * 2, A = q => 120 - 360 * (((q % 1) + 1) % 1), ch = s => 12 * Math.sin(ph * 2 + s);
+  const fU = A(p), bU = A(p + .5);
+  return pz({ lean: 62, head: -34, dx: -4, fT: -58 + ch(0), fS: -62 + ch(0) * 1.4, bT: -68 + ch(Math.PI), bS: -72 + ch(Math.PI) * 1.4, fFt: 160, bFt: 160,
+    fU, fF: fU + (fU < 60 && fU > -100 ? 18 : 6), bU, bF: bU + (bU < 60 && bU > -100 ? 18 : 6), bTop: bU > 60 ? 1 : 0,
+    hair: -12 + 3 * Math.sin(ph * 2), belt: -26 + 8 * Math.sin(ph * 2), mouth: Math.sin(ph) > .7 ? 'open' : 'closed', brow: 1 });
+}
+function cicloBoiar(p) {                                             // parado na água funda: pernas pedalando devagar, mãos remando dos lados
+  const ph = p * Math.PI * 2, s = Math.sin(ph), c = Math.cos(ph);
+  return pz({ lean: 6, fT: 34 + 16 * s, fS: -10 + 22 * c, bT: -8 - 16 * s, bS: -40 - 18 * c, fFt: 120, bFt: 110,
+    fU: 64 + 14 * s, fF: 88 + 26 * c, bU: 58 - 14 * s, bF: 80 - 24 * c, lift: 1.5 * s, hair: 2 * s, belt: 6 * c });
+}
+const POSE_AGUA = cicloAgua(0), POSE_NADO = cicloNado(0), POSE_BOIA = cicloBoiar(0);
+const kq = (t, base, o, e) => ({ t, p: Object.assign({}, base, o || {}), e: e || 'smooth' });
+Object.assign(KEYS, {
+  wadeIn: [kf(0), kf(.35, { fT: 78, fS: 22, bT: -12, bS: -14, lean: 3, fU: 72, fF: 108, bU: 62, bF: 96, lift: 2, brow: 1, hair: -3 }),
+    kf(.7, { fT: 42, fS: 30, bT: -32, bS: -24, lean: 15, fU: 56, fF: 100, bU: 46, bF: 92, hair: 6, belt: 10, brow: 1, mouth: 'open' }, 'out'), kq(1, POSE_AGUA)],
+  wadeOut: [kq(0, POSE_AGUA), kf(.4, { fT: 88, fS: 34, bT: -20, bS: -32, lean: 22, fU: 22, fF: 64, bU: 72, bF: 122, lift: 4, brow: 1, hair: -6, belt: 12 }),
+    kf(.75, { fT: 40, fS: 12, bT: -36, bS: -42, lean: 14, fU: 30, fF: 122, bU: 10, bF: 102, hair: 4, belt: -6 }), kf(1)],
+  swimIn: [kq(0, POSE_BOIA), kf(.5, { lean: 36, head: -18, fT: -8, fS: -16, bT: -42, bS: -50, fU: 122, fF: 128, bU: 104, bF: 112, hair: -8, belt: -14, brow: 1, mouth: 'open' }), kq(1, POSE_NADO)],
+  swimOut: [kq(0, POSE_NADO), kf(.45, { lean: 30, head: -12, fT: 46, fS: 8, bT: -30, bS: -46, fU: 18, fF: 40, bU: 8, bF: 30, hair: -4, belt: -8, brow: 1 }),
+    kq(1, POSE_BOIA, { lean: 10 })],
+  swimTurn: [kq(0, POSE_BOIA), kq(.5, POSE_BOIA, { sx: .16, fU: 80, fF: 100, bU: 70, bF: 92, hair: 8 }), kq(1, POSE_BOIA)],
+  underFall: [kf(0, { fT: 40, fS: 26, bT: -36, bS: -32, lean: 3, head: 9, fU: 150, fF: 238, bU: 146, bF: 232, bTop: 1, eye: 'closed', brow: 1, hair: -8, belt: 4 }),
+    kf(.5, { fT: 42, fS: 28, bT: -37, bS: -33, lean: 4, head: 11, fU: 152, fF: 240, bU: 148, bF: 234, bTop: 1, eye: 'closed', brow: 1, hair: -11, belt: -4, lift: -1 }),
+    kf(1, { fT: 40, fS: 26, bT: -36, bS: -32, lean: 3, head: 9, fU: 150, fF: 238, bU: 146, bF: 232, bTop: 1, eye: 'closed', brow: 1, hair: -8, belt: 4 })]
+});
+
 /* Caminhada e corrida: ciclo calculado (pernas e braços em oposição) */
 function cicloAndar(p, corre) {
   const ph = p * Math.PI * 2, A = corre ? 50 : 30, fl = corre ? 78 : 42;
@@ -5480,6 +5623,9 @@ function cicloAndar(p, corre) {
 function amostrar(nome, p) {
   if (nome === 'walk') return cicloAndar(p, false);
   if (nome === 'run') return cicloAndar(p, true);
+  if (nome === 'wade') return cicloAgua(p);
+  if (nome === 'swim') return cicloNado(p);
+  if (nome === 'tread') return cicloBoiar(p);
   const ks = KEYS[nome];
   p = Math.max(0, Math.min(1, p));
   let i = 0; while (i < ks.length - 2 && p > ks[i + 1].t) i++;
@@ -8420,7 +8566,9 @@ function desenharObj(o, sx, sy) {
     case 'jogador': {
       const [an, fr] = animJogador();
       desenharRastros();
-      desenharAkira(sx, sy, an, fr, jog.face, jog.z, 1, o.flash > 0 ? 'r' : false, null, jog.costas); break;
+      const face = jog.virando && jog.virando.t < .11 ? jog.virando.de : jog.face;      // virando na água: meia volta ainda com o lado antigo
+      if (jog.z < 4 && ((jog.linhaV || 0) > .6 || (jog.afundaV || 0) > .6)) desenharAkiraNaAgua(sx, sy, an, fr, face, o.flash > 0 ? 'r' : false);
+      else desenharAkira(sx, sy, an, fr, face, jog.z, 1, o.flash > 0 ? 'r' : false, null, jog.costas); break;
     }
     case 'npc': {
       virarObj(o);
