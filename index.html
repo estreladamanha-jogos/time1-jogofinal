@@ -535,6 +535,65 @@ const PAL_NPC = {
   maya: PN('#f08ab0', '#f1c9a5', '#e8c870', 'tranca', '#f08ab0', { esc: .82 }), alana: PN('#9ac8f0', '#f1c9a5', '#2a1a1a', 'longo', '#9ac8f0'),
   valkira: PN('#e88a2a', '#f1c9a5', '#d8c098', 'curto', '#e88a2a'), karina: PN('#5a7a3a', '#5a3a28', '#2a1a10', 'coque', '#7a5a2a')
 };
+/* ---------- visual dos NPCs fiel aos retratos de cada um (cabelo, barba, óculos, gorro...) ----------
+   O boneco base continua o mesmo; os detalhes de cada personagem são desenhados por cima (vis = lista de traços). */
+(() => {
+  const P = PAL_NPC, aj = (p, o) => Object.assign(p, o);
+  aj(PAL_DAVI, { cabelo: 'careca', cab: '#f1c9a5', gi: '#f6f6f2', faixa: '#f2f2f2', esc: .84, vis: [] });                       // Davi: jovem, careca, magro, pele clara, quimono e faixa branca
+  aj(PAL_PIETRA, { cabelo: 'coque', cab: '#d9502b', vis: [['coqueAlto', '#d9502b']] });                                          // Pietra: ruiva de coque
+  aj(PAL_RITA, { vis: [['trancas', '#1a120e']] });                                                                                // Rita: tranças
+  aj(P.debora, { cab: '#c89a5a', vis: [] });
+  aj(P.kenzo, { vis: [['barba', '#f2f2f2', 1.4], ['sobrancelha', '#f2f2f2']] });                                                // Mestre Kenzo: cabelo e barba brancos e longos
+  aj(P.ayame, { cab: '#c8c8d0' });
+  aj(P.gil, { cab: '#3a2414', vis: [['dreads', '#3a2414', '#a8321e'], ['barba', '#2a1a10', .8]] });                             // Gil: dreads com pontas vermelhas e barba
+  aj(P.ramor, { cabelo: 'curto', cab: '#151515', vis: [['chanel', '#151515', '#8a3ad0']] });                                    // Ramor: chanel preto com mecha roxa
+  aj(P.pibe, { cabelo: 'curto', cab: '#5a3a1a', testa: null, vis: [['gorro', '#2a2a2a', '#e8e8e8'], ['bigode', '#3a2210']] });  // Pibe: gorro listrado e bigode
+  aj(P.michele, { cabelo: 'curto', cab: '#2a1a10', vis: [['cachos', '#2a1a10', 1.25], ['oculos', '#c8c8d0']] });                // Michele: cabelo crespo volumoso e óculos
+  aj(P.luiza, { cabelo: 'longo', vis: [['rabo', '#111111']] });
+  aj(P.lane, { cabelo: 'curto', cab: '#2a1a10', vis: [['cachos', '#3a2416', 1.1]] });                                            // Lane: cachos
+  aj(P.henrique, { cabelo: 'curto', cab: '#2a1a10', vis: [['twists', '#2a1a10']] });                                             // Henrique: twists curtos
+  aj(P.nicolas, { cab: '#2a1a3a', vis: [['crespoCurto', '#2a1a40']] });
+  aj(P.david, { cabelo: 'curto', vis: [['cornrows', '#1a1010']] });                                                              // David: tranças rentes
+  aj(P.miguel, { cabelo: 'curto', vis: [['hightop', '#1a1010']] });
+  aj(P.levi, { cabelo: 'espeto' });
+  aj(P.valkira, { cabelo: 'curto', cab: '#e8d8b0', vis: [['cachos', '#e0d0a8', .9]] });                                          // Valkira: senhora de cachos claros
+  aj(P.maya, { cabelo: 'longo', cab: '#f0d890' });
+  aj(P.karina, { cabelo: 'coque', cab: '#2a1a10', testa: '#d8c098', vis: [['cachos', '#2a1a10', .75]] });                       // Karina: coque crespo com faixa de tecido
+  aj(P.alana, { cabelo: 'longo', cab: '#141014' });
+})();
+function desenharVisNPC(g, o, sx, sy) {
+  const vis = o.pal && o.pal.vis; if (!vis || !vis.length) return;
+  const e = o.pal.esc || 1, f = o.face || 1, hx = sx + f * 1 * e, hy = sy - 35 * e, costas = o.costas;
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+  const OL = '#1a1220';
+  for (const [tipo, c1, c2] of vis) {
+    switch (tipo) {
+      case 'barba': { if (costas) break; const L = (c2 || 1) * 9 * e; g.beginPath(); g.moveTo(hx - 5 * e + f * e, hy + 2 * e); g.quadraticCurveTo(hx - 6 * e + f * e, hy + L, hx + f * 1.5 * e, hy + L + 2 * e); g.quadraticCurveTo(hx + 6 * e + f * e, hy + L, hx + 5 * e + f * e, hy + 2 * e); g.quadraticCurveTo(hx + f * e, hy + 5 * e, hx - 5 * e + f * e, hy + 2 * e); g.fillStyle = c1; g.fill(); g.strokeStyle = OL; g.lineWidth = .6; g.stroke(); break; }
+      case 'bigode': if (!costas) { g.strokeStyle = c1; g.lineWidth = 1.4 * e; g.beginPath(); g.moveTo(hx - 3 * e + f * 1.2 * e, hy + 3.4 * e); g.quadraticCurveTo(hx + f * 1.2 * e, hy + 2.4 * e, hx + 3 * e + f * 1.2 * e, hy + 3.4 * e); g.stroke(); } break;
+      case 'sobrancelha': if (!costas) { g.strokeStyle = c1; g.lineWidth = 1.2 * e; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(hx + s * 1.5 * e + f * e, hy - 2.6 * e); g.lineTo(hx + s * 4.5 * e + f * e, hy - 3.4 * e); g.stroke(); }); } break;
+      case 'oculos': if (!costas) { g.strokeStyle = '#3a3a44'; g.lineWidth = .8; [-1, 1].forEach(s => { g.beginPath(); g.ellipse(hx + s * 2.6 * e + f * 1.2 * e, hy + .2 * e, 2.2 * e, 1.8 * e, 0, 0, TAU); g.fillStyle = 'rgba(220,235,255,.25)'; g.fill(); g.stroke(); }); g.beginPath(); g.moveTo(hx - .4 * e + f * 1.2 * e, hy); g.lineTo(hx + .4 * e + f * 1.2 * e, hy); g.stroke(); } break;
+      case 'gorro': { g.beginPath(); g.ellipse(hx, hy - 4.6 * e, 7.4 * e, 5.6 * e, 0, Math.PI, 0); g.closePath(); g.fillStyle = c1; g.fill(); g.strokeStyle = OL; g.lineWidth = .6; g.stroke();
+        g.strokeStyle = c2; g.lineWidth = 1 * e; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(hx + k * 2.6 * e, hy - 4.6 * e); g.lineTo(hx + k * 2 * e, hy - 9.6 * e); g.stroke(); } g.fillStyle = c1; g.fillRect(hx - 7.6 * e, hy - 5.4 * e, 15.2 * e, 2.2 * e); break; }
+      case 'cachos': { const v = c2 || 1, R = 8.6 * e * v; for (let k = 0; k < 13; k++) { const a = Math.PI * (1.02 + k / 12 * .96), r = R * (.85 + .15 * Math.sin(k * 2.3)); g.beginPath(); g.arc(hx + Math.cos(a) * r, hy - 2 * e + Math.sin(a) * r * .95, 3.4 * e * v, 0, TAU); g.fillStyle = c1; g.fill(); if (k % 2) { g.fillStyle = 'rgba(0,0,0,.18)'; g.fill(); } }
+        [-1, 1].forEach(s => { for (let q = 0; q < 2; q++) { g.beginPath(); g.arc(hx + s * R * .95, hy + q * 4 * e, 3 * e * v, 0, TAU); g.fillStyle = c1; g.fill(); } }); break; }
+      case 'crespoCurto': { for (let k = 0; k < 9; k++) { const a = Math.PI * (1.08 + k / 8 * .84); g.beginPath(); g.arc(hx + Math.cos(a) * 6.8 * e, hy - 3 * e + Math.sin(a) * 6.4 * e, 2.2 * e, 0, TAU); g.fillStyle = c1; g.fill(); } break; }
+      case 'twists': { for (let k = 0; k < 9; k++) { const a = Math.PI * (1.05 + k / 8 * .9), x = hx + Math.cos(a) * 6.6 * e, y = hy - 3 * e + Math.sin(a) * 6.2 * e; g.strokeStyle = c1; g.lineWidth = 2 * e; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * 3 * e, y + Math.sin(a) * 3 * e); g.stroke(); } break; }
+      case 'cornrows': { g.strokeStyle = c1; g.lineWidth = 1.4 * e; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(hx + k * 2.2 * e, hy - 9 * e); g.quadraticCurveTo(hx + k * 2.6 * e, hy - 4 * e, hx + k * 3 * e, hy - 1 * e); g.stroke(); } break; }
+      case 'hightop': { g.beginPath(); g.moveTo(hx - 6 * e, hy - 5 * e); g.lineTo(hx - 5.6 * e, hy - 12 * e); g.lineTo(hx + 5.6 * e, hy - 12 * e); g.lineTo(hx + 6 * e, hy - 5 * e); g.closePath(); g.fillStyle = c1; g.fill(); break; }
+      case 'trancas': case 'dreads': { const n = tipo === 'trancas' ? 9 : 7, L = (tipo === 'trancas' ? 26 : 22) * e;
+        for (let k = 0; k < n; k++) { const s = (k / (n - 1)) * 2 - 1, x0 = hx + s * 7 * e, y0 = hy - 4 * e - Math.cos(s * 1.2) * 3 * e, bal = Math.sin(tempo * 1.6 + k) * 1.2 * e;
+          if (!costas && Math.abs(s) < .45) continue;
+          g.strokeStyle = c1; g.lineWidth = 2.2 * e; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + s * 4 * e, y0 + L * .5, x0 + s * 3 * e + bal, y0 + L); g.stroke();
+          if (c2) { g.strokeStyle = c2; g.beginPath(); g.moveTo(x0 + s * 3 * e + bal, y0 + L - 3 * e); g.lineTo(x0 + s * 3 * e + bal, y0 + L); g.stroke(); } }
+        g.beginPath(); g.ellipse(hx, hy - 4 * e, 7.6 * e, 5.6 * e, 0, Math.PI, 0); g.fillStyle = c1; g.fill(); break; }
+      case 'coqueAlto': { g.beginPath(); g.arc(hx - f * 1 * e, hy - 11 * e, 4.8 * e, 0, TAU); g.fillStyle = c1; g.fill(); g.strokeStyle = 'rgba(60,10,0,.5)'; g.lineWidth = .7; g.beginPath(); g.arc(hx - f * 1 * e, hy - 11 * e, 3 * e, .5, 4); g.stroke(); break; }
+      case 'chanel': { g.beginPath(); g.moveTo(hx - 8 * e, hy + 4 * e); g.quadraticCurveTo(hx - 9 * e, hy - 9 * e, hx, hy - 9.5 * e); g.quadraticCurveTo(hx + 9 * e, hy - 9 * e, hx + 8 * e, hy + 4 * e); g.lineTo(hx + 5.6 * e, hy + 4 * e); g.lineTo(hx + 5 * e, hy - 3 * e); g.lineTo(hx - 5 * e, hy - 3 * e); g.lineTo(hx - 5.6 * e, hy + 4 * e); g.closePath(); g.fillStyle = c1; g.fill();
+        g.strokeStyle = c2; g.lineWidth = 2 * e; g.beginPath(); g.moveTo(hx + f * 3 * e, hy - 8.6 * e); g.quadraticCurveTo(hx + f * 7 * e, hy - 4 * e, hx + f * 6.6 * e, hy + 3 * e); g.stroke(); break; }
+      case 'rabo': if (!costas) break; else { g.strokeStyle = c1; g.lineWidth = 3 * e; g.beginPath(); g.moveTo(hx, hy - 4 * e); g.quadraticCurveTo(hx - f * 3 * e, hy + 8 * e, hx - f * 1 * e, hy + 16 * e); g.stroke(); } break;
+    }
+  }
+  g.restore();
+}
 const TIPOS_INIM = {
   bandido:  { nome: 'Bandido do Dojo',   hp: 34,  dano: 7,  vel: 1.7, xp: 18, pal: PAL_INIM },
   veterano: { nome: 'Bandido Veterano',  hp: 70,  dano: 12, vel: 1.9, xp: 40, pal: PAL_VET },
@@ -1788,7 +1847,7 @@ function ctxSala(m, ed, sala, E, rnd) {
   const C = {
     m, ed, sala, E, rnd, portas,
     p(k, x, y, ex) { const r = (DEF_OBJ[k] && DEF_OBJ[k].r) || .3; if (!livre(x, y, r)) return null; const o = mkObj(k, rnd, Object.assign({ x, y }, ex)); m.objs.push(o); return o; },
-    i(tipo, sprK, x, y, r, ex) { if (!livre(x, y, r)) { for (let t = 0; t < 12; t++) { const xx = x + (rnd() - .5) * 2, yy = y + (rnd() - .5) * 1.2; if (livre(xx, yy, r)) { x = xx; y = yy; break; } if (t === 11) return null; } }
+    i(tipo, sprK, x, y, r, ex) { if (!livre(x, y, r)) { for (let t = 0; t < 60; t++) { const sp = 1 + t / 10, xx = x + (rnd() - .5) * 2 * sp, yy = y + (rnd() - .5) * 1.2 * sp; if (livre(xx, yy, r)) { x = xx; y = yy; break; } if (t === 59) return null; } }
       let s = SPR[sprK]; if (Array.isArray(s)) s = s[0]; const o = Object.assign({ tipo, x, y, r, spr: s }, ex); m.objs.push(o); return o; },
     npc(nome, papel, x, y, ex) { if (!nome) return null; const o = Object.assign({ tipo: 'npc', nome, x, y, r: .3, dir: 2, pal: palED(nome), fala: 'ed', edPapel: papel, ed: ed.id }, ex); m.objs.push(o); return o; },
     deco(n) { for (let k = 0; k < n; k++) { const lado = k % 3; const x = lado === 0 ? .8 + rnd() * .2 : lado === 1 ? m.w - .9 : 1.5 + rnd() * (m.w - 3); const y = lado === 2 ? .8 : 1.6 + rnd() * (m.h - 3.6); C.p(E.deco[k % E.deco.length], x, y); } },
@@ -1948,8 +2007,126 @@ function portasDaSala(ed, sala, w, h) {
   });
   return out;
 }
-Object.keys(SALA_DE).forEach(id => { MAPAS[id] = () => construirSala(id); });
-MAPAS.casa_cha = () => construirSala('ed_gt_restaurante_1');           // saves antigos dentro da Casa de Chá do vilarejo vão para o salão do restaurante
+/* =====================================================================
+   PLANTA ÚNICA COM SALAS INTERLIGADAS (referência: casa vista de cima com cômodos em volta de um corredor)
+   - a construção inteira vira UM mapa: hall de entrada embaixo, corredor de madeira no meio e salas dos dois lados
+   - as salas se ligam por vãos de porta (sem tela de carregamento entre elas)
+   - paredes: externas altas (com janelas, quadros e prateleiras), internas baixas (corte para ver o que está atrás)
+   - cada sala usa a planta/móveis do seu tipo + tapetes e plantas (bem decorado, como na referência)
+   ===================================================================== */
+const VAZIO = 13;                                                       // fora da construção (não desenha nada)
+const PISO_SALA = { dojo: T.TATAME, santuario: T.TATAME, pavilhao: T.TATAME, restCha: T.TATAME, restPrivativa: T.TATAME, palacioAudiencia: T.TATAME, tgDojo: T.TATAME, tgTreino: T.TATAME, quartos: T.TATAME, alojamento: T.TATAME,
+  banhosTanque: T.LAJE, camaraSelo: T.LAJE, tesouro: T.LAJE, cozinhaServico: T.PEDRA, restCozinha: T.PEDRA, restDespensa: T.PEDRA, forja: T.PEDRA, ceramica: T.PEDRA, deposito: T.TERRA, armazem: T.TERRA };
+function salaLocal(ed, sala, E, rnd, portas) {                          // monta um cômodo sozinho (coordenadas locais) para depois colar na planta
+  const [w, h] = TAM_SALA[sala.k] || [11, 8], sombria = SALA_SOMBRIA[sala.k];
+  const m = novoMapa('tmp', '', w, h, true); const piso = sombria ? (ed.reg === 'cavernas' ? T.CAVERNA : T.PEDRA) : (PISO_SALA[sala.k] || E.piso);
+  m.tiles.forEach(l => l.fill(piso));
+  const C = ctxSala(m, ed, sala, E, rnd); portas.forEach(p => C.portas.push(p));
+  C.inimigos = n => { for (let k = 0; k < n; k++) { const x = 2 + rnd() * (w - 4), y = 2 + rnd() * (h - 4); if (portas.some(p => Math.hypot(x - p[0], y - p[1]) < 3)) continue;
+    const e = novoInimigo(k === 0 && n > 2 ? 'veterano' : 'bandido', x, y); e.regiaoForcada = ed.reg; e.home = [x, y]; e.semRenascer = true; m.objs.push(e); } };
+  (SALAS[sala.k] || SALAS.casaSala)(C);
+  // capricho: tapete no centro e plantas nos cantos livres (a referência é cheia de vasos e tapetes)
+  if (!sombria) { C.p('tapete', w / 2 + (rnd() - .5), h / 2 - .4); [[.8, .9], [w - .8, .9], [.8, h - 1.7], [w - .8, h - 1.7]].forEach(([x, y], k) => { if (rnd() < .8) C.p(k % 2 ? 'vasoGrande' : 'vasoPequeno', x, y); }); }
+  if (mundoYokai() && sombria && !['camaraSelo', 'arenaNucleo'].includes(sala.k)) C.p('escombros', 1.6 + rnd() * (w - 3.2), h - 2.4);
+  return { m, w, h, sombria };
+}
+function construirPlanta(ed) {
+  const E = ESTILO_INT[ed.reg] || ESTILO_INT.vilarejo, rnd = mulberry32(([...ed.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 11)) >>> 0);
+  garantirPosEdif(ed.id);
+  const salas = ed.salas, ent = salas[0], [we, he] = TAM_SALA[ent.k] || [11, 8], outras = salas.slice(1);
+  const CW = 3;                                                         // largura do corredor
+  const esq = outras.filter((s, k) => k % 2 === 0), dir = outras.filter((s, k) => k % 2 === 1), tam = s => TAM_SALA[s.k] || [11, 8];
+  const Lw = esq.length ? Math.max(...esq.map(s => tam(s)[0])) : 0, Rw = dir.length ? Math.max(...dir.map(s => tam(s)[0])) : 0;
+  const altura = lista => lista.reduce((a, s) => a + tam(s)[1] + 1, 0);
+  const corrH = outras.length ? Math.max(altura(esq), altura(dir), 4) : 0;
+  const cxL = 1 + Lw + (Lw ? 1 : 0);                                    // coluna onde começa o corredor
+  let W = cxL + CW + (Rw ? 1 + Rw : 0) + 1; W = Math.max(W, we + 2);
+  const corX = outras.length ? cxL : Math.floor((W - CW) / 2), H = 1 + corrH + (outras.length ? 1 : 0) + he;
+  const m = novoMapa(ent.id, ed.nome, W, H, true); m.semParede = true; m.fundo = '#0a0608'; m.planta = true; m.corrompido = false;
+  m.tiles.forEach(l => l.fill(VAZIO)); m.bloq.forEach(l => l.fill(true));
+  const rects = [];
+  const colar = (sala, x0, y0, portasLocais, nome) => {
+    const r = salaLocal(ed, sala, E, rnd, portasLocais);
+    for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) { m.tiles[y0 + j][x0 + i] = r.m.tiles[j][i]; m.bloq[y0 + j][x0 + i] = false; }
+    for (const o of r.m.objs) { o.x += x0; o.y += y0; if (o.home) o.home = [o.home[0] + x0, o.home[1] + y0]; if (o.dk != null && o.dk > -50) o.dk += x0 + y0; m.objs.push(o); }
+    rects.push({ x0, y0, x1: x0 + r.w, y1: y0 + r.h, nome, sombria: r.sombria });
+    if (r.sombria) m.corrompido = true;
+  };
+  // hall de entrada (embaixo, centralizado no corredor)
+  const exE = Math.max(1, Math.min(W - we - 1, corX + Math.floor(CW / 2) - Math.floor(we / 2))), eyE = H - he;
+  const dxE = corX + CW / 2 - exE, portaEnt = outras.length ? [[dxE, .4], [dxE, 1.7], [dxE, 3]] : [];   // passagem livre do vão até o meio do hall
+  colar(ent, exE, eyE, portaEnt.concat([[we / 2, he - 1]]), NOME_SALA[ent.k]);
+  m.exits.push({ x: exE + we / 2 - 1, y: H - 1, w: 2, h: 1, alvo: (EDIF_POS[ed.id] || {}).mapa || 'vilarejo', sx: (EDIF_POS[ed.id] || {}).x, sy: (EDIF_POS[ed.id] || {}).y, nome: 'Saída', tapete: true });
+  m.spawn = { x: exE + we / 2, y: H - 2.3 };
+  if (outras.length) {
+    // corredor de madeira (com passadeira e plantas)
+    for (let j = 1; j < 1 + corrH; j++) for (let i = corX; i < corX + CW; i++) { m.tiles[j][i] = T.PISO; m.bloq[j][i] = false; }
+    for (let i = corX + 1; i < corX + CW - 1 || i === corX + 1; i++) { m.tiles[1 + corrH][i] = T.PISO; m.bloq[1 + corrH][i] = false; }   // vão entre o corredor e o hall
+    rects.push({ x0: corX, y0: 1, x1: corX + CW, y1: 1 + corrH, nome: 'Corredor' });
+    for (let y = 2; y < corrH; y += 3) m.objs.push(mkObj('tapete', rnd, { x: corX + CW / 2, y: y + .5 }));
+    // salas dos dois lados, de baixo para cima; cada uma com um vão de porta para o corredor
+    let yL = 1 + corrH, yR = 1 + corrH;
+    esq.forEach(s => { const [w, h] = tam(s); yL -= h + 1; const x0 = cxL - 1 - w, y0 = yL + 1, py = Math.floor(h / 2);
+      colar(s, x0, y0, [[w - .4, py + .5], [w - 1.7, py + .5], [w - 3, py + .5]], NOME_SALA[s.k]); m.tiles[y0 + py][cxL - 1] = T.PISO; m.bloq[y0 + py][cxL - 1] = false; m.objs.push({ tipo: 'rotulo', x: cxL - .5, y: y0 + py + .5, r: 0, texto: NOME_SALA[s.k], dk: -40 }); });
+    dir.forEach(s => { const [w, h] = tam(s); yR -= h + 1; const x0 = corX + CW + 1, y0 = yR + 1, py = Math.floor(h / 2);
+      colar(s, x0, y0, [[.4, py + .5], [1.7, py + .5], [3, py + .5]], NOME_SALA[s.k]); m.tiles[y0 + py][corX + CW] = T.PISO; m.bloq[y0 + py][corX + CW] = false; m.objs.push({ tipo: 'rotulo', x: corX + CW + .5, y: y0 + py + .5, r: 0, texto: NOME_SALA[s.k], dk: -40 }); });
+    // vasos e lanternas no corredor (encostados nas paredes, sem fechar a passagem)
+    for (let y = 2.5; y < corrH; y += 2.6) { const x = corX + .45, x2 = corX + CW - .45; if (!m.bloq[Math.floor(y)][corX - 1] || rnd() < .5) continue; m.objs.push(mkObj(rnd() < .5 ? 'vasoGrande' : 'lanterna', rnd, { x: rnd() < .5 ? x : x2, y })); }
+  }
+  // paredes: todo tile vazio encostado num piso vira parede (alta na borda do fundo, baixa no resto)
+  const piso = (i, j) => i >= 0 && j >= 0 && i < W && j < H && m.tiles[j][i] !== VAZIO;
+  const E2 = { cor: E.parede[0], esc: E.parede[1], tipo: ed.reg === 'cavernas' ? 'rocha' : ed.reg === 'templos' || ed.reg === 'cachoeira' ? 'pedra' : ed.reg === 'bambuzal' ? 'bambu' : 'shoji' };
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    if (piso(i, j)) continue;
+    let viz = false; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (piso(i + di, j + dj)) viz = true;
+    if (!viz) continue;
+    const alta = !piso(i - 1, j) && !piso(i, j - 1) && !piso(i - 1, j - 1) && (piso(i + 1, j) || piso(i, j + 1) || piso(i + 1, j + 1));
+    m.objs.push({ tipo: 'paredeInt', x: i + .5, y: j + .5, r: 0, alta, cor: E2.cor, cor2: E2.esc, estilo: E2.tipo, seed: (i * 7 + j * 13) % 9, dk: i + j + 1.02, nS: piso(i, j + 1), nE: piso(i + 1, j) });
+  }
+  m.salasRect = rects; m.edNome = ed.nome;
+  return m;
+}
+// parede interna (bloco isométrico): faces com papel de parede/pedra/bambu, topo de madeira; as altas ganham janelas e quadros
+function desenharParedeInt(g, o) {
+  const i = o.x - .5, j = o.y - .5, P = (a, b, z) => { const [x, y] = iso(a, b); return [x, y - z]; }, h = o.alta ? 46 : 14;
+  const N = P(i, j, 0), Ee = P(i + 1, j, 0), S = P(i + 1, j + 1, 0), Wv = P(i, j + 1, 0);
+  const face = (a, b, cor) => { g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(b[0], b[1] - h); g.lineTo(a[0], a[1] - h); g.closePath(); g.fillStyle = cor; g.fill(); };
+  const corS = o.estilo === 'rocha' ? '#4a4656' : o.estilo === 'pedra' ? '#9a907e' : o.estilo === 'bambu' ? '#7aa84a' : o.cor, corE = o.estilo === 'rocha' ? '#36323e' : o.estilo === 'pedra' ? '#7a705e' : o.estilo === 'bambu' ? '#5a8a3a' : '#d8c8a0';
+  face(Wv, S, corS); face(S, Ee, corE);
+  // detalhes das faces
+  g.save(); g.lineWidth = .6;
+  const lin2 = (a, b, k, cor) => { g.strokeStyle = cor; g.beginPath(); g.moveTo(a[0], a[1] - k); g.lineTo(b[0], b[1] - k); g.stroke(); };
+  if (o.estilo === 'pedra' || o.estilo === 'rocha') { for (let k = 6; k < h; k += 7) { lin2(Wv, S, k, 'rgba(20,14,8,.35)'); lin2(S, Ee, k, 'rgba(20,14,8,.35)'); } }
+  else if (o.estilo === 'bambu') { for (let q = 1; q < 4; q++) { const ax = Wv[0] + (S[0] - Wv[0]) * q / 4, ay = Wv[1] + (S[1] - Wv[1]) * q / 4; g.strokeStyle = 'rgba(30,60,10,.6)'; g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax, ay - h); g.stroke(); } }
+  else { lin2(Wv, S, 4, 'rgba(90,50,20,.6)'); lin2(S, Ee, 4, 'rgba(90,50,20,.6)'); g.fillStyle = 'rgba(122,72,32,.85)'; const a = Wv, b = S; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(b[0], b[1] - 4); g.lineTo(a[0], a[1] - 4); g.fill(); }
+  if (o.alta && o.nS) {                                                  // parede do fundo virada para a sala: janela, quadro ou prateleira
+    const mx = (Wv[0] + S[0]) / 2, my = (Wv[1] + S[1]) / 2 - h * .55, k = o.seed % 4;
+    g.save(); g.translate(mx, my); g.transform(1, -.5, 0, 1, 0, 0);
+    if (k === 0) { g.fillStyle = '#2a1a10'; g.fillRect(-6, -8, 12, 14); g.fillStyle = 'rgba(190,225,255,.85)'; g.fillRect(-5, -7, 10, 12); g.strokeStyle = '#5a3a1e'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -7); g.lineTo(0, 5); g.moveTo(-5, -1); g.lineTo(5, -1); g.stroke(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-4, -6, 3, 4); }
+    else if (k === 1) { g.fillStyle = '#6a3a1e'; g.fillRect(-5, -7, 10, 9); g.fillStyle = ['#6aa84a', '#d86a4a', '#5a8ac8'][o.seed % 3]; g.fillRect(-4, -6, 8, 7); g.fillStyle = 'rgba(255,240,200,.5)'; g.beginPath(); g.arc(-1, -3, 1.6, 0, TAU); g.fill(); }
+    else if (k === 2) { g.fillStyle = '#7a4a22'; g.fillRect(-7, 2, 14, 2); ['#c84a4a', '#4a8ac8', '#e8c040', '#6aa84a'].forEach((c, q) => { g.fillStyle = c; g.fillRect(-6 + q * 3, -3, 2.4, 5); }); }
+    g.restore();
+  }
+  g.restore();
+  // topo
+  const tN = P(i, j, h), tE = P(i + 1, j, h), tS = P(i + 1, j + 1, h), tW = P(i, j + 1, h);
+  g.beginPath(); g.moveTo(tN[0], tN[1]); g.lineTo(tE[0], tE[1]); g.lineTo(tS[0], tS[1]); g.lineTo(tW[0], tW[1]); g.closePath(); g.fillStyle = o.estilo === 'rocha' ? '#2a2632' : '#6b4423'; g.fill(); g.strokeStyle = 'rgba(20,10,4,.6)'; g.lineWidth = .5; g.stroke();
+}
+// nome da sala no vão da porta (aparece quando o Akira chega perto)
+function desenharRotulo(g, o) {
+  const d = Math.hypot(o.x - jog.x, o.y - jog.y); if (d > 3.5) return;
+  const [x, y] = iso(o.x, o.y); g.save(); g.globalAlpha = Math.min(1, (3.5 - d) / 1.5); g.font = 'bold 7px monospace'; g.textAlign = 'center'; const w = g.measureText(o.texto).width + 6;
+  g.fillStyle = 'rgba(40,20,8,.85)'; g.fillRect(Math.round(x - w / 2), Math.round(y - 30), Math.round(w), 10); g.fillStyle = '#ffe0a0'; g.fillText(o.texto, Math.round(x), Math.round(y - 22)); g.restore();
+}
+function salaAtualDaPlanta() {                                           // muda o nome no HUD conforme a sala onde o Akira está
+  if (!mapa || !mapa.salasRect) return;
+  const r = mapa.salasRect.find(q => jog.x >= q.x0 && jog.x < q.x1 && jog.y >= q.y0 && jog.y < q.y1), nome = mapa.edNome + (r ? ' — ' + r.nome : '');
+  if (nome !== mapa.nome) { mapa.nome = nome; hudChave = ''; }
+}
+
+// todas as salas de uma construção abrem a mesma planta (salas interligadas); ids antigos continuam válidos nos saves
+Object.keys(SALA_DE).forEach(id => { const ed = EDIF[SALA_DE[id].ed]; MAPAS[id] = () => construirPlanta(ed); });
+MAPAS.casa_cha = () => construirPlanta(EDIF.gt_restaurante);           // saves antigos dentro da Casa de Chá do vilarejo vão para o salão do restaurante
 
 /* ---------- fachadas no mundo (cada região, fora do núcleo, sem cobrir rios e caminhos) ---------- */
 function garantirPosEdif(id) { if (!EDIF_POS[id]) { const ed = EDIF[id]; if (ed.reg === 'cavernas') obterCaverna(); else obterMundo(); } }
@@ -2716,10 +2893,11 @@ function prepararCache(m) {
   const vizDe = (i, j, t) => (di, dj) => { const v = get(i + di, j + dj); return v == null ? t : v; };
   for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) {
     const t = m.tiles[j][i], [x, y] = pos(i, j), viz = vizDe(i, j, t);
+    if (t === 13) continue;                                                // VAZIO: fora da planta da construção
     if (t === T.AGUA) { Cen.aguaBase(g, i, j, x, y, viz); m.aguas.push([i, j]); } else Cen.ladrilho(g, t, i, j, x, y, viz);
   }
   for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) {          // bordas orgânicas (grama invadindo, margem molhada)
-    const t = m.tiles[j][i]; if (t === T.AGUA) continue;
+    const t = m.tiles[j][i]; if (t === T.AGUA || t === 13) continue;
     const [x, y] = pos(i, j); Cen.bordaTile(g, t, i, j, x, y, vizDe(i, j, t));
   }
   for (const f of m.flores) {                                          // florzinhas com caule e pétalas
@@ -5646,6 +5824,7 @@ function desenharAliadoObj(o, sx, sy) {
   const cor = corElem(o.pid), est = estiloPal(o.pal);
   if (!o.caido) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 20, 18, cor, o.est === 'tecnica' ? .35 : .12); ctx.restore(); }
   desenharAkira(sx, sy, an, fr, o.face, 0, o.iframes > 0 && Math.floor(tempo * 20) % 2 ? .5 : 1, o.flash > 0, est, o.costas);
+  desenharVisNPC(ctx, o, sx, sy);
   if (o.est === 'tecnica') { ctx.save(); ctx.globalCompositeOperation = 'lighter'; for (let k = 0; k < 6; k++) { const a = tempo * 6 + k; ctx.fillStyle = cor; ctx.fillRect(sx + Math.cos(a) * 10, sy - 20 + Math.sin(a) * 12, 1.5, 1.5); } ctx.restore(); }
   if (o.caido && jog.est === 'reanimando') { const p = Math.min(1, jog.t / 3); ctx.strokeStyle = '#9fffb0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy - 30, 8, -Math.PI / 2, -Math.PI / 2 + p * TAU); ctx.stroke(); }
 }
@@ -7224,7 +7403,7 @@ function atualizar(dt0) {
     else if (o.tipo === 'npc' && Math.hypot(o.x - jog.x, o.y - jog.y) < 3) { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); }
   }
   mapa.objs = mapa.objs.filter(o => !o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0));
-  tickExame(dtM); tickTreino(dtM); tickArena(dtM);
+  tickExame(dtM); tickTreino(dtM); tickArena(dtM); salaAtualDaPlanta();
   tickChefe(dtM, ix, iy); atualizarPerigos(dtM); atualizarProjeteis(dtM); atualizarProjAmigos(dtM); EFX.atualizar(cine ? dt : dtM);
   for (let i = baloes.length - 1; i >= 0; i--) { baloes[i].t += dt0; if (baloes[i].t > baloes[i].vida) baloes.splice(i, 1); }
 
@@ -11121,6 +11300,7 @@ function desenharObj(o, sx, sy) {
     case 'npc': {
       virarObj(o);
       desenharAkira(sx, sy, 'relax', Math.floor(tempo * 3 + o.x) % 4, o.face, 0, 1, false, estiloPal(o.pal), o.costas);
+      desenharVisNPC(ctx, o, sx, sy);                                     // cabelo/barba/óculos de cada personagem
       if (o.chefe) acessorioChefe(o, sx, sy);                                // O Oitavo Dragão: chapéu cônico e rosto oculto
       const ey = Math.round(sy - 48 * (o.pal.esc || 1));
       ctx.font = GOT.on ? 'bold 8px Cinzel, serif' : 'bold 7px monospace'; ctx.textAlign = 'center';
@@ -11160,6 +11340,8 @@ function desenharObj(o, sx, sy) {
       break;
     }
     case 'casa': break;
+    case 'paredeInt': desenharParedeInt(ctx, o); break;
+    case 'rotulo': desenharRotulo(ctx, o); break;
     case 'barco': desenharBarco(sx, sy, false); break;
     case 'cachoeira': if (o.spr) spr(Array.isArray(o.spr) ? o.spr[0] : o.spr, sx, sy); break;   // na região a montanha nova (fatias 'monte') desenha a cachoeira
     case 'selo': spr(o.spr, sx, sy); brilhoObj(o, sx, sy); if (o.guardReg && mundoYokai() && !guardiaoVencido(o.guardReg) && !estado.chefes[o.chefe]) seloCorrompido(ctx, o, sx, sy); break;
@@ -13546,7 +13728,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
