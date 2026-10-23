@@ -1852,6 +1852,7 @@ function construirMundo() {
       reservar(M, x, y, 4.2); k++;
     }
   }
+  construirRioSagrado(M); construirCais(M);                            // rios e cais antes das arenas e das casinhas: nada nasce em cima da água
   // arenas dos chefes: em cada região, um selo antigo rompido no meio de um círculo de pedra (fora do núcleo, longe de portas)
   // Só existem depois do torneio (fase 'selos'): antes disso nenhum chefe aparece.
   if (estado.fase === 'selos') { const ra = mulberry32(8888);
@@ -1876,7 +1877,6 @@ function construirMundo() {
     }
   }
   // casas de moradores espalhadas pelo mundo (só enfeite); ficam longe dos prédios com interação
-  construirRioSagrado(M); construirCais(M);                            // rio e cais antes das casinhas: elas não nascem em cima da água
   { const QTD = { vilarejo: 14, cerejeiras: 5, tangerinas: 4, outono: 4, bambuzal: 4, cachoeira: 3, templos: 2 };
     const CORES = { vilarejo: ['#b8453a', '#3f6fb0', '#2f8f5a', '#c9892f', '#8e44ad', '#6b5b4a'], cerejeiras: ['#d8608f', '#b8453a', '#8a7a5a'], tangerinas: ['#c9892f', '#e07a2a', '#6b5b4a'],
       outono: ['#a8432a', '#7a4a2a', '#c9892f'], bambuzal: ['#2f8f5a', '#6b5b4a', '#3f6fb0'], cachoeira: ['#3f8fb0', '#6b5b4a'], templos: ['#a63a3a', '#6b5b4a'] };
@@ -1907,7 +1907,7 @@ function construirMundo() {
       for (const [i, j] of pts) { const a = eixoI ? i : j, b = eixoI ? j - cy : i - cx; if ((a - .3) * (a - .3) / 7.5 + b * b / 5.5 <= 1) M.tiles[j][i] = T.AGUA; }
       reservar(M, eixoI ? 1.5 : cx + .5, eixoI ? cy + .5 : 1.5, 3.2); return true;
     };
-    for (let i = 4; i < M.w - 2; i += L) { const agua = v % 3 === 1 && lagoa(i, 0, false); M.objs.push({ tipo: 'serra', x: i + .5, y: .05, r: 0, dk: -50, spr: Cen.serraSpr(v % 7, .5, agua) }); v++; }
+    for (let i = 4; i < M.w - 2; i += L) { const agua = (v % 3 === 1 && lagoa(i, 0, false)) || i === 166 || i === 193; /* 166 e 193: nascentes que caem no lago do nordeste */ M.objs.push({ tipo: 'serra', x: i + .5, y: .05, r: 0, dk: -50, spr: Cen.serraSpr(v % 7, .5, agua) }); v++; }
     // na frente (embaixo e à direita) o mapa termina em penhasco: alguns riachos chegam na beirada e despencam
     const riacho = (sul, k) => {
       const tiles = []; for (let a = 1; a <= 6; a++) for (let b = 0; b < 2; b++) tiles.push(sul ? [k + b, M.h - a] : [M.w - a, k + b]);
@@ -2457,62 +2457,114 @@ function desenharAkiraNaAgua(sx, sy, an, fr, face, branco) {
    frente do mapa (sangradouro), saindo da área jogável.
    ===================================================================== */
 const RIO_PONTOS = [[184, 253.2], [183.7, 257.5], [182, 262], [177.5, 266.2], [170.5, 269.6], [162.5, 272.2], [153.5, 274.2], [146, 275.6], [138.5, 276.6]];   // mundo (x, y), da piscina ao lago
-const RIO_CORREDEIRA = [.3, .46];                                       // trecho (fração do rio) com corredeira: a saída do vale
+const RIO_CORREDEIRA = [.42, .58];                                       // trecho (fração do rio) com corredeira: a saída do vale
 const SANGRADOURO = { i0: 96, n: 4 };                                    // onde o Grande Lago despenca do penhasco (4 cascatas de 2 tiles)
-function amostrasRio() {                                                 // linha central suave (Catmull-Rom)
-  const P = RIO_PONTOS, out = [];
+// Rio dos Templos: sai do lago do nordeste (alimentado pelas cascatas da serra de trás), desce pelo lado leste de
+// Templos Antigos e do Bambuzal (longe dos núcleos, portões e trilhas principais) e encontra o Rio Sagrado
+// logo abaixo da piscina da Cachoeira. Fundo do mundo = mais alto; frente = mais baixo, então a água sempre desce.
+const RIO_TEMPLOS = [[203, 66], [203.5, 73], [201, 82], [204.5, 93], [202, 104], [205.5, 116], [202.5, 128], [205, 140], [202, 152], [205.5, 164], [202.5, 176], [205, 188], [202, 200], [204.5, 212], [201.5, 224], [204, 236], [201, 248], [198.5, 257.5], [193, 264.2], [186.5, 266.4], [180.5, 267], [176, 267.2]];
+const RIOS = [
+  { id: 'sagrado', nome: 'Rio Sagrado', pontos: RIO_PONTOS, larg: f => f < .12 ? 3.0 - f * 7.9 : 2.05 + f * .55, vel: f => f >= RIO_CORREDEIRA[0] && f <= RIO_CORREDEIRA[1] ? 2.5 : f < .08 ? .6 : 1.05 },
+  { id: 'templos', nome: 'Rio dos Templos', pontos: RIO_TEMPLOS, larg: f => f < .04 ? 3.1 - f * 17 : f > .94 ? 2.7 : 2.4 + .2 * Math.sin(f * 37),
+    vel: f => (f > .17 && f < .25) || (f > .62 && f < .69) ? 2.2 : f < .03 ? .5 : 1.15 }
+];
+function amostrasRio(P) {                                                // linha central suave (Catmull-Rom); [x, y, fração, dirX, dirY]
+  P = P || RIO_PONTOS; const out = [];
   for (let k = 0; k < P.length - 1; k++) {
     const p0 = P[Math.max(0, k - 1)], p1 = P[k], p2 = P[k + 1], p3 = P[Math.min(P.length - 1, k + 2)];
     for (let s = 0; s < 1; s += .08) { const s2 = s * s, s3 = s2 * s, f = (a, b, c, d) => .5 * (2 * b + (-a + c) * s + (2 * a - 5 * b + 4 * c - d) * s2 + (-a + 3 * b - 3 * c + d) * s3); out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]); }
   }
-  out.push(P[P.length - 1]);
+  out.push(P[P.length - 1].slice());
   let L = 0; out.forEach((p, k) => { if (k) L += Math.hypot(p[0] - out[k - 1][0], p[1] - out[k - 1][1]); p[2] = L; });
   out.forEach((p, k) => { p[2] /= L; const a = out[Math.max(0, k - 1)], b = out[Math.min(out.length - 1, k + 1)], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; p[3] = (b[0] - a[0]) / d; p[4] = (b[1] - a[1]) / d; });
   return out;
 }
-const larguraRio = f => f < .1 ? 2.6 - f * 5.5 : 2.05 + f * .55;          // meia-largura: boca larga saindo da piscina, 4 tiles no vale, ~5 na foz
-const velRio = f => f >= RIO_CORREDEIRA[0] && f <= RIO_CORREDEIRA[1] ? 2.5 : f < .08 ? .6 : 1.05;   // tiles/s
-function construirRioSagrado(M) {
-  const S = amostrasRio(), w = M.w;
-  M.rioVel = new Float32Array(w * M.h); M.rioDir = new Float32Array(w * M.h * 2); M.ponteRio = new Set(); M.caisT = new Set(); M.rioS = S;
-  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; S.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+const larguraRio = f => RIOS[0].larg(f);                                  // (o cais do rio usa o Rio Sagrado)
+const velRio = f => RIOS[0].vel(f);
+// cor das folhas que descem o rio, pela região que ele atravessa
+const FOLHAS_RIO = { templos: ['#e0b44a', '#c9892f'], bambuzal: ['#9bd06a', '#6fae48'], cachoeira: ['#7fbf4e', '#ffc0d6'], jardins: ['#ff9fc0', '#fff2f6'] };
+function construirRioSagrado(M) {                                        // monta todos os rios (o nome ficou do primeiro)
+  const w = M.w;
+  M.rioVel = new Float32Array(w * M.h); M.rioDir = new Float32Array(w * M.h * 2); M.ponteRio = new Set(); M.caisT = new Set(); M.rios = [];
   const caminho = t => t === T.TERRA || t === T.LAJE;
-  for (let j = Math.floor(y0 - 4); j <= y1 + 4; j++) for (let i = Math.floor(x0 - 4); i <= x1 + 4; i++) {
-    if (!M.tiles[j] || i < 0 || i >= w || M.bloq[j][i]) continue;
-    let best = 1e9, bs = null; for (const s of S) { const d = Math.hypot(i + .5 - s[0], j + .5 - s[1]); if (d < best) { best = d; bs = s; } }
-    const hw = larguraRio(bs[2]); if (best > hw) continue;
-    const t = M.tiles[j][i], k = j * w + i;
-    if (caminho(t)) { M.tiles[j][i] = T.PONTE; if (best <= hw - .55) M.ponteRio.add(k); }   // caminho cruzando o rio vira ponte (barco passa por baixo)
-    else if (t !== T.PONTE) M.tiles[j][i] = T.AGUA;
-    M.rioVel[k] = velRio(bs[2]); M.rioDir[k * 2] = bs[3]; M.rioDir[k * 2 + 1] = bs[4];
+  for (const R of RIOS) {
+    const S = amostrasRio(R.pontos); M.rios.push({ R, S }); if (R.id === 'sagrado') M.rioS = S;
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; S.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+    for (let j = Math.max(0, Math.floor(y0 - 4)); j <= Math.min(M.h - 1, y1 + 4); j++) for (let i = Math.max(0, Math.floor(x0 - 4)); i <= Math.min(w - 1, x1 + 4); i++) {
+      if (M.bloq[j][i]) continue;
+      let best = 1e9, bs = null; for (const s of S) { const d = Math.abs(i + .5 - s[0]) + Math.abs(j + .5 - s[1]); if (d < best + 3) { const e = Math.hypot(i + .5 - s[0], j + .5 - s[1]); if (e < best) { best = e; bs = s; } } }
+      const hw = R.larg(bs[2]); if (best > hw) continue;
+      const t = M.tiles[j][i], k = j * w + i;
+      if (caminho(t)) { M.tiles[j][i] = T.PONTE; if (best <= hw - .55) M.ponteRio.add(k); }   // caminho cruzando o rio vira ponte (barco passa por baixo)
+      else if (t !== T.PONTE) M.tiles[j][i] = T.AGUA;
+      if (!M.rioVel[k]) { M.rioVel[k] = R.vel(bs[2]); M.rioDir[k * 2] = bs[3]; M.rioDir[k * 2 + 1] = bs[4]; }   // no encontro dos rios vale a direção do rio principal
+    }
+    reservarLinha(M, S, 1.2, R);
   }
-  // o que tinha em cima dos tiles que viraram rio sai (enfeites) ou vai para a margem (inimigos)
+  // o que tinha em cima dos tiles que viraram rio sai (enfeites) ou vai para a margem (inimigos, placas e santuários)
   const molhou = o => { const t = M.tiles[Math.floor(o.y)] && M.tiles[Math.floor(o.y)][Math.floor(o.x)]; return t === T.AGUA; };
-  const ENFEITE = ['arvore', 'bambu', 'pedra', 'arbusto', 'tufo', 'cogumelo', 'tronco', 'toco', 'rocha', 'flor'];
-  M.objs = M.objs.filter(o => { if (!molhou(o)) return true; if (o.tipo === 'inimigo') { const p = acharPerto(M, o.x, o.y, .3); if (p) { o.x = p[0]; o.y = p[1]; return true; } return false; } return !ENFEITE.includes(o.tipo); });
+  const ENFEITE = ['arvore', 'bambu', 'pedra', 'arbusto', 'tufo', 'cogumelo', 'tronco', 'toco', 'rocha', 'flor', 'folhasMonte', 'arvoreOutono', 'cerejeira', 'tangerineira'];
+  M.objs = M.objs.filter(o => { if (!molhou(o)) return true; if (ENFEITE.includes(o.tipo)) return false; const p = acharPerto(M, o.x, o.y, o.r || .3); if (p) { o.x = p[0]; o.y = p[1]; return true; } return o.tipo !== 'inimigo'; });
   M.floresN = M.floresN.filter(f => !molhou(f));
-  reservarLinha(M, S, 1.2);
-  // efeitos de correnteza (riscos que descem o rio; espuma branca na corredeira): desenhados no chão, por trechos
-  for (let k = 0; k < S.length; k += 6) {
-    const pts = [], tr = S.slice(k, k + 7); if (tr.length < 2) break;
-    for (const s of tr) { const hw = larguraRio(s[2]); for (let q = -3; q <= 3; q++) { const x = s[0] - s[4] * hw * q / 3.6, y = s[1] + s[3] * hw * q / 3.6; if (M.tiles[Math.floor(y)][Math.floor(x)] === T.AGUA) pts.push([x, y, s[3], s[4], velRio(s[2]), Math.random()]); } }
-    const c = tr[Math.floor(tr.length / 2)];
-    M.objs.push({ tipo: 'rioFx', x: c[0], y: c[1], r: 0, dk: -1e5, spr: { hi: true, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 90, r: 90, t: 60, b: 60 }, dyn: (g, t) => desenharCorrenteza(g, t, pts, c) } });
+  // animação dos rios (correnteza, reflexos, espuma das margens, corredeira, folhas descendo): desenhada no chão, por trechos
+  for (const { R, S } of M.rios) for (let k = 0; k < S.length; k += 6) {
+    const tr = S.slice(k, k + 7); if (tr.length < 2) break;
+    const pts = [], margem = [], ag = (x, y) => M.tiles[Math.floor(y)] && M.tiles[Math.floor(y)][Math.floor(x)] === T.AGUA;
+    for (const s of tr) { const hw = R.larg(s[2]); for (let q = -3; q <= 3; q++) { const x = s[0] - s[4] * hw * q / 3.6, y = s[1] + s[3] * hw * q / 3.6; if (ag(x, y)) pts.push([x, y, s[3], s[4], R.vel(s[2]), Math.random()]); } }
+    let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9; tr.forEach(([x, y]) => { bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x); by0 = Math.min(by0, y); by1 = Math.max(by1, y); });
+    for (let j = Math.floor(by0 - 4); j <= by1 + 4; j++) for (let i = Math.floor(bx0 - 4); i <= bx1 + 4; i++) {
+      if (!ag(i + .5, j + .5) || !M.rioVel[j * w + i]) continue;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const t = M.tiles[j + dj] && M.tiles[j + dj][i + di]; if (t != null && t !== T.AGUA && t !== T.PONTE) margem.push([i + .5 + di * .45, j + .5 + dj * .45, di, dj, Math.random()]); }
+    }
+    const c = tr[Math.floor(tr.length / 2)], reg = M.regiaoEm(c[0], c[1]), folhas = FOLHAS_RIO[reg && reg.id] || ['#7fbf4e', '#5f9a3e'];
+    const fx = { pts, margem, tr: tr.map(s => [s[0], s[1], s[3], s[4], R.vel(s[2]), R.larg(s[2])]), folhas, sem: k * 7.13 };
+    M.objs.push({ tipo: 'rioFx', x: c[0], y: c[1], r: 0, dk: -1e5, spr: { hi: true, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 110, r: 110, t: 70, b: 70 }, dyn: (g, t) => desenharCorrenteza(g, t, fx, c) } });
   }
   // o Grande Lago transborda pelo penhasco da frente (cascatas que já existem no jogo para os riachos da borda)
   for (let n = 0; n < SANGRADOURO.n; n++) { const k = SANGRADOURO.i0 + n * 2; M.objs.push({ tipo: 'cascataBorda', x: k + 1, y: M.h, r: 0, dk: 1e6, spr: Cen.cascataBorda(true) }); }
 }
-function reservarLinha(M, S, r) { for (let k = 0; k < S.length; k += 3) reservar(M, S[k][0], S[k][1], larguraRio(S[k][2]) + r); }
-function desenharCorrenteza(g, t, pts, c) {
-  const [cx, cy] = iso(c[0], c[1]);
+function reservarLinha(M, S, r, R) { for (let k = 0; k < S.length; k += 3) reservar(M, S[k][0], S[k][1], (R ? R.larg(S[k][2]) : larguraRio(S[k][2])) + r); }
+// animação do rio feita em código: brilho que desce com a água, riscos de correnteza, espuma batendo nas margens,
+// água branca e respingos na corredeira, folhas da região descendo o rio e cintilados do sol
+function desenharCorrenteza(g, t, fx, c) {
+  const [cx, cy] = iso(c[0], c[1]), P = (x, y) => { const [a, b] = iso(x, y); return [a - cx, b - cy]; };
+  const dirTela = (dx, dy) => { const sx = (dx - dy) * 16, sy = (dx + dy) * 8, L = Math.hypot(sx, sy) || 1; return [sx / L, sy / L]; };
   g.save(); g.lineCap = 'round';
-  for (const [x, y, dx, dy, v, r] of pts) {
-    const [sx, sy] = iso(x, y), sdx = (dx - dy) * 16, sdy = (dx + dy) * 8, L = Math.hypot(sdx, sdy) || 1, ux = sdx / L, uy = sdy / L;
-    const ph = ((t * v * .55 + r) % 1), len = v > 2 ? 10 : 3 + v * 2.2, a = Math.sin(ph * Math.PI) * (v > 2 ? .95 : .5);
-    if (v > 2 && r > .3) { const [fx, fy] = [sx - cx, sy - cy]; g.fillStyle = 'rgba(235,250,255,' + (.28 + .14 * Math.sin(t * 4 + r * 9)).toFixed(2) + ')'; g.beginPath(); g.ellipse(fx, fy, 5 + r * 4, 2 + r * 1.4, Math.atan2(uy, ux), 0, TAU); g.fill(); }   // água branca da corredeira
-    const px = sx - cx + ux * (ph - .5) * 14, py = sy - cy + uy * (ph - .5) * 14;
-    g.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.lineWidth = v > 2 ? 1.7 : .8; g.beginPath(); g.moveTo(px, py); g.lineTo(px + ux * len, py + uy * len); g.stroke();
-    if (v > 2 && r > .55) { g.fillStyle = 'rgba(240,252,255,' + (.5 * a).toFixed(2) + ')'; g.beginPath(); g.ellipse(px, py, 3.2, 1.3, 0, 0, TAU); g.fill(); }   // espuma da corredeira
+  for (const [x, y, dx, dy, v, r] of fx.pts) {                             // 1. faixas de brilho que descem com a água
+    const [px, py] = P(x, y), [ux, uy] = dirTela(dx, dy), ph = (t * v * .35 + r) % 1, a = .1 * Math.sin(ph * Math.PI);
+    g.fillStyle = 'rgba(220,245,255,' + a.toFixed(3) + ')'; g.beginPath(); g.ellipse(px + ux * (ph - .5) * 20, py + uy * (ph - .5) * 20, 9, 2.2, Math.atan2(uy, ux), 0, TAU); g.fill();
+  }
+  for (const [x, y, dx, dy, v, r] of fx.pts) {                             // 2. riscos da correnteza (mais longos e rápidos onde a água corre mais)
+    const [sx, sy] = P(x, y), [ux, uy] = dirTela(dx, dy), ph = (t * v * .55 + r) % 1, forte = v > 2, len = forte ? 11 : 4 + v * 2.6, a = Math.sin(ph * Math.PI) * (forte ? .95 : .62);
+    if (forte && r > .3) { g.fillStyle = 'rgba(235,250,255,' + (.3 + .15 * Math.sin(t * 5 + r * 9)).toFixed(2) + ')'; g.beginPath(); g.ellipse(sx, sy, 5 + r * 4, 2 + r * 1.4, Math.atan2(uy, ux), 0, TAU); g.fill(); }   // água branca
+    const px = sx + ux * (ph - .5) * 16, py = sy + uy * (ph - .5) * 16, wob = Math.sin(t * 3 + r * 20) * 1.2;
+    g.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.lineWidth = forte ? 1.8 : 1;
+    g.beginPath(); g.moveTo(px, py); g.quadraticCurveTo(px + ux * len * .5 - uy * wob, py + uy * len * .5 + ux * wob, px + ux * len, py + uy * len); g.stroke();
+    if (forte && r > .55) {                                                 // respingos pulando na corredeira
+      const q = (t * 1.6 + r * 3) % 1; g.fillStyle = 'rgba(240,252,255,' + (1 - q).toFixed(2) + ')';
+      for (const s of [-1, 1]) { g.beginPath(); g.arc(sx + s * q * 5 - uy * s * 2, sy - (q - q * q) * 14, .8, 0, TAU); g.fill(); }
+    }
+  }
+  for (const [x, y, di, dj, r] of fx.margem) {                             // 3. espuma batendo nas margens (vai e volta)
+    const [px, py] = P(x, y), [nx, ny] = dirTela(di, dj), o = Math.sin(t * 2.2 + r * 12) * 1.5, a = .35 + .25 * Math.sin(t * 2.2 + r * 12);
+    g.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.lineWidth = 1.1;
+    g.beginPath(); g.moveTo(px - ny * 5 - nx * o, py + nx * 5 - ny * o); g.lineTo(px + ny * 5 - nx * o, py - nx * 5 - ny * o); g.stroke();
+  }
+  const tr = fx.tr;                                                         // 4. folhas da região descendo o rio
+  for (let n = 0; n < 3; n++) {
+    const sem = fx.sem + n * 3.7, v = tr[0][4], f = ((t * v * .05 + sem * .137) % 1), pos = f * (tr.length - 1), k = Math.min(tr.length - 2, Math.floor(pos)), e = pos - k;
+    const a0 = tr[k], a1 = tr[k + 1], lado = Math.sin(sem * 5.1) * a0[5] * .6, x = a0[0] + (a1[0] - a0[0]) * e - a0[3] * lado, y = a0[1] + (a1[1] - a0[1]) * e + a0[2] * lado;
+    const [px, py] = P(x, y), rot = t * 1.4 + sem, cor = fx.folhas[n % fx.folhas.length], al = Math.min(1, Math.min(f, 1 - f) * 8);
+    g.save(); g.translate(px, py + Math.sin(t * 2 + sem) * .6); g.rotate(rot); g.globalAlpha = al;
+    g.fillStyle = 'rgba(20,60,90,.25)'; g.beginPath(); g.ellipse(.6, 1.2, 3, 1.3, 0, 0, TAU); g.fill();   // sombra na água
+    g.fillStyle = cor; g.beginPath(); g.moveTo(-3.2, 0); g.quadraticCurveTo(0, -2.2, 3.2, 0); g.quadraticCurveTo(0, 2.2, -3.2, 0); g.fill();
+    g.strokeStyle = 'rgba(40,30,10,.45)'; g.lineWidth = .4; g.beginPath(); g.moveTo(-3, 0); g.lineTo(3, 0); g.stroke();
+    g.restore();
+  }
+  for (let n = 0; n < fx.pts.length; n += 5) {                              // 5. cintilado do sol na água
+    const [x, y, , , , r] = fx.pts[n], s = Math.sin(t * 2.6 + r * 40); if (s < .82) continue;
+    const [px, py] = P(x, y), a = (s - .82) * 5, R = 1.6 + a;
+    g.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.lineWidth = .7; g.beginPath(); g.moveTo(px - R, py); g.lineTo(px + R, py); g.moveTo(px, py - R * .6); g.lineTo(px, py + R * .6); g.stroke();
   }
   g.restore();
 }
@@ -2583,7 +2635,7 @@ function construirCais(M) {
    Navega só em água funda (o leito do rio, a piscina longe da queda e os lagos); passa por baixo das pontes do rio.
    ===================================================================== */
 const BARCO = { tipo: 'barco', x: 0, y: 0, ang: 0, vx: 0, vy: 0, r: 0, bob: 0, remo: 0 };
-const BARCO_CFG = { acel: 5.2, maxV: 6.4, arrasto: .85, lateral: 3.2, giro: 2.4, raio: .48 };   // tiles/s; mais rápido que andar (3,8) e correr (5,8)
+const BARCO_CFG = { acel: 5.2, maxV: 6.4, arrasto: .85, lateral: 3.2, giro: 2.4, raio: .38 };   // tiles/s; mais rápido que andar (3,8) e correr (5,8)
 const temBarco = () => !!(estado && estado.barco && estado.barco.tem);
 const embarcado = () => jog.est === 'barco';
 function navegavelBarco(x, y) {
