@@ -902,6 +902,8 @@ function validarSave(d) {
   e.torneio = { inscrito: !!tq.inscrito, res: {}, elim: typeof tq.elim === 'string' ? tq.elim : null, campeao: !!tq.campeao };
   if (tq.res && typeof tq.res === 'object') for (const k of ['qf1', 'qf2', 'qf3', 'qf4', 'sf1', 'sf2', 'final']) if (typeof tq.res[k] === 'string') e.torneio.res[k] = tq.res[k];
   if (e.torneio.campeao) e.fase = 'selos';
+  const bq = d.barco && typeof d.barco === 'object' ? d.barco : null;     // barco: só a posse e onde ficou amarrado
+  e.barco = bq && bq.tem && numOk(bq.x, 0, 1e4) && numOk(bq.y, 0, 1e4) ? { tem: true, x: +bq.x, y: +bq.y, ang: numOk(bq.ang, -10, 10) ? +bq.ang : 0, terra: bq.terra && numOk(bq.terra.x, 0, 1e4) && numOk(bq.terra.y, 0, 1e4) ? { x: +bq.terra.x, y: +bq.terra.y } : null } : null;
   if (e.fase === 'treino' && e.chefes && Object.keys(e.chefes).length) e.fase = 'selos';   // save antigo que já enfrentou chefes: não perde o progresso
   for (let k = 1; k <= e.faixa; k++) { const id = 'exame_' + ['branca', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta'][k]; if (!e.grad.aprovados[id]) e.grad.aprovados[id] = 1; }   // save antigo: faixas já conquistadas
   return e;
@@ -911,6 +913,7 @@ let ultimoSave = -99, saveAgendado = null;
 function salvar() {
   if (!jogoIniciado) return;                                                   // menu/cutscene: não grava nada
   if (mapa && !fade && !jog.morto && mapa.id) estado.local = { mapa: mapa.id, x: +jog.x.toFixed(2), y: +jog.y.toFixed(2) };
+  if (typeof BARCO !== 'undefined' && temBarco()) { if (embarcado() && estado.barco.terra && estado.local) { estado.local.x = estado.barco.terra.x; estado.local.y = estado.barco.terra.y; } if (barcoNoMapa()) guardarBarco(); }   // no barco: volta na margem de onde embarcou
   const dados = Object.assign({}, estado, { versao: VERSAO_SAVE, salvoEm: Date.now() });
   if (!validarSave(JSON.parse(JSON.stringify(dados)))) return;                 // incompleto: não estraga o save bom
   try {
@@ -937,6 +940,7 @@ function carregarSave() {
   const d = saveGuardado();
   estado = d || estadoInicial();
   if (estado.hp == null) estado.hp = maxHp();
+  if (typeof sincronizarBarco === 'function') sincronizarBarco();
   return !!d;
 }
 
@@ -1174,7 +1178,8 @@ const MONTE_SAGRADO = (() => {
   const OX = 18, OY = 8;
   const h01 = (a, b) => { let h = (a * 374761393 + b * 668265263 + 977) | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
   // degraus do canal: [v da frente, v de trás, altura]
-  const DEGRAUS = [[-1, -4, 84], [-5, -8, 124], [-9, -13, 164]];
+  const DEGRAUS = [[-3, -5, 84], [-6, -9, 124], [-10, -13, 164]];
+  const ALCOVA = { v0: -2, v1: -1 };                                    // gruta atrás da cortina d'água (u = 0 e 1, v = -2 e -1): chão livre, dá para entrar
   const NASCENTE = { v: -14, h: 212, boca: [166, 192] };                // paredão da gruta de onde a água nasce
   const naCanal = u => u === 0 || u === 1;
   const alturaCanal = v => { for (const [f, t, h] of DEGRAUS) if (v <= f && v >= t) return h; return 0; };
@@ -1194,8 +1199,8 @@ const MONTE_SAGRADO = (() => {
   }
   function altura(u, v) {
     let h = bruta(u, v); if (!h) return 0;
-    if (naCanal(u)) { if (v === NASCENTE.v) return NASCENTE.h; const hc = alturaCanal(v); if (hc) return hc; }
-    if ((u === -1 || u === 2) && v >= NASCENTE.v && v <= -1) h = Math.max(h, (alturaCanal(v) || NASCENTE.h - 12) + 18);   // margens mais altas que a água
+    if (naCanal(u)) { if (v === NASCENTE.v) return NASCENTE.h; if (v >= ALCOVA.v0) return 0; const hc = alturaCanal(v); if (hc) return hc; }
+    if ((u === -1 || u === 2) && v >= NASCENTE.v && v <= -1) h = Math.max(h, (v >= ALCOVA.v0 ? DEGRAUS[0][2] : alturaCanal(v) || NASCENTE.h - 12) + 18);   // margens mais altas que a água (e paredes da gruta)
     if (v <= NASCENTE.v && v >= NASCENTE.v - 2 && u >= -1 && u <= 2) h = Math.max(h, NASCENTE.h + (v < NASCENTE.v ? 24 : 0));   // paredão atrás da nascente
     return h;
   }
@@ -1205,7 +1210,7 @@ const MONTE_SAGRADO = (() => {
   for (let it = 0; it < 8; it++) for (const [k, h] of H) { if (fixo.has(k)) continue; const [u, v] = k.split(',').map(Number); let mx = 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) mx = Math.max(mx, H.get((u + a) + ',' + (v + b)) || 0); if (h < mx - 36) H.set(k, Math.ceil((mx - 36) / 12) * 12); }
   const celulas = []; for (const [k, h] of H) { const [u, v] = k.split(',').map(Number); celulas.push({ u, v, h }); }
   const hEm = (u, v) => H.get(u + ',' + v) || 0;
-  return { OX, OY, DEGRAUS, NASCENTE, celulas, hEm, naCanal };
+  return { OX, OY, DEGRAUS, NASCENTE, ALCOVA, CORTINA_V: .15, celulas, hEm, naCanal };
 })();
 
 function regiao(c) {
@@ -1230,7 +1235,7 @@ function regiao(c) {
   if (c.montanha) {                                                    // Cachoeira Sagrada: cada tile da montanha é parede; a montanha entra como fatias com profundidade certa
     const [mx, my] = c.montanha;
     for (const k of MONTE_SAGRADO.celulas) { const i = mx + k.u, j = my + k.v; if (j >= 0 && j < m.h && i >= 0 && i < m.w) { m.bloq[j][i] = true; res.push({ x: i + .5, y: j + .5, r: .7 }); } }
-    for (const f of Cen.monteSagrado()) m.objs.push({ tipo: 'monte', x: f.x - MONTE_SAGRADO.OX + mx, y: f.y - MONTE_SAGRADO.OY + my, dk: f.dk - MONTE_SAGRADO.OX - MONTE_SAGRADO.OY + mx + my, r: 0, spr: f.spr });
+    for (const f of Cen.monteSagrado()) m.objs.push({ tipo: 'monte', x: f.x - MONTE_SAGRADO.OX + mx, y: f.y - MONTE_SAGRADO.OY + my, dk: f.dk != null ? f.dk - MONTE_SAGRADO.OX - MONTE_SAGRADO.OY + mx + my : undefined, r: 0, spr: f.spr, sempre: true });
   }
   (c.corredores || []).forEach(co => {                                 // corredores livres (cavernas)
     for (let k = 0; k < co.pts.length - 1; k++) {
@@ -1262,14 +1267,13 @@ const CFG = {
   cachoeira: () => ({
     id: 'cachoeira', nome: 'Cachoeira Sagrada', w: 28, h: 28, seed: 31, spawn: [5, 2.4], montanha: [18, 8],
     trilhas: [[4, 0, 4, 14], [4, 14, 12, 14], [12, 14, 12, 19], [12, 19, 0, 19], [12, 19, 26, 19]],
-    areas: [{ tipo: T.PEDRA, c: [18, 12, 6.8, 5.4] }, { tipo: T.AGUA, c: [18, 12, 4.6, 3.8] }, { tipo: T.AGUA, rect: [19, 16, 2, 12] }],
-    pontes: [[19, 19, 2, 2]],
+    areas: [{ tipo: T.PEDRA, c: [18, 12, 6.8, 5.4] }, { tipo: T.AGUA, c: [18, 12, 4.6, 3.8] }],
     saidas: [
       { x: 4, y: 0, w: 2, h: .9, alvo: 'bambuzal', sx: 10, sy: 23.4, nome: 'Bambuzal' },
       { x: 0, y: 19, w: .9, h: 2, alvo: 'cavernas', sx: 2.6, sy: 8.2, nome: 'Cavernas', req: { nivel: 3, msg: 'A caverna é escura e perigosa. Volte com nível 3.' } }
     ],
     fixos: [['cachoeira', 18, 8.1, { spr: null, r: 0 }], ['pedra', 14.8, 8.3], ['pedra', 21.2, 8.5], ['torii', 24.5, 16], ['lanternaPedra', 22.4, 17], ['lanternaPedra', 26.4, 17], ['altar', 24.5, 13.6], ['meditar', 23, 22]],
-    placas: [[7, 3.4, 'Cachoeira Sagrada. No santuário a leste você pode meditar (E) para recuperar a aura.'], [10.6, 18, '← Cavernas (precisa de nível 3).']],
+    placas: [[7, 3.4, 'Cachoeira Sagrada. No santuário a leste você pode meditar (E) para recuperar a aura.'], [19.1, 6.55, 'Gruta atrás da cortina d\'água. Os antigos mestres treinavam o foco aqui, com o barulho da queda abafando tudo.'], [10.6, 18, '← Cavernas (precisa de nível 3).']],
     grupos: [['bambu', 8, .16, 3, 6]], borda: 'bambu', espalhar: [['pedra', 12], ['arbusto', 12], ['arvore', 8]],
     inimigos: [['bandido', 7.5, 6.5], ['bandido', 5.5, 13.5], ['bandido', 9.5, 24.5], ['bandido', 24, 24.5], ['veterano', 15.5, 24.5], ['veterano', 6, 22]],
     amb: { cores: ['#e6f8ff', '#bfeaf5'], kx: .3, ky: -.6 }
@@ -1638,9 +1642,10 @@ function colarNucleo(M, n, ox, oy, regiaoId) {
 /* ---------- objetos estáticos em chunks + lista "ativa" perto do Akira ---------- */
 const DINAMICOS = { inimigo: 1, npc: 1, boneco: 1, papel: 1, aliado: 1 };
 function prepararChunks(M) {
-  M.chunks = new Map(); M.dyn = []; M.idx = new Map(); M.cAtual = null;
+  M.chunks = new Map(); M.dyn = []; M.idx = new Map(); M.cAtual = null; M.grandes = [];
   const tipoPorNome = {}; Object.keys(TIPOS_INIM).forEach(k => { tipoPorNome[TIPOS_INIM[k].nome] = k; });
   for (const o of M.objs) {
+    if (o.sempre) { M.grandes.push(o); continue; }                    // desenho grande (montanha): o desenho passa de vários chunks, então não fica preso a um
     if (DINAMICOS[o.tipo]) { o.home = [o.x, o.y]; if (o.tipo === 'inimigo' && !o.tipoInim) o.tipoInim = tipoPorNome[o.nome] || 'bandido'; M.dyn.push(o); }
     else guardarEstatico(M, o);
   }
@@ -1660,6 +1665,7 @@ function atualizarAtivos(M, forcar) {
   }
   const x0 = (ci - 1) * CHUNK, x1 = (ci + 2) * CHUNK, y0 = (cj - 1) * CHUNK, y1 = (cj + 2) * CHUNK;
   for (const o of M.dyn) if (!o.removido && !(o.tipo === 'inimigo' && !o.vivo && o.t <= 0) && o.x >= x0 && o.x < x1 && o.y >= y0 && o.y < y1) lista.push(o);
+  if (M.grandes) for (const o of M.grandes) lista.push(o);
   M.objs = lista; M.arvores = lista.filter(o => o.spr && o.spr.copa);
 }
 // Pré-aquecimento: quando o navegador está folgado, prepara os chunks e desenhos que estão logo além da tela
@@ -1870,6 +1876,7 @@ function construirMundo() {
     }
   }
   // casas de moradores espalhadas pelo mundo (só enfeite); ficam longe dos prédios com interação
+  construirRioSagrado(M); construirCais(M);                            // rio e cais antes das casinhas: elas não nascem em cima da água
   { const QTD = { vilarejo: 14, cerejeiras: 5, tangerinas: 4, outono: 4, bambuzal: 4, cachoeira: 3, templos: 2 };
     const CORES = { vilarejo: ['#b8453a', '#3f6fb0', '#2f8f5a', '#c9892f', '#8e44ad', '#6b5b4a'], cerejeiras: ['#d8608f', '#b8453a', '#8a7a5a'], tangerinas: ['#c9892f', '#e07a2a', '#6b5b4a'],
       outono: ['#a8432a', '#7a4a2a', '#c9892f'], bambuzal: ['#2f8f5a', '#6b5b4a', '#3f6fb0'], cachoeira: ['#3f8fb0', '#6b5b4a'], templos: ['#a63a3a', '#6b5b4a'] };
@@ -2352,15 +2359,16 @@ function mover(e, dx, dy) {                                           // um eixo
    ===================================================================== */
 function infoAgua(m) {
   if (m.aguaInfo !== undefined) return m.aguaInfo;
-  if (!m.grande) return (m.aguaInfo = null);
+  if (!m.grande || m.escuro) return (m.aguaInfo = null);                // cavernas: a água continua só de enfeite
   const w = m.w, h = m.h, prof = new Uint8Array(w * h), nado = new Uint8Array(w * h), fila = new Int32Array(w * h), V = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const agua = (i, j) => i >= 0 && j >= 0 && i < w && j < h && m.tiles[j][i] === T.AGUA;
+  const pass = k => (m.ponteRio && m.ponteRio.has(k)) || (m.caisT && m.caisT.has(k));      // pontes do rio e píeres: a água passa por baixo
+  const agua = (i, j) => i >= 0 && j >= 0 && i < w && j < h && (m.tiles[j][i] === T.AGUA || pass(j * w + i));
   let a = 0, b = 0;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {                // profundidade = distância até a margem (1 = encostado na terra)
     if (!agua(i, j)) continue;
-    if (V.some(([di, dj]) => { const ii = i + di, jj = j + dj; return ii >= 0 && jj >= 0 && ii < w && jj < h && m.tiles[jj][ii] !== T.AGUA; })) { prof[j * w + i] = 1; fila[b++] = j * w + i; }
+    if (V.some(([di, dj]) => { const ii = i + di, jj = j + dj; return ii >= 0 && jj >= 0 && ii < w && jj < h && !agua(ii, jj); })) { prof[j * w + i] = 1; fila[b++] = j * w + i; }
   }
-  while (a < b) { const k = fila[a++], i = k % w, j = (k / w) | 0, d = prof[k]; if (d >= 9) continue; for (const [di, dj] of V) { const ii = i + di, jj = j + dj, kk = jj * w + ii; if (agua(ii, jj) && !prof[kk]) { prof[kk] = d + 1; fila[b++] = kk; } } }
+  while (a < b) { const k = fila[a++], i = k % w, j = (k / w) | 0, d = prof[k]; for (const [di, dj] of V) { const ii = i + di, jj = j + dj, kk = jj * w + ii; if (agua(ii, jj) && !prof[kk]) { prof[kk] = Math.min(250, d + 1); fila[b++] = kk; } } }
   if (CELULA.cachoeira) {                                                // lagoa da Cachoeira Sagrada: a única água funda para nadar (só dentro do núcleo da região)
     const [ox, oy] = origemNucleo('cachoeira'), [nw, nh] = tamNucleo('cachoeira'), s = [[ox + 18, oy + 12]];
     while (s.length) { const [i, j] = s.pop(), k = j * w + i; if (i < ox || j < oy || i >= ox + nw || j >= oy + nh || !agua(i, j) || nado[k]) continue; nado[k] = 1; for (const [di, dj] of V) s.push([i + di, j + dj]); }
@@ -2375,10 +2383,15 @@ function aguaEm(x, y) {                                                  // 0 te
 }
 const AGUA_VIS = { 0: [0, 0], 1: [9, 0], 2: [2, 23] };                  // [altura da linha d'água nos pés, quanto o corpo afunda] em px
 let avisoNado = false, avisoQueda = false;
-function sobQuedaSagrada(x, y) {                                        // pé da queda grande da Cachoeira Sagrada
-  if (!mapa.grande || !CELULA.cachoeira) return false;
-  const [ox, oy] = origemNucleo('cachoeira'), u = x - ox - MONTE_SAGRADO.OX, v = y - oy - MONTE_SAGRADO.OY;
-  return u > -.15 && u < 2.15 && v >= 0 && v < 1.15;
+function akiraNaGruta() {                                               // dentro da gruta atrás da cortina da Cachoeira Sagrada
+  if (!mapa || !mapa.grande || !CELULA.cachoeira) return false;
+  const [ox, oy] = origemNucleo('cachoeira'), u = jog.x - ox - MONTE_SAGRADO.OX, v = jog.y - oy - MONTE_SAGRADO.OY;
+  return u > -.2 && u < 2.2 && v > MONTE_SAGRADO.ALCOVA.v0 - .1 && v < MONTE_SAGRADO.CORTINA_V + .1;
+}
+function sobQuedaSagrada(x, y, mg) {                                    // faixa onde a cortina da queda grande cai na lagoa
+  if (!mapa.grande || !CELULA.cachoeira) return false; mg = mg || 0;
+  const [ox, oy] = origemNucleo('cachoeira'), u = x - ox - MONTE_SAGRADO.OX, v = y - oy - MONTE_SAGRADO.OY, cv = MONTE_SAGRADO.CORTINA_V;
+  return u > -.15 - mg && u < 2.15 + mg && v > cv - .42 - mg && v < cv + .4 + mg;
 }
 function gotaAgua(x, y, z, forca) { EFX.add({ tipo: 'gota', x, y, z, vx: (Math.random() - .5) * forca, vy: (Math.random() - .5) * forca * .6, vz: 30 + Math.random() * 50 * forca / 2, g: 200, vida: .5, tam: 1.1 + Math.random() * .8, rot: 0 }); }
 function atualizarAguaJogador(dt) {
@@ -2400,13 +2413,15 @@ function atualizarAguaJogador(dt) {
   // respingos dos passos e das braçadas, gotas pingando depois de sair
   jog.passoAg = (jog.passoAg || 0) - dt;
   if (jog.agua && jog.andaAnt && jog.passoAg <= 0) { jog.passoAg = jog.agua === 2 ? .32 : .26; const fw = sv2w(DIRV[jog.dir][0], DIRV[jog.dir][1]); for (let k = 0; k < (jog.agua === 2 ? 6 : 4); k++) gotaAgua(jog.x + fw.x * (jog.agua === 2 ? .35 : .1), jog.y + fw.y * (jog.agua === 2 ? .35 : .1), 2, 1.4); }
+  if (jog.agua && dt > 0) { const [cx, cy] = correnteza(jog.x, jog.y); if (cx || cy) mover(jog, cx * dt * (jog.agua === 2 ? .8 : .5), cy * dt * (jog.agua === 2 ? .8 : .5)); }   // correnteza leva quem está na água
   if (jog.molhado > 0) { jog.molhado -= dt; if (Math.random() < dt * 9) EFX.add({ tipo: 'gota', x: jog.x + (Math.random() - .5) * .3, y: jog.y + (Math.random() - .5) * .2, z: 14 + Math.random() * 26, vx: 0, vy: 0, vz: -10, g: 160, vida: .4, tam: .9, rot: 0 }); }
   // pé da cachoeira: a força da água empurra o Akira para longe da pedra
   jog.sobQueda = !noAr && sobQuedaSagrada(jog.x, jog.y);
   if (jog.sobQueda) {
-    if (dt > 0) mover(jog, 0, .7 * dt); jog.molhado = 3;
+    if (dt > 0) { const [ox, oy] = origemNucleo('cachoeira'), v = jog.y - oy - MONTE_SAGRADO.OY; mover(jog, 0, (v >= MONTE_SAGRADO.CORTINA_V ? .7 : -.7) * dt); }   // a água empurra para fora da cortina (para a lagoa ou para dentro da gruta)
+    jog.molhado = 3;
     if (Math.random() < dt * 30) gotaAgua(jog.x + (Math.random() - .5) * .4, jog.y, 50 + Math.random() * 8, 3);
-    if (!avisoQueda) { avisoQueda = true; aviso('A força da Cachoeira Sagrada empurra o Akira para trás.'); }
+    if (!avisoQueda) { avisoQueda = true; aviso('A força da Cachoeira Sagrada empurra o Akira. Atrás da cortina d\'água há uma gruta!'); }
   }
 }
 // desenho do Akira dentro d'água: a parte submersa fica apagada e azulada, com anel de ondas na linha d'água
@@ -2428,6 +2443,283 @@ function desenharAkiraNaAgua(sx, sy, an, fr, face, branco) {
     g.fillStyle = 'rgba(235,250,255,.35)'; g.fillRect(sx - 13, sup - 110, 26, 52);
   }
   g.restore();
+}
+
+/* =====================================================================
+   SISTEMA FLUVIAL DO MUNDO
+   Relevo (não há altitude em número no jogo, então ficam estes níveis relativos):
+   - serras nas bordas de TRÁS do mundo (em cima e à esquerda) = o mais alto
+   - a frente do mundo (embaixo e à direita) termina em PENHASCO = o mais baixo
+   - Monte Sagrado (Cachoeira Sagrada) = ponto alto isolado no canto da frente
+   Percurso: nascente na gruta do topo do Monte Sagrado (chuva e neblina da montanha) → 3 quedas pelo canal →
+   piscina natural → sai pelo lado de baixo da piscina → desce para o sudoeste pelo vale da região (corredeira na saída
+   do vale) → deságua no Grande Lago do sudoeste (a parte mais baixa) → o lago transborda e despenca do penhasco da
+   frente do mapa (sangradouro), saindo da área jogável.
+   ===================================================================== */
+const RIO_PONTOS = [[184, 253.2], [183.7, 257.5], [182, 262], [177.5, 266.2], [170.5, 269.6], [162.5, 272.2], [153.5, 274.2], [146, 275.6], [138.5, 276.6]];   // mundo (x, y), da piscina ao lago
+const RIO_CORREDEIRA = [.3, .46];                                       // trecho (fração do rio) com corredeira: a saída do vale
+const SANGRADOURO = { i0: 96, n: 4 };                                    // onde o Grande Lago despenca do penhasco (4 cascatas de 2 tiles)
+function amostrasRio() {                                                 // linha central suave (Catmull-Rom)
+  const P = RIO_PONTOS, out = [];
+  for (let k = 0; k < P.length - 1; k++) {
+    const p0 = P[Math.max(0, k - 1)], p1 = P[k], p2 = P[k + 1], p3 = P[Math.min(P.length - 1, k + 2)];
+    for (let s = 0; s < 1; s += .08) { const s2 = s * s, s3 = s2 * s, f = (a, b, c, d) => .5 * (2 * b + (-a + c) * s + (2 * a - 5 * b + 4 * c - d) * s2 + (-a + 3 * b - 3 * c + d) * s3); out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]); }
+  }
+  out.push(P[P.length - 1]);
+  let L = 0; out.forEach((p, k) => { if (k) L += Math.hypot(p[0] - out[k - 1][0], p[1] - out[k - 1][1]); p[2] = L; });
+  out.forEach((p, k) => { p[2] /= L; const a = out[Math.max(0, k - 1)], b = out[Math.min(out.length - 1, k + 1)], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; p[3] = (b[0] - a[0]) / d; p[4] = (b[1] - a[1]) / d; });
+  return out;
+}
+const larguraRio = f => f < .1 ? 2.6 - f * 5.5 : 2.05 + f * .55;          // meia-largura: boca larga saindo da piscina, 4 tiles no vale, ~5 na foz
+const velRio = f => f >= RIO_CORREDEIRA[0] && f <= RIO_CORREDEIRA[1] ? 2.5 : f < .08 ? .6 : 1.05;   // tiles/s
+function construirRioSagrado(M) {
+  const S = amostrasRio(), w = M.w;
+  M.rioVel = new Float32Array(w * M.h); M.rioDir = new Float32Array(w * M.h * 2); M.ponteRio = new Set(); M.caisT = new Set(); M.rioS = S;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; S.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+  const caminho = t => t === T.TERRA || t === T.LAJE;
+  for (let j = Math.floor(y0 - 4); j <= y1 + 4; j++) for (let i = Math.floor(x0 - 4); i <= x1 + 4; i++) {
+    if (!M.tiles[j] || i < 0 || i >= w || M.bloq[j][i]) continue;
+    let best = 1e9, bs = null; for (const s of S) { const d = Math.hypot(i + .5 - s[0], j + .5 - s[1]); if (d < best) { best = d; bs = s; } }
+    const hw = larguraRio(bs[2]); if (best > hw) continue;
+    const t = M.tiles[j][i], k = j * w + i;
+    if (caminho(t)) { M.tiles[j][i] = T.PONTE; if (best <= hw - .55) M.ponteRio.add(k); }   // caminho cruzando o rio vira ponte (barco passa por baixo)
+    else if (t !== T.PONTE) M.tiles[j][i] = T.AGUA;
+    M.rioVel[k] = velRio(bs[2]); M.rioDir[k * 2] = bs[3]; M.rioDir[k * 2 + 1] = bs[4];
+  }
+  // o que tinha em cima dos tiles que viraram rio sai (enfeites) ou vai para a margem (inimigos)
+  const molhou = o => { const t = M.tiles[Math.floor(o.y)] && M.tiles[Math.floor(o.y)][Math.floor(o.x)]; return t === T.AGUA; };
+  const ENFEITE = ['arvore', 'bambu', 'pedra', 'arbusto', 'tufo', 'cogumelo', 'tronco', 'toco', 'rocha', 'flor'];
+  M.objs = M.objs.filter(o => { if (!molhou(o)) return true; if (o.tipo === 'inimigo') { const p = acharPerto(M, o.x, o.y, .3); if (p) { o.x = p[0]; o.y = p[1]; return true; } return false; } return !ENFEITE.includes(o.tipo); });
+  M.floresN = M.floresN.filter(f => !molhou(f));
+  reservarLinha(M, S, 1.2);
+  // efeitos de correnteza (riscos que descem o rio; espuma branca na corredeira): desenhados no chão, por trechos
+  for (let k = 0; k < S.length; k += 6) {
+    const pts = [], tr = S.slice(k, k + 7); if (tr.length < 2) break;
+    for (const s of tr) { const hw = larguraRio(s[2]); for (let q = -3; q <= 3; q++) { const x = s[0] - s[4] * hw * q / 3.6, y = s[1] + s[3] * hw * q / 3.6; if (M.tiles[Math.floor(y)][Math.floor(x)] === T.AGUA) pts.push([x, y, s[3], s[4], velRio(s[2]), Math.random()]); } }
+    const c = tr[Math.floor(tr.length / 2)];
+    M.objs.push({ tipo: 'rioFx', x: c[0], y: c[1], r: 0, dk: -1e5, spr: { hi: true, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 90, r: 90, t: 60, b: 60 }, dyn: (g, t) => desenharCorrenteza(g, t, pts, c) } });
+  }
+  // o Grande Lago transborda pelo penhasco da frente (cascatas que já existem no jogo para os riachos da borda)
+  for (let n = 0; n < SANGRADOURO.n; n++) { const k = SANGRADOURO.i0 + n * 2; M.objs.push({ tipo: 'cascataBorda', x: k + 1, y: M.h, r: 0, dk: 1e6, spr: Cen.cascataBorda(true) }); }
+}
+function reservarLinha(M, S, r) { for (let k = 0; k < S.length; k += 3) reservar(M, S[k][0], S[k][1], larguraRio(S[k][2]) + r); }
+function desenharCorrenteza(g, t, pts, c) {
+  const [cx, cy] = iso(c[0], c[1]);
+  g.save(); g.lineCap = 'round';
+  for (const [x, y, dx, dy, v, r] of pts) {
+    const [sx, sy] = iso(x, y), sdx = (dx - dy) * 16, sdy = (dx + dy) * 8, L = Math.hypot(sdx, sdy) || 1, ux = sdx / L, uy = sdy / L;
+    const ph = ((t * v * .55 + r) % 1), len = v > 2 ? 10 : 3 + v * 2.2, a = Math.sin(ph * Math.PI) * (v > 2 ? .95 : .5);
+    if (v > 2 && r > .3) { const [fx, fy] = [sx - cx, sy - cy]; g.fillStyle = 'rgba(235,250,255,' + (.28 + .14 * Math.sin(t * 4 + r * 9)).toFixed(2) + ')'; g.beginPath(); g.ellipse(fx, fy, 5 + r * 4, 2 + r * 1.4, Math.atan2(uy, ux), 0, TAU); g.fill(); }   // água branca da corredeira
+    const px = sx - cx + ux * (ph - .5) * 14, py = sy - cy + uy * (ph - .5) * 14;
+    g.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.lineWidth = v > 2 ? 1.7 : .8; g.beginPath(); g.moveTo(px, py); g.lineTo(px + ux * len, py + uy * len); g.stroke();
+    if (v > 2 && r > .55) { g.fillStyle = 'rgba(240,252,255,' + (.5 * a).toFixed(2) + ')'; g.beginPath(); g.ellipse(px, py, 3.2, 1.3, 0, 0, TAU); g.fill(); }   // espuma da corredeira
+  }
+  g.restore();
+}
+// correnteza num ponto do mundo (tiles/s): rio = ao longo do leito; piscina = puxa de leve para a saída; perto do sangradouro = puxa para o penhasco
+function correnteza(x, y) {
+  const M = mapa; if (!M || !M.grande || !M.rioVel) return [0, 0];
+  const i = Math.floor(x), j = Math.floor(y); if (i < 0 || j < 0 || i >= M.w || j >= M.h) return [0, 0];
+  const k = j * M.w + i, v = M.rioVel[k];
+  if (v) return [M.rioDir[k * 2] * v, M.rioDir[k * 2 + 1] * v];
+  if (M.tiles[j][i] !== T.AGUA) return [0, 0];
+  const A = infoAgua(M);
+  if (A && A.nado[k]) { const s = RIO_PONTOS[0], dx = s[0] - x, dy = s[1] - y, d = Math.hypot(dx, dy) || 1; return [dx / d * .3, dy / d * .3]; }
+  const sx = SANGRADOURO.i0 + SANGRADOURO.n, sy = M.h + 1, dx = sx - x, dy = sy - y, d = Math.hypot(dx, dy);
+  if (d < 10) { const f = .9 * (1 - d / 10); return [dx / d * f, dy / d * f]; }
+  return [0, 0];
+}
+
+/* =====================================================================
+   CAIS E BARQUEIROS (só onde a água é funda e larga o bastante para barco)
+   ===================================================================== */
+const PAL_BARQ = [PN('#3f5f86', '#d9a37c', '#2a2a2a', 'curto', '#c9a24a'), PN('#7a4a2a', '#e8b890', '#4a3020', 'coque', '#2f4f8a'), PN('#2f6a5a', '#c98f6a', '#1e1e24', 'curto', '#e0b44a'),
+  PN('#6a3a5a', '#f1c9a5', '#5a3a1a', 'longo', '#3f8a5a'), PN('#5a5a6a', '#d9a37c', '#9a9aa8', 'curto', '#a8432a')];
+// cada cais: região, ponto de terra aproximado, direção da água (eixo), nome do barqueiro
+const CAIS_DEF = [
+  { reg: 'vilarejo', x: 108, y: 212, di: 0, dj: 1, nome: 'Barqueiro Taro', vila: true },
+  { reg: 'cerejeiras', x: 38, y: 212, di: 0, dj: 1, nome: 'Barqueira Sora' },
+  { reg: 'cachoeira', rio: .62, nome: 'Barqueiro Genji' },
+  { reg: 'jardins', x: 140, y: 34, di: 1, dj: 0, nome: 'Barqueira Nami' },
+  { reg: 'templos', x: 182, y: 75, di: 0, dj: -1, nome: 'Barqueiro Ishi' }
+];
+function construirCais(M) {
+  M.cais = [];
+  CAIS_DEF.forEach((c, n) => {
+    let x = c.x, y = c.y, di = c.di, dj = c.dj;
+    if (c.rio != null) {                                                  // cais no rio: margem de cima do trecho escolhido, virado para o leito
+      const S = M.rioS, s = S.reduce((a, b) => Math.abs(b[2] - c.rio) < Math.abs(a[2] - c.rio) ? b : a), hw = larguraRio(s[2]);
+      const nx = s[4], ny = -s[3], sg = ny < 0 ? 1 : -1; x = s[0] + nx * sg * (hw + 1.6); y = s[1] + ny * sg * (hw + 1.6);
+      if (Math.abs(nx) > Math.abs(ny)) { di = -Math.sign(nx * sg); dj = 0; } else { di = 0; dj = -Math.sign(ny * sg); }
+    }
+    const ok = (i, j) => M.tiles[j] && M.tiles[j][i] != null && M.tiles[j][i] !== T.AGUA && !M.bloq[j][i];
+    let melhor = null;
+    for (const off of [0, 2, -2, 4, -4, 6, -6, 8, -8, 10, -10]) {              // anda pela margem até achar um lugar livre de casas
+      let i = Math.floor(x + (dj ? off : 0)), j = Math.floor(y + (di ? off : 0));
+      let passos = 0; while (passos < 14 && ok(i + di, j + dj)) { i += di; j += dj; passos++; }      // vai até a beira d'água
+      if (!ok(i, j) || M.tiles[j + dj][i + di] !== T.AGUA) continue;
+      const perto = [[0, 0], [-dj, di], [dj, -di], [-di, -dj], [-di - dj, -dj + di]].every(([a, b]) => ok(i + a, j + b) && (c.rio != null || !reservado(M, i + a + .5, j + b + .5, .3)));   // no rio a margem já está reservada pelo próprio rio
+      if (!perto) continue;
+      let L = 0; while (L < 5 && M.tiles[j + dj * (L + 1)] && M.tiles[j + dj * (L + 1)][i + di * (L + 1)] === T.AGUA) L++;
+      if (L < 2) continue;
+      melhor = { i, j, L: Math.min(c.rio != null ? 1 : 3, L) }; break;
+    }
+    if (!melhor) return;
+    const { i, j, L } = melhor, px = -dj, py = di;                        // px,py = lado (perpendicular)
+    for (let q = 1; q <= L; q++) for (const w of [0, 1]) { const ii = i + di * q + px * w, jj = j + dj * q + py * w; if (M.tiles[jj] && M.tiles[jj][ii] === T.AGUA) { M.tiles[jj][ii] = T.PONTE; M.caisT.add(jj * M.w + ii); } }   // píer de tábuas
+    const fimX = i + .5 + di * (L + .5) + px * .5, fimY = j + .5 + dj * (L + .5) + py * .5;
+    const vaga = { x: fimX + di * 1.25 + px * .2, y: fimY + dj * 1.25 + py * .2, ang: Math.atan2(py, px) };   // onde o barco fica amarrado (água funda, no fim do píer)
+    let vend = { x: i + .5 - px * 1.3 - di * .4, y: j + .5 - py * 1.3 - dj * .4 };
+    if (!ok(Math.floor(vend.x), Math.floor(vend.y))) vend = { x: i + .5 - di * 1.3, y: j + .5 - dj * 1.3 };
+    npc(M, { nome: c.nome, x: vend.x, y: vend.y, dir: dirDeMundo(di, dj), pal: PAL_BARQ[n % PAL_BARQ.length], fala: 'barqueiro', cais: M.cais.length });
+    placa(M, i + .5 + px * 1.5 - di * .6, j + .5 + py * 1.5 - dj * .6, 'Cais — ' + (M.cel[CELULA[c.reg][1]][CELULA[c.reg][0]].nome) + '. Fale com ' + c.nome.split(' ')[1] + ' para pegar um barco (de graça por enquanto).');
+    reservar(M, i + .5, j + .5, 3); reservar(M, vaga.x, vaga.y, 2);
+    M.cais.push({ reg: c.reg, nome: c.nome, vila: !!c.vila, vaga, x: i + .5, y: j + .5 });
+  });
+}
+
+/* =====================================================================
+   BARCO: um só barco (não duplica), fica onde foi deixado; o barqueiro traz até o cais dele se precisar.
+   Navega só em água funda (o leito do rio, a piscina longe da queda e os lagos); passa por baixo das pontes do rio.
+   ===================================================================== */
+const BARCO = { tipo: 'barco', x: 0, y: 0, ang: 0, vx: 0, vy: 0, r: 0, bob: 0, remo: 0 };
+const BARCO_CFG = { acel: 5.2, maxV: 6.4, arrasto: .85, lateral: 3.2, giro: 2.4, raio: .48 };   // tiles/s; mais rápido que andar (3,8) e correr (5,8)
+const temBarco = () => !!(estado && estado.barco && estado.barco.tem);
+const embarcado = () => jog.est === 'barco';
+function navegavelBarco(x, y) {
+  const M = mapa; if (!M || !M.grande || M.escuro) return false;
+  const i = Math.floor(x), j = Math.floor(y); if (i < 3 || j < 3 || i >= M.w - 3 || j >= M.h - 3 || M.bloq[j][i]) return false;
+  const k = j * M.w + i, t = M.tiles[j][i];
+  if (t === T.PONTE && !(M.ponteRio && M.ponteRio.has(k))) return false;
+  if (t !== T.AGUA && t !== T.PONTE) return false;
+  const A = infoAgua(M); if (!A || A.prof[k] < 2) return false;
+  if (sobQuedaSagrada(x, y, .5)) return false;                           // a cortina da queda grande e a gruta não são caminho de barco
+  return true;
+}
+function barcoCabe(x, y) { const r = BARCO_CFG.raio; return navegavelBarco(x, y) && navegavelBarco(x + r, y) && navegavelBarco(x - r, y) && navegavelBarco(x, y + r) && navegavelBarco(x, y - r); }
+function sincronizarBarco() { if (!temBarco()) return; const b = estado.barco; BARCO.x = b.x; BARCO.y = b.y; BARCO.ang = b.ang || 0; BARCO.vx = BARCO.vy = 0; }
+function guardarBarco() { if (!temBarco()) return; Object.assign(estado.barco, { x: +BARCO.x.toFixed(2), y: +BARCO.y.toFixed(2), ang: +BARCO.ang.toFixed(2) }); }
+function barcoNoMapa() { return temBarco() && mapa && mapa.grande && !mapa.escuro && mapa.id === 'mundo'; }
+// barqueiro: entrega o barco (uma vez só) ou traz o barco que já é do Akira até este cais
+function falarBarqueiro(o) {
+  const M = mapa, c = M.cais && M.cais[o.cais]; if (!c) return false;
+  const F = t => ({ p: null, nome: o.nome, t });
+  if (!temBarco()) {
+    abrirConversa({ npc: o, falas: [F('Quer um barco? Por enquanto é de graça: o vilarejo ainda está combinando os preços.'), F('Ele fica amarrado aqui no fim do píer. Chegue perto e aperte E para embarcar. Para descer, encoste numa margem e aperte E de novo.'), F('A correnteza ajuda rio abaixo e atrapalha rio acima. Na corredeira, segure firme! E não chegue perto da queda da Cachoeira Sagrada nem do penhasco do lago.')],
+      fim: [{ fn: () => { estado.barco = { tem: true, x: c.vaga.x, y: c.vaga.y, ang: c.vaga.ang }; sincronizarBarco(); aviso('Você ganhou um barco! Ele está no fim do píer.'); autoSalvar('barco', true); } }] });
+    return true;
+  }
+  const d = Math.hypot(BARCO.x - c.vaga.x, BARCO.y - c.vaga.y);
+  if (embarcado() || d < 3) { abrirConversa({ npc: o, falas: [F(d < 3 ? 'Seu barco está aí no píer. Boa viagem!' : 'Bom vento!')] }); return true; }
+  abrirConversa({ npc: o, falas: [F('Seu barco ficou longe daqui. Deixa que um dos barqueiros traz ele de volta para este cais.')],
+    fim: [{ fn: () => { Object.assign(estado.barco, { x: c.vaga.x, y: c.vaga.y, ang: c.vaga.ang }); sincronizarBarco(); aviso('Seu barco está no fim do píer.'); autoSalvar('barco', true); } }] });
+  return true;
+}
+// embarque e desembarque com uma pequena animação (o Akira pula para dentro / para a margem, nada de teletransporte)
+function podeEmbarcar() { return barcoNoMapa() && jog.est === 'livre' && !chefeAtual && Math.hypot(BARCO.x - jog.x, BARCO.y - jog.y) < 2.1; }
+function embarcar() {
+  if (!podeEmbarcar()) return false;
+  jog.barcoTr = { tipo: 'in', t: 0, dur: .45, x0: jog.x, y0: jog.y }; jog.est = 'barco'; jog.agua = 0; jog.aguaAnim = null; jog.linhaV = jog.afundaV = 0;
+  estado.barco.terra = { x: +jog.x.toFixed(2), y: +jog.y.toFixed(2) };
+  for (let k = 0; k < 8; k++) gotaAgua(BARCO.x, BARCO.y, 4, 1.6);
+  return true;
+}
+function lugarDesembarque() {
+  let melhor = null, nota = 1e9;
+  for (let a = 0; a < 16; a++) for (const d of [1.2, 1.6, 2.1]) {
+    const an = a / 16 * TAU, x = BARCO.x + Math.cos(an) * d, y = BARCO.y + Math.sin(an) * d;
+    if (colide(x, y, jog.r, jog) || !temCaminho(BARCO.x, BARCO.y, x, y)) continue;
+    const ag = aguaEm(x, y), n = d + (ag ? 1.5 : 0); if (n < nota) { nota = n; melhor = [x, y]; }   // prefere terra seca; água rasa também serve
+  }
+  return melhor;
+}
+function temCaminho(x0, y0, x1, y1) { for (let s = .25; s < 1; s += .25) { const x = x0 + (x1 - x0) * s, y = y0 + (y1 - y0) * s, i = Math.floor(x), j = Math.floor(y); if (mapa.bloq[j][i]) return false; } return true; }
+function desembarcar() {
+  if (!embarcado() || jog.barcoTr) return false;
+  if (Math.hypot(BARCO.vx, BARCO.vy) > 1.8) { aviso('Diminua a velocidade para descer do barco.'); return true; }
+  const p = lugarDesembarque(); if (!p) { aviso('Encoste o barco numa margem, num píer ou em água rasa para descer.'); return true; }
+  jog.barcoTr = { tipo: 'out', t: 0, dur: .45, x1: p[0], y1: p[1] }; BARCO.vx *= .2; BARCO.vy *= .2;
+  return true;
+}
+function atualizarBarco(dt, ix, iy, mag) {
+  const B = BARCO, C = BARCO_CFG;
+  B.bob += dt; jog.z = 0; jog.anda = false;
+  if (jog.barcoTr) {                                                      // pulando para dentro / para fora
+    const tr = jog.barcoTr; tr.t += dt; const k = Math.min(1, tr.t / tr.dur), e = k * k * (3 - 2 * k);
+    if (tr.tipo === 'in') { jog.x = tr.x0 + (B.x - tr.x0) * e; jog.y = tr.y0 + (B.y - tr.y0) * e; jog.z = Math.sin(k * Math.PI) * 10; }
+    else { jog.x = B.x + (tr.x1 - B.x) * e; jog.y = B.y + (tr.y1 - B.y) * e; jog.z = Math.sin(k * Math.PI) * 12; }
+    if (k >= 1) { jog.z = 0; if (tr.tipo === 'out') { jog.est = 'livre'; jog.molhado = 0; guardarBarco(); autoSalvar('barco'); for (let q = 0; q < 6; q++) gotaAgua(B.x, B.y, 3, 1.2); } jog.barcoTr = null; }
+    return;
+  }
+  // remo: o barco vira aos poucos para a direção pedida e acelera para onde a proa aponta
+  let empurra = 0;
+  if (ix || iy) {
+    jog.dir = dirDeVetor(ix, iy); virar();
+    const w = sv2w(ix, iy), l = Math.hypot(w.x, w.y) || 1, alvo = Math.atan2(w.y / l, w.x / l);
+    let da = ((alvo - B.ang) % TAU + TAU * 1.5) % TAU - Math.PI; B.ang += Math.max(-C.giro * dt, Math.min(C.giro * dt, da));
+    empurra = C.acel * mag * Math.max(.25, Math.cos(da));
+    B.remo += dt * 7;
+  }
+  const fx = Math.cos(B.ang), fy = Math.sin(B.ang);
+  B.vx += fx * empurra * dt; B.vy += fy * empurra * dt;
+  let vf = B.vx * fx + B.vy * fy, vl = -B.vx * fy + B.vy * fx;             // inércia: anda solto pra frente, de lado freia rápido (quilha)
+  vf *= Math.exp(-C.arrasto * dt * (empurra ? .35 : 1)); vl *= Math.exp(-C.lateral * dt);
+  vf = Math.max(-C.maxV * .4, Math.min(C.maxV, vf));
+  B.vx = vf * fx - vl * fy; B.vy = vf * fy + vl * fx;
+  const [cx, cy] = correnteza(B.x, B.y);                                   // correnteza leva o barco junto
+  const dx = (B.vx + cx) * dt, dy = (B.vy + cy) * dt;
+  if (barcoCabe(B.x + dx, B.y)) B.x += dx; else { B.vx *= -.25; if (Math.abs(dx) > .02) for (let q = 0; q < 2; q++) gotaAgua(B.x + Math.sign(dx) * .5, B.y, 3, 1); }
+  if (barcoCabe(B.x, B.y + dy)) B.y += dy; else { B.vy *= -.25; if (Math.abs(dy) > .02) for (let q = 0; q < 2; q++) gotaAgua(B.x, B.y + Math.sign(dy) * .5, 3, 1); }
+  jog.x = B.x; jog.y = B.y; jog.face = Math.cos(B.ang) - Math.sin(B.ang) >= 0 ? 1 : -1; jog.costas = Math.cos(B.ang) + Math.sin(B.ang) < 0;
+  B.rapido = Math.hypot(B.vx + cx, B.vy + cy);
+  if (B.rapido > 1 && Math.random() < dt * B.rapido * 3) gotaAgua(B.x - fx * .8, B.y - fy * .8, 2, 1);
+  if (Math.random() < dt) guardarBarco();
+}
+const bPoli = (g, pts) => { g.beginPath(); pts.forEach((q, k) => k ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); };
+const bLin = (g, x0, y0, x1, y1, cores) => { const gr = g.createLinearGradient(x0, y0, x1, y1); cores.forEach((c, k) => gr.addColorStop(k / (cores.length - 1), c)); return gr; };
+const bRisco = (g, x0, y0, x1, y1, w, c) => { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = w; g.strokeStyle = c; g.stroke(); };
+// desenho do barco de madeira (projetado na grade, vira para qualquer lado); com o Akira sentado remando quando embarcado
+function desenharBarco(sx, sy, comAkira) {
+  const B = BARCO, g = ctx, a = B.ang, ca = Math.cos(a), sa = Math.sin(a), bob = Math.sin(B.bob * 2.2) * .8;
+  const L = [[1.02, 0], [.72, .3], [-.7, .34], [-.95, .22], [-.95, -.22], [-.7, -.34], [.72, -.3]];
+  const W = (l0, w0, z) => { const l = l0 * 1.25, w = w0 * 1.25; return [sx + ((ca * l - sa * w) - (sa * l + ca * w)) * 16, sy + ((ca * l - sa * w) + (sa * l + ca * w)) * 8 - z + bob]; };   // barco ~2,5 tiles de comprimento
+  g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+  // sombra/ondas na água em volta do casco
+  const vel = Math.hypot(B.vx, B.vy);
+  for (let k = 0; k < 2; k++) { const p = (B.bob * .6 + k / 2) % 1; g.strokeStyle = 'rgba(255,255,255,' + (.45 * (1 - p)) + ')'; g.lineWidth = .9; g.beginPath(); g.ellipse(sx, sy + 1, 22 + p * 12, 9 + p * 5, 0, 0, TAU); g.stroke(); }
+  if (vel > .4) { const b0 = W(-.95, 0, 0); for (const s of [-1, 1]) { const q = W(-2.2, s * .9, 0); g.strokeStyle = 'rgba(255,255,255,' + Math.min(.7, vel / 6) + ')'; g.lineWidth = 1.1; g.beginPath(); g.moveTo(b0[0], b0[1]); g.lineTo(q[0], q[1]); g.stroke(); } }
+  // costado (só as faces viradas para a câmera)
+  const lados = [];
+  for (let k = 0; k < L.length; k++) {
+    const p = L[k], q = L[(k + 1) % L.length], nl = q[1] - p[1], nw = -(q[0] - p[0]), nx = ca * nl - sa * nw, ny = sa * nl + ca * nw;
+    if (nx + ny <= 0) continue; lados.push([p, q, (ca * (p[0] + q[0]) - sa * (p[1] + q[1])) + (sa * (p[0] + q[0]) + ca * (p[1] + q[1]))]);
+  }
+  lados.sort((u, v) => u[2] - v[2]);
+  for (const [p, q] of lados) {
+    const A = W(p[0], p[1], 7), Bq = W(q[0], q[1], 7), C = W(q[0], q[1], -1), D = W(p[0], p[1], -1);
+    bPoli(g, [A, Bq, C, D]); g.fillStyle = bLin(g, 0, A[1], 0, D[1], ['#9a6a3a', '#6e4626', '#4a2c18']); g.fill(); g.strokeStyle = '#2b1a10'; g.lineWidth = .7; g.stroke();
+    for (const z of [2, 4.6]) { const m0 = W(p[0], p[1], z), m1 = W(q[0], q[1], z); bRisco(g, m0[0], m0[1], m1[0], m1[1], .5, 'rgba(30,16,8,.5)'); }   // tábuas
+  }
+  // convés
+  const topo = L.map(([l, w]) => W(l * .93, w * .86, 6));
+  bPoli(g, topo); g.fillStyle = bLin(g, topo[0][0], topo[0][1], topo[3][0], topo[3][1], ['#d8a868', '#b88448', '#9a6a36']); g.fill();
+  for (let q = -2; q <= 2; q++) { const m0 = W(-.8, q * .12, 6), m1 = W(.7, q * .1, 6); bRisco(g, m0[0], m0[1], m1[0], m1[1], .4, 'rgba(90,56,26,.45)'); }
+  const b0 = W(-.1, -.3, 7), b1 = W(-.1, .3, 7); bRisco(g, b0[0], b0[1], b1[0], b1[1], 2.2, '#7a4e2a');            // banco
+  bPoli(g, L.map(([l, w]) => W(l, w, 7))); g.strokeStyle = '#3a2412'; g.lineWidth = 1.1; g.stroke(); g.strokeStyle = 'rgba(255,230,180,.5)'; g.lineWidth = .5; g.stroke();   // borda (amurada)
+  const proa = W(1.02, 0, 9); g.fillStyle = '#c9302a'; g.beginPath(); g.arc(proa[0], proa[1], 1.4, 0, TAU); g.fill();   // detalhe vermelho na proa
+  g.restore();
+  if (!comAkira) return;
+  // Akira sentado no banco: a parte de baixo fica escondida pela amurada
+  const p = W(-.1, 0, 6), tr = jog.barcoTr, remando = (B.rapido > .5 || jog.remar > 0) && !tr;
+  const an = tr ? (tr.tipo === 'in' ? 'boatIn' : 'boatOut') : remando ? 'boatRow' : 'boatSit', A = Akira.ANIM[an];
+  const fr = tr ? Math.min(A.frames - 1, Math.floor(Math.min(1, tr.t / tr.dur) * (A.frames - 1) * 3) / 3) : (Math.floor((remando ? B.remo : B.bob * 2) * 3) / 3) % A.frames;
+  if (tr) { const [px, py] = iso(jog.x, jog.y); desenharAkira(px, py, an, fr, jog.face, jog.z, 1, false, null, jog.costas); return; }
+  g.save(); g.beginPath(); g.rect(p[0] - 60, p[1] - 160, 120, 162); g.clip(); desenharAkira(p[0], p[1] + 4, an, fr, jog.face, 0, .999, false, null, jog.costas); g.restore();
+  if (remando) {                                                          // remo entrando na água no ritmo da remada
+    const ph = Math.sin(B.remo * Math.PI * 2 / A.frames * 1), hx = p[0] + jog.face * 7, hy = p[1] - 18, wx = p[0] - jog.face * (6 + ph * 8), wy = p[1] + 9;
+    bRisco(g, hx, hy, wx, wy, 1.6, '#6e4626'); g.fillStyle = '#9a6a3a'; g.beginPath(); g.ellipse(wx, wy, 2.6, 1.2, 0, 0, TAU); g.fill();
+    if (ph > .7) { g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = .8; g.beginPath(); g.ellipse(wx, wy + 1, 5, 2, 0, 0, TAU); g.stroke(); }
+  }
 }
 
 function andar(e, ix, iy, f, dt) {                                    // converte direção da TELA em movimento no MUNDO
@@ -4565,7 +4857,7 @@ function tickMissoes(dt, antX, antY) {
   }
 }
 
-const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo' };
+const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar' };
 function alvoInteracao() {
   let melhor = null, menor = 1.5;
   for (const o of mapa.objs) {
@@ -4573,15 +4865,19 @@ function alvoInteracao() {
     const d = Math.hypot(o.x - jog.x, o.y - jog.y);
     if (d < menor) { menor = d; melhor = o; }
   }
+  if (barcoNoMapa() && !embarcado() && podeEmbarcar() && (!melhor || Math.hypot(BARCO.x - jog.x, BARCO.y - jog.y) < menor + .3)) melhor = BARCO;
   return melhor;
 }
 function interagir() {
   if (dlg.ativo) { avancarDialogo(); return; }
   if (dlg.trava > 0) return;                                           // acabou de fechar: não reabre sem querer
+  if (embarcado()) { desembarcar(); return; }
   if (jog.est !== 'livre') return;
   if (podeReanimar()) { iniciarReanimar(); return; }
   const o = alvoInteracao(); if (!o) return;
   if (o.tipo === 'selo') { abrirSelo(o); return; }
+  if (o.tipo === 'barco') { embarcar(); return; }
+  if (o.tipo === 'npc' && o.fala === 'barqueiro' && falarBarqueiro(o)) return;
   if (o.tipo === 'papel') {
     estado.inv.papel = nPapeis() + 1; estado.coletados[o.id] = true;
     if (mapa.grande) removerObj(mapa, o); else mapa.objs = mapa.objs.filter(x => x !== o);
@@ -4730,6 +5026,7 @@ function danoJogador(dano, ox, oy) {
     return;
   }
   if (guarda) { jog.escudo = .2; dano = Math.ceil(dano * .25); estado.aura = Math.min(maxAura(), estado.aura + 2); fagulha(jog.x, jog.y, '#9fd8ff', 5); }
+  else if (jog.est === 'barco') fagulha(jog.x, jog.y, '#ff6b5a', 6);    // no barco: leva o dano mas continua sentado
   else { jog.est = 'dano'; jog.z = 0; jog.ar = false; jog.t = .28; jog.kx = (jog.x - ox) / d * 4; jog.ky = (jog.y - oy) / d * 4; fagulha(jog.x, jog.y, '#ff6b5a', 6); }
   estado.hp -= dano; popup(jog.x, jog.y, '-' + dano, '#ff6b5a'); jog.flash = .15; shake = 4; hitstop = .04;
   if (estado.hp <= 0) {
@@ -4751,7 +5048,7 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
   if (jog.flash > 0) jog.flash -= dt;
   if (jog.escudo > 0) jog.escudo -= dt;
   jog.andaAnt = jog.anda; jog.anda = false; jog.def = false; jog.corre = false;
-  atualizarAguaJogador(dt);
+  if (jog.est !== 'barco') atualizarAguaJogador(dt);
   const gd = ctrl && !!teclas.KeyL && (jog.est === 'livre') && jog.agua !== 2;            // timing da defesa: conta desde que apertou L
   if (gd && !jog.gdAnt) jog.defT = 0;
   jog.gdAnt = gd; if (gd) jog.defT += dt;
@@ -4780,6 +5077,7 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
       }
       break;
     }
+    case 'barco': atualizarBarco(dt, ix, iy, mag || 1); break;
     case 'pulo': {                                                       // pulo com altura (z): sombra fica no chão
       jog.t += dt;
       if (jog.pre > 0) { jog.pre -= dt; if (jog.pre <= 0) { jog.vz = 125; jog.ar = true; fxPoeira(4, true); } break; }
@@ -5604,6 +5902,24 @@ Object.assign(KEYS, {
     kf(1, { fT: 40, fS: 26, bT: -36, bS: -32, lean: 3, head: 9, fU: 150, fF: 238, bU: 146, bF: 232, bTop: 1, eye: 'closed', brow: 1, hair: -8, belt: 4 })]
 });
 
+/* barco: sentado no banco, remando, pulando para dentro e para fora */
+Object.assign(AKIRA_ANIMATIONS, {
+  boatSit: { frames: 4, fps: 4,  loop: true },
+  boatRow: { frames: 8, fps: 10, loop: true },
+  boatIn:  { frames: 6, fps: 14, loop: false },
+  boatOut: { frames: 6, fps: 14, loop: false }
+});
+const POSE_SENTADO = pz({ fT: 86, fS: 4, bT: 80, bS: -2, fFt: 96, bFt: 96, lean: 4, fU: 30, fF: 72, bU: 24, bF: 66, belt: 2 });
+function cicloRemo(p) {                                              // puxa o remo: tronco vai pra trás e volta, braços puxando junto
+  const ph = p * Math.PI * 2, s = Math.sin(ph), c = Math.cos(ph);
+  return Object.assign({}, POSE_SENTADO, { lean: 8 + 12 * s, fU: 58 + 28 * s, fF: 100 + 30 * s + 12 * c, bU: 48 + 28 * s, bF: 90 + 30 * s, hair: 3 * c, belt: 4 * c, brow: 1, head: -2 * s });
+}
+Object.assign(KEYS, {
+  boatSit: [kq(0, POSE_SENTADO), kq(.5, POSE_SENTADO, { lean: 6, head: 2, fU: 32, bU: 26, belt: -2, hair: 2 }), kq(1, POSE_SENTADO)],
+  boatIn: [kf(0), kf(.4, { fT: 72, fS: 22, bT: -30, bS: -44, lift: 6, lean: 10, fU: 72, fF: 104, bU: 62, bF: 96, hair: 10, belt: 14, brow: 1 }), kq(1, POSE_SENTADO)],
+  boatOut: [kq(0, POSE_SENTADO), kf(.5, { fT: 62, fS: 30, bT: -40, bS: -52, lift: 8, lean: 18, fU: 74, fF: 108, bU: 64, bF: 98, hair: 12, belt: 16, brow: 1 }), kf(1)]
+});
+
 /* Caminhada e corrida: ciclo calculado (pernas e braços em oposição) */
 function cicloAndar(p, corre) {
   const ph = p * Math.PI * 2, A = corre ? 50 : 30, fl = corre ? 78 : 42;
@@ -5626,6 +5942,7 @@ function amostrar(nome, p) {
   if (nome === 'wade') return cicloAgua(p);
   if (nome === 'swim') return cicloNado(p);
   if (nome === 'tread') return cicloBoiar(p);
+  if (nome === 'boatRow') return cicloRemo(p);
   const ks = KEYS[nome];
   p = Math.max(0, Math.min(1, p));
   let i = 0; while (i < ks.length - 2 && p > ks[i + 1].t) i++;
@@ -7504,7 +7821,7 @@ const MonteSag = (() => {
     const N = MONTE_SAGRADO.NASCENTE, cel = MONTE_SAGRADO.celulas.slice().sort((a, b) => (a.u + a.v) - (b.u + b.v) || a.u - b.u);
     for (const c of cel) {
       const { u, v, h } = c, r = mul(9100 + (u + 20) * 131 + (v + 30) * 17), hv = hEm(u, v + 1), hu = hEm(u + 1, v);
-      const canal = MONTE_SAGRADO.naCanal(u) && v > N.v, molh = perto(u, v) && v >= -2;
+      const canal = MONTE_SAGRADO.naCanal(u) && v > N.v, molh = perto(u, v) && v >= -3;
       if (hv < h) parede(g, P(u, v + 1), P(u + 1, v + 1), u, h, hv, true, v * 2 + 500, molh && !canal);
       if (hu < h) parede(g, P(u + 1, v), P(u + 1, v + 1), v, h, hu, false, u * 2 + 901, molh);
       const D = [P(u, v, h), P(u + 1, v, h), P(u + 1, v + 1, h), P(u, v + 1, h)], cx = (D[0][0] + D[2][0]) / 2, cy = (D[0][1] + D[2][1]) / 2;
@@ -7556,9 +7873,10 @@ const MonteSag = (() => {
     g.restore();
     risco(g, Q1[0], Q1[1], Q2[0], Q2[1], .8, 'rgba(230,250,255,.5)');
   }
-  function queda(g, t, f, h, hb, grande) {
+  // avanco = quantos tiles a água se afasta da parede até tocar embaixo (a cortina da queda grande fica longe da pedra: dá pra passar por trás)
+  function queda(g, t, f, h, hb, grande, avanco) {
     const A = P(0, f + 1), B = P(2, f + 1), alt = h - hb;
-    const pt = (s, q) => { const tt = -.04 + s * 1.08 + (s - .5) * q * .1, base = lerp(A, B, tt), fw = Math.pow(q, 1.4) * (grande ? 6 : 4); return [base[0] + FRENTE[0] * fw + Math.sin(t * 5 + s * 9 + q * 4) * .5 * q, base[1] - (h - alt * q) + FRENTE[1] * fw]; };
+    const pt = (s, q) => { const tt = -.04 + s * 1.08 + (s - .5) * q * .1, base = lerp(A, B, tt), fw = avanco ? 17.89 * avanco * Math.sqrt(q) + q * 2 : Math.pow(q, 1.4) * (grande ? 6 : 4); return [base[0] + FRENTE[0] * fw + Math.sin(t * 5 + s * 9 + q * 4) * .5 * q, base[1] - (h - alt * q) + FRENTE[1] * fw]; };
     const borda = []; for (let k = 0; k <= 8; k++) borda.push(pt(k / 8, 0)); const dir = []; for (let k = 0; k <= 10; k++) dir.push(pt(1, k / 10)); const fundo = []; for (let k = 8; k >= 0; k--) fundo.push(pt(k / 8, 1)); const esq = []; for (let k = 10; k >= 0; k--) esq.push(pt(0, k / 10));
     const contorno = borda.concat(dir, fundo, esq);
     g.save(); poli(g, contorno);
@@ -7590,7 +7908,7 @@ const MonteSag = (() => {
   function desenharAgua(g, t) {
     const D = MONTE_SAGRADO.DEGRAUS, N = MONTE_SAGRADO.NASCENTE;
     // de trás para a frente: nascente → degraus de cima → queda grande na lagoa
-    for (let i = D.length - 1; i >= 0; i--) { const [f, b, h] = D[i]; superficie(g, t, f, b, h, i); if (i === D.length - 1) desenharFonte(g, t); queda(g, t, f, h, i ? D[i - 1][2] : 0, i === 0); }
+    for (let i = D.length - 1; i >= 0; i--) { const [f, b, h] = D[i]; superficie(g, t, f, b, h, i); if (i === D.length - 1) desenharFonte(g, t); if (i > 0) queda(g, t, f, h, D[i - 1][2], false); }   // a queda grande (i = 0) é a cortina, desenhada à parte
     margens(g);
   }
   function desenharFonte(g, t) {
@@ -7628,6 +7946,11 @@ const MonteSag = (() => {
       } };
       fatias.push({ x: MONTE_SAGRADO.OX + u, y: MONTE_SAGRADO.OY + v, dk: MONTE_SAGRADO.OX + MONTE_SAGRADO.OY + tf, spr });
     }
+    // cortina d'água da queda grande: objeto próprio com a profundidade da linha onde a água toca a lagoa,
+    // assim o Akira dentro da gruta aparece ATRÁS da água e, na lagoa, na frente dela
+    const D0 = MONTE_SAGRADO.DEGRAUS[0], CV = MONTE_SAGRADO.CORTINA_V, Pc = P(1, CV);
+    fatias.push({ x: MONTE_SAGRADO.OX + 1, y: MONTE_SAGRADO.OY + CV, cortina: true, spr: { hi: true, w: 0, h: 0, ax: 0, ay: 0, ext: { l: 70, r: 60, t: D0[2] + 70, b: 50 },
+      dyn: (g, t) => { g.save(); g.translate(-Pc[0], -Pc[1]); g.lineCap = 'round'; g.lineJoin = 'round'; if (typeof akiraNaGruta === 'function' && akiraNaGruta()) g.globalAlpha = .55; /* Akira atrás da cortina: a água fica mais transparente */ queda(g, t, D0[0], D0[2], 0, true, MONTE_SAGRADO.CORTINA_V - D0[0] - 1); g.restore(); } } });
     return fatias;
   }
   return { montar, get est() { return est; }, limites: () => { if (X0 == null) limites(); return { X0, X1, Y0, Y1 }; } };
@@ -8566,6 +8889,7 @@ function desenharObj(o, sx, sy) {
     case 'jogador': {
       const [an, fr] = animJogador();
       desenharRastros();
+      if (embarcado()) { const [bx, by] = iso(BARCO.x, BARCO.y); desenharBarco(bx, by, true); break; }
       const face = jog.virando && jog.virando.t < .11 ? jog.virando.de : jog.face;      // virando na água: meia volta ainda com o lado antigo
       if (jog.z < 4 && ((jog.linhaV || 0) > .6 || (jog.afundaV || 0) > .6)) desenharAkiraNaAgua(sx, sy, an, fr, face, o.flash > 0 ? 'r' : false);
       else desenharAkira(sx, sy, an, fr, face, jog.z, 1, o.flash > 0 ? 'r' : false, null, jog.costas); break;
@@ -8611,6 +8935,7 @@ function desenharObj(o, sx, sy) {
       break;
     }
     case 'casa': break;
+    case 'barco': desenharBarco(sx, sy, false); break;
     case 'cachoeira': if (o.spr) spr(Array.isArray(o.spr) ? o.spr[0] : o.spr, sx, sy); break;   // na região a montanha nova (fatias 'monte') desenha a cachoeira
     default: if (o.spr) { spr(o.spr, sx, sy); brilhoObj(o, sx, sy); }
   }
@@ -8782,6 +9107,7 @@ function renderizar(dt) {
 
   // Camada 2: objetos e personagens ordenados pelos PÉS (x + y)
   const lista = [jog];
+  if (barcoNoMapa() && !embarcado() && Math.hypot(BARCO.x - jog.x, BARCO.y - jog.y) < 40) lista.push(BARCO);   // barco parado na água
   for (const o of mapa.objs) {                                       // só entra na lista o que aparece na tela (pelo tamanho real do desenho)
     const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y), e = extDe(o);
     if (e ? (sx + e.r >= vx0 && sx - e.l <= vx1 && sy + e.b >= vy0 && sy - e.t <= vy1) : (sx >= vx0 && sx <= vx1 && sy >= vy0 && sy <= vy1 + 120)) lista.push(o);
@@ -8791,6 +9117,11 @@ function renderizar(dt) {
   for (const o of lista) {
     const [sx, sy] = o.tipo === 'casa' ? iso(o.ax, o.ay) : iso(o.x, o.y);
     if (o.tipo === 'casa') spr(o.spr, sx, sy); else desenharObj(o, sx, sy);
+  }
+  if (mapa.grandes && mapa.grandes.length && !jog.morto && !embarcado()) {   // Akira atrás da montanha: aparece em silhueta transparente (não some)
+    const [jx, jy] = iso(jog.x, jog.y), pj = jog.x + jog.y;
+    const cobre = mapa.grandes.some(o => { if (o.cortina || o.dk == null) return false; const [ox, oy] = iso(o.x, o.y), e = o.spr.ext; return Math.abs(jx - ox) < 9 && pj < o.dk - .15 && jy - 30 > oy - e.t && jy - 30 < oy + 4; });
+    if (cobre) { const [an, fr] = animJogador(); desenharAkira(jx, jy, an, fr, jog.face, jog.z, .42, false, null, jog.costas); }
   }
   if (GOT.on && !mapa.escuro) luzesGoticas(g, camTx, camTy);          // luz de tochas por cima de tudo (menos dos textos)
   if (mapa.escuro) {                                                   // cavernas: escuro, com brilho dos cristais
@@ -8817,6 +9148,10 @@ function renderizar(dt) {
     g.font = 'bold 8px monospace'; const w = g.measureText(e.nome).width + 8;
     g.fillStyle = 'rgba(15,20,35,.85)'; g.fillRect(Math.round(sx - w / 2), Math.round(sy - (e.tapete ? 12 : 44)), Math.round(w), 11);
     g.fillStyle = '#f4d03f'; g.fillText(e.nome, Math.round(sx), Math.round(sy - (e.tapete ? 4 : 36)));
+  }
+  if (!dlg.ativo && embarcado() && !jog.barcoTr) {                      // no barco: avisa quando dá para descer
+    if (!(tempo < (jog.descerT || 0))) { jog.descerT = tempo + .25; jog.podeDescer = Math.hypot(BARCO.vx, BARCO.vy) < 1.8 && !!lugarDesembarque(); }
+    if (jog.podeDescer) { const [sx, sy] = iso(jog.x, jog.y), txt = 'E Descer'; g.font = 'bold 8px monospace'; const w = g.measureText(txt).width + 8; g.fillStyle = 'rgba(15,20,35,.92)'; g.fillRect(Math.round(sx - w / 2), Math.round(sy - 58), Math.round(w), 11); g.fillStyle = '#f4d03f'; g.fillText(txt, Math.round(sx), Math.round(sy - 50)); }
   }
   if (!dlg.ativo && jog.est === 'livre') {
     const alvo = alvoInteracao();
@@ -10676,6 +11011,7 @@ const MapaMundo = (() => {
   // ---------- pontos de interesse (desenhados por cima, sempre atualizados) ----------
   function pontos(M) {
     const l = [], R = reqOk;
+    if (barcoNoMapa() && M === mapa && !embarcado()) l.push({ cat: 'item', x: BARCO.x, y: BARCO.y, nome: 'Seu barco', desc: 'Onde você deixou o barco. Chegue perto e aperte E para embarcar.' });
     for (const o of objetosVivos(M)) {
       if (o.removido) continue;
       if (o.tipo === 'npc') l.push({ cat: 'npc', x: o.x, y: o.y, nome: o.nome, desc: 'Personagem' });
@@ -10944,7 +11280,7 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado } };                       // para testes no console
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
