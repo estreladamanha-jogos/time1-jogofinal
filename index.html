@@ -954,6 +954,7 @@ function validarSave(d) {
   if (e.combo >= COMBOS.length) e.combo = 0;
   if (!numOk(e.hp, 0, 1e6)) e.hp = null;
   if (!numOk(e.relogio, 0, 2400)) e.relogio = 200; e.chuva = e.chuva === true;
+  if (!numOk(e.dia, 0, 1e7)) e.dia = 0; if (typeof e.rastreio !== 'string') e.rastreio = null;
   const lugarOk = l => l && typeof l.mapa === 'string' && (MAPAS[l.mapa] || CELULA[l.mapa] || l.mapa === 'mundo' || l.mapa === 'caverna' || l.mapa === 'cavernas') && numOk(l.x, -1, 1e4) && numOk(l.y, -1, 1e4);
   if (!lugarOk(e.respawn)) e.respawn = estadoInicial().respawn;
   if (!lugarOk(e.local)) e.local = null;
@@ -2236,9 +2237,10 @@ function tickTreino(dt) {
   const T0 = jog.treino; if (!T0 || dt <= 0) return;
   const antes = Math.ceil(T0.t); T0.t -= dt;
   if (Math.ceil(T0.t) !== antes && Math.ceil(T0.t) % 10 === 0 && T0.t > 0) aviso('Treino: ' + Math.ceil(T0.t) + ' s • ' + T0.n + ' acertos');
-  if (T0.t <= 0) { const k = 'treino_' + T0.id, rec = estado.flags[k] || 0; if (T0.n > rec) estado.flags[k] = T0.n; aviso('Fim do treino: ' + T0.n + ' acertos' + (T0.n > rec ? ' — NOVO RECORDE!' : ' (recorde ' + rec + ')')); jog.treino = null; salvar(); }
+  if (T0.t <= 0) { missaoTreinou(T0.n); const k = 'treino_' + T0.id, rec = estado.flags[k] || 0; if (T0.n > rec) estado.flags[k] = T0.n; aviso('Fim do treino: ' + T0.n + ' acertos' + (T0.n > rec ? ' — NOVO RECORDE!' : ' (recorde ' + rec + ')')); jog.treino = null; salvar(); }
 }
 function falarNpcED(o) {
+  if (missaoNpcED(o)) return true;                                      // missões dos moradores das construções
   if (o.servico === 'cura') { abrirConversa({ falas: falasED(o.nome, 'cura', EDIF[o.ed]), opcoes: [{ t: 'Sim, me trate', eventos: [() => { estado.hp = maxHp(); estado.aura = Math.min(maxAura(), estado.aura + 15); aviso('Tratamento completo: vida cheia e +15 de aura.'); salvar(); }] }, { t: 'Agora não' }] }); return true; }
   if (o.edLinhas) { abrirConversa({ falas: o.edLinhas() }); return true; }
   if (o.fala === 'ed') { abrirConversa({ falas: falasED(o.nome, o.edPapel, EDIF[o.ed]) }); return true; }
@@ -2284,11 +2286,11 @@ const REGRAS_EXTRA = {
 };
 const SEM_INIMIGOS = { vilarejo: 1, gt_patio: 1, jardins: 1 };
 const DECOR_EXTRA = {
-  gt_patio: [['cerejeira', 8], ['lanternaPedra', 8], ['estatua', 2], ['coluna', 3], ['estandarte', 3]],
-  bambuzal: [['tufo', 30], ['tronco', 2], ['caixote', 1]], vilarejo: [['tufo', 26], ['barril', 4], ['caixote', 4], ['estandarte', 3], ['lanternaPedra', 2]],
-  cerejeiras: [['tufo', 22], ['estandarte', 3], ['lanternaPedra', 4]], outono: [['folhasMonte', 22], ['tronco', 4], ['cogumelo', 4], ['tufo', 10]],
-  tangerinas: [['tufo', 20], ['caixote', 3], ['barril', 2], ['cesto', 3]], cachoeira: [['tufo', 24], ['cogumelo', 5], ['tronco', 2]],
-  templos: [['tufo', 16], ['estandarte', 3], ['colunaQuebrada', 3]], jardins: [['tufo', 16], ['lanternaPedra', 3]]
+  gt_patio: [['cerejeira', 10], ['lanternaPedra', 10], ['estatua', 3], ['coluna', 3], ['estandarte', 4], ['tufo', 10], ['pedra', 4]],
+  bambuzal: [['tufo', 40], ['tronco', 3], ['caixote', 1], ['lanternaPedra', 2], ['pedra', 6], ['cogumelo', 3]], vilarejo: [['tufo', 34], ['barril', 6], ['caixote', 6], ['estandarte', 3], ['lanternaPedra', 3], ['cesto', 4], ['pedra', 4]],
+  cerejeiras: [['tufo', 28], ['estandarte', 3], ['lanternaPedra', 6], ['cerejeira', 5], ['pedra', 4]], outono: [['folhasMonte', 30], ['tronco', 5], ['cogumelo', 7], ['tufo', 14], ['lanternaPedra', 2], ['pedra', 6]],
+  tangerinas: [['tufo', 26], ['caixote', 4], ['barril', 3], ['cesto', 5], ['tronco', 2], ['cogumelo', 3], ['lanternaPedra', 2]], cachoeira: [['tufo', 30], ['cogumelo', 7], ['tronco', 3], ['pedra', 10], ['lanternaPedra', 3]],
+  templos: [['tufo', 20], ['estandarte', 3], ['colunaQuebrada', 5], ['estatua', 2], ['lanternaPedra', 3], ['pedra', 6]], jardins: [['tufo', 20], ['lanternaPedra', 5], ['pedra', 6], ['cerejeira', 4], ['estatua', 1]]
 };   // a região antiga não tinha decoração espalhada
 let SEM_BORDA = false;                             // enquanto monta o núcleo, não cerca a borda antiga
 const regraDe = id => REGRAS_EXTRA[id] || CFG[id]();
@@ -2790,6 +2792,74 @@ function limparChaoPixel(c) {                                         // tira o 
   for (let i = 3; i < a.length; i += 4) a[i] = a[i] > 90 ? 255 : 0;
   g.putImageData(d, 0, 0);
 }
+/* ---------- detalhes do chão (pré-desenhados junto com o chão: não pesam nada por quadro) ----------
+   tufos de grama, pedrinhas, folhas caídas, pétalas, tangerinas no chão, musgo, juncos na beira da água,
+   rachaduras nas lajes, marcas de roda na terra, cogumelos e fungos que brilham nas cavernas */
+function detalhesChao(g, m, i0, j0, i1, j1) {
+  const get = (i, j) => (i < 0 || j < 0 || i >= m.w || j >= m.h) ? null : m.tiles[j][i];
+  const pt = (x, y, u, v) => [x + 16 + (u - v) * 15, y + 1 + (u + v) * 7.5];
+  const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+  const tufo = (x, y, c1, c2, n) => { g.lineWidth = .7; for (let k = 0; k < n; k++) { const a = -1.9 + k * (1.2 / Math.max(1, n - 1)), l = 2.4 + (k % 2) * 1.2; g.strokeStyle = k % 2 ? c2 : c1; g.beginPath(); g.moveTo(x + k * .8 - n * .4, y); g.lineTo(x + k * .8 - n * .4 + Math.cos(a) * l * .5, y + Math.sin(a) * l); g.stroke(); } };
+  const pedrinha = (x, y, s) => { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + .4, y + .6, 1.6 * s, .8 * s, 0, 0, 6.3); g.fill(); g.fillStyle = '#9a9a92'; g.beginPath(); g.ellipse(x, y, 1.4 * s, .9 * s, 0, 0, 6.3); g.fill(); g.fillStyle = '#c8c8bc'; g.fillRect(x - .7 * s, y - .6 * s, .9 * s, .4 * s); };
+  const folha = (x, y, c, a) => { g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = c; g.beginPath(); g.moveTo(-1.6, 0); g.quadraticCurveTo(0, -1.1, 1.6, 0); g.quadraticCurveTo(0, 1.1, -1.6, 0); g.fill(); g.strokeStyle = 'rgba(80,30,10,.35)'; g.lineWidth = .3; g.beginPath(); g.moveTo(-1.4, 0); g.lineTo(1.4, 0); g.stroke(); g.restore(); };
+  const petala = (x, y, c, a) => { g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = c; g.beginPath(); g.ellipse(0, 0, 1.1, .6, 0, 0, 6.3); g.fill(); g.restore(); };
+  const mancha = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * .5, 0, 0, 6.3); g.fill(); };
+  for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+    const t = m.tiles[j][i], x = (i - j) * 16 - 16, y = (i + j) * 8, h = k => h2(i, j, 40 + k);
+    if (t === T.AGUA || t === T.PONTE) {
+      // vitórias-régias e folhinhas boiando perto da margem
+      if (t === T.AGUA && h(1) < .07 && [get(i + 1, j), get(i - 1, j), get(i, j + 1), get(i, j - 1)].some(v => v != null && v !== T.AGUA)) {
+        const [a, b] = pt(x, y, .3 + h(2) * .4, .3 + h(3) * .4); g.fillStyle = '#3f8f3a'; g.beginPath(); g.ellipse(a, b, 3, 1.5, 0, .3, 6); g.lineTo(a, b); g.fill(); g.fillStyle = '#5fb44a'; g.beginPath(); g.ellipse(a - .4, b - .3, 2, 1, 0, .3, 6); g.lineTo(a - .4, b - .3); g.fill();
+        if (h(4) < .4) { g.fillStyle = '#ffd0e4'; g.beginPath(); g.arc(a + 1, b - 1, 1, 0, 6.3); g.fill(); g.fillStyle = '#ff9fc0'; g.fillRect(a + .6, b - 1.4, .8, .8); }
+      }
+      continue;
+    }
+    const perto = [get(i + 1, j), get(i - 1, j), get(i, j + 1), get(i, j - 1)], beiraAgua = perto.some(v => v === T.AGUA);
+    // variação suave de cor (quebra a repetição dos ladrilhos)
+    if (h(5) < .35 && (t === T.GRAMA || t === T.OUTONO || t === T.CEREJA || t === T.TANGER)) { const [a, b] = pt(x, y, .5, .5); mancha(a, b, 10 + h(6) * 8, h(7) < .5 ? 'rgba(255,255,200,.07)' : 'rgba(20,40,10,.08)'); }
+    if (beiraAgua && (t === T.GRAMA || t === T.AREIA || t === T.CEREJA || t === T.TANGER) && h(8) < .55) {     // juncos e taboas na margem
+      for (let k = 0; k < 3; k++) { const [a, b] = pt(x, y, .2 + h(9 + k) * .6, .2 + h(12 + k) * .6); g.strokeStyle = k % 2 ? '#4f8a2a' : '#6aa83a'; g.lineWidth = .8; g.beginPath(); g.moveTo(a, b); g.quadraticCurveTo(a + 1, b - 4, a + (h(15 + k) - .5) * 3, b - 7 - h(18 + k) * 3); g.stroke();
+        if (h(21 + k) < .35) px(a + (h(15 + k) - .5) * 3 - .7, b - 9 - h(18 + k) * 3, 1.4, 3, '#7a4a22'); }
+    }
+    if (t === T.GRAMA || t === T.CEREJA || t === T.TANGER || t === T.OUTONO) {
+      const n = h(24) < .55 ? 1 + Math.floor(h(25) * 2) : 0;
+      for (let k = 0; k < n; k++) { const [a, b] = pt(x, y, h(26 + k), h(28 + k)); tufo(a, b, t === T.OUTONO ? '#8a7a2a' : '#3f8a30', t === T.OUTONO ? '#b89a3a' : '#7ac44a', 3 + Math.floor(h(30 + k) * 2)); }
+      if (h(32) < .09) { const [a, b] = pt(x, y, h(33), h(34)); pedrinha(a, b, .7 + h(35) * .6); }
+      if (h(36) < .04) { const [a, b] = pt(x, y, h(37), h(38)); px(a - 1, b - 2.5, 2, 2.5, '#f2ece0'); px(a - 2, b - 3.5, 4, 1.5, h(39) < .5 ? '#d84a3a' : '#c89a5a'); px(a - 1, b - 3.3, 1, .6, '#fff'); }   // cogumelinho
+    }
+    if (t === T.OUTONO) { const nf = 2 + Math.floor(h(40) * 4), C = ['#e8742a', '#f0b03a', '#d9482b', '#b8541e', '#ffd050']; for (let k = 0; k < nf; k++) { const [a, b] = pt(x, y, h(41 + k), h(47 + k)); folha(a, b, C[Math.floor(h(53 + k) * C.length)], h(59 + k) * 6.3); } }
+    if (t === T.CEREJA) { const nf = 1 + Math.floor(h(40) * 4); for (let k = 0; k < nf; k++) { const [a, b] = pt(x, y, h(41 + k), h(47 + k)); petala(a, b, h(53 + k) < .5 ? '#ffc0d6' : '#ff9fc0', h(59 + k) * 6.3); } }
+    if (t === T.TANGER) {
+      if (h(40) < .12) { const [a, b] = pt(x, y, h(41), h(42)); g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(a + .5, b + 1, 2, .8, 0, 0, 6.3); g.fill(); g.fillStyle = '#ff8a1a'; g.beginPath(); g.arc(a, b - .6, 1.7, 0, 6.3); g.fill(); g.fillStyle = '#ffc070'; g.fillRect(a - .9, b - 1.6, .9, .7); g.fillStyle = '#3f8a30'; g.fillRect(a - .2, b - 2.6, 1.2, .7); }
+      if (h(43) < .3) { const [a, b] = pt(x, y, h(44), h(45)); folha(a, b, '#5a9a3a', h(46) * 6.3); }
+    }
+    if (t === T.GRAMA && m.regiaoEm) {
+      const R = m.regiaoEm(i, j), id = R && R.id;
+      if (id === 'bambuzal' && h(60) < .35) { const [a, b] = pt(x, y, h(61), h(62)); folha(a, b, h(63) < .5 ? '#b8c84a' : '#8ab03a', h(64) * 6.3); g.save(); g.translate(a + 2, b + 1); g.rotate(h(65) * 6.3); g.fillStyle = '#9ab83a'; g.fillRect(-2.2, -.3, 4.4, .6); g.restore(); }
+      if (id === 'bambuzal' && h(66) < .03) { const [a, b] = pt(x, y, .5, .5); g.fillStyle = '#6a8a2a'; g.beginPath(); g.moveTo(a - 1.5, b); g.lineTo(a, b - 6); g.lineTo(a + 1.5, b); g.fill(); g.fillStyle = '#9ac44a'; g.fillRect(a - .5, b - 4, 1, 3); }   // broto de bambu
+      if (id === 'cachoeira' && h(60) < .18) { const [a, b] = pt(x, y, h(61), h(62)); mancha(a, b, 4, 'rgba(60,140,60,.35)'); px(a - 1, b - .5, 1, 1, '#9ad4ff'); }        // musgo úmido com orvalho
+      if (id === 'templos' && h(60) < .12) { const [a, b] = pt(x, y, h(61), h(62)); px(a - 2, b - 1, 4, 2, '#8a8a80'); px(a - 1.5, b - 1.5, 3, .8, '#b0b0a4'); px(a + 1, b - .2, 1.5, 1, '#5a8a3a'); }   // cascalho de ruína com musgo
+      if (id === 'vilarejo' && h(60) < .06) { const [a, b] = pt(x, y, h(61), h(62)); g.strokeStyle = '#d8b860'; g.lineWidth = .5; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(a + k - 2, b); g.lineTo(a + k - 1, b - 1.5 + (k % 2)); g.stroke(); } }   // palha caída
+      if ((id === 'jardins' || id === 'gt_patio') && h(60) < .07) { const [a, b] = pt(x, y, h(61), h(62)); petala(a, b, '#ffc0d6', h(63) * 6.3); }
+    }
+    if (t === T.TERRA) {
+      if (h(70) < .3) { const [a, b] = pt(x, y, h(71), h(72)); pedrinha(a, b, .5 + h(73) * .5); }
+      if (h(74) < .25) { const [a, b] = pt(x, y, h(75), h(76)); px(a - 1, b, 2, 1, 'rgba(90,60,30,.35)'); px(a + 2, b + 1, 1, 1, 'rgba(255,240,200,.25)'); }
+      if (h(77) < .15) { const [a, b] = pt(x, y, .2, .5), [c, d] = pt(x, y, .8, .5); g.strokeStyle = 'rgba(80,50,25,.22)'; g.lineWidth = .8; g.beginPath(); g.moveTo(a, b - 2); g.lineTo(c, d - 2); g.moveTo(a, b + 2); g.lineTo(c, d + 2); g.stroke(); }   // marcas de roda
+      if (h(78) < .1 && !beiraAgua) { const [a, b] = pt(x, y, h(79), h(80)); tufo(a, b, '#4f8a30', '#7ab44a', 3); }
+    }
+    if (t === T.LAJE || t === T.PEDRA || t === T.PISO) {
+      if (h(81) < .22) { const [a, b] = pt(x, y, h(82), h(83)); g.strokeStyle = 'rgba(40,30,30,.35)'; g.lineWidth = .5; g.beginPath(); g.moveTo(a, b); g.lineTo(a + 2 + h(84) * 2, b + 1); g.lineTo(a + 3, b + 2.5); g.stroke(); }   // rachadura
+      if (h(85) < .18) { const [a, b] = pt(x, y, h(86) < .5 ? .05 : .95, h(87)); mancha(a, b, 3, 'rgba(70,130,50,.45)'); }   // musgo nas juntas
+    }
+    if (t === T.AREIA && h(88) < .12) { const [a, b] = pt(x, y, h(89), h(90)); g.fillStyle = '#f4e8d0'; g.beginPath(); g.moveTo(a - 1.5, b); g.quadraticCurveTo(a, b - 2, a + 1.5, b); g.fill(); g.strokeStyle = '#c8a888'; g.lineWidth = .3; g.stroke(); }   // conchinha
+    if (t === T.CAVERNA) {
+      if (h(91) < .2) { const [a, b] = pt(x, y, h(92), h(93)); pedrinha(a, b, .6); }
+      if (h(94) < .07) { const [a, b] = pt(x, y, h(95), h(96)), c = h(97) < .5 ? '#7affd8' : '#9ab8ff'; mancha(a, b - 1, 5, c === '#7affd8' ? 'rgba(120,255,210,.35)' : 'rgba(150,180,255,.35)'); for (let k = 0; k < 3; k++) { px(a + k * 1.4 - 2, b - 2 - (k % 2), 1, 2, '#3a4a5a'); px(a + k * 1.4 - 2.4, b - 3 - (k % 2), 1.8, 1, c); } }   // fungos que brilham
+      if (h(98) < .1) { const [a, b] = pt(x, y, h(99), h(100)); g.strokeStyle = 'rgba(10,8,20,.4)'; g.lineWidth = .6; g.beginPath(); g.moveTo(a, b); g.lineTo(a + 3, b + 1); g.lineTo(a + 4, b + 3); g.stroke(); }
+    }
+  }
+}
 function chaoChunk(m, fi, fj) {
   const key = fi + ',' + fj;
   const i0 = fi * FC, j0 = fj * FC, i1 = Math.min(i0 + FC, m.w), j1 = Math.min(j0 + FC, m.h);
@@ -2814,6 +2884,7 @@ function chaoChunk(m, fi, fj) {
     florzinha(g, Math.round(px), Math.round(py), cores[Math.floor(h2(i, j, 5) * cores.length)]);
   }
   if (!m.floresIdx) { m.floresIdx = new Map(); for (const f of m.floresN) { const k = Math.floor(f.x / FC) + ',' + Math.floor(f.y / FC); if (!m.floresIdx.has(k)) m.floresIdx.set(k, []); m.floresIdx.get(k).push(f); } }
+  if (!m.interior) detalhesChao(g, m, i0, j0, i1, j1);                // tufos, folhas, pétalas, pedrinhas, juncos, musgo...
   for (const f of (m.floresIdx.get(key) || [])) { const [px, py] = iso(f.x, f.y); florzinha(g, Math.round(px), Math.round(py), f.cor); }
   for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {           // beirada do mapa: penhasco com camadas de rocha, raízes e cascata
     if (i === m.w - 1) penhasco(g, m, i, j, 'i');
@@ -3603,7 +3674,7 @@ function tickRelogio(dt) {
   const antes = estado.relogio || 0; estado.relogio = (antes + dt) % RELOGIO.CICLO;
   const virouNoite = antes < RELOGIO.DIA && estado.relogio >= RELOGIO.DIA, virouDia = antes >= RELOGIO.DIA && estado.relogio < RELOGIO.DIA;
   if (virouNoite) { estado.chuva = Math.random() < RELOGIO.chanceChuva; aviso(estado.chuva ? 'Anoiteceu... e começou a chover.' : 'Anoiteceu. As lanternas se acendem.'); chuvaSorteioT = 0; }
-  if (virouDia) { if (estado.chuva) aviso('Amanheceu. A chuva passou.'); else aviso('Amanheceu! Um novo dia começa.'); estado.chuva = false; }
+  if (virouDia) { estado.dia = (estado.dia || 0) + 1; if (estado.chuva) aviso('Amanheceu. A chuva passou.'); else aviso('Amanheceu! Um novo dia começa.'); estado.chuva = false; }
   if (ehNoite() && (chuvaSorteioT += dt) > 90) {                     // a cada 1,5 min de noite: a chuva pode começar ou parar
     chuvaSorteioT = 0;
     if (!estado.chuva && Math.random() < .2) { estado.chuva = true; aviso('Começou a chover.'); }
@@ -4090,48 +4161,9 @@ function coracaoSvg(tipo) {
   const cor = tipo === 'cheio' ? '#d83a1e' : 'none', borda = tipo === 'cheio' ? '#7a1408' : '#a05a2a';
   return `<svg viewBox="0 0 16 14" shape-rendering="crispEdges"><path d="${P}" fill="${cor}" stroke="${borda}" stroke-width=".9"/>${tipo === 'cheio' ? '<rect x="3" y="4" width="2" height="1" fill="#ff9a7a"/>' : ''}</svg>`;
 }
-function linhaSocial(pid) {
-  const temRel = !!RELACOES[pid], r = temRel ? relacao(pid) : null, P = PERSONAGENS[pid] || {}, nome = (RELACOES[pid] || P).nome || pid;
-  const g = temRel ? grauDe(pid) : 0, max = REGRAS_RESPEITO.limites[REGRAS_RESPEITO.limites.length - 1];
-  const cheios = temRel ? Math.max(0, Math.min(10, Math.floor(r.pts / max * 10))) : 0;
-  let cor = ''; for (let k = 0; k < 10; k++) cor += coracaoSvg(k < cheios ? 'cheio' : 'vazio');
-  const sit = !temRel ? 'missões' : !r.conhece ? 'ainda não conhece' : (GRAUS[g] || '—') + (RELACOES[pid].aliado ? (estado.parceiro === pid ? ' • parceiro' : ' • aliado') : '');
-  const ms = SOCIAL_MISSOES[pid] || []; let caixas = '';
-  for (const id of ms) { const st = stM(id), nm = (MISSOES[id] || { nome: id === 'grande_torneio' ? 'O Grande Torneio' : id }).nome; caixas += `<span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}" title="${nm}"></span>`; }
-  if (!ms.length) caixas = '<small style="color:#7a3a10">sem missões</small>';
-  return `<div class="sc-linha"><div class="sc-ret"><canvas width="96" height="96" data-ret="${pid}"></canvas></div><div class="sc-nome">${nome}<small>(${sit})</small></div><div class="sc-cor">${cor}</div><div class="sc-mis"><span class="sc-presente">🎁</span>${caixas}</div></div>`;
-}
-function montarSocial() {
-  const abas = `<div class="sc-abas"><div class="sc-aba ${socialAba === 'respeito' ? 'on' : ''}" data-aba="respeito" title="Respeito">❤️</div><div class="sc-aba ${socialAba === 'missoes' ? 'on' : ''}" data-aba="missoes" title="Missões">📜</div><div class="sc-aba" data-aba="menu" title="Menu (M)">🎒</div></div>`;
-  let corpo = '';
-  if (socialAba === 'respeito') {
-    const ids = SOCIAL_ORDEM.filter(p => (RELACOES[p] && relacao(p).conhece) || (SOCIAL_MISSOES[p] || []).some(m => stM(m) !== 'nao_iniciada'));
-    corpo = ids.length ? ids.map(linhaSocial).join('') : '<p class="sc-titulo">Converse com os personagens para conhecê-los. Os corações mostram o respeito; as caixas, as missões feitas para cada um.</p>';
-  } else {
-    const ids = Object.keys(MISSOES).concat(['grande_torneio']);
-    corpo = '<p class="sc-titulo">Missões</p>' + ids.map(id => { const st = stM(id), M = MISSOES[id] || { nome: 'O Grande Torneio', objetivo: () => 'Vença o torneio na Arena dos Grandes Mestres' }, dono = Object.keys(SOCIAL_MISSOES).find(p => SOCIAL_MISSOES[p].includes(id));
-      const cores = { concluida: ['#6ec34a', 'Concluída'], em_andamento: ['#ffd04a', 'Em andamento'], nao_iniciada: ['#e8b070', 'Não iniciada'] }[st] || ['#e8b070', st];
-      return `<div class="sc-mrow"><span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}"></span><div><b>${M.nome}</b><br><small>${st === 'em_andamento' ? M.objetivo() : st === 'concluida' ? 'Feita para ' + ((PERSONAGENS[dono] || RELACOES[dono] || {}).nome || '—') : '—'}</small></div><small>${dono ? 'Para: ' + ((RELACOES[dono] || PERSONAGENS[dono] || {}).nome || dono) : ''}</small><span class="sc-est" style="background:${cores[0]}">${cores[1]}</span></div>`; }).join('');
-  }
-  socialEl.innerHTML = `<div class="sc-caixa">${abas}<div class="sc-painel"><button class="sc-fechar" data-sc="fechar">✕</button><div class="sc-lista">${corpo}</div><div class="sc-rolar"><button data-sc="sobe">▲</button><div class="sc-trilho"><div class="sc-pega"></div></div><button data-sc="desce">▼</button></div></div></div>`;
-  socialEl.querySelectorAll('canvas[data-ret]').forEach(c => { const pid = c.dataset.ret, ret = (PERSONAGENS[pid] && PERSONAGENS[pid].retrato) || pid; try { desenharRetrato(c, ret === 'gemeo_agua' || ret === 'gemeo_vento' ? 'gemeos' : pid, 'sorridente', { pal: PAL_NPC[pid] || PAL_NPC[ret] || null }); } catch (e) {} });
-  const L = socialEl.querySelector('.sc-lista'), pega = socialEl.querySelector('.sc-pega'), atual = () => { const t = socialEl.querySelector('.sc-trilho'); const k = L.scrollHeight > L.clientHeight ? L.scrollTop / (L.scrollHeight - L.clientHeight) : 0; pega.style.top = (k * (t.clientHeight - 26)) + 'px'; };
-  L.addEventListener('scroll', atual); setTimeout(atual, 0);
-}
-function alternarSocial(aba) {
-  socialAberto = !socialAberto || !!aba; if (aba) socialAba = aba;
-  socialEl.hidden = !socialAberto; if (socialAberto) { if (menuAberto) alternarMenu(); montarSocial(); }
-}
-socialEl.addEventListener('click', ev => {
-  const a = ev.target.closest('[data-aba]'), b = ev.target.closest('[data-sc]');
-  if (a) { if (a.dataset.aba === 'menu') { alternarSocial(); alternarMenu(); return; } socialAba = a.dataset.aba; montarSocial(); return; }
-  if (!b) { if (ev.target === socialEl) alternarSocial(); return; }
-  const L = socialEl.querySelector('.sc-lista');
-  if (b.dataset.sc === 'fechar') alternarSocial(); else if (b.dataset.sc === 'sobe') L.scrollBy({ top: -150, behavior: 'smooth' }); else if (b.dataset.sc === 'desce') L.scrollBy({ top: 150, behavior: 'smooth' });
-});
 addEventListener('keydown', e => { if (MODO_TELA !== 'jogo' || e.repeat) return; if (e.code === 'KeyH' && !dlg.ativo) { alternarSocial(); edge.KeyH = false; } else if (socialAberto && (e.code === 'Escape' || e.code === 'KeyM' || e.code === 'Tab')) { alternarSocial(); socialBloq = performance.now(); } }, true);
 
-const missaoAtiva = () => Object.keys(MISSOES).find(id => stM(id) === 'em_andamento');
+const missaoAtiva = () => (estado.rastreio && stM(estado.rastreio) === 'em_andamento' && MISSOES[estado.rastreio] ? estado.rastreio : null) || Object.keys(MISSOES).find(id => stM(id) === 'em_andamento');
 function executarEvento(ev) {
   if (!ev) return;
   if (typeof ev === 'function') { ev(); return; }
@@ -6342,7 +6374,7 @@ function interagir() {
     estado.aura = maxAura(); estado.hp = Math.min(maxHp(), estado.hp + Math.round(maxHp() * .25));
     aviso('Você meditou: aura restaurada e um pouco de vida!'); salvar(); return;
   }
-  if (o.tipo === 'npc') { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); }
+  if (o.tipo === 'npc') { const [ax, ay] = iso(jog.x, jog.y), [bx, by] = iso(o.x, o.y); o.dir = dirDeVetor(ax - bx, (ay - by) * 2); conversaDiaria(o); }
   if (INTERACOES_ED[o.tipo]) { INTERACOES_ED[o.tipo](o); return; }       // móveis e objetos dos interiores
   if (o.tipo === 'npc' && falarNpcED(o)) return;
   if (o.tipo === 'placa') { abrirConversa({ falas: [{ p: null, nome: 'Placa', t: o.texto }] }); return; }
@@ -6453,7 +6485,7 @@ function danoEm(o, dano, tk, dx, dy) {
   const f = tk.emp * 8; o.kx = dx * f; o.ky = dy * f;
   if (o.arq) posGolpeArq(o, tk);
   if (o.hp <= 0 && o.vivo) {
-    o.vivo = false; o.t = .5; estado.vitorias++; ganharXp(o.xp);
+    o.vivo = false; o.t = .5; estado.vitorias++; ganharXp(o.xp); missaoCacou(o);
     if (o.guardiao) guardiaoFoiVencido(o);
     popup(o.x, o.y, '+' + o.xp + ' XP', '#f4d03f');
     const r = Math.random();
@@ -7650,7 +7682,7 @@ function atualizar(dt0) {
   if (socialBloq && performance.now() - socialBloq < 300) { edge.Escape = edge.KeyM = edge.Tab = false; }   // fechou o menu de respeito: não abre o menu M junto
   if (!dlg.ativo && !fade && !cine && (pegou('KeyM') || pegou('Tab') || pegou('Escape'))) alternarMenu();
   if (menuAberto || socialAberto) { edge = {}; return; }
-  tickRelogio(dt0); destravarAkira(dt0);                               // relógio do dia/noite + destrava se ficar preso
+  tickRelogio(dt0); destravarAkira(dt0); tickMissoesNpc();                               // relógio do dia/noite + destrava se ficar preso
 
   let dt = dt0;
   if (hitstop > 0) { hitstop -= dt0; dt = 0; }
@@ -11830,7 +11862,7 @@ function renderizar(dt) {
     const cobreM = mapa.grandes && mapa.grandes.some(o => { if (o.cortina || o.dk == null) return false; const [ox, oy] = iso(o.x, o.y), e = o.spr.ext; return Math.abs(jx - ox) < 9 && pj < o.dk - .15 && jy - 30 > oy - e.t && jy - 30 < oy + 4; });
     if (cobreM || akiraCoberto(lista)) desenharSilhuetaAkira(g);
   }
-  desenharSaidasVisiveis(g);
+  desenharSaidasVisiveis(g); desenharItensMissao(g); desenharSetaRastreio(g);
   if (noiteN > .02 && !mapa.escuro) luzesGoticas(g, camTx, camTy, noiteN * (mapa.interior ? .55 : 1));          // luz de tochas por cima de tudo (menos dos textos)
   if (mapa.escuro) {                                                   // cavernas: escuro, com brilho dos cristais
     g.fillStyle = 'rgba(10,8,34,.3)'; g.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0 + 120);
@@ -12510,18 +12542,22 @@ const Arena2D = (() => {
    Visual: mesmo estilo da abertura (cenário em pixel art + personagens anime do jogo).
    ===================================================================== */
 const Luta2D = (() => {
-  const DANO_IA = .8;                                                    // equilíbrio: quanto do dano da IA chega no Akira (IA mais competitiva)
+  const DANO_IA = 1;                                                    // equilíbrio: quanto do dano da IA chega no Akira (IA mais competitiva)
   // atributos do RPG valem no torneio (Vitalidade, Força, Agilidade, Aura e Técnica)
   const atrLuta = () => { const A = estado.attr; return { hp: 100 + (A.vit - 1) * 10, defesa: 1 / (1 + (A.vit - 1) * .07), forca: multDano(), vel: 2.3 + (A.agi - 1) * .1, esqCd: Math.max(.28, .5 - (A.agi - 1) * .025),
     prep: Math.max(.78, 1 - (A.agi - 1) * .02 - (A.tec - 1) * .01), aura: 1 + (A.aur - 1) * .12, guarda: 1 + (A.tec - 1) * .08, esp: (A.aur - 1) * 2.5 }; };
   // adversários bem mais competitivos: reagem mais rápido, defendem, punem e emendam mais; vida e força acompanham o nível do Akira (com limite)
-  function iaCompetitiva(P0) {
-    const n = estado.nivel, P = Object.assign({}, P0);
-    P.reacao = Math.max(.1, P0.reacao * .72); P.esquiva = Math.min(.7, P0.esquiva + .14); P.defesa = Math.min(.8, P0.defesa + .14); P.punir = Math.min(1, P0.punir + .18);
-    P.agress = Math.min(.95, P0.agress + .15); P.cadeia = Math.min(.85, P0.cadeia + .18); P.vel = P0.vel * 1.08;
-    P.hp = P0.hp * Math.min(2.2, 1 + Math.max(0, n - 1) * .07); P.forca = P0.forca * Math.min(1.7, 1 + Math.max(0, n - 1) * .035);
+  // dificuldade sobe com a RODADA (quartas < semi < final); a IA acompanha só metade da evolução do Akira,
+  // então treinar Vitalidade/Força/Agilidade faz diferença de verdade no tatame
+  const ESTAGIO = { qf: { hp: 1.1, forca: 1.08, ia: .5 }, sf: { hp: 1.3, forca: 1.28, ia: .85 }, final: { hp: 1.3, forca: 1.12, ia: 1 }, ex: { hp: 1, forca: 1, ia: .5 } };
+  function iaCompetitiva(P0, rodada) {
+    const S = ESTAGIO[rodada] || ESTAGIO.ex, k = S.ia, A = atrLuta(), P = Object.assign({}, P0);
+    P.reacao = Math.max(.12, P0.reacao * (1 - .22 * k)); P.esquiva = Math.min(.62, P0.esquiva + .1 * k); P.defesa = Math.min(.7, P0.defesa + .1 * k); P.punir = Math.min(.95, P0.punir + .12 * k);
+    P.agress = Math.min(.9, P0.agress + .1 * k); P.cadeia = Math.min(.75, P0.cadeia + .12 * k); P.vel = P0.vel * (1 + .05 * k);
+    P.hp = P0.hp * S.hp * (1 + (A.hp / 100 - 1) * .5); P.forca = P0.forca * S.forca * (1 + (A.forca - 1) * .45);
+    P.rodada = rodada || 'ex';
     return P;
-  }                                                   // equilíbrio: quanto do dano da IA chega no Akira
+  }
   /* ---------- golpes (tempos em segundos, alcance em metros) ---------- */
   const GOLPES = {
     jab:       { nome: 'Jab', prep: .1, ativo: .06, rec: .2, alc: .95, dano: 5, anim: ['guarda', 'jab'], mao: 'mE' },
@@ -12543,21 +12579,40 @@ const Luta2D = (() => {
     // técnicas especiais dos competidores (preparação mais longa = dá para ver e reagir; recarga própria na IA)
     passoRelampago:   { nome: 'Passo Relâmpago', tec: 1, prep: .3, ativo: .16, rec: .4, alc: 1.1, dano: 12, anim: ['esquiva', 'direto'], mao: 'mD', avanco: 2.8, energia: true },
     punhosFantasma:   { nome: 'Punhos Fantasma', tec: 1, prep: .26, ativo: .06, rec: .1, alc: .95, dano: 5, anim: ['guarda', 'jab'], mao: 'mE', energia: true, fila: ['jab', 'direto', 'gancho'] },
-    punhoSismico:     { nome: 'Punho Sísmico', tec: 1, prep: .6, ativo: .1, rec: .6, alc: 1.25, dano: 20, anim: ['marretaArma', 'marreta'], mao: 'mD', derruba: true, quebra: true, armadura: true, tremor: .5 },
-    pisaoImpacto:     { nome: 'Pisão de Impacto', tec: 1, prep: .62, ativo: .12, rec: .62, alc: 1.6, dano: 16, anim: ['marretaArma', 'marreta'], mao: 'mD', derruba: true, onda: true, tremor: .55 },
-    laminaVento:      { nome: 'Lâmina de Vento', tec: 1, prep: .34, ativo: .1, rec: .42, alc: 2.6, dano: 12, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2.4 },
+    punhoSismico:     { nome: 'Punho Sísmico', tec: 1, elem: 'terra', prep: .6, ativo: .1, rec: .6, alc: 1.25, dano: 20, anim: ['marretaArma', 'marreta'], mao: 'mD', derruba: true, quebra: true, armadura: true, tremor: .5 },
+    pisaoImpacto:     { nome: 'Pisão de Impacto', tec: 1, elem: 'terra', prep: .62, ativo: .12, rec: .62, alc: 6, dano: 14, anim: ['marretaArma', 'marreta'], mao: 'mD', derruba: true, tremor: .55, proj: 'tremor', vel: 6, chao: true },
+    laminaVento:      { nome: 'Lâmina de Vento', tec: 1, prep: .34, ativo: .1, rec: .42, alc: 6, dano: 11, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2.4, proj: 'vento', vel: 8.5, elem: 'vento' },
     contraPerfeito:   { nome: 'Contra-Ataque Perfeito', tec: 1, prep: .06, ativo: .08, rec: .26, alc: 1.15, dano: 16, anim: ['guarda', 'direto'], mao: 'mD', avanco: .6, quebra: true },
-    investidaEletrica:{ nome: 'Investida Elétrica', tec: 1, prep: .3, ativo: .16, rec: .4, alc: 1.1, dano: 13, anim: ['chuteArma', 'lateral'], pe: 'fD', avanco: 2.4, energia: true },
-    descargaEletrica: { nome: 'Descarga Elétrica', tec: 1, prep: .4, ativo: .12, rec: .5, alc: 1.8, dano: 14, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true },
-    lancaGelo:        { nome: 'Lança de Gelo', tec: 1, prep: .36, ativo: .1, rec: .45, alc: 2.8, dano: 13, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2 },
-    punhoFlamejante:  { nome: 'Punho Flamejante', tec: 1, prep: .3, ativo: .09, rec: .38, alc: 1.05, dano: 15, anim: ['jab', 'gancho'], mao: 'mD', energia: true, avanco: .3, quebra: true },
-    ondaFogo:         { nome: 'Onda de Fogo', tec: 1, prep: .38, ativo: .12, rec: .48, alc: 2.4, dano: 14, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true },
-    projetilSombrio:  { nome: 'Projétil de Energia Sombria', tec: 1, prep: .38, ativo: .1, rec: .45, alc: 3.0, dano: 14, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2.6 },
-    explosaoNegra:    { nome: 'Explosão de Aura Negra e Dourada', tec: 1, prep: .48, ativo: .12, rec: .55, alc: 2.3, dano: 18, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true, derruba: true, tremor: .4 }
+    investidaEletrica:{ nome: 'Investida Elétrica', tec: 1, elem: 'raio', prep: .3, ativo: .16, rec: .4, alc: 1.1, dano: 13, anim: ['chuteArma', 'lateral'], pe: 'fD', avanco: 2.4, energia: true },
+    descargaEletrica: { nome: 'Descarga Elétrica', tec: 1, elem: 'raio', prep: .4, ativo: .12, rec: .5, alc: 1.8, dano: 14, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true },
+    lancaGelo:        { nome: 'Lança de Gelo', tec: 1, prep: .36, ativo: .1, rec: .45, alc: 6, dano: 12, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2, proj: 'gelo', vel: 7, elem: 'gelo' },
+    punhoFlamejante:  { nome: 'Punho Flamejante', tec: 1, elem: 'fogo', prep: .3, ativo: .09, rec: .38, alc: 1.05, dano: 15, anim: ['jab', 'gancho'], mao: 'mD', energia: true, avanco: .3, quebra: true },
+    ondaFogo:         { nome: 'Onda de Fogo', tec: 1, elem: 'fogo', prep: .38, ativo: .12, rec: .48, alc: 2.4, dano: 14, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true },
+    projetilSombrio:  { nome: 'Projétil de Energia Sombria', tec: 1, prep: .38, ativo: .1, rec: .45, alc: 6, dano: 13, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, empurra: 2.6, proj: 'sombra', vel: 6.2, elem: 'sombra' },
+    // golpes finais (1 vez por round, quando o lutador está com pouca vida): preparação longa, nome na tela e dá pra fugir
+    milPassos:        { nome: 'Mil Passos do Vento', tec: 1, super: 1, prep: .55, ativo: .14, rec: .5, alc: 1.2, dano: 7, anim: ['esquiva', 'direto'], mao: 'mD', avanco: 3.2, energia: true, fila: ['jab', 'direto', 'jab', 'gancho'] },
+    avalanche:        { nome: 'Avalanche de Pedra', tec: 1, super: 1, elem: 'terra', prep: .7, ativo: .12, rec: .7, alc: 9, dano: 18, anim: ['marretaArma', 'marreta'], mao: 'mD', zona: 'pedra', zonas: [0, -1.4, 1.4], atraso: .85, tremor: .6, derruba: true },
+    tempestadePetalas:{ nome: 'Tempestade de Pétalas', tec: 1, super: 1, elem: 'vento', prep: .5, ativo: .1, rec: .55, alc: 9, dano: 6, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, proj: 'petala', vel: 7.5, rajadaProj: 5 },
+    trovaoCadente:    { nome: 'Trovão Cadente', tec: 1, super: 1, elem: 'raio', prep: .5, ativo: .1, rec: .6, alc: 9, dano: 20, anim: ['aura', 'palma'], mao: 'mD', energia: true, zona: 'raio', zonas: [0], atraso: .75, derruba: true },
+    prisaoGelo:       { nome: 'Prisão de Gelo Eterno', tec: 1, super: 1, elem: 'gelo', prep: .6, ativo: .1, rec: .6, alc: 9, dano: 16, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, proj: 'espinhos', vel: 5.5, chao: true, derruba: true },
+    dragaoFogo:       { nome: 'Dragão de Fogo', tec: 1, super: 1, elem: 'fogo', prep: .6, ativo: .1, rec: .6, alc: 9, dano: 20, anim: ['aura', 'palma'], mao: 'mD', energia: true, proj: 'dragaoFogo', vel: 6, derruba: true, tremor: .4 },
+    furiaDragao:      { nome: 'Fúria do Oitavo Dragão', tec: 1, super: 1, elem: 'sombra', prep: .75, ativo: .12, rec: .65, alc: 9, dano: 22, anim: ['aura', 'palma'], mao: 'mD', energia: true, proj: 'dragaoOuro', vel: 5.2, derruba: true, tremor: .5 },
+    // técnicas especiais do AKIRA (as mesmas do RPG: a equipada no menu M sai no K)
+    akExplosao:       { nome: 'Explosão de Aura', tec: 1, prep: .25, ativo: .12, rec: .4, alc: 1.7, dano: 18, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true, derruba: true, tremor: .35, elem: 'espirito' },
+    akProjetil:       { nome: 'Projétil Espiritual', tec: 1, prep: .4, ativo: .1, rec: .32, alc: 9, dano: 16, anim: ['palmaArma', 'palma'], mao: 'mD', energia: true, proj: 'espirito', vel: 8, elem: 'espirito' },
+    akPunho:          { nome: 'Punho Concentrado', tec: 1, prep: .42, ativo: .09, rec: .42, alc: 1.35, dano: 27, anim: ['marretaArma', 'marreta'], mao: 'mD', energia: true, quebra: true, avanco: .5, tremor: .35 },
+    akOnda:           { nome: 'Onda Espiritual', tec: 1, prep: .42, ativo: .1, rec: .42, alc: 9, dano: 21, anim: ['aura', 'palma'], mao: 'mD', energia: true, proj: 'ondaChao', vel: 7.5, chao: true, derruba: true },
+    akRuptura:        { nome: 'Ruptura Espiritual', tec: 1, prep: .8, ativo: .14, rec: .6, alc: 2.5, dano: 44, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true, derruba: true, quebra: true, tremor: .7 },
+    explosaoNegra:    { nome: 'Explosão de Aura Negra e Dourada', tec: 1, elem: 'sombra', prep: .48, ativo: .12, rec: .55, alc: 2.3, dano: 18, anim: ['aura', 'palma'], mao: 'mD', energia: true, onda: true, derruba: true, tremor: .4 }
   };
   // quem usa cada técnica no torneio (a IA usa de vez em quando, com recarga — não troca os golpes normais)
   const TEC_2D = { renji: ['passoRelampago', 'punhosFantasma'], goro: ['punhoSismico', 'pisaoImpacto'], mei: ['laminaVento', 'contraPerfeito'], luna: ['investidaEletrica', 'descargaEletrica'],
-    nicolas: ['lancaGelo'], henrique: ['punhoFlamejante', 'ondaFogo'], oitavo: ['projetilSombrio', 'explosaoNegra'] };
+    nicolas: ['lancaGelo', 'palma'], henrique: ['punhoFlamejante', 'ondaFogo'], oitavo: ['projetilSombrio', 'explosaoNegra'] };
+  const SUPER_2D = { renji: 'milPassos', goro: 'avalanche', mei_torneio: 'tempestadePetalas', luna: 'trovaoCadente', nicolas: 'prisaoGelo', henrique: 'dragaoFogo', oitavo: 'furiaDragao' };
+  const TEC_AK_2D = { explosaoAura: 'akExplosao', projetilEspiritual: 'akProjetil', punhoConcentrado: 'akPunho', ondaEspiritual: 'akOnda', rupturaEspiritual: 'akRuptura' };
+  const tecAk2D = () => TEC_AK_2D[tecEquipada()] || 'akExplosao';
+  const custoK = () => custoTec(tecEquipada());
+  const ELEM_COR = { gelo: [.55, .9, 1], fogo: [1, .45, .12], raio: [1, .92, .3], vento: [.75, 1, .85], terra: [.85, .6, .3], sombra: [1, .8, .3], espirito: [.35, .8, 1], petala: [1, .6, .75] };
   // golpes do Akira vêm das técnicas do RPG (mesmo dano e nome); só o desenho/alcance é do modo lateral
   const DO_RPG = { soco1: 'jab', soco2: 'gancho', cotovelo: 'cotovelo', chute: 'chuteAlto', chute2: 'lateral', giratorio: 'giro' };
   function golpeDoRpg(id) {
@@ -12571,13 +12626,13 @@ const Luta2D = (() => {
   const LUTADORES = {
     akira: { nome: 'Akira', estilo: 'Karatê equilibrado', cor: '#4fc8ff', est: () => estiloAkira() },
     renji: { nome: 'Renji', estilo: 'Velocidade', cor: '#9ff8e0', pal: () => PAL_COMP.renji,
-      ia: { vel: 2.7, hp: 95, forca: .9, reacao: .19, defesa: .22, esquiva: .42, punir: .6, agress: .85, dist: 1.0, cadeia: .6, golpes: [['jab', 3], ['direto', 2], ['investida', 3], ['chute', 1]], salto: .12 } },
+      ia: { vel: 2.7, hp: 100, forca: .95, reacao: .18, defesa: .22, esquiva: .42, punir: .6, agress: .85, dist: 1.0, cadeia: .6, golpes: [['jab', 3], ['direto', 2], ['investida', 3], ['chute', 1]], salto: .12 } },
     goro: { nome: 'Goro', estilo: 'Força', cor: '#ffb347', pal: () => PAL_COMP.goro,
       ia: { vel: 1.35, hp: 130, forca: 1.3, reacao: .3, defesa: .35, esquiva: .05, punir: .5, agress: .55, dist: 1.1, cadeia: .25, golpes: [['marreta', 3], ['empurrao', 2], ['direto', 2], ['gancho', 2]], armadura: true } },
     mei: { nome: 'Mei', estilo: 'Contra-ataque', cor: '#ff9fc0', pal: () => PAL_COMP.mei_torneio,
-      ia: { vel: 1.9, hp: 105, forca: 1.0, reacao: .16, defesa: .55, esquiva: .5, punir: .95, agress: .3, dist: 1.45, cadeia: .3, golpes: [['jab', 2], ['chute', 2], ['lateral', 1]], contraGolpe: 'contra' } },
+      ia: { vel: 1.95, hp: 112, forca: 1.08, reacao: .14, defesa: .58, esquiva: .5, punir: .95, agress: .38, dist: 1.45, cadeia: .3, golpes: [['jab', 2], ['chute', 2], ['lateral', 1]], contraGolpe: 'contra' } },
     luna: { nome: 'Luna', estilo: 'Chutes elétricos', cor: '#ffe45e', pal: () => PAL_NPC.luna,
-      ia: { vel: 2.1, hp: 105, forca: 1.0, reacao: .21, defesa: .35, esquiva: .35, punir: .55, agress: .6, dist: 1.35, cadeia: .45, golpes: [['chute', 3], ['chuteAlto', 2], ['lateral', 2], ['jab', 1]], elemento: 'raio' } },
+      ia: { vel: 2.15, hp: 112, forca: 1.08, reacao: .18, defesa: .4, esquiva: .38, punir: .6, agress: .68, dist: 1.35, cadeia: .45, golpes: [['chute', 3], ['chuteAlto', 2], ['lateral', 2], ['jab', 1]], elemento: 'raio' } },
     nicolas: { nome: 'Nicolas', estilo: 'Gelo e distância', cor: '#8fe8ff', pal: () => PAL_NPC.nicolas,
       ia: { vel: 1.8, hp: 115, forca: 1.05, reacao: .23, defesa: .55, esquiva: .2, punir: .6, agress: .45, dist: 1.45, cadeia: .35, golpes: [['lateral', 3], ['direto', 2], ['palma', 1]], elemento: 'gelo' } },
     henrique: { nome: 'Henrique', estilo: 'Fogo e pressão', cor: '#ff6a2a', pal: () => PAL_NPC.henrique,
@@ -12662,7 +12717,7 @@ const Luta2D = (() => {
       hp: 100, hpMax: 100, rastro: 100, guarda: 100, tontura: 0, invul: 0, aura: 0, esc: 1, cor: FX2D.hexA(d.cor), vitorias: 0, combo: 0, comboT: 0, buf: false, fila: [],
       historico: [], tokens: [], dmgMult: 1, forca: 1, esqCd: 0, bloqT: 0, falou: {}, flashT: 0, prof: CENA_GY, escala: 1 };
     f.esc = f.estilo.esc || 1;
-    if (op && op.ia) { const P = iaCompetitiva(d.ia); f.ia = { P, cd: .8, reagiu: false, contra: false, guardaT: 0, planoT: 0, previsto: null, leu: 0, ngram: {}, ultimos: [] }; f.hpMax = f.hp = P.hp * (op.escHp || 1); f.forca = P.forca; }
+    if (op && op.ia) { const P = iaCompetitiva(d.ia, op.rodada); f.ia = { P, cd: .8, reagiu: false, contra: false, guardaT: 0, planoT: 0, previsto: null, leu: 0, ngram: {}, ultimos: [] }; f.hpMax = f.hp = P.hp * (op.escHp || 1); f.forca = P.forca; }
     else { const A = atrLuta(); f.hpMax = f.hp = A.hp; f.forca = A.forca; f.defesa = A.defesa; f.atr = A; }
     if (op && op.mult) f.dmgMult = op.mult;
     return f;
@@ -12679,7 +12734,7 @@ const Luta2D = (() => {
   const noChao = f => f.y <= .001;
   function iniciarGolpe(f, g, token) {
     if (f.atr && !g.aereo) g = Object.assign({}, g, { prep: g.prep * f.atr.prep });   // agilidade/técnica: golpes saem mais rápido
-    f.est = 'atk'; f.t = 0; f.golpe = g; f.acertou = false; f.buf = false;
+    f.est = 'atk'; f.t = 0; f.golpe = g; f.acertou = false; f.remoto = false; f.buf = false;
     if (token) { f.tokens.push(token); if (f.tokens.length > 12) f.tokens.shift(); f.ultimoToken = token; }
     if (g.energia || g.onda) FX2D.aura(f.x, .2, f.cor, 6);
   }
@@ -12707,8 +12762,8 @@ const Luta2D = (() => {
     if (c.pulo && noChao(f)) { mudar(f, 'pulo'); f.vy = 5.6; f.vx = c.mov * 2.6; f.chutouAr = false; registrar(f, 'pulo'); return; }
     if (c.atk === 'J') { f.cadeia = 0; const g = Object.assign({ doCombo: true, idx: 0 }, golpeDoRpg(seq[0])); iniciarGolpe(f, g, 'J0:' + g.id); registrar(f, 'J0'); return; }
     if (c.atk === 'K') {
-      const custo = custoEsp(); if (f.aura < custo) { balaoSistema('Aura insuficiente (' + Math.floor(f.aura) + '/' + custo + ')'); return; }
-      f.aura -= custo; iniciarGolpe(f, Object.assign({}, GOLPES.onda, { dano: ESPECIAL.dano + (f.atr ? f.atr.esp : 0) }), 'K'); registrar(f, 'K'); return;
+      const custo = custoK(), id = tecAk2D(); if (f.aura < custo) { balaoSistema('Aura insuficiente (' + Math.floor(f.aura) + '/' + custo + ')'); return; }
+      f.aura -= custo; const G = GOLPES[id]; iniciarGolpe(f, Object.assign({ id }, G, { dano: G.dano + (f.atr ? f.atr.esp : 0) }), 'K'); balao(f, G.nome + '!', 1.1); registrar(f, 'K'); return;
     }
     if (c.atk === 'C') {
       if (f.aura < 12) { balaoSistema('Aura insuficiente para a rajada (12)'); return; }
@@ -12760,12 +12815,20 @@ const Luta2D = (() => {
       else if (r < pE + pB) { c.bloq = true; ia.guardaT = o.golpe.prep + o.golpe.ativo - o.t + .18; ia.contra = Math.random() < P.punir; }
     }
     if (o.est !== 'atk') ia.reagiu = false;
+    // lê o ritmo: quem ataca sem parar (apertando J toda hora) começa a ser bloqueado e punido
+    if (o.est === 'atk' && o.golpe !== ia.ultGolpe) { ia.ultGolpe = o.golpe; (ia.ritmo || (ia.ritmo = [])).push(tempoCena); }
+    if (ia.ritmo) while (ia.ritmo.length && tempoCena - ia.ritmo[0] > 1.6) ia.ritmo.shift();
+    const kE = (ESTAGIO[P.rodada] || ESTAGIO.ex).ia;
+    if (ia.ritmo && ia.ritmo.length >= 3 && livre(f) && d < 1.7 && ia.guardaT <= 0 && !ia.leuRitmo) {
+      ia.leuRitmo = true; if (Math.random() < .35 + .5 * kE) { ia.guardaT = .45 + .25 * kE; ia.contra = Math.random() < P.punir; }
+    }
+    if (!ia.ritmo || ia.ritmo.length < 2) ia.leuRitmo = false;
     if (ia.guardaT > 0 && !c.esq) { c.bloq = true; return c; }
     // 2) punir quem errou o golpe ou contra-atacar depois de defender
     const abertura = (o.est === 'atk' && o.t > o.golpe.prep + o.golpe.ativo) || o.est === 'pouso' || (o.est === 'esq' && o.t > .3);
     if ((abertura || ia.contra && o.est === 'bloqStun') && livre(f)) {
       let id = ia.contra ? (P.contraGolpe || maisRapido(P)) : maisRapido(P);
-      if (ia.contra && (TEC_2D[f.pid] || []).includes('contraPerfeito') && ia.cdTec <= 0) { id = 'contraPerfeito'; ia.cdTec = 6 + Math.random() * 3; }   // Mei: técnica de contra-ataque
+      if (ia.contra && (TEC_2D[f.pid === 'mei_torneio' ? 'mei' : f.pid] || []).includes('contraPerfeito') && ia.cdTec <= 0) { id = 'contraPerfeito'; ia.cdTec = 6 + Math.random() * 3; }   // Mei: técnica de contra-ataque
       if (d <= GOLPES[id].alc * f.esc + .3 && Math.random() < (ia.contra ? .9 : P.punir * dt * 14)) { ia.contra = false; c.atk = id; return c; }
     }
     if (!abertura && o.est !== 'bloqStun') ia.contra = ia.contra && o.est === 'atk';
@@ -12776,10 +12839,16 @@ const Luta2D = (() => {
     if (d > alvoD + .35) c.mov = dir * (o.est === 'atk' && d < 2.2 ? 0 : 1);
     else if (d < alvoD - .45 && Math.random() < .5) c.mov = -dir;
     if (P.salto && d > 1.6 && d < 3 && Math.random() < P.salto * dt) c.pulo = true;
+    // golpe final: 1 vez por round quando está com pouca vida (só nas lutas oficiais)
+    const SP = SUPER_2D[f.pid];
+    if (SP && !f.superRound && luta.oficial !== false && f.hp / f.hpMax < .45 && ia.cd <= 0 && livre(f) && d <= GOLPES[SP].alc * f.esc + .3 && o.est !== 'caido') { f.superRound = true; c.atk = SP; ia.cd = 1.2; return c; }
+    // de longe: quem tem projétil usa para pressionar (zoneamento)
+    const T3 = TEC_2D[f.pid === 'mei_torneio' ? 'mei' : f.pid];
+    if (T3 && d > 2.4 && ia.cdTec <= 0 && luta.oficial !== false && Math.random() < dt * 2.2) { const pr = T3.filter(id => GOLPES[id].proj); if (pr.length) { c.atk = pr[0]; ia.cdTec = 4.5 + Math.random() * 3; ia.cd = .8; return c; } }
     if (ia.cd <= 0 && d <= alvoD + .5) {
       // guarda preventiva quando o jogador está num padrão previsível (ou é um lutador defensivo)
       if (Math.random() < (repetiu ? .45 : P.defesa * .25) && o.est !== 'atk') { ia.guardaT = .35 + Math.random() * .3; ia.cd = .3; c.bloq = true; return c; }
-      const T2 = TEC_2D[f.pid];
+      const T2 = TEC_2D[f.pid === 'mei_torneio' ? 'mei' : f.pid];
       if (T2 && ia.cdTec <= 0 && luta.oficial !== false && Math.random() < .55) {           // técnica especial do lutador (com recarga)
         const ops = T2.filter(id => GOLPES[id].alc * f.esc + .3 >= d);
         if (ops.length) { c.atk = ops[Math.floor(Math.random() * ops.length)]; ia.cdTec = 6 + Math.random() * 4; ia.cd = (1 - P.agress) * 1.1 + .45; return c; }
@@ -12798,6 +12867,7 @@ const Luta2D = (() => {
     if (c.atk) {
       const g = GOLPES[c.atk]; iniciarGolpe(f, Object.assign({ id: c.atk }, g), c.atk);
       if (g.tec) { balao(f, g.nome + '!', 1.2); if (g.fila) f.fila = g.fila.slice(); }
+      if (g.super) anunciarSuper(f, g);
       if (c.atk === 'marreta' && f.pid === 'goro' && !f.falou.luta && luta.oficial) { f.falou.luta = true; balao(f, FALAS_TORNEIO.goro.luta); }
       return;
     }
@@ -12806,7 +12876,7 @@ const Luta2D = (() => {
 
   /* ---------- movimento e física ---------- */
   function andar(f, mov) {
-    const vel = (f.ia ? f.ia.P.vel : (f.atr ? f.atr.vel : 2.3)) * (mov === -f.face ? .75 : 1);
+    const vel = (f.ia ? f.ia.P.vel : (f.atr ? f.atr.vel : 2.3)) * (mov === -f.face ? .75 : 1) * (f.lento > 0 ? .6 : 1);
     if (mov) { f.est = 'andar'; f.x += mov * vel * dtLuta; f.passo = (f.passo || 0) + mov * f.face * vel * dtLuta; f.tras = mov === -f.face; }
     else if (f.est === 'andar') { f.est = 'idle'; f.t = 0; }
   }
@@ -12827,14 +12897,14 @@ const Luta2D = (() => {
         if (g.avanco && f.t > g.prep * .7 && f.t < fimA) f.x += f.face * g.avanco / (g.ativo + g.prep * .3) * dt;
         if (g.giro) f.giro = Math.min(1, f.t / fimA);
         if (g.pe && f.t > g.prep && f.t < fimA && Math.random() < .7) { const p = pontoDe(f, g); FX2D.add({ x: p[0], y: p[1], z: p[2], vx: 0, vy: 0, vz: 0, vida: .18, tam: .25, tamF: .05, cor: f.ia && f.ia.P.elemento ? f.cor : [1, 1, 1], alfa: .55 }); }
-        if (f.t >= g.prep && f.t < fimA && !f.acertou) tentarAcerto(f, o, g);
+        if (f.t >= g.prep && f.t < fimA && !f.acertou) { if (g.proj || g.zona) { f.acertou = true; f.remoto = true; soltarRemoto(f, o, g); } else tentarAcerto(f, o, g); }
         if (g.aereo) { if (noChao(f) && f.t > .05) mudar(f, 'pouso', .14); break; }
         if (f.t >= fimA) {
           // combo do jogador: J na hora certa emenda o próximo golpe da sequência
           if (g.doCombo && f.buf) { const seq = COMBOS[estado.combo].seq, i = g.idx + 1; if (i < seq.length) { const ng = Object.assign({ doCombo: true, idx: i }, golpeDoRpg(seq[i])); iniciarGolpe(f, ng, 'J' + i + ':' + ng.id); registrar(f, 'J' + i); break; } }
           if (f.fila.length) { const id = f.fila.shift(); iniciarGolpe(f, Object.assign({}, GOLPES[id], { prep: .05, rec: f.fila.length ? .08 : .3, rajada: true })); break; }
           if (g.decidido) { /* a IA decide emendar só uma vez, no começo da recuperação */ }
-          else if ((g.decidido = true) && f.ia && f.acertou && (f.cadeiaN || 0) < (f.ia.P.leitura ? 3 : 2) && Math.random() < f.ia.P.cadeia && !g.derruba) { f.cadeiaN = (f.cadeiaN || 0) + 1; const id = escolherGolpe(f.ia.P, Math.abs(o.x - f.x), f.esc); iniciarGolpe(f, Object.assign({ id }, GOLPES[id]), id); break; }
+          else if ((g.decidido = true) && f.ia && f.acertou && !f.remoto && (f.cadeiaN || 0) < (f.ia.P.leitura ? 3 : 2) && Math.random() < f.ia.P.cadeia && !g.derruba) { f.cadeiaN = (f.cadeiaN || 0) + 1; const id = escolherGolpe(f.ia.P, Math.abs(o.x - f.x), f.esc); iniciarGolpe(f, Object.assign({ id }, GOLPES[id]), id); break; }
           else if (f.ia && f.cadeiaN) { f.ia.cd = Math.max(f.ia.cd, .55); f.cadeiaN = 0; }   // depois de uma sequência a IA respira (abre espaço pro jogador)
         }
         if (f.t >= fimA + g.rec) { mudar(f, 'idle'); f.giro = 0; }
@@ -12847,6 +12917,10 @@ const Luta2D = (() => {
       case 'levantar': if (f.t > .45) mudar(f, 'idle'); break;
       case 'tonto': if (f.t > 1.5) { mudar(f, 'idle'); f.tontura = 0; } else if (Math.random() < dt * 20) { const p = cabecaDe(f); FX2D.estrelas(p[0], p[1] + .3, tempoCena); } break;
     }
+    // efeitos de elemento: gelo deixa lento, fogo queima um pouco, raio dá um choque
+    if (f.lento > 0) { f.lento -= dt; if (Math.random() < dt * 14) FX2D.add({ x: f.x + (Math.random() - .5) * .6, y: .2 + Math.random() * 1.4, vx: 0, vy: -.3, vida: .5, tam: .12, tamF: .02, cor: ELEM_COR.gelo, alfa: .8 }); }
+    if (f.queima > 0) { f.queima -= dt; f.hp = Math.max(Math.min(f.hp, 1), f.hp - 2.2 * dt); if (Math.random() < dt * 20) FX2D.add({ x: f.x + (Math.random() - .5) * .5, y: .3 + Math.random() * 1.2, vx: 0, vy: 1.4, vida: .4, tam: .2, tamF: .02, cor: ELEM_COR.fogo, alfa: .9 }); }
+    if (f.choque > 0) { f.choque -= dt; if (Math.random() < dt * 25) FX2D.add({ x: f.x + (Math.random() - .5) * .7, y: .4 + Math.random() * 1.3, vx: (Math.random() - .5) * 3, vy: (Math.random() - .5) * 3, vida: .12, tam: .08, tamF: .02, cor: ELEM_COR.raio, alfa: 1 }); }
     f.x = Math.max(-5.1, Math.min(5.1, f.x));
   }
   function separar(a, b) {
@@ -12902,6 +12976,109 @@ const Luta2D = (() => {
     else if (d.tontura >= 100) { mudar(d, 'tonto'); d.tontura = 0; textoCentro('', d.nome + ' está tonto!', 1); }
     else { mudar(d, 'dano', .26 + g.dano * .012); d.vx = a.face * (1.6 + (g.empurra || 0)); if (d.y > 0) { d.vy = 2; } }
     if (luta) luta.ultimoAcerto = { a, d, g };
+    aplicarElemento(a, d, g);
+  }
+  function aplicarElemento(a, d, g) {
+    const el = g.elem || (a.ia && a.ia.P.elemento) || null; if (!el || d.hp <= 0) return;
+    if (el === 'gelo') d.lento = Math.max(d.lento || 0, g.super ? 2.4 : 1.4);
+    else if (el === 'fogo') d.queima = Math.max(d.queima || 0, g.super ? 2.5 : 1.5);
+    else if (el === 'raio') { d.choque = .5; if (d.est === 'dano') d.dur += .14; }
+    else if (el === 'vento') d.vx += a.face * 1.6;
+    else if (el === 'terra') d.guarda = Math.max(0, d.guarda - 15);
+    else if (el === 'sombra' && !d.ia) d.aura = Math.max(0, d.aura - 8);
+  }
+  /* ---------- projéteis e golpes à distância (dá para pular, esquivar ou defender) ---------- */
+  let projs = [], zonas = [];
+  function soltarRemoto(f, o, g) {
+    const cor = ELEM_COR[g.proj === 'petala' ? 'petala' : g.elem] || f.cor;
+    if (g.zona) { (g.zonas || [0]).forEach((dx, i) => zonas.push({ x: Math.max(-5, Math.min(5, o.x + dx)), w: g.zona === 'raio' ? .55 : .7, t: -i * .18, atraso: g.atraso || .8, dono: f, g, tipo: g.zona, cor, feito: false })); return; }
+    const n = g.rajadaProj || 1;
+    for (let k = 0; k < n; k++) projs.push({ x: f.x + f.face * .6, y: g.chao ? .15 : 1.15 + (n > 1 ? (k % 3 - 1) * .3 : 0), vx: f.face * g.vel, dono: f, g, tipo: g.proj, cor, vida: 0, atraso: k * .16, r: g.proj === 'dragaoFogo' || g.proj === 'dragaoOuro' ? .7 : g.chao ? .5 : .35 });
+    if (g.super) cam.linhas = Math.max(cam.linhas, 1);
+  }
+  function acertoRemoto(a, d, g, x) {
+    const ax = a.x, af = a.face, ay = a.y, est = a.est;
+    a.face = Math.sign(d.x - x) || af; a.x = d.x - a.face * .2; a.y = d.y; a.est = 'atk';
+    tentarAcerto(a, d, Object.assign({}, g, { alc: .8, avanco: 0 }));
+    a.x = ax; a.face = af; a.y = ay; a.est = est;
+  }
+  function passoRemotos(dt) {
+    for (let i = projs.length - 1; i >= 0; i--) {
+      const p = projs[i]; if (p.morto) { projs.splice(i, 1); continue; } if (p.atraso > 0) { p.atraso -= dt; if (p.atraso <= 0) p.x = p.dono.x + p.dono.face * .6; continue; }
+      p.vida += dt; p.x += p.vx * dt;
+      if (Math.random() < dt * 40) FX2D.add({ x: p.x - Math.sign(p.vx) * .2, y: p.y + (Math.random() - .5) * .3, vx: -p.vx * .1, vy: (Math.random() - .5) * .6, vida: .3, tam: p.r * .5, tamF: .02, cor: p.cor, alfa: .7 });
+      const alvo = L.find(l => l !== p.dono);
+      // projéteis de lados opostos se anulam
+      const outro = projs.find(q => q !== p && !q.morto && q.dono !== p.dono && q.atraso <= 0 && Math.abs(q.x - p.x) < .5 && Math.abs(q.y - p.y) < .8);
+      if (outro) { FX2D.impacto(p.x, p.y, p.cor, true); p.morto = outro.morto = true; continue; }
+      if (alvo && Math.abs(alvo.x - p.x) < p.r + .3 && (p.y < .5 ? alvo.y < .45 : Math.abs(alvo.y + 1 - p.y) < 1.1) && alvo.est !== 'caido' && alvo.est !== 'queda') {
+        if (alvo.invul > 0 || (alvo.est === 'esq' && alvo.t < .3)) continue;
+        acertoRemoto(p.dono, alvo, p.g, p.x); FX2D.impacto(p.x, p.y, p.cor, true); projs.splice(i, 1); continue;
+      }
+      if (Math.abs(p.x) > 6.5 || p.vida > 3) projs.splice(i, 1);
+    }
+    for (let i = projs.length - 1; i >= 0; i--) if (projs[i].morto) projs.splice(i, 1);
+    for (let i = zonas.length - 1; i >= 0; i--) {
+      const z = zonas[i]; z.t += dt;
+      if (!z.feito && z.t >= z.atraso) {
+        z.feito = true; cam.tremor = Math.max(cam.tremor, .25); flash(z.tipo === 'raio' ? '#fff6b0' : '#d8a060', .25);
+        for (let k = 0; k < 18; k++) FX2D.add({ x: z.x + (Math.random() - .5) * z.w * 2, y: z.tipo === 'raio' ? Math.random() * 3 : .2, vx: (Math.random() - .5) * 3, vy: z.tipo === 'raio' ? 0 : 2 + Math.random() * 3, vida: .4, tam: .25, tamF: .03, cor: z.cor, alfa: .95 });
+        const alvo = L.find(l => l !== z.dono);
+        if (alvo && Math.abs(alvo.x - z.x) < z.w + .25 && alvo.est !== 'caido' && !(alvo.est === 'esq' && alvo.t < .3) && alvo.invul <= 0) acertoRemoto(z.dono, alvo, z.g, z.x);
+      }
+      if (z.t > z.atraso + .45) zonas.splice(i, 1);
+    }
+  }
+  function limparRemotos() { projs.length = 0; zonas.length = 0; }
+  // nome do golpe final no meio da tela + câmera lenta curtinha (avisa o jogador)
+  function anunciarSuper(f, g) { textoCentro(g.nome.toUpperCase(), f.nome, 1.2, 'l3round'); flash(FX2D.rgba(f.cor, 1), .25); lento(.35, .45); cam.linhas = Math.max(cam.linhas, 1.2); if (Som && Som.efeito) Som.efeito('impacto'); }
+  function desenharRemotos(g) {
+    const t = tempoCena;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const z of zonas) {                                         // aviso no chão (cresce até explodir)
+      const xs = cenaX(z.x), ys = cenaY(0), k = Math.min(1, Math.max(0, z.t) / z.atraso), w = z.w * CENA_M, rgb = a => FX2D.rgba(z.cor, a);
+      if (!z.feito) {
+        g.strokeStyle = rgb(.5 + .5 * Math.sin(t * 30)); g.lineWidth = 2; g.beginPath(); g.ellipse(xs, ys, w, w * .25, 0, 0, 7); g.stroke();
+        g.fillStyle = rgb(.25 * k); g.beginPath(); g.ellipse(xs, ys, w * k, w * .25 * k, 0, 0, 7); g.fill();
+        if (z.tipo === 'raio') { g.fillStyle = rgb(.15 * k); g.fillRect(xs - w * .3, 0, w * .6, ys); }
+        if (z.tipo === 'pedra') { const yy = ys - 160 * (1 - k); g.globalCompositeOperation = 'source-over'; g.fillStyle = '#6a5040'; g.beginPath(); g.moveTo(xs - 12, yy); g.lineTo(xs - 4, yy - 16); g.lineTo(xs + 10, yy - 12); g.lineTo(xs + 13, yy + 2); g.lineTo(xs, yy + 8); g.closePath(); g.fill(); g.fillStyle = '#8a7058'; g.fillRect(xs - 6, yy - 10, 8, 5); g.globalCompositeOperation = 'lighter'; }
+      } else {
+        const e = 1 - (z.t - z.atraso) / .45;
+        if (z.tipo === 'raio') { g.strokeStyle = 'rgba(255,255,230,' + e + ')'; g.lineWidth = 5 * e + 1; g.beginPath(); let x = xs; g.moveTo(x, 0); for (let y = 0; y < ys; y += 14) { x = xs + (Math.random() - .5) * 18; g.lineTo(x, y); } g.lineTo(xs, ys); g.stroke(); g.lineWidth = 2; g.strokeStyle = rgb(e); g.stroke(); }
+        const gr = g.createRadialGradient(xs, ys - 10, 2, xs, ys - 10, w * 1.6); gr.addColorStop(0, rgb(.9 * e)); gr.addColorStop(1, rgb(0)); g.fillStyle = gr; g.beginPath(); g.ellipse(xs, ys - 10, w * 1.6, w * .8, 0, 0, 7); g.fill();
+      }
+    }
+    for (const p of projs) {
+      if (p.atraso > 0) continue;
+      const xs = cenaX(p.x), ys = cenaY(p.y), s = Math.sign(p.vx), rgb = a => FX2D.rgba(p.cor, a);
+      g.save(); g.translate(xs, ys); g.scale(s, 1);
+      if (p.tipo === 'gelo') {                                         // lança de gelo: cristal pontudo com rastro gelado
+        const gr = g.createLinearGradient(-40, 0, 14, 0); gr.addColorStop(0, rgb(0)); gr.addColorStop(1, rgb(.7)); g.fillStyle = gr; g.fillRect(-40, -3, 50, 6);
+        g.globalCompositeOperation = 'source-over'; g.fillStyle = '#dff8ff'; g.beginPath(); g.moveTo(16, 0); g.lineTo(2, -5); g.lineTo(-12, -2); g.lineTo(-12, 2); g.lineTo(2, 5); g.closePath(); g.fill();
+        g.fillStyle = '#7fd8f8'; g.beginPath(); g.moveTo(16, 0); g.lineTo(2, -1); g.lineTo(-12, 0); g.lineTo(2, 5); g.closePath(); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.moveTo(-8, -1); g.lineTo(10, -1); g.stroke();
+      } else if (p.tipo === 'vento' || p.tipo === 'petala') {           // lâmina de vento (meia-lua) / pétalas cortantes
+        if (p.tipo === 'vento') { g.rotate(Math.sin(t * 20) * .1); for (let j = 0; j < 3; j++) { g.strokeStyle = j ? rgb(.5 - j * .12) : 'rgba(255,255,255,.95)'; g.lineWidth = 4 - j; g.beginPath(); g.arc(-6 - j * 5, 0, 16, -1.1, 1.1); g.stroke(); } }
+        else { g.rotate(t * 14 + p.y * 5); g.globalCompositeOperation = 'source-over'; g.fillStyle = '#ffb4cc'; g.beginPath(); g.ellipse(0, 0, 6, 3, 0, 0, 7); g.fill(); g.fillStyle = '#ff7aa2'; g.beginPath(); g.ellipse(2, 0, 3, 1.5, 0, 0, 7); g.fill(); }
+      } else if (p.tipo === 'sombra' || p.tipo === 'espirito') {      // esfera de energia (sombria dourada ou espiritual azul)
+        const r = 10 + Math.sin(t * 30) * 1.5, gr = g.createRadialGradient(0, 0, 1, 0, 0, r * 2); gr.addColorStop(0, p.tipo === 'sombra' ? 'rgba(255,230,150,1)' : 'rgba(255,255,255,1)'); gr.addColorStop(.35, rgb(.9)); gr.addColorStop(1, rgb(0));
+        g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r * 2, 0, 7); g.fill();
+        if (p.tipo === 'sombra') { g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(12,8,18,.85)'; g.beginPath(); g.arc(0, 0, r * .55, 0, 7); g.fill(); g.strokeStyle = '#ffcf4a'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, r * .75, t * 9, t * 9 + 4); g.stroke(); }
+        for (let j = 1; j <= 4; j++) { g.fillStyle = rgb(.5 - j * .1); g.beginPath(); g.arc(-j * 9, Math.sin(t * 20 + j) * 2, r * (1 - j * .18), 0, 7); g.fill(); }
+      } else if (p.tipo === 'tremor' || p.tipo === 'ondaChao' || p.tipo === 'espinhos') {   // ondas rente ao chão (pule por cima!)
+        const ys0 = cenaY(0) - ys;
+        if (p.tipo === 'espinhos') { g.globalCompositeOperation = 'source-over'; for (let j = 0; j < 4; j++) { const h = 10 + ((j * 7 + Math.floor(t * 20)) % 9); g.fillStyle = j % 2 ? '#bfefff' : '#7fd0f0'; g.beginPath(); g.moveTo(-j * 9 - 5, ys0); g.lineTo(-j * 9, ys0 - h); g.lineTo(-j * 9 + 5, ys0); g.fill(); } }
+        else if (p.tipo === 'tremor') { g.globalCompositeOperation = 'source-over'; for (let j = 0; j < 5; j++) { g.fillStyle = j % 2 ? '#8a6a48' : '#6a5038'; g.fillRect(-j * 7 - 4, ys0 - 4 - ((j * 5 + Math.floor(t * 25)) % 7), 6, 5); } g.globalCompositeOperation = 'lighter'; g.fillStyle = rgb(.35); g.fillRect(-36, ys0 - 3, 44, 3); }
+        else { const gr = g.createLinearGradient(-50, 0, 10, 0); gr.addColorStop(0, rgb(0)); gr.addColorStop(1, rgb(.9)); g.fillStyle = gr; g.beginPath(); g.moveTo(-50, ys0); g.quadraticCurveTo(0, ys0 - 30, 12, ys0); g.fill(); g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(-30, ys0 - 2, 40, 2); }
+      } else if (p.tipo === 'dragaoFogo' || p.tipo === 'dragaoOuro') { // cabeça de dragão de energia com corpo ondulando
+        const ouro = p.tipo === 'dragaoOuro';
+        for (let j = 12; j >= 0; j--) { const x = -j * 7, y = Math.sin(t * 10 - j * .6) * 6 * (j / 12), r = 9 - j * .45; const gr = g.createRadialGradient(x, y, 0, x, y, r * 1.8); gr.addColorStop(0, ouro ? 'rgba(255,240,170,.95)' : 'rgba(255,230,120,.95)'); gr.addColorStop(.5, rgb(.8)); gr.addColorStop(1, rgb(0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * 1.8, 0, 7); g.fill(); }
+        g.globalCompositeOperation = 'source-over'; g.fillStyle = ouro ? '#ffd86a' : '#ff8a2a'; g.beginPath(); g.moveTo(16, 0); g.lineTo(4, -9); g.lineTo(-6, -7); g.lineTo(-6, 7); g.lineTo(4, 8); g.closePath(); g.fill();
+        g.fillStyle = ouro ? '#1a1020' : '#7a1a08'; g.beginPath(); g.moveTo(16, 1); g.lineTo(6, 2); g.lineTo(14, 5); g.fill(); g.fillStyle = '#ffffff'; g.fillRect(4, -5, 3, 2);
+        g.strokeStyle = ouro ? '#fff2b0' : '#ffd060'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-2, -7); g.quadraticCurveTo(-10, -16, -18, -12); g.moveTo(0, -6); g.quadraticCurveTo(-4, -18, -12, -18); g.stroke();
+      }
+      g.restore();
+    }
+    g.restore();
   }
   function ganharAura(f, n) { if (!f.ia) f.aura = Math.min(100, f.aura + n * (f.atr ? f.atr.aura : 1)); }
   function mostrarCombo(a) { if (a.combo >= 2) { ui.combo.hidden = false; ui.combo.textContent = a.combo + ' GOLPES'; ui.combo.classList.remove('l3anima'); void ui.combo.offsetWidth; ui.combo.classList.add('l3anima'); clearTimeout(mostrarCombo.h); mostrarCombo.h = setTimeout(() => ui.combo.hidden = true, 1100); } }
@@ -12968,7 +13145,7 @@ const Luta2D = (() => {
     if (!f.base) sombra(g, xs, cenaY(0) - (CENA_GY - f.prof), 15 * f.esc, f.y);
     // aura de energia atrás do corpo (Akira: azul, como na ficha)
     const carregando = f.est === 'atk' && f.golpe && (f.golpe.onda || f.golpe.energia) && f.t < f.golpe.prep + f.golpe.ativo;
-    if (carregando || f.desperto || (!f.ia && f.aura >= custoEsp() && luta)) {
+    if (carregando || f.desperto || (!f.ia && f.aura >= custoK() && luta)) {
       const r = (carregando ? 46 : 36) * f.esc + Math.sin(tempoCena * 14) * 2;
       g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(xs, ys - 34 * f.esc, 4, xs, ys - 34 * f.esc, r); gr.addColorStop(0, rgb(carregando ? .55 : .3)); gr.addColorStop(1, rgb(0)); g.fillStyle = gr; g.beginPath(); g.ellipse(xs, ys - 34 * f.esc, r * .6, r, 0, 0, 7); g.fill(); g.restore();
     }
@@ -13009,7 +13186,7 @@ const Luta2D = (() => {
     f.flashT -= dt;
     if (f.ia && f.ia.P.elemento && Math.random() < dt * 5) FX2D.aura(f.x, f.y, f.cor, 1);
     if (f.desperto && Math.random() < dt * 25) FX2D.aura(f.x, f.y, [1, .78, .25], 1);
-    if (!f.ia && luta && f.aura >= custoEsp() && Math.random() < dt * 8) FX2D.aura(f.x, f.y, f.cor, 1);
+    if (!f.ia && luta && f.aura >= custoK() && Math.random() < dt * 8) FX2D.aura(f.x, f.y, f.cor, 1);
     if (f.est === 'atk' && f.golpe && (f.golpe.onda || f.golpe.energia) && f.t < f.golpe.prep && Math.random() < dt * 40) { const p = pontoDe(f, f.golpe); FX2D.add({ x: p[0] - f.face * .4 + (Math.random() - .5) * .8, y: p[1] + (Math.random() - .5) * .8, vx: f.face * 2, vy: (Math.random() - .5), vida: .25, tam: .07, cor: f.cor, alfa: 1 }); }
   }
   /* ---------- HUD da luta ---------- */
@@ -13123,7 +13300,7 @@ const Luta2D = (() => {
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
     const todos = plateia.map(n => ({ n, p: n.prof, pl: true })).concat(L.map(f => ({ n: f, p: f.prof + (f.base ? -1 : 0) }))).sort((a, b) => a.p - b.p);
     for (const it of todos) it.pl ? desenharPlateia(g, [it.n]) : desenharLutador(g, it.n);
-    FX2D.desenhar(g);
+    FX2D.desenhar(g); desenharRemotos(g);
     if (ganchos.frente) ganchos.frente(g, tempoCena);
     g.setTransform(1, 0, 0, 1, 0, 0);
     if (cam.linhas > 0) linhasVelocidade(g, cw, ch, Math.min(1, cam.linhas), k / 1.5);
@@ -13135,7 +13312,7 @@ const Luta2D = (() => {
     const ca = a.ia ? comandoIA(a, b, dt) : comandoJogador(a), cb = comandoIA(b, a, dt);
     if (luta.travado) { ca.atk = cb.atk = null; ca.mov = cb.mov = 0; ca.esq = cb.esq = ca.pulo = cb.pulo = false; }
     (a.ia ? executarIA : executarJogador)(a, b, ca); executarIA(b, a, cb);
-    fisica(a, b, dt); fisica(b, a, dt); separar(a, b);
+    fisica(a, b, dt); fisica(b, a, dt); separar(a, b); passoRemotos(dt);
     if (!luta.travado) luta.tempo -= dt;
     // falas curtas que dependem do que acontece
     while (luta.eventos.length) eventoLuta(luta.eventos.shift());
@@ -13175,7 +13352,8 @@ const Luta2D = (() => {
   }
   function reposicionar() {
     const [a, b] = L;
-    [[a, -1.6, 1], [b, 1.6, -1]].forEach(([f, x, face]) => { f.x = x; f.face = face; f.y = 0; f.vy = f.vx = 0; f.hp = f.hpMax; f.rastro = 100; f.tontura = 0; f.guarda = 100; mudar(f, 'idle'); f.golpe = null; f.fila = []; });
+    limparRemotos();
+    [[a, -1.6, 1], [b, 1.6, -1]].forEach(([f, x, face]) => { f.superRound = false; f.lento = f.queima = f.choque = 0; f.x = x; f.face = face; f.y = 0; f.vy = f.vx = 0; f.hp = f.hpMax; f.rastro = 100; f.tontura = 0; f.guarda = 100; mudar(f, 'idle'); f.golpe = null; f.fila = []; });
     a.aura = Math.max(a.aura, 20);
   }
   async function anunciarRound() {
@@ -13187,9 +13365,9 @@ const Luta2D = (() => {
   function lutar(cfg) {
     return new Promise(async res => {
       const ex = cfg.vencedor;
-      const a = novoLutador(cfg.a, -6.5, 1, { ia: cfg.a !== 'akira', mult: ex ? (ex === cfg.a ? 1.5 : .55) : 1, escHp: cfg.escHp });
-      const b = novoLutador(cfg.b, 6.5, -1, { ia: true, mult: ex ? (ex === cfg.b ? 1.5 : .55) : 1, escHp: cfg.escHp });
-      L = [a, b];
+      const a = novoLutador(cfg.a, -6.5, 1, { ia: cfg.a !== 'akira', mult: ex ? (ex === cfg.a ? 1.5 : .55) : 1, escHp: cfg.escHp, rodada: cfg.rodada });
+      const b = novoLutador(cfg.b, 6.5, -1, { ia: true, mult: ex ? (ex === cfg.b ? 1.5 : .55) : 1, escHp: cfg.escHp, rodada: cfg.rodada });
+      L = [a, b]; limparRemotos();
       a.aura = 30;
       luta = { cfg, oficial: !!cfg.oficial, precisa: Math.ceil((cfg.rounds || 3) / 2), round: 1, tempo: cfg.tempo || 40, tempoRound: cfg.tempo || 40, eventos: [], travado: true, rodando: false, vencedor: cfg.vencedor, fim: null };
       prepararHud(a, b, luta.precisa); ui.topo.hidden = true;
@@ -13259,9 +13437,9 @@ const Luta2D = (() => {
       quadroCb = (dt, d0) => { if (antigo) antigo(dt, d0); if (pegou('ArrowDown') || pegou('KeyS')) { sel = (sel + 1) % lista.length; desenha(); } if (pegou('ArrowUp') || pegou('KeyW')) { sel = (sel + lista.length - 1) % lista.length; desenha(); } if (pegou('KeyJ') || pegou('Enter') || pegou('KeyE')) fim(sel); };
     });
   }
-  function abortar() { luta = null; esperas = []; ui.topo.hidden = true; L = []; FX2D.limpar(); }
+  function abortar() { limparRemotos(); luta = null; esperas = []; ui.topo.hidden = true; L = []; FX2D.limpar(); }
   return {
-    GOLPES, LUTADORES, abortar, abrir, fechar, quadro, lutar, falas, espera, balao, opcoes, textoCentro, flash, faixasCinema, camFoco, camPan, camLado, montarPlateia, novoLutador, mudar, desenharBoneco, linhas: v => { cam.linhas = v; },
+    get projs() { return projs; }, get zonas() { return zonas; }, GOLPES, LUTADORES, abortar, abrir, fechar, quadro, lutar, falas, espera, balao, opcoes, textoCentro, flash, faixasCinema, camFoco, camPan, camLado, montarPlateia, novoLutador, mudar, desenharBoneco, linhas: v => { cam.linhas = v; },
     get ativo() { return ativo; }, get ui() { return ui; }, get L() { return L; }, set L(v) { L = v; }, get plateia() { return plateia; }, set plateia(v) { plateia = v; }, get luta() { return luta; },
     set quadroCb(f) { quadroCb = f; }, get quadroCb() { return quadroCb; }, set pulando(v) { pulando = v; }, get pulando() { return pulando; }, get tempo() { return tempoCena; },
     set empolgacao(v) { empolgacao = v; }, cam, ganchos, esperaPulavel: s => new Promise(r => esperas.push({ t: s, r, pulavel: true })),
@@ -13455,7 +13633,7 @@ const Torneio = (() => {
     await abertura(m);
     for (const e of pendentesAntes(m)) await exibicao(e);
     const [, op] = ladosDe(m);
-    const cfg = { a: 'akira', b: op, oficial: true, rounds: 3, tempo: 40 };
+    const cfg = { a: 'akira', b: op, oficial: true, rounds: 3, tempo: 45, rodada: rodadaDe(m) };
     if (op === 'oitavo') cfg.antes = () => L.falas(FALAS_DRAGAO.torneio.antes);
     cfg.duranteInicio = (a, b) => { if (op === 'renji') L.balao(b, FALAS_TORNEIO.renji.luta, 2.6); };
     const r = await L.lutar(cfg);
@@ -13775,6 +13953,7 @@ const MapaMundo = (() => {
       else if (o.tipo === 'boneco' || o.tipo === 'makiwara') l.push({ cat: 'treino', x: o.x, y: o.y, nome: 'Treino', desc: 'Boneco de treinamento' });
       else if (o.tipo === 'cavernaBoca') l.push({ cat: 'saida', x: o.x, y: o.y, nome: 'Entrada de caverna', desc: 'Passagem para as cavernas' });
     }
+    if (typeof pontosMissaoMapa === 'function') l.push(...pontosMissaoMapa(M));
     for (const e of (M.exits || [])) { const ok = !e.req || R(e.req); l.push({ cat: 'saida', x: e.x + (e.w || 1) / 2, y: e.y + (e.h || .6) / 2, nome: e.nome || 'Saída', desc: ok ? 'Entrada/saída' : 'Trancada: ' + ((e.req && e.req.msg) || 'requisito não cumprido'), tranca: !ok }); }
     for (const p of (M.portoes || [])) { if (!p.nome) continue; const ok = !p.req || R(p.req); l.push({ cat: 'saida', x: p.x + p.w / 2 - 1, y: p.y + p.h / 2 - 1, nome: 'Portão: ' + p.nome, desc: ok ? 'Passagem entre regiões' : 'Trancado: ' + (p.req.msg || ''), tranca: !ok }); }
     return l;
@@ -14030,7 +14209,437 @@ if (baseExt) {
   fetch(baseExt + '.json').then(r => r.json()).then(m => Akira.carregarExterno(baseExt + '.png', m))
     .then(() => aviso('Sprites PNG carregados!')).catch(() => console.warn('Sprites externos não encontrados; usando o desenho por código.'));
 }
+/* =====================================================================
+   MISSÕES DOS NOVOS NPCs (moradores, mestres, monges e comerciantes das construções)
+   Cada NPC das construções tem uma missão própria. Tipos:
+   - coletar: achar N coisas espalhadas perto da casa dele (brilham no chão e aparecem no mapa)
+   - cacar:   derrotar N inimigos daquela região
+   - entregar: levar uma encomenda para outro NPC
+   - treinar:  fazer N acertos no treino cronometrado do dojo dele
+   Recompensa: XP + respeito com o NPC + presente. Tudo salvo e pago uma vez só.
+   ===================================================================== */
+const TIER_REG = { bambuzal: 1, vilarejo: 1, cachoeira: 2, cerejeiras: 2, templos: 3, cavernas: 4, outono: 4, tangerinas: 5, gt_patio: 5 };
+// id do edifício: [tipo, quantidade, coisa, pedido, agradecimento, (alvo da entrega)]
+const MISSOES_ED = {
+  bam_guardiao: ['cacar', 5, 'bandidos', 'Bandidos andam assustando quem passa pela trilha. Derrote 5 deles para mim.', 'A trilha está segura de novo. Você tem o espírito de um guardião.'],
+  bam_dojo: ['treinar', 10, 'acertos', 'Quero ver sua base. Faça 10 acertos no treino cronometrado aqui do dojo.', 'Boa base! Os primeiros passos são os mais importantes.'],
+  bam_santuario: ['coletar', 4, 'sinos de vento perdidos', 'O vento forte arrancou 4 sinos do santuário e eles caíram pelo bambuzal. Pode trazê-los?', 'Ouça... o santuário voltou a cantar com o vento.'],
+  bam_cha: ['coletar', 5, 'folhas de chá silvestre', 'Minhas pernas já não aguentam subir a colina. Colha 5 folhas de chá silvestre para mim?', 'Hmm, que aroma! O primeiro chá dessa colheita é seu.'],
+  bam_loja: ['entregar', 1, 'cesto de onigiris', 'Preciso mandar este cesto de onigiris para a Pousadeira Yume, aqui no bambuzal. Leva para mim?', 'Entregou? Ótimo! Cliente feliz volta sempre.', 'bam_pousada'],
+  bam_lenhador: ['coletar', 6, 'troncos de bambu cortados', 'Deixei 6 troncos de bambu cortados pela mata e esqueci onde. Me ajuda a juntar?', 'Agora dá para consertar o telhado antes da chuva. Valeu!'],
+  bam_pousada: ['coletar', 3, 'lençóis levados pelo vento', 'O vento levou 3 lençóis do varal! Devem estar presos nos bambus por aí.', 'Camas arrumadas de novo. Você é um herói de verdade, viu?'],
+  bam_ervas: ['coletar', 5, 'ervas de cura', 'Estou sem ervas de cura. Encontre 5 delas pelo bambuzal, elas brilham de leve na grama.', 'Com isso eu preparo remédio para o vilarejo inteiro.'],
+  cac_santuario: ['coletar', 4, 'pedras lisas do rio', 'A oferenda da cachoeira são pedras lisas do rio. Traga 4 para o altar.', 'A água sagrada agradece. E eu também.'],
+  cac_dojo: ['treinar', 12, 'acertos', 'A água vence a pedra pela constância. Faça 12 acertos no treino do dojo.', 'Constância. Você entendeu a lição da água.'],
+  cac_moinho: ['cacar', 5, 'inimigos', 'Gente estranha anda mexendo na roda do moinho. Derrote 5 inimigos na região da cachoeira.', 'A roda gira em paz. Tome, farinha fresquinha... quer dizer, um onigiri!'],
+  cac_pousada: ['entregar', 1, 'carta de reserva', 'Um hóspede reservou quarto na Pousada do Bambu Sereno. Leve esta carta para a Pousadeira Yume?', 'Reserva confirmada! Obrigado, Akira.', 'bam_pousada'],
+  cac_ervas: ['coletar', 4, 'flores de lótus', 'As flores de lótus da margem curam febre. Colha 4 para mim.', 'Perfeitas! Vou fazer chá para os pescadores.'],
+  cac_guardiao: ['cacar', 6, 'inimigos', 'Minha função é proteger as margens. Me ajude: derrote 6 inimigos da Cachoeira.', 'As margens estão em paz. Guardiões não lutam sozinhos.'],
+  cac_ribeira1: ['coletar', 4, 'redes de pesca perdidas', 'A correnteza levou 4 redes de pesca. Elas devem ter enroscado pela margem.', 'Sem redes não tem peixe! Muito obrigado, garoto.'],
+  cac_ribeira2: ['entregar', 1, 'pote de caldo quente', 'Meu neto Nakano, o pescador, esqueceu o almoço. Leve este pote de caldo para ele?', 'Ah, ele comeu tudo? Então valeu a viagem!', 'cac_ribeira1'],
+  cac_silencio: ['coletar', 3, 'velas de meditação', 'Perdi 3 velas de meditação pelo caminho. Sem elas o pavilhão fica escuro demais.', '...Silêncio e luz. Obrigado.'],
+  tem_grande: ['cacar', 6, 'inimigos', 'Espíritos agitados rondam os templos. Derrote 6 inimigos nos Templos Antigos.', 'Os templos respiram de novo. Que os ancestrais guiem você.'],
+  tem_dojo: ['treinar', 14, 'acertos', 'Disciplina é repetir até ficar natural. Faça 14 acertos no treino do dojo.', 'Natural, como deve ser. Muito bem.'],
+  tem_arquivo: ['coletar', 4, 'páginas de pergaminho rasgado', 'Um pergaminho antigo rasgou e as páginas voaram pelos templos. Encontre 4 delas.', 'Incrível... essas páginas falam dos oito guardiões. Obrigado!'],
+  tem_alojamentos: ['coletar', 5, 'telhas soltas', 'A tempestade derrubou 5 telhas do alojamento. Pode juntá-las pelo pátio?', 'Telhado inteiro, monges secos. Valeu, Akira!'],
+  cav_fortaleza: ['cacar', 7, 'inimigos', 'Soldado, as cavernas estão cheias de inimigos. Derrote 7 e volte aqui.', 'Missão cumprida! Você lutaria bem na minha guarda.'],
+  cav_dojo: ['treinar', 14, 'acertos', 'No escuro, só o corpo treinado acerta. Faça 14 acertos no treino.', 'Seu corpo enxerga melhor que seus olhos. Ótimo.'],
+  cav_mina: ['coletar', 5, 'pepitas de cristal', 'Meus carrinhos tombaram e espalharam 5 pepitas de cristal pela caverna!', 'Que brilho! Com isso a mina continua funcionando.'],
+  cav_santuario: ['coletar', 4, 'cristais de visão', 'Preciso de 4 cristais de visão para enxergar o futuro... ou pelo menos o caminho.', 'Hmm... vejo você lutando contra algo muito antigo. Tenha cuidado.'],
+  cav_biblioteca: ['entregar', 1, 'livro emprestado', 'Este livro é da biblioteca do Grande Templo. Devolva ao Bibliotecário Sen, por favor.', 'Livro devolvido no prazo. Raro! Obrigado.', 'gt_biblioteca'],
+  cav_forja: ['coletar', 5, 'pedaços de minério', 'Minha forja está faminta. Traga 5 pedaços de minério das galerias.', 'Esse minério canta no fogo. Bom trabalho!'],
+  cav_abrigo: ['entregar', 1, 'mapa das galerias', 'Desenhei um mapa das galerias. Leve para o Capitão Iwao, na fortaleza, para os soldados não se perderem.', 'O capitão gostou? Então ninguém mais se perde aqui embaixo.', 'cav_fortaleza'],
+  cav_lab: ['coletar', 4, 'amostras de fungo luminoso', 'Estudo os fungos que brilham no escuro. Colete 4 amostras para mim?', 'Fascinante! Eles brilham mais perto dos cristais. Anotado!'],
+  out_guardiao: ['cacar', 6, 'inimigos', 'A floresta de outono está inquieta. Derrote 6 inimigos por aqui.', 'As folhas caem em paz de novo. Obrigada, Akira.'],
+  out_dojo: ['treinar', 15, 'acertos', 'Como folhas no vento: rápido e leve. Faça 15 acertos no treino.', 'Leve como uma folha, firme como a raiz. Excelente.'],
+  out_santuario: ['coletar', 4, 'folhas douradas', 'As oferendas do outono são folhas douradas. Encontre 4 pela floresta.', 'Lindas. A floresta abençoa quem ajuda.'],
+  out_pousada: ['entregar', 1, 'caixa de chá de bordo', 'Mande esta caixa de chá de bordo para a Anfitriã Chiyo, nas Cerejeiras?', 'Ela adorou? Que bom! Somos amigas há muitos anos.', 'cer_cha'],
+  out_forja: ['coletar', 5, 'lascas de ferro', 'Preciso de 5 lascas de ferro velho espalhadas pela floresta.', 'Ferro velho vira ferramenta nova. Obrigado!'],
+  out_ervas: ['coletar', 4, 'cogumelos medicinais', 'Os cogumelos medicinais nascem perto das raízes. Colha 4 para mim.', 'Perfeitos! Com isso trato muitos resfriados.'],
+  cer_santuario: ['coletar', 5, 'pétalas sagradas', 'As pétalas sagradas caem só nas cerejeiras mais antigas. Traga 5 para o altar.', 'O santuário floresceu de novo. Obrigada!'],
+  cer_dojo: ['treinar', 12, 'acertos', 'Graça e precisão! Faça 12 acertos no treino do dojo.', 'Que golpes bonitos! Precisos como uma pétala caindo.'],
+  cer_cha: ['coletar', 4, 'flores para a cerimônia', 'A cerimônia do chá precisa de 4 flores bonitas. Pode colher pelas Cerejeiras?', 'A mesa ficou linda. Sente-se, o chá é por minha conta!'],
+  cer_pousada: ['cacar', 5, 'inimigos', 'Os hóspedes estão com medo de sair. Derrote 5 inimigos nas Cerejeiras?', 'Os hóspedes voltaram a passear. Obrigada!'],
+  cer_oficina: ['coletar', 4, 'galhos de cerejeira caídos', 'Faço pentes e leques com galhos de cerejeira caídos. Traga 4?', 'Vou fazer um leque especial com esses. Obrigado!'],
+  cer_biblioteca: ['entregar', 1, 'poema copiado', 'Copiei um poema antigo para a Escrivã Mai, do Grande Templo. Leve para ela?', 'Ela leu? Que alegria! Poesia é para ser compartilhada.', 'gt_admin'],
+  cer_mestres: ['treinar', 15, 'acertos', 'Um mestre ensina pelo exemplo. Mostre 15 acertos no treino.', 'Você tem futuro. Continue assim.'],
+  cer_casa1: ['coletar', 3, 'gatinhos fujões (sinos de coleira)', 'Meus gatos fugiram e só acho os sininhos das coleiras! Traga os 3 sinos que eles volta para casa.', 'Ouviu? Eles já estão miando na porta. Obrigada!'],
+  cer_casa2: ['coletar', 5, 'mudas de flor', 'Plantei mudas novas mas os pássaros espalharam 5 delas. Junta para mim?', 'O jardim agradece! Vai ficar lindo na primavera.'],
+  vil_suprimentos: ['entregar', 1, 'saco de arroz', 'Este saco de arroz é da Senhora Tanaka. Entrega para ela aqui no vilarejo?', 'Entregue! Freguesia satisfeita.', 'vil_casa1'],
+  vil_ervas: ['coletar', 5, 'ervas do campo', 'Preciso de 5 ervas do campo para os remédios. Elas brilham na grama do vilarejo.', 'Obrigada! A boticária nunca pode ficar sem estoque.'],
+  vil_alfaiate: ['coletar', 4, 'carretéis de linha', 'Deixei cair 4 carretéis de linha voltando do mercado. Acha para mim?', 'Agora termino seu quimono novo... um dia! Obrigado.'],
+  vil_ceramica: ['coletar', 4, 'blocos de argila boa', 'A melhor argila fica perto da água. Traga 4 blocos?', 'Vou fazer uma tigela só para você.'],
+  vil_banhos: ['coletar', 4, 'pedras quentes', 'Os banhos precisam de 4 pedras quentes novas. Procure pelas redondezas.', 'A água vai ficar quentinha! Volte para um banho.'],
+  vil_salao: ['entregar', 1, 'convite para a reunião', 'Leve este convite da reunião do vilarejo para o Guarda Masa?', 'Ótimo. Com a guarda presente, a reunião vai ser tranquila.', 'vil_guarda'],
+  vil_guarda: ['cacar', 4, 'inimigos', 'Tem gente suspeita perto do vilarejo. Derrote 4 inimigos nas estradas daqui.', 'Ronda feita! O vilarejo dorme tranquilo hoje.'],
+  vil_casa1: ['coletar', 3, 'galinhas fujonas (penas)', 'Minhas galinhas fugiram! Siga as 3 penas que elas deixaram.', 'Ahh, todas em casa! Tome, um presentinho.'],
+  vil_casa2: ['coletar', 5, 'espigas caídas', 'A carroça tombou e espalhou 5 espigas pela estrada. Me ajuda?', 'Colheita salva! Muito obrigado, Akira.'],
+  vil_casa3: ['entregar', 1, 'peixe fresco', 'Pesquei um peixe enorme! Leva para o Cozinheiro Goro-san, no Grande Templo?', 'Ele vai fazer um banquete! Valeu!', 'gt_refeitorio'],
+  vil_casa4: ['coletar', 3, 'páginas do meu diário de viagem', 'O vento levou 3 páginas do meu diário de viagem! Elas estão pelo vilarejo.', 'Minhas memórias voltaram! Obrigado, amigo.'],
+  vil_santuario: ['coletar', 4, 'incensos', 'Os incensos do santuário acabaram. Encontre 4 pelo vilarejo? Os moradores deixam como oferenda nas trilhas.', 'O santuário está perfumado de novo. Obrigado.'],
+  vil_enfermaria: ['entregar', 1, 'caixa de bandagens', 'Leve esta caixa de bandagens para a Médica Sayo, no Grande Templo?', 'Chegou na hora certa. Obrigada!', 'gt_enfermaria'],
+  vil_armazem: ['coletar', 5, 'caixotes perdidos', 'Perdi a conta: 5 caixotes caíram da carroça! Acha para mim?', 'Estoque conferido! Pode contar comigo.'],
+  gt_palacio: ['cacar', 8, 'inimigos', 'Por ordem do palácio: derrote 8 inimigos no Pátio do Grande Templo e arredores.', 'O palácio reconhece sua coragem.'],
+  gt_admin: ['entregar', 1, 'registro de inscrição', 'Este registro precisa chegar ao Instrutor Raiden, no salão de treino.', 'Registro entregue. Tudo em ordem!', 'gt_treino'],
+  gt_treino: ['treinar', 18, 'acertos', 'Aqui treinam os melhores. Faça 18 acertos no treino.', 'Você tem nível de Grande Templo. Parabéns!'],
+  gt_alojamento: ['coletar', 4, 'faixas de treino perdidas', 'Perdi 4 faixas de treino dos meus colegas pelo pátio... me ajuda antes que percebam?', 'Ufa! Ninguém vai saber. Obrigada, Akira!'],
+  gt_mestres: ['treinar', 20, 'acertos', 'Mostre-me 20 acertos no treino. Depois conversamos sobre o caminho.', 'Seu caminho está só começando. E começou bem.'],
+  gt_refeitorio: ['coletar', 5, 'tangerinas maduras', 'Faltam 5 tangerinas para a sobremesa dos discípulos! Encontre no pátio e arredores.', 'Sobremesa garantida! Pegue uma para você.'],
+  gt_biblioteca: ['coletar', 4, 'marcadores de seda', 'Os marcadores de seda sumiram dos livros. Encontre 4 pelo pátio?', 'Silêncio... e obrigado. Os livros agradecem.'],
+  gt_santuario: ['coletar', 4, 'lanternas de papel apagadas', 'Quatro lanternas de papel voaram com o vento. Traga-as para o santuário.', 'Que a luz delas guie você.'],
+  gt_enfermaria: ['coletar', 4, 'ervas raras', 'As ervas raras crescem perto dos muros do pátio. Traga 4 para a enfermaria.', 'Com isso trato até os lutadores mais teimosos.'],
+  gt_guarda: ['cacar', 7, 'inimigos', 'Capitã Rin-to falando: derrote 7 inimigos nas redondezas do Grande Templo.', 'Excelente! A guarda do templo agradece.'],
+  tg_agricultores: ['coletar', 6, 'tangerinas caídas', 'O vento derrubou 6 tangerinas no pomar. Ajuda a recolher?', 'Pomar limpo, cesto cheio! Obrigada!'],
+  tg_armazem: ['entregar', 1, 'caixa de tangerinas', 'Esta caixa vai para a Agricultora Mikan conferir. Leva lá?', 'Caixa conferida! Valeu, Akira.', 'tg_agricultores'],
+  tg_eremita: ['coletar', 3, 'pedras espirituais', 'Hmm... três pedras espirituais rolaram montanha abaixo. Se achar, traga.', 'As pedras dizem que você é confiável. Elas raramente erram.'],
+  tg_santuario: ['cacar', 6, 'inimigos', 'Os pomares sagrados precisam de proteção. Derrote 6 inimigos nas Tangerinas.', 'Os pomares estão seguros. Obrigada, protetor.'],
+  tg_oficina: ['coletar', 4, 'pedaços de madeira nobre', 'Preciso de 4 pedaços de madeira nobre para entalhar uma estátua.', 'Vou entalhar um dragão... bem pequeno. Obrigado!'],
+  tg_mestres: ['treinar', 20, 'acertos', 'Um velho mestre quer ver um jovem lutador. 20 acertos no treino.', 'Hoho! Faz anos que não vejo golpes assim.'],
+  tg_pousada: ['entregar', 1, 'cesta de boas-vindas', 'Leve esta cesta de boas-vindas para o Eremita Mukashi? Ele nunca desce da cabana...', 'Ele aceitou? Milagre! Obrigada.', 'tg_eremita']
+};
+// presentes que dá para ganhar (e dar no menu de respeito)
+Object.assign(ITENS, {
+  dango: { nome: 'Dango doce (presente)', tipo: 'presente' },
+  incenso: { nome: 'Incenso perfumado (presente)', tipo: 'presente' },
+  flor_silvestre: { nome: 'Flor silvestre (presente)', tipo: 'presente' }
+});
+const GOSTA_PAPEL = { monge: 'incenso', mestre: 'cha', cura: 'flor_silvestre', loja: 'onigiri', pousada: 'dango', morador: 'dango', leitura: 'cha', guarda: 'onigiri', forja: 'onigiri', artesao: 'flor_silvestre', eremita: 'incenso', 'guardião': 'cha' };
+const PRESENTE_PAPEL = { monge: 'incenso', mestre: 'cha', cura: 'flor_silvestre', loja: 'dango', pousada: 'dango', morador: 'dango', leitura: 'incenso', guarda: 'onigiri', forja: 'onigiri', artesao: 'flor_silvestre', eremita: 'incenso', 'guardião': 'cha' };
+const slugNpc = n => 'ed_' + n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+function nomeRegiaoEd(r) { if (r === 'cavernas') return 'Cavernas'; try { return regraDe(r).nome; } catch (e) { return r; } }
+const NPC_ED = {};                                                       // pid -> { ed, nome, papel, reg }
+const PID_NOME = {};                                                     // nome -> pid
+(() => {
+  for (const reg in EDIFICIOS) for (const e of EDIFICIOS[reg]) {
+    const op = e[4] || {}; if (!op.npc) continue;
+    const [nome, papel] = op.npc, pid = slugNpc(nome);
+    NPC_ED[pid] = { ed: e[0], nome, papel, reg }; PID_NOME[nome] = pid;
+    RELACOES[pid] = { nome, elemento: null, local: e[1] + ' (' + nomeRegiaoEd(reg) + ')', aliado: false, ed: e[0], papel };
+    PERSONAGENS[pid] = PERSONAGENS[pid] || { nome };
+    const M = MISSOES_ED[e[0]]; if (!M) continue;
+    const id = 'npc_' + e[0], [tipo, qtd, coisa] = M;
+    MISSOES[id] = { nome: tituloMissaoEd(tipo, coisa, nome), dono: pid, tipo, qtd, coisa, ed: e[0], reg, alvoEd: M[5] || null,
+      objetivo: () => objetivoMissaoEd(id) };
+    SOCIAL_MISSOES[pid] = [id];
+    if (tipo === 'entregar') ITENS['enc_' + e[0]] = { nome: coisa[0].toUpperCase() + coisa.slice(1) + ' (entrega)', tipo: 'missao' };
+  }
+})();
+function tituloMissaoEd(tipo, coisa, nome) {
+  const curto = nome.split(' ').slice(-1)[0];
+  const c = coisa.split(' (')[0]; return tipo === 'cacar' ? 'Proteção pedida por ' + curto : tipo === 'treinar' ? 'O treino de ' + curto : tipo === 'entregar' ? 'Entrega de ' + curto : c[0].toUpperCase() + c.slice(1) + ' para ' + curto;
+}
+// moradores que já existiam também passam a ter respeito (conversas e presentes)
+[['debora', 'Mestra Débora', 'Dojo do Vilarejo'], ['kenzo', 'Mestre Kenzo', null], ['ayame', 'Ayame', null], ['gil', 'Gil', 'Arena dos Grandes Mestres'], ['ramor', 'Ramor', 'Restaurante do Grande Templo'], ['pibe', 'Pibe', null], ['michele', 'Michele', null],
+ ['luiza', 'Luiza', 'Grande Templo'], ['lane', 'Lane', 'Floricultura Flor de Liz (Cerejeiras)'], ['lucas', 'Lucas', null], ['levi', 'Levi', null], ['valkira', 'Valkira', null], ['maya', 'Maya', null], ['karina', 'Karina', 'Floresta das Tangerinas'], ['alana', 'Alana', null]]
+  .forEach(([pid, nome, local]) => { if (!RELACOES[pid]) RELACOES[pid] = { nome, elemento: null, local, aliado: false }; });
+const pidEd = o => o && o.fala === 'ed' && o.nome ? PID_NOME[o.nome] || null : null;
+const progM = id => estado.mprog[id] || (estado.mprog[id] = { n: 0 });
+function objetivoMissaoEd(id) {
+  const M = MISSOES[id], p = progM(id), nm = NPC_ED[M.dono] ? NPC_ED[M.dono].nome : '';
+  if (M.tipo === 'entregar') { const alvo = EDIF[M.alvoEd]; const quem = alvo && EDIFICIOS_NPC(M.alvoEd); return p.n >= 1 ? 'Entregue! Fale com ' + nm : 'Leve ' + M.coisa + ' para ' + (quem || '?') + ' (' + (alvo ? alvo.nome : '') + ')'; }
+  if (p.n >= M.qtd) return 'Pronto! Volte e fale com ' + nm;
+  if (M.tipo === 'cacar') return 'Derrote ' + M.qtd + ' ' + M.coisa + ' na região: ' + p.n + '/' + M.qtd;
+  if (M.tipo === 'treinar') return 'Faça ' + M.qtd + ' acertos no treino do ' + EDIF[M.ed].nome + ' (melhor: ' + p.n + ')';
+  return 'Encontre ' + M.coisa + ': ' + p.n + '/' + M.qtd + ' (brilham no chão perto de ' + EDIF[M.ed].nome + ')';
+}
+function EDIFICIOS_NPC(edId) { for (const pid in NPC_ED) if (NPC_ED[pid].ed === edId) return NPC_ED[pid].nome; return null; }
+const recompensaEd = M => ({ xp: 30 + 15 * (TIER_REG[M.reg] || 1), item: PRESENTE_PAPEL[(NPC_ED[M.dono] || {}).papel] || 'onigiri' });
+// espalha as coisas para coletar perto da construção (só em chão livre, fora da água)
+function espalharColeta(id) {
+  const M = MISSOES[id], p = progM(id); if (p.pts) return;
+  garantirPosEdif(M.ed); const P = EDIF_POS[M.ed]; if (!P) return;
+  const Mp = P.mapa === 'caverna' ? obterCaverna() : obterMundo(), rnd = mulberry32(id.length * 977 + M.qtd * 31 + id.charCodeAt(4) * 13), pts = [];
+  for (let t = 0; t < 400 && pts.length < M.qtd; t++) {
+    const a = rnd() * TAU, r = 5 + rnd() * (P.mapa === 'caverna' ? 9 : 15), x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r;
+    const i = Math.floor(x), j = Math.floor(y); if (!Mp.tiles[j] || Mp.tiles[j][i] == null || Mp.tiles[j][i] === T.AGUA || (Mp.bloq && Mp.bloq[j] && Mp.bloq[j][i])) continue;
+    if (Mp.regiaoEm && Mp.regiaoEm(x, y) && Mp.regiaoEm(x, y).lago) continue;
+    if (pts.some(q => Math.hypot(q[0] - x, q[1] - y) < 2.5)) continue;
+    pts.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+  }
+  p.pts = pts; p.mapa = P.mapa; p.pegos = pts.map(() => 0);
+}
+function aceitarMissaoEd(id) {
+  if (stM(id) !== 'nao_iniciada') return;
+  const M = MISSOES[id]; estado.missoes[id] = 'em_andamento'; progM(id).n = 0;
+  if (M.tipo === 'coletar') espalharColeta(id);
+  if (M.tipo === 'entregar') estado.inv['enc_' + M.ed] = 1;
+  estado.rastreio = id; hudChave = '';
+  aviso('Nova missão: ' + M.nome + ' (aparece no mapa e no menu H)'); salvar();
+}
+function concluirMissaoEd(id) {
+  if (stM(id) === 'concluida') return;
+  const M = MISSOES[id], R = recompensaEd(M);
+  estado.missoes[id] = 'concluida'; if (estado.rastreio === id) estado.rastreio = null;
+  delete estado.inv['enc_' + M.ed];
+  ganharXp(R.xp); estado.inv[R.item] = (estado.inv[R.item] || 0) + 1;
+  ganharRespeito(M.dono, 25, 'missao');
+  aviso('Missão concluída: ' + M.nome + ' • +' + R.xp + ' XP • ' + ITENS[R.item].nome + ' • respeito com ' + NPC_ED[M.dono].nome + ' subiu!');
+  hudChave = ''; salvar();
+}
+// conversa com NPC das construções: oferece, acompanha e entrega a missão
+function missaoNpcED(o) {
+  const pid = pidEd(o); if (!pid) return false;
+  conhecer(pid);
+  // alguém trazendo uma entrega para este NPC?
+  for (const id in MISSOES) { const M = MISSOES[id]; if (M.tipo === 'entregar' && M.alvoEd === NPC_ED[pid].ed && stM(id) === 'em_andamento' && progM(id).n < 1) {
+    progM(id).n = 1; delete estado.inv['enc_' + M.ed]; ganharRespeito(pid, 8);
+    abrirConversa({ falas: [{ p: null, nome: o.nome, t: 'Isso é para mim? ' + M.coisa[0].toUpperCase() + M.coisa.slice(1) + ', da parte de ' + NPC_ED[M.dono].nome + '! Muito obrigado, Akira.' }, NARR('Entrega feita! Volte e conte para ' + NPC_ED[M.dono].nome + '.')] });
+    hudChave = ''; salvar(); return true; } }
+  const id = 'npc_' + NPC_ED[pid].ed, M = MISSOES[id]; if (!M) return false;
+  const st = stM(id), cab = falasED(o.nome, o.edPapel, EDIF[o.ed]).slice(0, 1);
+  if (st === 'nao_iniciada') {
+    abrirConversa({ falas: cab.concat([{ p: null, nome: o.nome, t: MISSOES_ED[M.ed][3] }]), opcoes: [
+      { t: 'Pode deixar comigo!', eventos: [() => aceitarMissaoEd(id)] },
+      ...(o.servico === 'cura' ? [{ t: 'Antes, cuide dos meus ferimentos', eventos: [() => { estado.hp = maxHp(); estado.aura = Math.min(maxAura(), estado.aura + 15); aviso('Tratamento completo: vida cheia e +15 de aura.'); salvar(); }] }] : []),
+      { t: 'Agora não.' }] });
+    return true;
+  }
+  if (st === 'em_andamento') {
+    const p = progM(id), pronto = M.tipo === 'entregar' ? p.n >= 1 : p.n >= M.qtd;
+    if (pronto) { abrirConversa({ falas: [{ p: null, nome: o.nome, t: MISSOES_ED[M.ed][4] }], fim: [{ fn: () => concluirMissaoEd(id) }] }); return true; }
+    if (o.servico === 'cura') return false;                                // a curandeira continua oferecendo o tratamento
+    abrirConversa({ falas: [{ p: null, nome: o.nome, t: 'Como vai a missão? ' + objetivoMissaoEd(id) + '.' }] }); return true;
+  }
+  return false;                                                            // concluída: falas normais do NPC
+}
+// contadores das missões (inimigos derrotados, treino, coleta)
+function regiaoDoInimigo(o) { if (mapa.grande && mapa.regiaoEm) { const R = mapa.regiaoEm(o.x, o.y); return R && R.id; } return mapa.id === 'caverna' ? 'cavernas' : null; }
+function missaoCacou(o) {
+  const reg = regiaoDoInimigo(o); if (!reg) return;
+  for (const id in MISSOES) { const M = MISSOES[id]; if (M.tipo !== 'cacar' || M.reg !== reg || stM(id) !== 'em_andamento') continue;
+    const p = progM(id); if (p.n >= M.qtd) continue; p.n++; hudChave = '';
+    aviso(M.nome + ': ' + p.n + '/' + M.qtd + (p.n >= M.qtd ? ' — volte e fale com ' + NPC_ED[M.dono].nome : '')); }
+}
+function missaoTreinou(n) {
+  const sala = SALA_DE[mapa.id], ed = sala && sala.ed; if (!ed) return;
+  const id = 'npc_' + ed, M = MISSOES[id]; if (!M || M.tipo !== 'treinar' || stM(id) !== 'em_andamento') return;
+  const p = progM(id); if (n > p.n) p.n = n; hudChave = '';
+  aviso(p.n >= M.qtd ? M.nome + ': conseguiu! Fale com ' + NPC_ED[M.dono].nome : M.nome + ': ' + n + '/' + M.qtd + ' acertos — tente de novo!');
+}
+const ICONE_COLETA = { sinos: '#ffe08a', folhas: '#7fd85a', troncos: '#c89a5a', 'lençóis': '#f4f4ff', ervas: '#8af07a', pedras: '#b8c8d8', flores: '#ff9fd0', redes: '#d8c8a0', velas: '#fff2b0', 'páginas': '#f4e6c0', telhas: '#c86a4a', pepitas: '#9ae8ff', cristais: '#c8a0ff', pedaços: '#a89888', amostras: '#8affd8', folhas_d: '#ffc84a', lascas: '#9a9aa8', cogumelos: '#ff8a6a', 'pétalas': '#ffb8d8', galhos: '#a8784a', gatinhos: '#ffe08a', mudas: '#7ad86a', carretéis: '#ff7a9a', blocos: '#c8885a', espigas: '#ffd84a', incensos: '#d8a0ff', caixotes: '#b8884a', faixas: '#ffffff', tangerinas: '#ff9a2a', marcadores: '#d84a6a', lanternas: '#ffb84a', galinhas: '#fff4e0' };
+const corColeta = M => ICONE_COLETA[M.coisa.split(' ')[0]] || '#ffe36a';
+function tickMissoesNpc() {
+  if (MODO_TELA !== 'jogo' || dlg.ativo || !mapa) return;
+  for (const id in MISSOES) {
+    const M = MISSOES[id]; if (M.tipo !== 'coletar' || stM(id) !== 'em_andamento') continue;
+    const p = progM(id); if (!p.pts) espalharColeta(id); if (!p.pts || p.mapa !== mapa.id) continue;
+    p.pts.forEach((q, k) => { if (p.pegos[k] || Math.hypot(q[0] - jog.x, q[1] - jog.y) > .9) return;
+      p.pegos[k] = 1; p.n = p.pegos.filter(Boolean).length; hudChave = ''; Som.efeito && Som.efeito('confirma');
+      popup(q[0], q[1], '+1', corColeta(M)); aviso(M.nome + ': ' + p.n + '/' + M.qtd + (p.n >= M.qtd ? ' — volte e fale com ' + NPC_ED[M.dono].nome : '')); salvar(); });
+  }
+}
+function desenharItensMissao(g) {
+  if (!mapa || mapa.interior) return;
+  for (const id in MISSOES) {
+    const M = MISSOES[id]; if (M.tipo !== 'coletar' || stM(id) !== 'em_andamento') continue;
+    const p = progM(id); if (!p.pts || p.mapa !== mapa.id) continue;
+    const cor = corColeta(M), rast = estado.rastreio === id;
+    p.pts.forEach((q, k) => {
+      if (p.pegos[k]) return; const [sx, sy] = iso(q[0], q[1]); if (Math.abs(sx - camera.x) > W / 2 + 40 || Math.abs(sy - camera.y) > H / 2 + 60) return;
+      const b = Math.sin(tempo * 3 + k) * 2;
+      g.save(); g.globalCompositeOperation = 'lighter';
+      const gr = g.createRadialGradient(sx, sy - 6 + b, 1, sx, sy - 6 + b, 16); gr.addColorStop(0, 'rgba(255,255,220,.75)'); gr.addColorStop(1, 'rgba(255,240,160,0)'); g.fillStyle = gr; g.fillRect(sx - 16, sy - 22 + b, 32, 32);
+      if (rast) { g.fillStyle = 'rgba(255,240,170,.18)'; g.fillRect(sx - 2, sy - 70, 4, 64); }
+      g.restore();
+      g.save(); g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 4, 1.8, 0, 0, TAU); g.fill();
+      g.translate(sx, sy - 7 + b); g.rotate(Math.sin(tempo * 2 + k) * .25);
+      g.fillStyle = cor; g.strokeStyle = '#2a1a10'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -4); g.lineTo(3.5, 0); g.lineTo(0, 4); g.lineTo(-3.5, 0); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(-1, -2.5, 1.2, 1.2);
+      g.restore();
+    });
+  }
+}
+// pontos no mapa (tecla N): coisas para coletar e o destino da missão rastreada
+function pontosMissaoMapa(M0) {
+  const l = [];
+  for (const id in MISSOES) {
+    const M = MISSOES[id]; if (!M.dono || stM(id) !== 'em_andamento') continue;
+    const p = progM(id);
+    if (M.tipo === 'coletar' && p.pts && p.mapa === M0.id) p.pts.forEach((q, k) => { if (!p.pegos[k]) l.push({ cat: 'item', x: q[0], y: q[1], nome: M.coisa, desc: 'Missão: ' + M.nome }); });
+    const alvo = M.tipo === 'entregar' && p.n < 1 ? M.alvoEd : (M.tipo === 'coletar' && p.n < M.qtd) || (M.tipo === 'cacar' && p.n < M.qtd) ? null : M.ed;
+    const P = alvo && EDIF_POS[alvo]; if (P && P.mapa === M0.id) l.push({ cat: 'npc', x: P.x, y: P.y, nome: (alvo === M.ed ? NPC_ED[M.dono].nome : EDIFICIOS_NPC(alvo)), desc: 'Missão: ' + M.nome });
+  }
+  return l;
+}
+// respeito do dia: conversar dá um pouco de respeito uma vez por dia do jogo; presentes também (1 por dia)
+const diaJogo = () => estado.dia || 0;
+function conversaDiaria(o) {
+  const pid = pidEd(o) || (FALA_RELACAO[o.fala] && FALA_RELACAO[o.fala][0]) || (RELACOES[o.fala] ? o.fala : null) || (RELACOES[o.pid] ? o.pid : null);
+  if (!pid || !RELACOES[pid]) return;
+  const r = relacao(pid), novo = !r.conhece; conhecer(pid); r.visto = mapa && mapa.nome;
+  if (r.diaConversa !== diaJogo() || novo) { r.diaConversa = diaJogo(); ganharRespeito(pid, novo ? 4 : 3); }
+}
+function darPresente(pid, item) {
+  const R = RELACOES[pid]; if (!R) return 'Ninguém para receber.';
+  const r = relacao(pid); if (!r.conhece) return 'Você ainda não conhece ' + R.nome + '.';
+  if (!(estado.inv[item] > 0) || !ITENS[item] || ITENS[item].tipo === 'missao') return 'Você não tem esse item.';
+  if (r.diaPresente === diaJogo()) return R.nome + ' já ganhou um presente hoje. Amanhã (no jogo) dá para dar outro!';
+  estado.inv[item]--; if (!estado.inv[item]) delete estado.inv[item];
+  const gosto = GOSTA_PAPEL[R.papel] || ({ henrique: 'onigiri', nicolas: 'cha', pietra: 'onigiri', luna: 'dango', rita: 'flor_silvestre', davi: 'cha', lane: 'flor_silvestre', debora: 'cha', gil: 'onigiri', karina: 'dango', luiza: 'flor_silvestre' })[pid];
+  const pts = item === gosto ? 12 : ITENS[item].tipo === 'presente' ? 7 : 5;
+  r.diaPresente = diaJogo(); ganharRespeito(pid, pts); salvar(); hudChave = '';
+  return item === gosto ? R.nome + ' AMOU o presente! (+' + pts + ' respeito)' : R.nome + ' gostou do presente. (+' + pts + ' respeito)';
+}
+
+/* ---------- menu de respeito FUNCIONAL: filtros, ficha de cada personagem, presentes e rastrear missão ---------- */
+(() => { const st = document.createElement('style'); st.textContent = `
+  #social .sc-filtros { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px 2px; }
+  #social .sc-filtros button, #social .sc-bt { border: 3px solid #8a4414; background: linear-gradient(#ffe0a8, #f2b46a); color: #4a1c04; font-weight: bold; font-size: 13px; padding: 4px 10px; border-radius: 4px; cursor: pointer; box-shadow: inset 0 2px 0 #fff0cc; font-family: inherit; }
+  #social .sc-filtros button.on { background: linear-gradient(#ffcf6a, #e8902a); color: #fff; text-shadow: 1px 1px 0 #6a2a08; }
+  #social .sc-bt:active, #social .sc-filtros button:active { transform: translateY(1px); }
+  #social .sc-bt.verde { background: linear-gradient(#a8f08a, #5ab43a); color: #fff; text-shadow: 1px 1px 0 #1a4a0a; border-color: #2a6a1a; }
+  #social .sc-linha { cursor: pointer; } #social .sc-linha:hover { filter: brightness(1.06); }
+  #social .sc-presente { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 22px; }
+  #social .sc-presente.feito { filter: grayscale(1); opacity: .5; }
+  #social .sc-ficha { display: grid; grid-template-columns: 120px 1fr; gap: 12px; background: #ffd497; border: 3px solid #b0601e; padding: 10px; color: #4a1c04; box-shadow: inset 0 0 0 2px #ffe6b8; }
+  #social .sc-ficha canvas { width: 112px; height: 112px; border: 3px solid #8a4414; border-radius: 6px; background: #e8a85c; }
+  #social .sc-ficha h3 { margin: 0 0 4px; font-size: 21px; } #social .sc-ficha p { margin: 3px 0; font-size: 13px; }
+  #social .sc-barra { height: 12px; background: #c97a34; border: 2px solid #8a4414; border-radius: 6px; overflow: hidden; margin: 4px 0 2px; }
+  #social .sc-barra i { display: block; height: 100%; background: linear-gradient(#ff8a6a, #d83a1e); }
+  #social .sc-sub { color: #5a2408; font-weight: bold; font-size: 14px; margin: 10px 0 6px; }
+  #social .sc-itens { display: flex; gap: 6px; flex-wrap: wrap; }
+  #social .sc-msg { background: #fff2d0; border: 2px dashed #b0601e; padding: 6px 8px; color: #4a1c04; font-size: 13px; margin: 6px 0; }
+  #social .sc-mrow { cursor: pointer; } #social .sc-mdet { grid-column: 1 / -1; font-size: 13px; color: #4a1c04; border-top: 2px dashed #b0601e; padding-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #social .sc-rast { color: #c8326a; font-weight: bold; }
+  @media (max-width: 640px) { #social .sc-ficha { grid-template-columns: 1fr; } #social .sc-ficha canvas { width: 80px; height: 80px; } #social .sc-mrow { grid-template-columns: 30px 1fr; } #social .sc-mrow > :nth-child(n+3) { grid-column: 2; } #social .sc-painel { padding: 10px 44px 10px 8px; } }
+`; document.head.appendChild(st); })();
+let socialFiltro = 'todos', socialMFiltro = 'andamento', socialFicha = null, socialAberta = null, socialMsg = '';
+const nomeRel = pid => (RELACOES[pid] || PERSONAGENS[pid] || {}).nome || pid;
+const palDe = pid => NPC_ED[pid] ? palED(NPC_ED[pid].nome) : PAL_NPC[pid] || (pid === 'pietra' ? PAL_PIETRA : pid === 'rita' ? PAL_RITA : pid === 'davi' ? PAL_DAVI : null);
+function idsRespeito() {
+  const conhecidos = Object.keys(RELACOES).filter(p => relacao(p).conhece || (SOCIAL_MISSOES[p] || []).some(m => stM(m) !== 'nao_iniciada'));
+  const ordem = p => { const i = SOCIAL_ORDEM.indexOf(p); return i >= 0 ? i : 100; };
+  return conhecidos.filter(p => socialFiltro === 'todos' || (socialFiltro === 'aliados' ? RELACOES[p].aliado : !RELACOES[p].aliado))
+    .sort((a, b) => ordem(a) - ordem(b) || relacao(b).pts - relacao(a).pts || nomeRel(a).localeCompare(nomeRel(b)));
+}
+function coracoes(pid) { const r = relacao(pid), max = REGRAS_RESPEITO.limites[REGRAS_RESPEITO.limites.length - 1], n = Math.max(0, Math.min(10, Math.floor(r.pts / max * 10))); let h = ''; for (let k = 0; k < 10; k++) h += coracaoSvg(k < n ? 'cheio' : 'vazio'); return h; }
+function linhaSocial(pid) {
+  const r = relacao(pid), g = grauDe(pid), R = RELACOES[pid] || {};
+  const sit = !r.conhece ? 'ainda não conhece' : (GRAUS[g] || '—') + (R.aliado ? (estado.parceiro === pid ? ' • parceiro' : ' • aliado') : '');
+  const ms = SOCIAL_MISSOES[pid] || []; let caixas = '';
+  for (const id of ms) { const st = stM(id), nm = (MISSOES[id] || { nome: id === 'grande_torneio' ? 'O Grande Torneio' : id }).nome; caixas += `<span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}" title="${nm}"></span>`; }
+  if (!ms.length) caixas = '<small style="color:#7a3a10">sem missões</small>';
+  const deu = r.diaPresente === diaJogo();
+  return `<div class="sc-linha" data-ficha="${pid}"><div class="sc-ret"><canvas width="96" height="96" data-ret="${pid}"></canvas></div><div class="sc-nome">${nomeRel(pid)}<small>(${sit})</small></div><div class="sc-cor">${coracoes(pid)}</div><div class="sc-mis"><button class="sc-presente ${deu ? 'feito' : ''}" data-presente="${pid}" title="${deu ? 'Já ganhou presente hoje' : 'Dar presente'}">🎁</button>${caixas}</div></div>`;
+}
+function botoesPresente(pid) {
+  const ids = Object.keys(estado.inv).filter(k => estado.inv[k] > 0 && ITENS[k] && ITENS[k].tipo !== 'missao');
+  if (!ids.length) return '<p><small>Você não tem itens para presentear. Missões e baús dão onigiri, chá, dango, incenso e flores.</small></p>';
+  if (relacao(pid).diaPresente === diaJogo()) return '<p><small>Já ganhou um presente hoje. Volte amanhã (no relógio do jogo)!</small></p>';
+  return '<div class="sc-itens">' + ids.map(k => `<button class="sc-bt" data-dar="${k}" data-pid="${pid}">${ITENS[k].nome.split(' (')[0]} x${estado.inv[k]}</button>`).join('') + '</div>';
+}
+function fichaSocial(pid) {
+  const R = RELACOES[pid] || {}, r = relacao(pid), g = grauDe(pid), L = REGRAS_RESPEITO.limites, ini = L[g] || 0, prox = L[g + 1];
+  const pct = prox == null ? 100 : Math.round((r.pts - ini) / (prox - ini) * 100);
+  const ms = (SOCIAL_MISSOES[pid] || []).map(id => { const M = MISSOES[id] || { nome: 'O Grande Torneio', objetivo: () => '' }, st = stM(id);
+    return `<div class="sc-mrow" data-mis="${id}"><span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}"></span><div><b>${M.nome}</b><br><small>${st === 'em_andamento' ? M.objetivo() : st === 'concluida' ? 'Concluída ✔' : 'Fale com ' + nomeRel(pid) + ' para começar'}</small></div></div>`; }).join('') || '<p><small>Sem missões com este personagem.</small></p>';
+  const dicas = ['Converse todo dia (+3)', 'Dê presentes (1 por dia)', 'Faça as missões dele (+25)'].concat(R.aliado ? ['Lute junto contra os chefes'] : []);
+  return `<p class="sc-filtros"><button data-voltar="1">◀ Voltar</button></p>${socialMsg ? '<p class="sc-msg">' + socialMsg + '</p>' : ''}
+    <div class="sc-ficha"><canvas width="128" height="128" data-ret="${pid}"></canvas><div>
+      <h3>${nomeRel(pid)}</h3>
+      <p>${R.elemento ? 'Elemento: <b>' + R.elemento + '</b> • ' : ''}${R.aliado ? 'Pode ser parceiro de luta' : ({ cura: 'Cura e ervas', monge: 'Santuário', mestre: 'Mestre de dojo', loja: 'Comerciante', pousada: 'Hospedagem', leitura: 'Biblioteca e registros', guarda: 'Guarda', forja: 'Forja', artesao: 'Artesanato', eremita: 'Eremita', 'guardião': 'Guardião da região' })[R.papel] || 'Morador'}</p>
+      <p>📍 ${R.local || r.visto || 'Local ainda desconhecido'}</p>
+      <div class="sc-cor">${coracoes(pid)}</div>
+      <p>Grau ${g}: <b>${GRAUS[g] || '—'}</b> • ${r.pts} pontos${prox != null ? ' (faltam ' + Math.max(0, prox - r.pts) + ' para ' + GRAUS[g + 1] + ')' : ' (máximo!)'}</p>
+      <div class="sc-barra"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>
+      <p><small>Como ganhar respeito: ${dicas.join(' • ')}</small></p>
+      ${R.aliado && g >= REGRAS_RESPEITO.parceiroMinimo ? `<p><button class="sc-bt ${estado.parceiro === pid ? 'verde' : ''}" data-parceiro="${pid}">${estado.parceiro === pid ? 'Parceiro ✔' : 'Escolher como parceiro'}</button></p>` : ''}
+    </div></div>
+    <p class="sc-sub">🎁 Dar presente</p>${botoesPresente(pid)}
+    <p class="sc-sub">📜 Missões</p>${ms}`;
+}
+function linhaMissao(id) {
+  const st = stM(id), M = MISSOES[id] || { nome: 'O Grande Torneio', objetivo: () => '' }, dono = M.dono || Object.keys(SOCIAL_MISSOES).find(p => SOCIAL_MISSOES[p].includes(id));
+  const cores = { concluida: ['#6ec34a', 'Concluída'], em_andamento: ['#ffd04a', 'Em andamento'], nao_iniciada: ['#e8b070', 'Disponível'] }[st] || ['#e8b070', st];
+  const rast = estado.rastreio === id, aberta = socialAberta === id;
+  const ond = M.ed && EDIF[M.ed] ? EDIF[M.ed].nome + ' (' + nomeRegiaoEd(M.reg) + ')' : dono && RELACOES[dono] && RELACOES[dono].local || '';
+  const rec = M.dono ? recompensaEd(M) : null;
+  let det = '';
+  if (aberta) det = `<div class="sc-mdet">${st === 'nao_iniciada' ? 'Vá falar com <b>' + (dono ? nomeRel(dono) : '?') + '</b>' + (ond ? ' em ' + ond : '') + '.' : st === 'em_andamento' ? '<b>Objetivo:</b> ' + M.objetivo() : 'Missão feita. Obrigado!'}
+    ${rec ? ' • <b>Recompensa:</b> ' + rec.xp + ' XP, ' + ITENS[rec.item].nome.split(' (')[0] + ', +25 respeito' : ''}
+    ${st !== 'concluida' ? `<button class="sc-bt ${rast ? 'verde' : ''}" data-rastrear="${id}">${rast ? '📍 Rastreando (parar)' : '📍 Rastrear'}</button>` : ''}
+    ${dono && RELACOES[dono] ? `<button class="sc-bt" data-ficha="${dono}">Ver ${nomeRel(dono)}</button>` : ''}</div>`;
+  return `<div class="sc-mrow" data-abre="${id}"><span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}"></span><div><b>${M.nome}</b>${rast ? ' <span class="sc-rast">📍</span>' : ''}<br><small>${st === 'em_andamento' ? M.objetivo() : st === 'concluida' ? 'Feita para ' + (dono ? nomeRel(dono) : '—') : ond ? 'Onde: ' + ond : ''}</small></div><small>${dono ? 'Para: ' + nomeRel(dono) : ''}</small><span class="sc-est" style="background:${cores[0]}">${cores[1]}</span>${det}</div>`;
+}
+function montarSocial() {
+  const abas = `<div class="sc-abas"><div class="sc-aba ${socialAba === 'respeito' ? 'on' : ''}" data-aba="respeito" title="Respeito">❤️</div><div class="sc-aba ${socialAba === 'missoes' ? 'on' : ''}" data-aba="missoes" title="Missões">📜</div><div class="sc-aba" data-aba="menu" title="Menu (M)">🎒</div></div>`;
+  let corpo = '';
+  if (socialAba === 'respeito' && socialFicha) corpo = fichaSocial(socialFicha);
+  else if (socialAba === 'respeito') {
+    const ids = idsRespeito(), f = (k, t) => `<button class="${socialFiltro === k ? 'on' : ''}" data-filtro="${k}">${t}</button>`;
+    corpo = `<p class="sc-filtros">${f('todos', 'Todos')}${f('aliados', 'Aliados')}${f('moradores', 'Moradores')}</p>` + (socialMsg ? '<p class="sc-msg">' + socialMsg + '</p>' : '') +
+      (ids.length ? ids.map(linhaSocial).join('') : '<p class="sc-titulo">Converse com os personagens para conhecê-los. Toque numa linha para ver a ficha, dar presentes e rastrear as missões.</p>');
+  } else {
+    const todas = Object.keys(MISSOES), cont = k => todas.filter(id => stM(id) === k).length;
+    const lista = todas.filter(id => socialMFiltro === 'andamento' ? stM(id) === 'em_andamento' : socialMFiltro === 'disponiveis' ? stM(id) === 'nao_iniciada' : stM(id) === 'concluida')
+      .sort((a, b) => (estado.rastreio === b) - (estado.rastreio === a));
+    const f = (k, t, n) => `<button class="${socialMFiltro === k ? 'on' : ''}" data-mfiltro="${k}">${t} (${n})</button>`;
+    corpo = `<p class="sc-filtros">${f('andamento', 'Em andamento', cont('em_andamento'))}${f('disponiveis', 'Disponíveis', cont('nao_iniciada'))}${f('concluidas', 'Concluídas', cont('concluida'))}</p>` +
+      (lista.length ? lista.map(linhaMissao).join('') : '<p class="sc-titulo">Nada aqui ainda. Os moradores das casas, dojos e santuários têm pedidos para você!</p>');
+  }
+  socialEl.innerHTML = `<div class="sc-caixa">${abas}<div class="sc-painel"><button class="sc-fechar" data-sc="fechar">✕</button><div class="sc-lista">${corpo}</div><div class="sc-rolar"><button data-sc="sobe">▲</button><div class="sc-trilho"><div class="sc-pega"></div></div><button data-sc="desce">▼</button></div></div></div>`;
+  socialEl.querySelectorAll('canvas[data-ret]').forEach(c => { const pid = c.dataset.ret, ret = (PERSONAGENS[pid] && PERSONAGENS[pid].retrato) || pid; try { desenharRetrato(c, ret === 'gemeo_agua' || ret === 'gemeo_vento' ? 'gemeos' : pid, 'sorridente', { pal: palDe(pid) }); } catch (e) {} });
+  const L = socialEl.querySelector('.sc-lista'), pega = socialEl.querySelector('.sc-pega'), atual = () => { const t = socialEl.querySelector('.sc-trilho'); const k = L.scrollHeight > L.clientHeight ? L.scrollTop / (L.scrollHeight - L.clientHeight) : 0; pega.style.top = (k * (t.clientHeight - 26)) + 'px'; };
+  L.addEventListener('scroll', atual); setTimeout(atual, 0);
+}
+function alternarSocial(aba) {
+  socialAberto = !socialAberto || !!aba; if (aba) socialAba = aba; socialMsg = '';
+  if (!socialAberto) socialFicha = null;
+  socialEl.hidden = !socialAberto; if (socialAberto) { if (menuAberto) alternarMenu(); montarSocial(); }
+}
+socialEl.addEventListener('click', ev => {
+  const q = s => ev.target.closest(s), L0 = socialEl.querySelector('.sc-lista'), topo = L0 ? L0.scrollTop : 0;
+  const refazer = (manter) => { montarSocial(); if (manter) { const L1 = socialEl.querySelector('.sc-lista'); if (L1) L1.scrollTop = topo; } };
+  let e;
+  if ((e = q('[data-aba]'))) { if (e.dataset.aba === 'menu') { alternarSocial(); alternarMenu(); return; } socialAba = e.dataset.aba; socialFicha = null; socialMsg = ''; refazer(); return; }
+  if ((e = q('[data-sc]'))) { const L = socialEl.querySelector('.sc-lista'); if (e.dataset.sc === 'fechar') alternarSocial(); else if (e.dataset.sc === 'sobe') L.scrollBy({ top: -150, behavior: 'smooth' }); else L.scrollBy({ top: 150, behavior: 'smooth' }); return; }
+  if ((e = q('[data-filtro]'))) { socialFiltro = e.dataset.filtro; socialMsg = ''; refazer(); return; }
+  if ((e = q('[data-mfiltro]'))) { socialMFiltro = e.dataset.mfiltro; socialAberta = null; refazer(); return; }
+  if ((e = q('[data-voltar]'))) { socialFicha = null; socialMsg = ''; refazer(); return; }
+  if ((e = q('[data-dar]'))) { socialMsg = darPresente(e.dataset.pid, e.dataset.dar); Som.efeito('confirma'); refazer(true); return; }
+  if ((e = q('[data-presente]'))) { socialFicha = e.dataset.presente; socialAba = 'respeito'; socialMsg = ''; refazer(); const s = socialEl.querySelector('.sc-sub'); if (s) s.scrollIntoView({ block: 'start' }); return; }
+  if ((e = q('[data-parceiro]'))) { const p = e.dataset.parceiro; escolherParceiro(estado.parceiro === p ? null : p); refazer(true); return; }
+  if ((e = q('[data-rastrear]'))) { const id = e.dataset.rastrear; estado.rastreio = estado.rastreio === id ? null : id; hudChave = ''; aviso(estado.rastreio ? 'Rastreando: ' + MISSOES[id].nome + ' (seta na tela e no mapa)' : 'Rastreio desligado'); salvar(); refazer(true); return; }
+  if ((e = q('[data-ficha]'))) { socialFicha = e.dataset.ficha; socialAba = 'respeito'; socialMsg = ''; refazer(); return; }
+  if ((e = q('[data-mis]'))) { socialAba = 'missoes'; socialAberta = e.dataset.mis; const st = stM(socialAberta); socialMFiltro = st === 'em_andamento' ? 'andamento' : st === 'concluida' ? 'concluidas' : 'disponiveis'; socialFicha = null; refazer(); return; }
+  if ((e = q('[data-abre]'))) { socialAberta = socialAberta === e.dataset.abre ? null : e.dataset.abre; refazer(true); return; }
+  if (ev.target === socialEl) alternarSocial();
+});
+// destino da missão rastreada (para a seta na tela)
+function alvoRastreio() {
+  const id = estado.rastreio; if (!id || stM(id) !== 'em_andamento') return null;
+  const M = MISSOES[id]; if (!M || !M.dono) return null;
+  const p = progM(id);
+  if (M.tipo === 'coletar' && p.n < M.qtd && p.pts && p.mapa === mapa.id) {
+    let melhor = null, dm = 1e9; p.pts.forEach((q, k) => { if (p.pegos[k]) return; const d = Math.hypot(q[0] - jog.x, q[1] - jog.y); if (d < dm) { dm = d; melhor = { x: q[0], y: q[1], nome: M.coisa } }; }); return melhor;
+  }
+  if (M.tipo === 'cacar' && p.n < M.qtd) return null;
+  const ed = M.tipo === 'entregar' && p.n < 1 ? M.alvoEd : M.ed, P = EDIF_POS[ed];
+  if (!P) return null;
+  if (P.mapa === mapa.id) return { x: P.x, y: P.y, nome: ed === M.ed ? NPC_ED[M.dono].nome : EDIFICIOS_NPC(ed) };
+  return null;
+}
+// nas cavernas (escuras) a seta sempre mostra a saída mais perta: ninguém fica perdido sem achar o caminho de volta
+function saidaMaisPerto() {
+  let m = null, dm = 1e9;
+  for (const e of mapa.exits || []) { if (EDIF_ALVO(e.alvo)) continue; const x = e.x + (e.w || 1) / 2, y = e.y + (e.h || 1) / 2, d = Math.hypot(x - jog.x, y - jog.y); if (d < dm) { dm = d; m = { x, y, nome: 'Saída: ' + (e.nome || 'exterior') }; } }
+  return m;
+}
+function desenharSetaRastreio(g) {
+  if (!mapa || mapa.interior || MODO_TELA !== 'jogo') return;
+  const A = alvoRastreio() || (mapa.escuro ? saidaMaisPerto() : null); if (!A) return;
+  const d = Math.hypot(A.x - jog.x, A.y - jog.y); if (d < 2) return;
+  const [ax, ay] = iso(A.x, A.y), [jx, jy] = iso(jog.x, jog.y), ang = Math.atan2(ay - jy, ax - jx);
+  const r = 26, x = jx + Math.cos(ang) * r, y = jy - 16 + Math.sin(ang) * r * .6, pul = 1 + Math.sin(tempo * 6) * .12;
+  g.save(); g.translate(x, y); g.rotate(ang); g.scale(pul, pul);
+  g.fillStyle = '#ffe36a'; g.strokeStyle = '#3a1a08'; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(8, 0); g.lineTo(-3, -5); g.lineTo(-1, 0); g.lineTo(-3, 5); g.closePath(); g.fill(); g.stroke(); g.restore();
+  g.save(); g.font = 'bold 6px monospace'; g.textAlign = 'center'; const t = A.nome + ' • ' + Math.round(d) + 'm', w = g.measureText(t).width + 4;
+  g.fillStyle = 'rgba(20,12,6,.7)'; g.fillRect(Math.round(x - w / 2), Math.round(y + 6), Math.round(w), 8); g.fillStyle = '#ffe36a'; g.fillText(t, Math.round(x), Math.round(y + 12)); g.restore();
+}
+
 window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
+Object.assign(window.AKIRA.dbg, { colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
