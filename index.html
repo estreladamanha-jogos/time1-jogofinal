@@ -3778,7 +3778,8 @@ function destravarAkira(dt) {
 function atualizarHud() {
   const q = estado.missoes.papeis_perdidos;
   const ma = missaoAtiva();
-  let txtM = ma ? 'Missão: ' + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo() : '';
+  let txtM = ma ? (ma.startsWith('debora_') ? 'Missão principal: ' : 'Missão: ') + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo() : '';
+  if (!ma && stM('debora_fundamentos') === 'nao_iniciada') txtM = 'Missão principal: Fale com a Mestra Débora';   // começo do jogo: sempre mostra o próximo passo
   if (exameAtual) txtM = 'EXAME ' + GRADUACOES[exameAtual.ex.faixa].nome + ': ' + exameAtual.ops.filter(o => !o.vivo).length + '/' + exameAtual.ops.length + ' • ' + Math.max(0, Math.ceil(exameAtual.ex.tempo - exameAtual.t)) + 's';
   const chave = [estado.nivel, estado.xp, Math.round(estado.hp), Math.round(estado.aura), estado.faixa, estado.pontos, mapa.nome, txtM, estado.combo, maxHp(), maxAura()].join('|');
   if (chave === hudChave) return; hudChave = chave;
@@ -7675,6 +7676,7 @@ function reiniciar() {
    ===================================================================== */
 function atualizar(dt0) {
   tempo += dt0;
+  if (introAk > 0 && MODO_TELA === 'jogo') { introAk -= dt0; if (introAk <= 0) { introAk = -1; estado.flags.acordou = true; falar(jog, 'Preciso falar com a mestra Débora no pátio de treino.', 6); } }
   if (avisoT > 0) { avisoT -= dt0; if (avisoT <= 0) avisoEl.hidden = true; }
   if (shake > 0) shake = Math.max(0, shake - dt0 * 20);
   if (fade) tickFade(dt0);
@@ -11862,7 +11864,7 @@ function renderizar(dt) {
     const cobreM = mapa.grandes && mapa.grandes.some(o => { if (o.cortina || o.dk == null) return false; const [ox, oy] = iso(o.x, o.y), e = o.spr.ext; return Math.abs(jx - ox) < 9 && pj < o.dk - .15 && jy - 30 > oy - e.t && jy - 30 < oy + 4; });
     if (cobreM || akiraCoberto(lista)) desenharSilhuetaAkira(g);
   }
-  desenharSaidasVisiveis(g); desenharItensMissao(g); desenharSetaRastreio(g);
+  desenharSaidasVisiveis(g); desenharItensMissao(g); desenharSetaRastreio(g); desenharSetaMissao(g);
   if (noiteN > .02 && !mapa.escuro) luzesGoticas(g, camTx, camTy, noiteN * (mapa.interior ? .55 : 1));          // luz de tochas por cima de tudo (menos dos textos)
   if (mapa.escuro) {                                                   // cavernas: escuro, com brilho dos cristais
     g.fillStyle = 'rgba(10,8,34,.3)'; g.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0 + 120);
@@ -12332,6 +12334,7 @@ const MenuP = (() => {
 
 /* ---------- sequência de início: abertura -> menu -> jogo (um loop só) ---------- */
 let MODO_TELA = 'abertura';                         // 'abertura' | 'menu' | 'jogo' | 'torneio' (lutas do torneio e cenas)
+let introAk = -1;                                        // contagem até o balão de fala de Akira ao acordar (-1 = não é hora)
 function comecarJogo(novo) {
   if (novo) { MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null; estado = estadoInicial(); estado.hp = maxHp(); }
   else carregarSave();
@@ -12340,6 +12343,7 @@ function comecarJogo(novo) {
   const L = (!novo && estado.local) || estado.respawn;
   try { carregarMapa(L.mapa, L.x, L.y); } catch (e) { carregarMapa(estado.respawn.mapa, estado.respawn.x, estado.respawn.y); }
   if (novo) autoSalvar('novo', true);
+  if (!estado.flags.acordou && stM('debora_fundamentos') === 'nao_iniciada') introAk = 1.4;
   atualizarHud(); canvas.focus();
 }
 function irParaMenu() { MODO_TELA = 'menu'; MenuP.abrir(); }
@@ -14638,8 +14642,57 @@ function desenharSetaRastreio(g) {
   g.fillStyle = 'rgba(20,12,6,.7)'; g.fillRect(Math.round(x - w / 2), Math.round(y + 6), Math.round(w), 8); g.fillStyle = '#ffe36a'; g.fillText(t, Math.round(x), Math.round(y + 12)); g.restore();
 }
 
+/* ---------- missão principal: seta na borda da tela e próximo lugar de cada passo (Mestra Débora e treino) ---------- */
+const ALVO_DEBORA = { x: 18.6, y: 10.4, nome: 'Mestra Débora' };      // posições no mapa do Bambuzal (no mundo: somadas à origem da região)
+const ALVO_BONECO = { x: 22, y: 11.4, nome: 'Boneco de treino' };
+const ALVO_PATIO = { x: 12.5, y: 9.5, nome: 'Pátio de treino' };
+function alvoMissaoPrincipal() {
+  if (!mapa || !estado || MODO_TELA !== 'jogo' || dlg.ativo || jog.morto) return null;
+  const mp = estado.mprog || {};
+  let A = null;
+  if (stM('debora_fundamentos') === 'nao_iniciada') A = ALVO_DEBORA;
+  else if (stM('debora_fundamentos') === 'em_andamento') A = (mp.passos || 0) >= 18 ? ALVO_DEBORA : ALVO_PATIO;
+  else if (stM('debora_alvo') === 'em_andamento') A = mp.alvo ? ALVO_DEBORA : ALVO_BONECO;
+  else if (stM('debora_defesa') === 'em_andamento') A = (mp.defesa && mp.esquiva) ? ALVO_DEBORA : ALVO_BONECO;
+  else if (stM('debora_gemeos') === 'em_andamento') {
+    const g2 = (mapa.objs || []).find(o => o.pid === 'david' || o.pid === 'miguel');
+    A = g2 ? { x: g2.x, y: g2.y, nome: 'Gêmeos', direto: true } : ALVO_DEBORA;
+  }
+  if (!A) return null;
+  if (A.direto) return { x: A.x, y: A.y, nome: A.nome };
+  if (mapa.id === 'bambuzal') return { x: A.x, y: A.y, nome: A.nome };
+  if (mapa.id === 'mundo') { const [ox, oy] = origemNucleo('bambuzal'); return { x: ox + A.x, y: oy + A.y, nome: A.nome }; }
+  const saida = (mapa.exits || []).find(e => e.alvo === 'mundo' || e.alvo === 'bambuzal');   // em outro lugar: a seta aponta para a saída que leva até lá
+  return saida ? { x: saida.x + saida.w / 2, y: saida.y + saida.h / 2, nome: 'Saída para ' + A.nome } : null;
+}
+function desenharSetaMissao(g) {
+  const A = alvoMissaoPrincipal(); if (!A) return;
+  const d = Math.hypot(A.x - jog.x, A.y - jog.y); if (d < 3) return;          // chegou perto: a seta some
+  const cw = g.canvas.width, ch = g.canvas.height, k = cw / W;
+  const [ix, iy] = iso(A.x, A.y), cx = cw / 2, cy = ch / 2;
+  const tx = cx + (ix - camera.x) * k, ty = cy + (iy - camera.y) * k;
+  let ux = tx - cx, uy = ty - cy; const len = Math.hypot(ux, uy) || 1; ux /= len; uy /= len;
+  const mL = 22 * k, mT = 60 * k, mB = 28 * k;                               // margens: o topo fica livre para a barra de missão
+  let t = Infinity;
+  if (ux > 1e-4) t = Math.min(t, (cw - mL - cx) / ux); else if (ux < -1e-4) t = Math.min(t, (mL - cx) / ux);
+  if (uy > 1e-4) t = Math.min(t, (ch - mB - cy) / uy); else if (uy < -1e-4) t = Math.min(t, (mT - cy) / uy);
+  const px = cx + ux * t, py = cy + uy * t, ang = Math.atan2(uy, ux), s = 10 * k * (1 + Math.sin(tempo * 6) * .1);
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.translate(px, py); g.rotate(ang);
+  g.fillStyle = '#ffe36a'; g.strokeStyle = '#3a1a08'; g.lineWidth = Math.max(1, k * .7);
+  g.beginPath(); g.moveTo(s, 0); g.lineTo(-s * .45, -s * .62); g.lineTo(-s * .15, 0); g.lineTo(-s * .45, s * .62); g.closePath(); g.fill(); g.stroke();
+  g.restore();
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  const txt = A.nome + ' • ' + Math.round(d) + 'm', fs = Math.round(7 * k);
+  g.font = `bold ${fs}px monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const w = g.measureText(txt).width + 8 * k, h = fs + 5 * k;
+  const lx = Math.max(w / 2 + 4 * k, Math.min(cw - w / 2 - 4 * k, px)), ly = Math.max(h / 2 + 4 * k, Math.min(ch - h / 2 - 4 * k, py < cy ? py + 16 * k : py - 16 * k));
+  g.fillStyle = 'rgba(20,12,6,.75)'; g.fillRect(lx - w / 2, ly - h / 2, w, h);
+  g.fillStyle = '#ffe36a'; g.fillText(txt, lx, ly);
+  g.restore();
+}
+
 window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
-Object.assign(window.AKIRA.dbg, { colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
+Object.assign(window.AKIRA.dbg, { alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
