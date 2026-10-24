@@ -12391,7 +12391,8 @@ const Abertura = (() => {
     if (t < IMPACTO) { g.font = Math.round(11 * Math.max(1, k / 3)) + 'px "Pixelify Sans", monospace'; g.fillStyle = 'rgba(255,255,255,.55)'; g.textAlign = 'right'; g.fillText(navigator.maxTouchPoints ? 'toque para pular' : 'ESC para pular', cw - 14, ch - barra / 2 + 4); }
     g.restore();
   }
-  return { iniciar, pular, atualizar, desenhar, ativa: () => ativa, tempo: () => t, pulou: () => pulou };
+  return { iniciar, pular, atualizar, desenhar, ativa: () => ativa, tempo: () => t, pulou: () => pulou,
+    H: { pintarDojo, pintarContra, misturar, silhueta, linhasVelocidade, SENTADO, EM_PE, GUARDA, PREP, SOCO } };   // mesmos cenários e poses para a cutscene da história
 })();
 
 /* =====================================================================
@@ -12416,7 +12417,8 @@ const HIST_CENAS = [
   { cena: 'templo', legenda: 'NOVO OBJETIVO: ENCONTRE DÉBORA NO DOJO.', falas: [] }
 ];
 const HIST_CORES = { MESTRE: '#e8e0c8', NARRADOR: '#ffe27a', AKIRA: '#46d4ff', HENRIQUE: '#ff9b4a', PIETRA: '#ff7ac8', LUNA: '#b9a6ff', NICOLAS: '#8fe36a', GABRIEL: '#9fdcff', YAGAMI: '#ff5a6a', 'DÉBORA': '#f0c0ff' };
-let histAtiva = false, histCena = 0, histFala = 0, histChars = 0, histT = 0, histRaf = 0, histLegendaT = 0;
+let histAtiva = false, histCena = 0, histFala = 0, histChars = 0, histT = 0, histRaf = 0, histLegendaT = 0, histCenaT0 = 0;
+const histBgCache = {};
 function histFim() { return histCena >= HIST_CENAS.length; }
 function histFalaAtual() { const c = HIST_CENAS[histCena]; return c && c.falas[histFala]; }
 function iniciarHistoria() {
@@ -12429,6 +12431,7 @@ function iniciarHistoria() {
 }
 function histMostrarCena() {
   const c = HIST_CENAS[histCena], leg = document.getElementById('histLegenda');
+  histCenaT0 = histT;
   histLegendaT = c && c.legenda ? 3.2 : 0;
   leg.textContent = c && c.legenda || ''; leg.classList.toggle('ativa', !!(c && c.legenda));
   histMostrarFala();
@@ -12464,127 +12467,139 @@ function histLoop(agora) {
   const f = histFalaAtual();
   if (f && histChars < f[1].length) { histChars = Math.min(f[1].length, histChars + dt * 42); document.getElementById('histTexto').textContent = f[1].slice(0, Math.floor(histChars)); }
   document.getElementById('histSeta').classList.toggle('ativa', !!f && histChars >= f[1].length);
-  histDesenharCena(HIST_CENAS[histCena] ? HIST_CENAS[histCena].cena : 'templo', histT);
+  histDesenharCena(HIST_CENAS[histCena] ? HIST_CENAS[histCena].cena : 'templo', histT - histCenaT0);
   histRaf = requestAnimationFrame(histLoop);
 }
 function histDesenharCena(nome, t) {
-  const cv = document.getElementById('histCanvas'), g = cv.getContext('2d'), W = 320, H = 180;
-  g.imageSmoothingEnabled = false;
-  const faixa = (y0, y1, c) => { g.fillStyle = c; g.fillRect(0, y0, W, y1 - y0); };
-  const rect = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
-  const figura = (x, y, cor, cab, opt = {}) => {                         // pessoa em pixel art: cabeça, cabelo, roupa branca de karatê
-    const k = opt.s || 1, bob = opt.bob || 0;
-    rect(x - 4 * k, y - 22 * k + bob, 8 * k, 8 * k, '#f1c9a5');
-    rect(x - 4 * k, y - 24 * k + bob, 8 * k, 3 * k, cab);
-    if (opt.espinho) for (let i = -2; i <= 2; i++) rect(x + i * 2 * k - 1, y - 28 * k + bob, 2, 4, cab);
-    rect(x - 6 * k, y - 13 * k + bob, 12 * k, 14 * k, cor);
-    rect(x - 6 * k, y - 1 * k + bob, 5 * k, 6 * k, '#f2f2f2'); rect(x + 1 * k, y - 1 * k + bob, 5 * k, 6 * k, '#f2f2f2');
-    if (opt.faixa) rect(x - 6 * k, y - 6 * k + bob, 12 * k, 2 * k, opt.faixa);
+  const cv = document.getElementById('histCanvas');
+  if (cv.width !== innerWidth || cv.height !== innerHeight) { cv.width = innerWidth; cv.height = innerHeight; }
+  const cw = cv.width, ch = cv.height, g = cv.getContext('2d'), VW = 320, VH = 180, H = Abertura.H;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch);
+  const k = Math.max(cw / VW, ch / VH);
+  let cam = { z: 1, x: 160, y: 95 }, shake = 0;
+  const bg = (key, fn) => histBgCache[key] || (histBgCache[key] = fn());   // cenários prontos (mesmos da abertura)
+  const pers = (x, y, esc, pal, pose, flip, costas) => {                   // personagem com o mesmo boneco e as mesmas poses do jogo
+    g.save(); g.translate(x, y); g.scale(flip ? -esc : esc, esc);
+    Akira.poseFrente(g, Object.assign({}, pose, { costas: costas ? 1 : 0 }), pal ? estiloPal(pal) : estiloAkira()); g.restore();
   };
-  const luz = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); };
-  const chao = (c) => { faixa(120, H, c); };
-  const estrelas = () => { for (let i = 0; i < 30; i++) rect((i * 97) % W, (i * 53) % 70, 1, 1, '#fff'); };
-  const e = {
+  const cen = (c) => g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k + (Math.random() - .5) * shake * k, ch / 2 - (cam.y + 22) * cam.z * k + (Math.random() - .5) * shake * k);   // +22: sobe a cena para a caixa de texto não cobrir os personagens
+  const tint = (c) => { g.fillStyle = c; g.fillRect(-400, -400, VW + 800, VH + 800); };
+  const sent = (o) => Object.assign({}, H.SENTADO, { eye: 'open' }, o || {});
+  const P = {
+    mestre: PN('#e8e6dc', '#e8c8a0', '#e6e6e6', 'curto', '#555555'),
+    gabriel: PN('#f2f2f2', '#f1c9a5', '#2a2a40', 'curto', '#2a4ad0'),
+    yagami: PN('#2a4ad0', '#f1c9a5', '#1a1a28', 'curto', '#c23a3a'),
+    henrique: PN('#c23a3a', '#f1c9a5', '#2a1a10', 'curto', '#222222'),
+    luna: PN('#6a4aa8', '#f1c9a5', '#3a2a50', 'longo', '#222222'),
+    nicolas: PAL_NPC.nicolas, pietra: PAL_PIETRA, debora: PAL_NPC.debora
+  };
+  const ataque = (p, a, b) => Math.sin(p) > .4 ? a : b;
+  const sc = {
     templo: () => {
-      faixa(0, 110, '#f6c98a'); faixa(60, 110, '#e99a6a'); chao('#8a5a33');
-      rect(40, 40, 240, 16, '#7a2a20'); rect(30, 34, 260, 6, '#c9562e'); rect(120, 56, 80, 64, '#5b2a1f');
-      rect(140, 70, 40, 50, '#2a1410');
-      const kids = [['#2d6fb0', '#2b1a10', 40, 'PIETRA'], ['#c23a3a', '#1a1010', 76, 'HENRIQUE'], ['#3a9a5a', '#4a3a20', 110, 'LUNA'], ['#2a4ad0', '#1a1a2a', 230, 'AKIRA'], ['#e0a020', '#8a5a2a', 262, 'NICOLAS']];
-      kids.forEach(([c, h, x, n], i) => figura(x, 120, c, h, { bob: Math.round(Math.sin(t * 2 + i) * .6) }));
-      figura(160, 104, '#d8d2c0', '#cfcfcf', { s: 1.3, bob: Math.round(Math.sin(t * 2.5) * 1) });
-      rect(154, 96, 4, 2, '#8a8a8a');
+      cam = { z: 1 + .02 * Math.min(t, 4), x: 160, y: 96 };
+      cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
+      const ondas = Math.sin(t * 2);
+      [[52, 'pietra', .46], [100, 'henrique', .46], [218, null, .46], [262, 'nicolas', .46]].forEach(([x, q, e], i) => {
+        pers(x, 150, e, P[q], sent({ lean: q === 'nicolas' ? Math.sin(t * 3) * 2 : 0, belt: 2 + Math.sin(t * 2 + i) * 1.5 }));
+      });
+      pers(160, 150, .62, P.mestre, sent({ rh: [3 + ondas * 2, 9], lh: [3 - ondas, 8] }));
+      pers(296, 150, .46, P.luna, sent({ eye: 'closed' }));
+      g.setTransform(1, 0, 0, 1, 0, 0);
     },
     treino: () => {
-      faixa(0, 120, '#f1b48a'); faixa(0, 60, '#ffd9a0'); chao('#6a9a3a');
-      rect(0, 118, W, 4, '#4a7a2a');
-      const p = Math.sin(t * 5);
-      figura(120 + p * 6, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
-      figura(200 - p * 6, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
-      if (Math.abs(p) > .9) { luz(160, 92, 22, 'rgba(255,240,180,.9)'); }
+      cam = { z: 1.35, x: 160, y: 120 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      const p = t * 5, gp = ataque(p, H.SOCO, H.GUARDA), yp = ataque(p + Math.PI, H.SOCO, H.GUARDA);
+      pers(116 + Math.sin(p) * 4, 150, .62, P.gabriel, gp, false);
+      pers(206 - Math.sin(p) * 4, 150, .62, P.yagami, yp, true);
+      if (Math.sin(p) > .92) { g.fillStyle = 'rgba(255,240,180,.7)'; g.fillRect(150, 96, 22, 8); }
     },
     pergaminho: () => {
-      faixa(0, H, '#20182a'); chao('#2a2030');
-      for (let i = 0; i < 10; i++) rect(20 + i * 30, 20, 4, 100, '#3a2c44');
+      cam = { z: 1.2, x: 160, y: 100 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
       const pulso = .6 + .4 * Math.sin(t * 3);
-      luz(160, 90, 60 * pulso, 'rgba(120,200,255,' + (.35 * pulso) + ')');
-      rect(146, 84, 28, 20, '#f4e6b0'); rect(146, 84, 28, 2, '#b89a50'); rect(146, 102, 28, 2, '#b89a50');
-      for (let i = 0; i < 6; i++) rect(150 + ((i * 17 + t * 30) % 24), 70 + (i * 13) % 40, 2, 2, '#9fe7ff');
-      figura(110, 120, '#e8e8f0', '#2a2a40', { s: 1.1 });
-      figura(230, 120, '#3a2a40', '#1a0a14', { s: 1.1 });
+      g.fillStyle = 'rgba(120,200,255,' + (.25 * pulso) + ')'; g.fillRect(120, 60, 80, 70);
+      pers(128, 150, .62, P.gabriel, H.EM_PE, false);
+      pers(200, 150, .62, P.mestre, sent({ eye: 'open' }), false);
+      H.silhueta(g, 272, 150, .62, Math.floor(t * 6), .45, true);
     },
     briga_templo: () => {
-      faixa(0, 110, '#cf7a4a'); faixa(60, 110, '#a85a3a'); chao('#6a4a2a');
-      rect(50, 30, 220, 12, '#5b2a1f'); rect(60, 42, 8, 70, '#3a2010'); rect(252, 42, 8, 70, '#3a2010');
-      const p = Math.sin(t * 6);
-      figura(120 + p * 4, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
-      figura(200 - p * 4, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
-      const mestre = t > 5;
-      if (mestre) figura(40, 120, '#d8d2c0', '#cfcfcf', { s: 1.2 });
+      cam = { z: 1.25, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      pers(44, 150, .6, P.mestre, sent({ eye: 'open' }), false);
+      const p = t * 6, gp = ataque(p, H.SOCO, H.GUARDA), yp = ataque(p + Math.PI, H.SOCO, H.GUARDA);
+      pers(120 + Math.sin(p) * 4, 150, .62, P.gabriel, gp, false);
+      pers(204 - Math.sin(p) * 4, 150, .62, P.yagami, yp, true);
     },
     noite: () => {
-      faixa(0, H, '#14163a'); estrelas(); chao('#243a2a');
-      luz(260, 30, 22, 'rgba(255,250,220,.9)'); rect(256, 26, 8, 8, '#fffbe6');
-      const p = Math.sin(t * 4.4);
-      figura(130 + p * 10, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
-      figura(190 - p * 10, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
-      if (Math.abs(p) > .92) luz(160, 100, 26, 'rgba(255,220,140,.8)');
+      cam = { z: 1.3, x: 160, y: 118 }; shake = 0; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      const p = t * 7;
+      if (Math.sin(p) > .95) shake = 3;
+      pers(118 + Math.sin(p) * 6, 150, .62, P.gabriel, ataque(p, H.PREP, H.GUARDA), false);
+      pers(202 - Math.sin(p) * 6, 150, .62, P.yagami, ataque(p + 1, H.PREP, H.SOCO), true);
+      tint('rgba(10,14,50,.45)');
+      g.fillStyle = '#fff6d8'; g.fillRect(268, 14, 8, 8);
     },
     rasgado: () => {
-      faixa(0, H, '#261a2a'); chao('#33243a');
-      const sep = Math.min(14, t * 10);
-      rect(140 - sep, 80, 18, 34, '#f4e6b0'); rect(162 + sep, 80, 18, 34, '#f4e6b0');
-      rect(140 - sep, 80, 18, 2, '#b89a50'); rect(162 + sep, 80, 18, 2, '#b89a50');
-      figura(100, 120, '#f2f2f2', '#2a2a40'); figura(220, 120, '#f2f2f2', '#2a2a40');
+      cam = { z: 1.5, x: 160, y: 98 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      const sep = Math.min(16, t * 10);
+      g.fillStyle = '#f4e6b0'; g.fillRect(160 - sep - 14, 80, 14, 30); g.fillRect(160 + sep, 80, 14, 30);
+      g.fillStyle = '#b89a50'; g.fillRect(160 - sep - 14, 80, 14, 2); g.fillRect(160 + sep, 80, 14, 2);
+      pers(122, 150, .62, P.gabriel, H.PREP, false);
+      pers(198, 150, .62, P.yagami, H.PREP, true);
     },
     corrupcao: () => {
-      faixa(0, H, '#1a0c22'); chao('#2a1433');
-      for (let i = 0; i < 12; i++) { const x = (i * 53 + t * 20) % W; rect(x, 30 + (i * 17) % 90, 2, 2, 'rgba(180,80,255,.8)'); }
-      const k = Math.min(1, t / 4);
-      luz(160, 100, 40 + 20 * k, 'rgba(120,20,160,' + (.4 * k) + ')');
-      figura(160, 120, k < .5 ? '#3a2a40' : '#1a0a14', k < .5 ? '#2a2a40' : '#5a0a20', { s: 1.3, espinho: k > .5 });
-      if (k > .7) { rect(140, 80, 40, 3, '#8a1a30'); }
+      const kk = Math.min(1, t / 4);
+      cam = { z: 1.3, x: 160, y: 100 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      tint('rgba(60,0,80,' + (.5 * kk) + ')');
+      if (kk < .5) pers(160, 150, .62, P.yagami, H.EM_PE, false);
+      else H.silhueta(g, 160, 150, .62, Math.floor(t * 6), kk, false);
+      for (let i = 0; i < 10; i++) { g.fillStyle = 'rgba(190,90,255,.8)'; g.fillRect(120 + (i * 17) % 80, 150 - ((t * 40 + i * 13) % 110), 2, 2); }
     },
     dojo_sombrio: () => {
-      faixa(0, H, '#0e0a16'); chao('#1a1220');
-      rect(120, 40, 80, 8, '#2a1e30'); rect(120, 48, 4, 50, '#2a1e30'); rect(196, 48, 4, 50, '#2a1e30');
-      for (let i = 0; i < 4; i++) figura(60 + i * 26, 120, '#1a0a14', '#0a0a10', { s: .9 });
-      figura(160, 120, '#1a0a14', '#5a0a20', { s: 1.3, espinho: true });
-      figura(250, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
+      cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      tint('rgba(10,0,20,.55)');
+      [[46, .5], [78, .5], [110, .5]].forEach(([x, e], i) => H.silhueta(g, x, 150, e, Math.floor(t * 6) + i, 1, false));
+      H.silhueta(g, 186, 150, .62, Math.floor(t * 6), 1, false);
+      pers(262, 150, .62, P.gabriel, H.EM_PE, true);
     },
     queda: () => {
-      const b = Math.max(0, 1 - t / 2.5);
-      faixa(0, H, '#101018'); chao('#2a1e20');
-      rect(120, 118, 60, 8, '#8a7a6a');
-      if (t > 1.2) { figura(140, 120, '#e8e8f0', '#2a2a40', { s: .9 }); }
-      figura(100, 120, '#f2f2f2', '#cfcfcf');
-      rect(0, 0, W, H, 'rgba(255,255,255,' + (b * .6) + ')');
+      cam = { z: 1.4, x: 160, y: 130 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      g.fillStyle = '#e6e6e6'; g.fillRect(104, 150, 90, 8); g.beginPath(); g.arc(98, 153, 5, 0, 7); g.fill();
+      pers(150, 150, .6, P.gabriel, sent({ belt: 4 }), false);
+      H.silhueta(g, 236, 150, .6, Math.floor(t * 6), 1, true);
+      if (t > 2.2) { g.fillStyle = 'rgba(255,255,255,' + Math.min(1, (t - 2.2) / .8) + ')'; g.fillRect(-400, -400, VW + 800, VH + 800); }
     },
     selo: () => {
-      faixa(0, H, '#0f1a30'); chao('#1a2a40');
-      const r = 20 + Math.sin(t * 2) * 4;
+      cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
+      tint('rgba(20,40,90,.35)');
+      const r = 26 + Math.sin(t * 2) * 4;
       g.strokeStyle = '#7ad8ff'; g.lineWidth = 1;
-      g.beginPath(); g.arc(160, 120, r + 20, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.arc(160, 120, r + 8, 0, Math.PI * 2); g.stroke();
-      luz(160, 120, 60, 'rgba(120,200,255,.35)');
-      for (let i = 0; i < 6; i++) { const a = t * 1.5 + i; rect(160 + Math.cos(a) * 40, 110 + Math.sin(a) * 18, 3, 3, '#dff7ff'); }
-      figura(140, 120, '#f2f2f2', '#cfcfcf'); figura(180, 120, '#3a2a40', '#5a0a20', { espinho: true });
+      g.beginPath(); g.arc(160, 150, r + 20, 0, 7); g.stroke(); g.beginPath(); g.arc(160, 150, r + 8, 0, 7); g.stroke();
+      for (let i = 0; i < 6; i++) { const a = t * 1.5 + i; g.fillStyle = '#dff7ff'; g.fillRect(160 + Math.cos(a) * 40, 140 + Math.sin(a) * 14, 2, 2); }
+      pers(120, 150, .62, P.gabriel, H.EM_PE, false);
+      H.silhueta(g, Math.max(160, 200 - t * 12), 150, .62, Math.floor(t * 6), 1, true);
     },
     funeral: () => {
-      faixa(0, H, '#3a3e4a'); chao('#2e3038');
-      rect(150, 60, 20, 60, '#2a2430'); rect(144, 90, 32, 6, '#5a5068');
-      luz(160, 80, 30, 'rgba(255,200,120,.35)');
-      for (let i = 0; i < 4; i++) figura(70 + i * 26, 120, '#4a4a58', '#2a2020', { s: .9 });
-      for (let i = 0; i < 3; i++) figura(210 + i * 26, 120, '#4a4a58', '#2a2020', { s: .9 });
+      cam = { z: 1.1, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
+      tint('rgba(20,22,30,.55)');
+      [[50, P.henrique], [92, P.pietra], [132, P.luna], [176, P.nicolas]].forEach(([x, pal]) => pers(x, 150, .5, pal, H.EM_PE, false));
+      pers(218, 150, .5, null, H.EM_PE, false);
+      pers(272, 150, .55, P.debora, H.EM_PE, false);
+      g.fillStyle = 'rgba(255,200,120,.25)'; g.fillRect(150, 70, 20, 20);
     },
     revelacao: () => {
-      faixa(0, H, '#14101e'); chao('#2a2030');
-      rect(158, 0, 4, H, '#000');
-      figura(80, 120, '#d8d2c0', '#cfcfcf', { s: 1.2 });
-      figura(240, 120, '#e8e8f0', '#2a2a40', { s: 1.2, faixa: '#c23a3a' });
-      luz(240, 100, 26, 'rgba(120,200,255,.3)');
+      cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
+      g.fillStyle = '#000'; g.fillRect(158, 0, 4, VH);
+      pers(80, 150, .62, P.mestre, sent({ eye: 'open' }), false);
+      pers(240, 150, .62, P.gabriel, H.EM_PE, false);
+      g.fillStyle = 'rgba(120,200,255,.3)'; g.fillRect(220, 110, 40, 60);
     }
   };
-  (e[nome] || e.templo)();
+  g.save(); g.imageSmoothingEnabled = true;
+  (sc[nome] || sc.templo)();
+  g.restore();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // tarjas de cinema e fade entre as cenas (como na abertura)
+  const barra = ch * .09; g.fillStyle = '#000'; g.fillRect(0, 0, cw, barra); g.fillRect(0, ch - barra, cw, barra);
+  const fade = Math.max(0, 1 - t / .5); if (fade > 0) { g.fillStyle = 'rgba(0,0,0,' + fade + ')'; g.fillRect(0, 0, cw, ch); }
 }
 function pularHistoria() { if (histAtiva) finalizarHistoria(); }
 document.getElementById('histPular').addEventListener('click', e => { e.stopPropagation(); pularHistoria(); });
@@ -15102,7 +15117,7 @@ function desenharSetaMissao(g) {
 }
 
 window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
-Object.assign(window.AKIRA.dbg, { alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
+Object.assign(window.AKIRA.dbg, { hist: () => ({ c: histCena, f: histFala }), alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
