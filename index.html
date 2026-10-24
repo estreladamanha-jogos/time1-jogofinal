@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Karatê RPG Isométrico</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=UnifrakturCook:wght@700&family=Pixelify+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -13,6 +13,7 @@
     -webkit-user-select: none; touch-action: none;
   }
   main { position: fixed; inset: 0; z-index: 0; }
+  html, body { height: 100vh; height: 100dvh; background: #000; }   /* celular: ocupa a tela inteira, sem faixas */
   #hud, #dica, #dialogo, #aviso, #joystick, .btn { z-index: 5; }
   #menu { z-index: 10; }
   canvas { display: block; width: 100%; height: 100%; outline: none; }
@@ -231,6 +232,14 @@
   #menu button:disabled { background: #555; color: #999; cursor: default; }
   #menu .sel { outline: 2px solid #9be36b; }
 
+  /* ===== Aviso para girar o celular (em pé, em aparelho de toque) ===== */
+  #girar { display: none; position: fixed; inset: 0; z-index: 40; place-content: center; text-align: center; pointer-events: none; padding: 24px; box-sizing: border-box;
+    background: radial-gradient(circle, rgba(40, 50, 90, .92), rgba(6, 8, 20, .97)); color: #fff; font: bold 17px 'Trebuchet MS', Verdana, sans-serif; text-shadow: 2px 2px 0 #000; }
+  #girar .icone { font-size: 56px; display: inline-block; margin-bottom: 12px; animation: girarCel 2.4s ease-in-out infinite; }
+  #girar p { margin: 0; max-width: 300px; line-height: 1.4; }
+  @keyframes girarCel { 0%, 25% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (pointer: coarse) and (orientation: portrait) { #girar { display: grid; } }
+
   /* ===== Controles de celular ===== */
   #joystick {
     display: none; position: fixed; left: 20px; bottom: 24px;
@@ -256,6 +265,18 @@
   #btnC { right: 214px; bottom: 96px; width: 46px; height: 46px; background: rgba(255, 120, 150, .9); font-size: 12px; }
   #btnR { right: 252px; bottom: 30px; width: 46px; height: 46px; background: rgba(170, 220, 255, .9); font-size: 12px; }
   #btnM { top: 6px; right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
+  @media (pointer: coarse) and (orientation: landscape) {               /* deitado: esquerda = movimento, direita = ações */
+    #joystick { left: calc(14px + env(safe-area-inset-left)); bottom: 14px; width: 120px; height: 120px; }
+    #btnJ { right: calc(14px + env(safe-area-inset-right)); bottom: 14px; width: 72px; height: 72px; font-size: 24px; }
+    #btnK { right: 96px; bottom: 26px; width: 56px; height: 56px; }
+    #btnL { right: 14px; bottom: 96px; width: 52px; height: 52px; }
+    #btnS { right: 90px; bottom: 96px; width: 52px; height: 52px; }
+    #btnV { right: 160px; bottom: 26px; width: 52px; height: 52px; }
+    #btnC { right: 160px; bottom: 92px; width: 52px; height: 52px; }
+    #btnE { right: 222px; bottom: 108px; width: 48px; height: 48px; font-size: 18px; }
+    #btnR { right: 222px; bottom: 40px; width: 44px; height: 44px; }
+    #ctxAcoes { bottom: 170px; }
+  }
   @media (pointer: coarse) {
     .btn, #joystick { display: block; }
     #dica { display: none; }
@@ -434,6 +455,7 @@
 </footer>
 
 <div id="joystick"><div class="knob" id="knob"></div></div>
+<div id="girar" aria-hidden="true"><div class="icone">📱</div><p>Gire o celular para uma melhor experiência</p></div>
 <button class="btn" id="btnJ" data-k="KeyJ" type="button">J</button>
 <button class="btn" id="btnK" data-k="KeyK" type="button">K</button>
 <button class="btn" id="btnS" data-k="Space" type="button">ESQ</button>
