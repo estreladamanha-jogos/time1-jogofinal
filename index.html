@@ -288,6 +288,21 @@
   #pausa .escolhas { justify-content: center; }
   #pausa .painel { max-height: 90vh; overflow: auto; box-sizing: border-box; }
 
+  /* ===== Cutscene da história (NOVO JOGO) ===== */
+  #historia { position: fixed; inset: 0; z-index: 37; background: #05060c; display: grid; place-items: center; overflow: hidden; transition: opacity .6s; font-family: 'Pixelify Sans', monospace; color: #fff; }
+  #historia[hidden] { display: none; }
+  #historia.saindo { opacity: 0; }
+  #histCanvas { width: 100vw; height: 100vh; height: 100dvh; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #histLegenda { position: absolute; top: 14%; left: 0; right: 0; margin: 0; text-align: center; font: 700 clamp(16px, 4vw, 28px) 'Cinzel', serif; color: #ffe27a; text-shadow: 2px 2px 0 #000; letter-spacing: .1em; opacity: 0; transition: opacity .8s; pointer-events: none; }
+  #histLegenda.ativa { opacity: 1; }
+  #histCaixa { position: absolute; left: 50%; bottom: 3vh; transform: translateX(-50%); width: min(94vw, 760px); box-sizing: border-box; min-height: 92px; padding: 10px 14px 12px;
+    background: rgba(10, 16, 30, .94); box-shadow: 0 0 0 3px #0b1220, 0 0 0 5px #46d4ff, 0 0 0 7px #0b1220; cursor: pointer; }
+  #histNome { color: #ffd56a; font-weight: 700; letter-spacing: .12em; font-size: clamp(13px, 2.6vw, 17px); text-shadow: 1px 1px 0 #000; }
+  #histTexto { margin: 4px 0 0; font-size: clamp(14px, 2.8vw, 19px); line-height: 1.4; min-height: 2.8em; }
+  #histSeta { position: absolute; right: 12px; bottom: 6px; color: #46d4ff; font-size: 14px; opacity: 0; }
+  #histSeta.ativa { opacity: 1; animation: piscar 1s steps(2) infinite; }
+  #histPular { position: absolute; top: 10px; right: 10px; font: 600 14px 'Pixelify Sans', monospace; padding: 6px 12px; color: #eaf6ff; background: rgba(13, 16, 39, .85); border: 2px solid #46d4ff; cursor: pointer; }
+
   /* ===== Controles de celular ===== */
   #joystick {
     display: none; position: fixed; left: 20px; bottom: 24px;
@@ -534,6 +549,12 @@
 <button class="btn" id="btnR" data-k="ShiftLeft" type="button"><span class="ico">🏃</span><small>CORRER</small></button>
 <button class="btn" id="btnM" data-k="KeyM" type="button">☰</button>
 <button type="button" id="btnPausa" aria-label="Pausar" title="Pausar">⏸️</button>
+<section id="historia" hidden aria-live="polite">
+  <canvas id="histCanvas" width="320" height="180"></canvas>
+  <p id="histLegenda"></p>
+  <div id="histCaixa"><div id="histNome"></div><p id="histTexto"></p><span id="histSeta" aria-hidden="true">▼</span></div>
+  <button type="button" id="histPular">PULAR ▸</button>
+</section>
 <section id="pausa" hidden>
   <div class="tela pausaMenu"><div class="painel">
     <h2>PAUSA</h2>
@@ -12376,6 +12397,205 @@ const Abertura = (() => {
 /* =====================================================================
    18. MENU PRINCIPAL: fundo panorâmico com as regiões + título + opções
    ===================================================================== */
+/* ---------- cutscene da história: começa no NOVO JOGO, antes de Akira assumir o controle ---------- */
+const HIST_CENAS = [
+  { cena: 'templo', falas: [['MESTRE', 'Existem histórias que não são contadas apenas para lembrar o passado...'], ['MESTRE', 'Algumas precisam ser contadas para impedir que os mesmos erros aconteçam novamente.'], ['NICOLAS', 'É uma história de guerreiros lendários?!'], ['LUNA', 'Espero que seja curta...'], ['PIETRA', 'Você fala isso antes de todas as histórias, Luna.'], ['HENRIQUE', 'Deixe o mestre contar. Tenho certeza de que existe uma razão para ele nos reunir.'], ['AKIRA', 'Mestre... o que aconteceu?'], ['MESTRE', 'Há muito tempo, dois irmãos eram considerados os maiores guerreiros de todo o reino.']] },
+  { cena: 'treino', legenda: 'Há muito tempo...', falas: [['NARRADOR', 'Gabriel e Yagami eram irmãos. Desde jovens, treinavam juntos e aperfeiçoavam suas habilidades.'], ['NARRADOR', 'Não importava quantas vezes lutassem: nenhum dos dois conseguia superar o outro.'], ['NARRADOR', 'Gabriel compreendia que a verdadeira força não estava apenas em derrotar um adversário.'], ['NARRADOR', 'Yagami, por outro lado, começou a acreditar que ser o mais forte era a única forma de provar seu valor.']] },
+  { cena: 'pergaminho', falas: [['MESTRE', 'Eu sabia que Gabriel possuía algo além da habilidade de um guerreiro.'], ['MESTRE', 'Por isso, decidi confiar a ele uma técnica milenar capaz de invocar espíritos e preservar o equilíbrio do reino.'], ['MESTRE', 'Mas aquele conhecimento exigia mais do que força. Exigia equilíbrio, responsabilidade e respeito.'], ['YAGAMI', 'Por que Gabriel? Por que ele foi escolhido... e eu não?']] },
+  { cena: 'briga_templo', falas: [['YAGAMI', 'Você ensinou tudo a Gabriel. E a mim? Eu também sou seu discípulo!'], ['MESTRE', 'Você tem grande poder, Yagami. Mas ainda não compreendeu o peso daquilo que deseja controlar.'], ['YAGAMI', 'Se Gabriel pode receber esse poder, eu também posso!'], ['GABRIEL', 'Yagami! Pare!'], ['GABRIEL', 'Não vou permitir que machuque o mestre.']] },
+  { cena: 'noite', falas: [['MESTRE', 'Gabriel tentou impedir que seu irmão cometesse um erro irreversível. Mas Yagami já não conseguia ouvir a razão.'], ['YAGAMI', 'Por que você sempre precisa ser o escolhido?!'], ['GABRIEL', 'Eu nunca fui seu inimigo! Você não precisa provar nada para mim!'], ['YAGAMI', 'CALE-SE!'], ['MESTRE', 'Naquele momento, não foi a força que decidiu a batalha. Foi a calma de Gabriel diante da fúria de seu irmão.']] },
+  { cena: 'rasgado', falas: [['GABRIEL', 'Não faça isso! Você não compreende o que está tentando controlar!'], ['YAGAMI', 'Se não querem me dar o poder, eu o conquistarei sozinho!'], ['MESTRE', 'Na disputa, o pergaminho sagrado foi rasgado. Gabriel ficou com uma metade. Yagami fugiu levando a outra.']] },
+  { cena: 'corrupcao', falas: [['MESTRE', 'Consumido pelo orgulho, Yagami acreditou que poderia dominar a técnica usando apenas metade do conhecimento.'], ['MESTRE', 'Sem compreender os ensinamentos completos, ele abriu uma passagem para forças que não conseguia controlar.'], ['YAGAMI', 'Gabriel... você me tirou tudo. Eu voltarei. E, quando voltar, ninguém poderá me impedir.']] },
+  { cena: 'dojo_sombrio', falas: [['YAGAMI', 'Entregue a outra metade. Com ela, poderei completar aquilo que comecei.'], ['GABRIEL', 'Olhe para si mesmo, Yagami. Isso não é poder. É corrupção.'], ['GABRIEL', 'Você ainda pode parar.'], ['YAGAMI', 'É tarde demais!']] },
+  { cena: 'queda', falas: [['GABRIEL', 'MESTRE!'], ['MESTRE', 'Gabriel... não permita que a escuridão destrua tudo aquilo que juramos proteger.'], ['NARRADOR', 'O mestre morre.'], ['YAGAMI', 'Agora não há mais ninguém para me impedir.'], ['GABRIEL', 'Você pode destruir meu corpo... mas não permitirá que destrua o equilíbrio deste reino.']] },
+  { cena: 'selo', falas: [['MESTRE', 'Gabriel compreendeu que precisaria usar a técnica espiritual em sua forma mais poderosa.'], ['YAGAMI', 'VOCÊ NÃO PODE ME APRISIONAR!'], ['GABRIEL', 'Eu não farei isso por vingança. Farei para proteger aqueles que ainda podem viver em paz.'], ['NARRADOR', 'Yagami é selado. Gabriel desaparece no clarão da técnica.']] },
+  { cena: 'templo', falas: [['NICOLAS', 'Isso foi incrível! Então Gabriel conseguiu salvar o reino inteiro?!'], ['HENRIQUE', 'Ele fez o que precisava ser feito para proteger as pessoas. Eu quero ter coragem para fazer o mesmo.'], ['PIETRA', 'Coragem não é suficiente, Henrique.'], ['LUNA', 'Eu só queria saber se depois de salvar o reino alguém finalmente teve tempo para dormir.'], ['AKIRA', 'Mestre... o que aconteceu com Gabriel depois do selamento?'], ['MESTRE', 'Essa é uma pergunta cuja resposta você precisará descobrir por si mesmo.'], ['AKIRA', 'Se uma força tão poderosa pode proteger o mundo ou destruí-lo... então precisamos aprender a controlá-la.'], ['MESTRE', 'Talvez um dia você compreenda o verdadeiro significado dessas palavras, Akira.']] },
+  { cena: 'funeral', legenda: 'Algum tempo depois...', falas: [['DÉBORA', 'Akira... preciso conversar com você.'], ['AKIRA', 'Você conhecia o mestre há muito tempo?'], ['DÉBORA', 'Conhecia. Antes de partir, ele me pediu uma coisa: que eu treinasse você pessoalmente.'], ['AKIRA', 'Eu? Mas por quê?'], ['DÉBORA', 'Ele acreditava que você possuía um potencial espiritual incomum.'], ['AKIRA', 'Estou. Quero aprender. Quero ficar mais forte.'], ['DÉBORA', 'Então, quando estiver pronto, venha ao dojo. Seu treinamento começa agora.']] },
+  { cena: 'revelacao', falas: [['NARRADOR', 'Akira encontra um símbolo deixado pelo mestre: o mesmo que Gabriel usava na história antiga.'], ['NARRADOR', 'O mestre que contava a história às crianças era Gabriel.']] },
+  { cena: 'templo', legenda: 'A JORNADA DE AKIRA COMEÇA', falas: [] },
+  { cena: 'templo', legenda: 'NOVO OBJETIVO: ENCONTRE DÉBORA NO DOJO.', falas: [] }
+];
+const HIST_CORES = { MESTRE: '#e8e0c8', NARRADOR: '#ffe27a', AKIRA: '#46d4ff', HENRIQUE: '#ff9b4a', PIETRA: '#ff7ac8', LUNA: '#b9a6ff', NICOLAS: '#8fe36a', GABRIEL: '#9fdcff', YAGAMI: '#ff5a6a', 'DÉBORA': '#f0c0ff' };
+let histAtiva = false, histCena = 0, histFala = 0, histChars = 0, histT = 0, histRaf = 0, histLegendaT = 0;
+function histFim() { return histCena >= HIST_CENAS.length; }
+function histFalaAtual() { const c = HIST_CENAS[histCena]; return c && c.falas[histFala]; }
+function iniciarHistoria() {
+  if (histAtiva) return;                                                 // um clique só: não começa duas vezes
+  histAtiva = true; histCena = 0; histFala = 0; histChars = 0; histT = 0;
+  for (const k in teclas) teclas[k] = false; edge = {};
+  MODO_TELA = 'historia';
+  const el = document.getElementById('historia'); el.hidden = false; el.classList.remove('saindo');
+  histMostrarCena(); histLoop(performance.now());
+}
+function histMostrarCena() {
+  const c = HIST_CENAS[histCena], leg = document.getElementById('histLegenda');
+  histLegendaT = c && c.legenda ? 3.2 : 0;
+  leg.textContent = c && c.legenda || ''; leg.classList.toggle('ativa', !!(c && c.legenda));
+  histMostrarFala();
+}
+function histMostrarFala() {
+  const f = histFalaAtual(), nome = document.getElementById('histNome'), txt = document.getElementById('histTexto');
+  if (!f) { nome.textContent = ''; txt.textContent = ''; return; }
+  nome.textContent = f[0]; nome.style.color = HIST_CORES[f[0]] || '#ffd56a'; histChars = 0; txt.textContent = '';
+}
+function avancarHistoria() {
+  if (!histAtiva) return;
+  const f = histFalaAtual();
+  if (f && histChars < f[1].length) { histChars = f[1].length; return; }     // 1º toque: completa o texto
+  if (!f && !histFim()) { histCena++; histFala = 0; if (histFim()) return finalizarHistoria(); histMostrarCena(); return; }
+  histFala++;
+  if (histFala >= HIST_CENAS[histCena].falas.length) {
+    histCena++; histFala = 0;
+    if (histFim()) return finalizarHistoria();
+    histMostrarCena();
+  } else histMostrarFala();
+}
+function finalizarHistoria() {
+  if (!histAtiva) return;
+  histAtiva = false; cancelAnimationFrame(histRaf);
+  const el = document.getElementById('historia'); el.classList.add('saindo');
+  setTimeout(() => { el.hidden = true; el.classList.remove('saindo'); MODO_TELA = 'jogo'; comecarJogo(true); }, 600);
+}
+function histLoop(agora) {
+  if (!histAtiva) return;
+  const dt = Math.min(.05, (agora - (histLoop.ult || agora)) / 1000); histLoop.ult = agora;
+  histT += dt; histLegendaT = Math.max(0, histLegendaT - dt);
+  if (histLegendaT === 0 && HIST_CENAS[histCena] && HIST_CENAS[histCena].legenda) document.getElementById('histLegenda').classList.remove('ativa');
+  const f = histFalaAtual();
+  if (f && histChars < f[1].length) { histChars = Math.min(f[1].length, histChars + dt * 42); document.getElementById('histTexto').textContent = f[1].slice(0, Math.floor(histChars)); }
+  document.getElementById('histSeta').classList.toggle('ativa', !!f && histChars >= f[1].length);
+  histDesenharCena(HIST_CENAS[histCena] ? HIST_CENAS[histCena].cena : 'templo', histT);
+  histRaf = requestAnimationFrame(histLoop);
+}
+function histDesenharCena(nome, t) {
+  const cv = document.getElementById('histCanvas'), g = cv.getContext('2d'), W = 320, H = 180;
+  g.imageSmoothingEnabled = false;
+  const faixa = (y0, y1, c) => { g.fillStyle = c; g.fillRect(0, y0, W, y1 - y0); };
+  const rect = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+  const figura = (x, y, cor, cab, opt = {}) => {                         // pessoa em pixel art: cabeça, cabelo, roupa branca de karatê
+    const k = opt.s || 1, bob = opt.bob || 0;
+    rect(x - 4 * k, y - 22 * k + bob, 8 * k, 8 * k, '#f1c9a5');
+    rect(x - 4 * k, y - 24 * k + bob, 8 * k, 3 * k, cab);
+    if (opt.espinho) for (let i = -2; i <= 2; i++) rect(x + i * 2 * k - 1, y - 28 * k + bob, 2, 4, cab);
+    rect(x - 6 * k, y - 13 * k + bob, 12 * k, 14 * k, cor);
+    rect(x - 6 * k, y - 1 * k + bob, 5 * k, 6 * k, '#f2f2f2'); rect(x + 1 * k, y - 1 * k + bob, 5 * k, 6 * k, '#f2f2f2');
+    if (opt.faixa) rect(x - 6 * k, y - 6 * k + bob, 12 * k, 2 * k, opt.faixa);
+  };
+  const luz = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); };
+  const chao = (c) => { faixa(120, H, c); };
+  const estrelas = () => { for (let i = 0; i < 30; i++) rect((i * 97) % W, (i * 53) % 70, 1, 1, '#fff'); };
+  const e = {
+    templo: () => {
+      faixa(0, 110, '#f6c98a'); faixa(60, 110, '#e99a6a'); chao('#8a5a33');
+      rect(40, 40, 240, 16, '#7a2a20'); rect(30, 34, 260, 6, '#c9562e'); rect(120, 56, 80, 64, '#5b2a1f');
+      rect(140, 70, 40, 50, '#2a1410');
+      const kids = [['#2d6fb0', '#2b1a10', 40, 'PIETRA'], ['#c23a3a', '#1a1010', 76, 'HENRIQUE'], ['#3a9a5a', '#4a3a20', 110, 'LUNA'], ['#2a4ad0', '#1a1a2a', 230, 'AKIRA'], ['#e0a020', '#8a5a2a', 262, 'NICOLAS']];
+      kids.forEach(([c, h, x, n], i) => figura(x, 120, c, h, { bob: Math.round(Math.sin(t * 2 + i) * .6) }));
+      figura(160, 104, '#d8d2c0', '#cfcfcf', { s: 1.3, bob: Math.round(Math.sin(t * 2.5) * 1) });
+      rect(154, 96, 4, 2, '#8a8a8a');
+    },
+    treino: () => {
+      faixa(0, 120, '#f1b48a'); faixa(0, 60, '#ffd9a0'); chao('#6a9a3a');
+      rect(0, 118, W, 4, '#4a7a2a');
+      const p = Math.sin(t * 5);
+      figura(120 + p * 6, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
+      figura(200 - p * 6, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
+      if (Math.abs(p) > .9) { luz(160, 92, 22, 'rgba(255,240,180,.9)'); }
+    },
+    pergaminho: () => {
+      faixa(0, H, '#20182a'); chao('#2a2030');
+      for (let i = 0; i < 10; i++) rect(20 + i * 30, 20, 4, 100, '#3a2c44');
+      const pulso = .6 + .4 * Math.sin(t * 3);
+      luz(160, 90, 60 * pulso, 'rgba(120,200,255,' + (.35 * pulso) + ')');
+      rect(146, 84, 28, 20, '#f4e6b0'); rect(146, 84, 28, 2, '#b89a50'); rect(146, 102, 28, 2, '#b89a50');
+      for (let i = 0; i < 6; i++) rect(150 + ((i * 17 + t * 30) % 24), 70 + (i * 13) % 40, 2, 2, '#9fe7ff');
+      figura(110, 120, '#e8e8f0', '#2a2a40', { s: 1.1 });
+      figura(230, 120, '#3a2a40', '#1a0a14', { s: 1.1 });
+    },
+    briga_templo: () => {
+      faixa(0, 110, '#cf7a4a'); faixa(60, 110, '#a85a3a'); chao('#6a4a2a');
+      rect(50, 30, 220, 12, '#5b2a1f'); rect(60, 42, 8, 70, '#3a2010'); rect(252, 42, 8, 70, '#3a2010');
+      const p = Math.sin(t * 6);
+      figura(120 + p * 4, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
+      figura(200 - p * 4, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
+      const mestre = t > 5;
+      if (mestre) figura(40, 120, '#d8d2c0', '#cfcfcf', { s: 1.2 });
+    },
+    noite: () => {
+      faixa(0, H, '#14163a'); estrelas(); chao('#243a2a');
+      luz(260, 30, 22, 'rgba(255,250,220,.9)'); rect(256, 26, 8, 8, '#fffbe6');
+      const p = Math.sin(t * 4.4);
+      figura(130 + p * 10, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
+      figura(190 - p * 10, 120, '#f2f2f2', '#2a2a40', { faixa: '#2a4ad0' });
+      if (Math.abs(p) > .92) luz(160, 100, 26, 'rgba(255,220,140,.8)');
+    },
+    rasgado: () => {
+      faixa(0, H, '#261a2a'); chao('#33243a');
+      const sep = Math.min(14, t * 10);
+      rect(140 - sep, 80, 18, 34, '#f4e6b0'); rect(162 + sep, 80, 18, 34, '#f4e6b0');
+      rect(140 - sep, 80, 18, 2, '#b89a50'); rect(162 + sep, 80, 18, 2, '#b89a50');
+      figura(100, 120, '#f2f2f2', '#2a2a40'); figura(220, 120, '#f2f2f2', '#2a2a40');
+    },
+    corrupcao: () => {
+      faixa(0, H, '#1a0c22'); chao('#2a1433');
+      for (let i = 0; i < 12; i++) { const x = (i * 53 + t * 20) % W; rect(x, 30 + (i * 17) % 90, 2, 2, 'rgba(180,80,255,.8)'); }
+      const k = Math.min(1, t / 4);
+      luz(160, 100, 40 + 20 * k, 'rgba(120,20,160,' + (.4 * k) + ')');
+      figura(160, 120, k < .5 ? '#3a2a40' : '#1a0a14', k < .5 ? '#2a2a40' : '#5a0a20', { s: 1.3, espinho: k > .5 });
+      if (k > .7) { rect(140, 80, 40, 3, '#8a1a30'); }
+    },
+    dojo_sombrio: () => {
+      faixa(0, H, '#0e0a16'); chao('#1a1220');
+      rect(120, 40, 80, 8, '#2a1e30'); rect(120, 48, 4, 50, '#2a1e30'); rect(196, 48, 4, 50, '#2a1e30');
+      for (let i = 0; i < 4; i++) figura(60 + i * 26, 120, '#1a0a14', '#0a0a10', { s: .9 });
+      figura(160, 120, '#1a0a14', '#5a0a20', { s: 1.3, espinho: true });
+      figura(250, 120, '#f2f2f2', '#2a2a40', { faixa: '#c23a3a' });
+    },
+    queda: () => {
+      const b = Math.max(0, 1 - t / 2.5);
+      faixa(0, H, '#101018'); chao('#2a1e20');
+      rect(120, 118, 60, 8, '#8a7a6a');
+      if (t > 1.2) { figura(140, 120, '#e8e8f0', '#2a2a40', { s: .9 }); }
+      figura(100, 120, '#f2f2f2', '#cfcfcf');
+      rect(0, 0, W, H, 'rgba(255,255,255,' + (b * .6) + ')');
+    },
+    selo: () => {
+      faixa(0, H, '#0f1a30'); chao('#1a2a40');
+      const r = 20 + Math.sin(t * 2) * 4;
+      g.strokeStyle = '#7ad8ff'; g.lineWidth = 1;
+      g.beginPath(); g.arc(160, 120, r + 20, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.arc(160, 120, r + 8, 0, Math.PI * 2); g.stroke();
+      luz(160, 120, 60, 'rgba(120,200,255,.35)');
+      for (let i = 0; i < 6; i++) { const a = t * 1.5 + i; rect(160 + Math.cos(a) * 40, 110 + Math.sin(a) * 18, 3, 3, '#dff7ff'); }
+      figura(140, 120, '#f2f2f2', '#cfcfcf'); figura(180, 120, '#3a2a40', '#5a0a20', { espinho: true });
+    },
+    funeral: () => {
+      faixa(0, H, '#3a3e4a'); chao('#2e3038');
+      rect(150, 60, 20, 60, '#2a2430'); rect(144, 90, 32, 6, '#5a5068');
+      luz(160, 80, 30, 'rgba(255,200,120,.35)');
+      for (let i = 0; i < 4; i++) figura(70 + i * 26, 120, '#4a4a58', '#2a2020', { s: .9 });
+      for (let i = 0; i < 3; i++) figura(210 + i * 26, 120, '#4a4a58', '#2a2020', { s: .9 });
+    },
+    revelacao: () => {
+      faixa(0, H, '#14101e'); chao('#2a2030');
+      rect(158, 0, 4, H, '#000');
+      figura(80, 120, '#d8d2c0', '#cfcfcf', { s: 1.2 });
+      figura(240, 120, '#e8e8f0', '#2a2a40', { s: 1.2, faixa: '#c23a3a' });
+      luz(240, 100, 26, 'rgba(120,200,255,.3)');
+    }
+  };
+  (e[nome] || e.templo)();
+}
+function pularHistoria() { if (histAtiva) finalizarHistoria(); }
+document.getElementById('histPular').addEventListener('click', e => { e.stopPropagation(); pularHistoria(); });
+document.getElementById('historia').addEventListener('pointerdown', e => { if (e.target.id === 'histPular') return; avancarHistoria(); });
+window.addEventListener('keydown', e => {                                 // enquanto a cutscene roda, as teclas não chegam ao jogo
+  if (!histAtiva) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (e.code === 'Escape') pularHistoria();
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') avancarHistoria();
+}, true);
+
 /* ---------- controles (título, opções e pausa) e tamanho da tela ---------- */
 const CONTROLES = [
   ['🎤', 'FALAR / INTERAGIR', 'conversar e interagir com pessoas e objetos', 'E'],
@@ -12422,8 +12642,8 @@ const MenuP = (() => {
   function acao(a) {
     Som.efeito('confirma');
     if (a === 'continuar') { if (!saveGuardado()) return; fechar(); comecarJogo(false); }
-    else if (a === 'novo') { if (saveGuardado()) mostrar('confirma'); else { fechar(); comecarJogo(true); } }
-    else if (a === 'novoSim') { fechar(); comecarJogo(true); }
+    else if (a === 'novo') { if (saveGuardado()) mostrar('confirma'); else { fechar(); iniciarHistoria(); } }
+    else if (a === 'novoSim') { fechar(); iniciarHistoria(); }
     else if (a === 'opcoes') { lerOpcoes(); mostrar('opcoes'); }
     else if (a === 'creditos') mostrar('creditos');
     else if (a === 'controles') { el.querySelectorAll('[data-lista]').forEach(x => { x.innerHTML = htmlControles(); }); mostrar('controles'); }
@@ -14375,6 +14595,7 @@ function loop(agora) {                                                // um loop
   if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
   else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
   else if (MODO_TELA === 'torneio') { try { Luta2D.quadro(dt); } catch (e) { console.error(e); } }
+  else if (MODO_TELA === 'historia') { /* cutscene: tem o próprio quadro (histLoop) */ }
   else if (!MapaMundo.aberto && !pausado) {                              // com o mapa em tela cheia aberto ou o menu de pausa, a partida fica parada
     const a = performance.now(); atualizar(dt); const b = performance.now(); renderizar(dt); const c = performance.now();
     perfQuadro(Math.min(250, agora - (loop.ant || agora - 16.7)), b - a, c - b);
