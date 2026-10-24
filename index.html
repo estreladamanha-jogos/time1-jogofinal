@@ -330,6 +330,8 @@
   #btnV { right: 160px; bottom: 100px; width: 46px; height: 46px; background: rgba(255, 170, 120, .9); font-size: 12px; }
   #btnC { right: 214px; bottom: 96px; width: 46px; height: 46px; background: rgba(255, 120, 150, .9); font-size: 12px; }
   #btnR { right: 252px; bottom: 30px; width: 46px; height: 46px; background: rgba(170, 220, 255, .9); font-size: 12px; }
+  #btnC.falar { background: rgba(255, 255, 255, .95); box-shadow: 0 0 0 3px #46d4ff; }
+  #btnR.travado { background: #ffd54a; box-shadow: 0 0 0 3px #fff, 0 0 12px #ffd54a; }
   #btnM { top: 6px; right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
   @media (pointer: coarse) and (orientation: landscape) {               /* deitado: esquerda = movimento, direita = ações */
     #joystick { left: calc(14px + env(safe-area-inset-left)); bottom: 14px; width: 120px; height: 120px; }
@@ -348,7 +350,7 @@
     #joystick { display: block; }
     #dica { display: none; }
     #dialogo { bottom: 176px; width: 96vw; }
-    body.conversa .btn:not(#btnE), body.conversa #joystick { opacity: .35; }
+    body.conversa .btn:not(#btnE):not(.falar), body.conversa #joystick { opacity: .35; }
     .dlg-retrato { width: 84px; height: 84px; margin-bottom: 8px; }
     #dlgTexto { font-size: 14px; min-height: 2.8em; }
     .dlg-caixa { padding: 16px 14px 18px 18px; min-height: 76px; }
@@ -3165,10 +3167,37 @@ joystickEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) mo
 joystickEl.addEventListener('pointerup', soltarJoy);
 joystickEl.addEventListener('pointercancel', soltarJoy);
 document.querySelectorAll('.btn').forEach(b => {                       // botões do celular = teclas virtuais
+  if (b.id === 'btnR') return;                                           // correr: tratado abaixo (segurar ou travar)
   const k = b.dataset.k;
-  b.addEventListener('pointerdown', e => { e.preventDefault(); teclas[k] = true; edge[k] = true; });
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (b.id === 'btnC' && b.classList.contains('falar')) { interagir(); return; }   // modo FALAR: o botão interage, não ataca
+    teclas[k] = true; edge[k] = true;
+  });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => { teclas[k] = false; }));
 });
+// Correr no celular: segurar = corre enquanto pressionado; toque rápido = trava/destrava a corrida
+let correTravado = false, correT0 = 0;
+const correPressionado = () => !!(teclas.ShiftLeft || teclas.ShiftRight || correTravado);
+const btnCorrer = document.getElementById('btnR');
+btnCorrer.addEventListener('pointerdown', e => { e.preventDefault(); correT0 = performance.now(); teclas.ShiftLeft = true; });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => btnCorrer.addEventListener(ev, () => {
+  if (!teclas.ShiftLeft) return;
+  teclas.ShiftLeft = false;
+  if (ev === 'pointerup' && performance.now() - correT0 < 250) { correTravado = !correTravado; btnCorrer.classList.toggle('travado', correTravado); }
+}));
+// Botão de ação dinâmica: ✊ ATAQUE LEVE vira 🎤 FALAR perto de NPC/placa/objeto (ou durante diálogo)
+let botaoAcaoModo = '';
+function atualizarBotaoAcao() {
+  const b = document.getElementById('btnC');
+  const emFalar = !!dlg.ativo || (jog.est === 'livre' && !embarcado() && !!alvoInteracao());
+  const modo = emFalar ? 'falar' : 'ataque';
+  if (modo === botaoAcaoModo) return;
+  botaoAcaoModo = modo;
+  b.classList.toggle('falar', emFalar);
+  b.querySelector('.ico').textContent = emFalar ? '🎤' : '✊';
+  b.querySelector('small').textContent = emFalar ? 'FALAR' : 'ATAQUE LEVE';
+}
 
 /* =====================================================================
    7. TELA, CÂMERA E COLISÃO
@@ -6527,11 +6556,12 @@ function tickMissoes(dt, antX, antY) {
 const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar',
   leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', bau: 'Abrir', sino: 'Tocar o sino', treino: 'Treinar' };
 function alvoInteracao() {
-  let melhor = null, menor = 1.5;
+  let melhor = null, menor = 1.5, melhorP = 9;
+  const PRIO = { npc: 0, placa: 1 };                                   // prioridade: NPC > placa > outros
   for (const o of mapa.objs) {
     if (!INTERATIVOS[o.tipo] || (o.tipo === 'selo' && chefeAtual)) continue;
-    const d = Math.hypot(o.x - jog.x, o.y - jog.y);
-    if (d < menor) { menor = d; melhor = o; }
+    const d = Math.hypot(o.x - jog.x, o.y - jog.y), pr = PRIO[o.tipo] ?? 2;
+    if (d < 1.5 && (pr < melhorP || (pr === melhorP && d < menor))) { menor = d; melhor = o; melhorP = pr; }
   }
   if (barcoNoMapa() && !embarcado() && podeEmbarcar() && (!melhor || Math.hypot(BARCO.x - jog.x, BARCO.y - jog.y) < menor + .3)) melhor = BARCO;
   return melhor;
@@ -6862,8 +6892,8 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
     case 'livre': {
       jog.def = gd;
       if (ix || iy) {
-        jog.corre = !jog.def && jog.agua !== 2 && !!(teclas.ShiftLeft || teclas.ShiftRight);
-        jog.dir = dirDeVetor(ix, iy); virar(); jog.anda = true; jog.fase += dt * (jog.corre ? 14 : 10);
+        jog.corre = !jog.def && !dlg.ativo && jog.agua !== 2 && correPressionado();
+        jog.dir = dirDeVetor(ix, iy); virar(); jog.anda = true; jog.fase += dt * (jog.corre ? 15.5 : 10);
         andar(jog, ix, iy, (jog.def ? .4 : 1) * agi * mag * (jog.corre ? 1.55 : 1) * (jog.lento > 0 ? .55 : 1) * (jog.agua === 1 ? .7 : jog.agua === 2 ? .55 : 1) * (jog.sobQueda ? .5 : 1), dt);
         if (jog.corre && dt > 0) {                                      // poeira e linhas de velocidade ao correr
           jog.pt -= dt; if (jog.pt <= 0) { jog.pt = .1; fxPoeira(1); fxLinhas(1, DIRV[jog.dir][0], DIRV[jog.dir][1]); }
@@ -6887,7 +6917,7 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
       jog.t += dt;
       if (jog.pre > 0) { jog.pre -= dt; if (jog.pre <= 0) { jog.vz = 125; jog.ar = true; fxPoeira(4, true); } break; }
       if (jog.ar) {
-        if (ix || iy) { jog.dir = dirDeVetor(ix, iy); virar(); andar(jog, ix, iy, .9 * agi * mag * ((teclas.ShiftLeft || teclas.ShiftRight) ? 1.4 : 1), dt); }
+        if (ix || iy) { jog.dir = dirDeVetor(ix, iy); virar(); andar(jog, ix, iy, .9 * agi * mag * (correPressionado() && !dlg.ativo ? 1.55 : 1), dt); }
         jog.vz -= 440 * dt; jog.z += jog.vz * dt;
         if (jog.z <= 0 && jog.vz < 0) { jog.z = 0; jog.vz = 0; jog.ar = false; jog.pos = .12; fxPoeira(6, true); shake = Math.max(shake, 1.5); }
       } else { jog.pos -= dt; if (jog.pos <= 0) jog.est = 'livre'; }
@@ -7942,7 +7972,7 @@ function atualizar(dt0) {
   // Câmera suave
   const [px, py] = cine && cine.foco ? iso(cine.foco[0], cine.foco[1]) : iso(jog.x, jog.y), k = 1 - Math.exp(-dt0 * (cine ? 3 : 7));
   camera.x += (px - camera.x) * k; camera.y += (py - 14 - camera.y) * k;
-  atualizarHud(); atualizarHudChefe();
+  atualizarBotaoAcao(); atualizarHud(); atualizarHudChefe();
   edge = {};
 }
 
