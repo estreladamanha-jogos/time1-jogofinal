@@ -61,6 +61,16 @@
   #hHora { color: #ffe9a8; font-weight: bold; text-shadow: 2px 2px 0 #000; font-size: .9em; }
   #hLoc { font-family: inherit; color: #5ff3ff; font-weight: bold; text-shadow: 0 0 6px #00e5ff, 2px 2px 0 #000; }
   #hMissao { color: #f4d03f; font-size: 11px; }
+  /* HUD compacto: Vida, Aura e XP sempre visíveis + botão de missão que abre/fecha a caixinha de informações */
+  #hud { width: min(170px, 46vw); padding: 4px 6px 4px; }
+  .hudTopo { display: flex; align-items: center; gap: 6px; }
+  .hudBarras { flex: 1; min-width: 0; }
+  .hudInfoBtn { pointer-events: auto; flex: 0 0 auto; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #c9d0e6; background: #1b2350; color: #fff; font-size: 12px; line-height: 1; cursor: pointer; box-shadow: 0 0 0 1px #000; text-shadow: none; font-style: normal; }
+  .hudInfoBtn:active, .hudInfoBtn[aria-expanded="true"] { background: #f4d03f; color: #2a1f00; }
+  .hudInfo { position: absolute; top: calc(100% + 6px); left: 0; width: min(230px, 78vw); max-height: 36vh; overflow: auto; box-sizing: border-box; pointer-events: auto;
+    padding: 6px 8px; background: rgba(13, 16, 39, .95); border: 2px solid #c9d0e6; border-radius: 4px; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0, 229, 255, .35); font-size: 10px; line-height: 1.35; }
+  .hudInfo[hidden] { display: none; }
+  body.gotico .hudInfo { background: rgba(11, 5, 8, .95); border-color: #8a8f9e; font-family: 'Cinzel', serif; }
   #hCombo { color: #bcd; font-size: 11px; }
 
   /* ===== Dica de teclas ===== */
@@ -368,17 +378,24 @@
 <body>
 
 <header id="hud">
-  <div class="linha">
-    <span>Akira • Nv <b id="hNivel">1</b></span>
-    <span><span class="faixa-cor" id="hFaixaCor"></span> <span id="hFaixa">Branca</span></span>
+  <div class="hudTopo">
+    <div class="hudBarras">
+      <div class="barra vida"><i id="bVida"></i><span id="tVida"></span></div>
+      <div class="barra aura"><i id="bAura"></i><span id="tAura"></span></div>
+      <div class="barra xp"><i id="bXp"></i><span id="tXp"></span></div>
+    </div>
+    <button type="button" id="btnInfo" class="hudInfoBtn" aria-expanded="false" aria-controls="hudInfo" title="Missão e informações">📜</button>
   </div>
-  <div class="barra vida"><i id="bVida"></i><span id="tVida"></span></div>
-  <div class="barra aura"><i id="bAura"></i><span id="tAura"></span></div>
-  <div class="barra xp"><i id="bXp"></i><span id="tXp"></span></div>
-  <div id="hLoc">Bambuzal</div>
-  <div id="hHora">☀ 08:00 • dia</div>
-  <div id="hCombo"></div>
-  <div id="hMissao"></div>
+  <div id="hudInfo" class="hudInfo" hidden>
+    <div class="linha">
+      <span>Akira • Nv <b id="hNivel">1</b></span>
+      <span><span class="faixa-cor" id="hFaixaCor"></span> <span id="hFaixa">Branca</span></span>
+    </div>
+    <div id="hLoc">Bambuzal</div>
+    <div id="hHora">☀ 08:00 • dia</div>
+    <div id="hCombo"></div>
+    <div id="hMissao"></div>
+  </div>
 </header>
 
 <main>
@@ -3815,6 +3832,11 @@ function atualizarHud() {
   $('hMissao').textContent = txtM;
 }
 
+document.getElementById('btnInfo').addEventListener('pointerdown', e => {               // botão de missão: abre/fecha a caixinha
+  e.preventDefault(); e.stopPropagation();
+  const caixa = document.getElementById('hudInfo'), btn = document.getElementById('btnInfo');
+  caixa.hidden = !caixa.hidden; btn.setAttribute('aria-expanded', String(!caixa.hidden));
+});
 function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto; if (menuAberto) montarMenu(); }
 function montarMenu() {
   const e = estado, f = FAIXAS[e.faixa], q = e.missoes.papeis_perdidos;
