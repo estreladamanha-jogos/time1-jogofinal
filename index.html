@@ -243,12 +243,13 @@
   #menu .sel { outline: 2px solid #9be36b; }
 
   /* ===== Aviso para girar o celular (em pé, em aparelho de toque) ===== */
-  #girar { display: none; position: fixed; inset: 0; z-index: 40; place-content: center; text-align: center; pointer-events: none; padding: 24px; box-sizing: border-box;
-    background: radial-gradient(circle, rgba(40, 50, 90, .92), rgba(6, 8, 20, .97)); color: #fff; font: bold 17px 'Trebuchet MS', Verdana, sans-serif; text-shadow: 2px 2px 0 #000; }
-  #girar .icone { font-size: 56px; display: inline-block; margin-bottom: 12px; animation: girarCel 2.4s ease-in-out infinite; }
-  #girar p { margin: 0; max-width: 300px; line-height: 1.4; }
+  #girar { display: none; position: fixed; bottom: 40%; left: 50%; transform: translateX(-50%); z-index: 40; width: max-content; max-width: 92vw; align-items: center; gap: 8px; pointer-events: none; box-sizing: border-box;
+    padding: 6px 12px; border-radius: 10px; background: rgba(8, 10, 24, .88); border: 2px solid #c9d0e6; color: #fff; font: bold 12px 'Trebuchet MS', Verdana, sans-serif; text-shadow: 1px 1px 0 #000; }
+  #girar .icone { font-size: 20px; display: inline-block; animation: girarCel 2.4s ease-in-out infinite; }
+  #girar p { margin: 0; line-height: 1.3; }
   @keyframes girarCel { 0%, 25% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
-  @media (pointer: coarse) and (orientation: portrait) { #girar { display: grid; } }
+  @media (pointer: coarse) and (orientation: portrait) { #girar { display: flex; animation: girarAviso 6s ease forwards; } }
+  @keyframes girarAviso { 0%, 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }   /* aparece e some sozinho: não fica cobrindo o jogo */
 
   /* ===== Controles de celular ===== */
   #joystick {
