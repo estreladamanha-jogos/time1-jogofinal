@@ -20,10 +20,10 @@
 
   /* ===== HUD estilo arcade (KOF/SNK): barras inclinadas, moldura metálica, fonte itálica com sombra ===== */
   #hud {
-    position: fixed; top: 8px; left: 8px; width: 244px;
+    position: fixed; top: 8px; left: 8px; width: 170px;
     background: linear-gradient(180deg, #232a4d 0%, #0d1027 100%);
-    border: 2px solid #c9d0e6; border-radius: 3px; color: #fff; padding: 6px 10px 7px;
-    font-size: 12px; line-height: 1.35; pointer-events: none; font-style: italic; font-weight: bold;
+    border: 2px solid #c9d0e6; border-radius: 3px; color: #fff; padding: 4px 7px 5px;
+    font-size: 10px; line-height: 1.3; pointer-events: none; font-style: italic; font-weight: bold;
     letter-spacing: .5px; text-shadow: 2px 2px 0 #000;
     box-shadow: 0 0 0 2px #000, 0 0 14px rgba(0, 229, 255, .45), inset 0 0 0 1px #5a6490;
   }
@@ -32,9 +32,10 @@
     display: inline-block; width: 22px; height: 7px; border: 1px solid #000; transform: skewX(-15deg);
     background: var(--faixa, #f2f2f2); box-shadow: 0 0 0 1px #fff;
   }
-  .barra { position: relative; height: 13px; margin: 4px 0; background: #07081a; border: 2px solid #c9d0e6; box-shadow: 0 0 0 1px #000, 2px 2px 0 #000; transform: skewX(-15deg); }
-  .barra i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p, 100) * 1%); }
-  .barra span { position: absolute; inset: 0; text-align: center; font-size: 9px; line-height: 13px; transform: skewX(15deg); text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; letter-spacing: 1px; }
+  .barra { position: relative; height: 11px; margin: 3px 0; background: repeating-linear-gradient(90deg, transparent 0 7px, rgba(0, 0, 0, .6) 7px 8px), #07081a; border: 1px solid #c9d0e6; box-shadow: 0 0 0 1px #000, 1px 1px 0 #000, inset 0 0 4px #000; transform: skewX(-15deg); }
+  .barra i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p, 100) * 1%); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .45), 0 0 6px currentColor; transition: width .25s ease-out; }
+  .barra i::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 45%; background: linear-gradient(rgba(255, 255, 255, .7), rgba(255, 255, 255, 0)); }
+  .barra span { position: absolute; inset: 0; text-align: center; font-size: 8px; line-height: 11px; transform: skewX(15deg); text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; letter-spacing: 1px; }
   .vida i { background: linear-gradient(180deg, #fff3a0 0%, #ffd23a 30%, #ff7a1f 65%, #d8281f 100%); }
   .aura i { background: linear-gradient(180deg, #d6fbff 0%, #5fe0ff 35%, #2a8cff 70%, #1a46c8 100%); }
   .xp i { background: linear-gradient(180deg, #fff 0%, #f4d03f 40%, #b8860b 100%); }
@@ -45,9 +46,9 @@
     border: 4px solid transparent; border-image: linear-gradient(135deg, #b5bac8, #3a3d48 35%, #9096a6 60%, #2a2c36) 1;
     box-shadow: 0 0 0 2px #000, 0 0 22px rgba(190, 20, 50, .55), inset 0 0 0 2px #14080c, inset 0 0 18px rgba(0, 0, 0, .8);
   }
-  body.gotico .barra { border: 3px solid #6c7080; box-shadow: 0 0 0 1px #000, 2px 2px 0 #000, inset 0 0 6px #000; background: #12060a; overflow: visible; }
+  body.gotico .barra { background: repeating-linear-gradient(90deg, transparent 0 7px, rgba(0, 0, 0, .7) 7px 8px), #12060a; border: 2px solid #6c7080; box-shadow: 0 0 0 1px #000, 2px 2px 0 #000, inset 0 0 6px #000; overflow: visible; }
   body.gotico .barra::before {
-    content: ''; position: absolute; left: -12px; top: 50%; width: 12px; height: 12px; margin-top: -8px; border-radius: 50%; transform: skewX(15deg);
+    content: ''; position: absolute; left: -9px; top: 50%; width: 10px; height: 10px; margin-top: -6px; border-radius: 50%; transform: skewX(15deg);
     background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ff3050 32%, #6a0618 92%); box-shadow: 0 0 0 2px #c9a24a, 0 0 8px #ff2040; z-index: 2;
   }
   body.gotico .vida i { background: linear-gradient(180deg, #ffb0bb 0%, #e0233c 38%, #8a0a22 75%, #4a0212 100%); }
