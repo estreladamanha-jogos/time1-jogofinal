@@ -67,6 +67,13 @@
   .hudBarras { flex: 1; min-width: 0; }
   .hudInfoBtn { pointer-events: auto; flex: 0 0 auto; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #c9d0e6; background: #1b2350; color: #fff; font-size: 12px; line-height: 1; cursor: pointer; box-shadow: 0 0 0 1px #000; text-shadow: none; font-style: normal; }
   .hudInfoBtn:active, .hudInfoBtn[aria-expanded="true"] { background: #f4d03f; color: #2a1f00; }
+  .hudInfoBtn.nova { background: #f4d03f; color: #2a1f00; border-color: #fff6d0; animation: piscaMissao .8s steps(2, jump-none) infinite; }
+  .hudInfoBtn.feita { background: #5fc85a; color: #0b2a08; border-color: #d9ffd2; }
+  @keyframes piscaMissao { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.85); } }
+  #hudMissoes { margin-bottom: 4px; }
+  #hudMissoes div { margin: 0 0 4px; }
+  #hudMissoes small { color: #bcd; font-size: 9px; }
+  #hMissao { display: none; }   /* a lista de missões (📋) mostra isso agora */
   .hudInfo { position: absolute; top: calc(100% + 6px); left: 0; width: min(230px, 78vw); max-height: 36vh; overflow: auto; box-sizing: border-box; pointer-events: auto;
     padding: 6px 8px; background: rgba(13, 16, 39, .95); border: 2px solid #c9d0e6; border-radius: 4px; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0, 229, 255, .35); font-size: 10px; line-height: 1.35; }
   .hudInfo[hidden] { display: none; }
@@ -212,7 +219,7 @@
   .painel input.foco, .painel select.foco { outline: 2px solid #ffd56a; outline-offset: 2px; }
   .painel select { font: inherit; background: #16243a; color: #fff; border: 2px solid #46d4ff; padding: 3px 6px; }
   .painel .teclas { font-size: 12px; color: #9fb4d4; }
-  body.toque-sempre .btn, body.toque-sempre #joystick { display: block; }
+  body.toque-sempre .btn { display: flex; } body.toque-sempre #joystick { display: block; }
   body.toque-nunca .btn, body.toque-nunca #joystick { display: none !important; }
   /* ===== Promoção de faixa ===== */
   #promo { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; text-align: center; pointer-events: none; color: #fff; background: radial-gradient(circle, rgba(255,240,180,.35), rgba(0,0,0,.55)); }
@@ -266,7 +273,10 @@
   .btn {
     display: none; position: fixed; border-radius: 50%; border: 3px solid #fff;
     font-weight: bold; font-family: inherit; touch-action: none; color: #2a1f00; padding: 0;
+    display: none; flex-direction: column; align-items: center; justify-content: center; line-height: 1; overflow: hidden;
   }
+  .btn .ico { font-size: 1.25em; line-height: 1; font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
+  .btn small { font-size: 6.5px; letter-spacing: .3px; margin-top: 2px; max-width: 90%; white-space: normal; text-align: center; line-height: 1.05; }
   #btnJ { right: 20px; bottom: 30px; width: 80px; height: 80px; background: rgba(244, 208, 63, .9); font-size: 28px; }
   #btnK { right: 110px; bottom: 50px; width: 62px; height: 62px; background: rgba(58, 169, 224, .9); font-size: 22px; }
   #btnS { right: 30px; bottom: 122px; width: 58px; height: 58px; background: rgba(155, 227, 107, .9); font-size: 13px; }
@@ -289,7 +299,8 @@
     #ctxAcoes { bottom: 170px; }
   }
   @media (pointer: coarse) {
-    .btn, #joystick { display: block; }
+    .btn { display: flex; }
+    #joystick { display: block; }
     #dica { display: none; }
     #dialogo { bottom: 176px; width: 96vw; }
     body.conversa .btn:not(#btnE), body.conversa #joystick { opacity: .35; }
@@ -385,9 +396,10 @@
       <div class="barra aura"><i id="bAura"></i><span id="tAura"></span></div>
       <div class="barra xp"><i id="bXp"></i><span id="tXp"></span></div>
     </div>
-    <button type="button" id="btnInfo" class="hudInfoBtn" aria-expanded="false" aria-controls="hudInfo" title="Missão e informações">📜</button>
+    <button type="button" id="btnInfo" class="hudInfoBtn" aria-expanded="false" aria-controls="hudInfo" title="Lista de missões">📋</button>
   </div>
   <div id="hudInfo" class="hudInfo" hidden>
+    <div id="hudMissoes"></div>
     <div class="linha">
       <span>Akira • Nv <b id="hNivel">1</b></span>
       <span><span class="faixa-cor" id="hFaixaCor"></span> <span id="hFaixa">Branca</span></span>
@@ -474,14 +486,14 @@
 
 <div id="joystick"><div class="knob" id="knob"></div></div>
 <div id="girar" aria-hidden="true"><div class="icone">📱</div><p>Gire o celular para uma melhor experiência</p></div>
-<button class="btn" id="btnJ" data-k="KeyJ" type="button">J</button>
-<button class="btn" id="btnK" data-k="KeyK" type="button">K</button>
-<button class="btn" id="btnS" data-k="Space" type="button">ESQ</button>
-<button class="btn" id="btnL" data-k="KeyL" type="button">DEF</button>
-<button class="btn" id="btnE" data-k="KeyE" type="button">E</button>
-<button class="btn" id="btnV" data-k="KeyV" type="button">PULO</button>
-<button class="btn" id="btnC" data-k="KeyC" type="button">RAJ</button>
-<button class="btn" id="btnR" data-k="ShiftLeft" type="button">RUN</button>
+<button class="btn" id="btnJ" data-k="KeyJ" type="button"><span class="ico">✨</span><small>ESPECIAL</small></button>
+<button class="btn" id="btnK" data-k="KeyK" type="button"><span class="ico">💥</span><small>ATAQUE FORTE</small></button>
+<button class="btn" id="btnS" data-k="Space" type="button"><span class="ico">💨</span><small>ESQUIVA</small></button>
+<button class="btn" id="btnL" data-k="KeyL" type="button"><span class="ico">🛡️</span><small>DEFENDER</small></button>
+<button class="btn" id="btnE" data-k="KeyE" type="button"><span class="ico">🎤</span><small>FALAR</small></button>
+<button class="btn" id="btnV" data-k="KeyV" type="button"><span class="ico">⬆️</span><small>PULAR</small></button>
+<button class="btn" id="btnC" data-k="KeyC" type="button"><span class="ico">✊</span><small>ATAQUE LEVE</small></button>
+<button class="btn" id="btnR" data-k="ShiftLeft" type="button"><span class="ico">🏃</span><small>CORRER</small></button>
 <button class="btn" id="btnM" data-k="KeyM" type="button">☰</button>
 
 <script>
@@ -3816,7 +3828,24 @@ function destravarAkira(dt) {
   if (mapa.spawn) { jog.x = mapa.spawn.x; jog.y = mapa.spawn.y; }
 }
 
+let listaMissoesTxt = '';
+function listaMissoesHtml() {                                             // principal + em andamento + concluídas
+  let h = stM('debora_fundamentos') === 'nao_iniciada' ? '<div>▶ <b>Fale com a Mestra Débora</b></div>' : '';
+  const ids = Object.keys(MISSOES);
+  h += ids.filter(id => stM(id) === 'em_andamento').map(id => `<div>▶ <b>${MISSOES[id].nome}</b><br><small>${MISSOES[id].objetivo ? MISSOES[id].objetivo() : ''}</small></div>`).join('');
+  h += ids.filter(id => stM(id) === 'concluida').map(id => `<div>✔ ${MISSOES[id].nome}</div>`).join('');
+  return h || '<div><small>Nenhuma missão ainda. Converse com os personagens.</small></div>';
+}
+function atualizarIconeMissao() {                                        // 📋 amarelo piscando = nova/a fazer; verde = concluída
+  const b = document.getElementById('btnInfo'); if (!b) return;
+  const nova = !!missaoAtiva() || stM('debora_fundamentos') === 'nao_iniciada';
+  const feita = !nova && Object.keys(MISSOES).some(id => stM(id) === 'concluida');
+  b.classList.toggle('nova', nova); b.classList.toggle('feita', !nova && feita);
+  const caixa = document.getElementById('hudMissoes');
+  if (caixa && !document.getElementById('hudInfo').hidden) { const h = listaMissoesHtml(); if (h !== listaMissoesTxt) { listaMissoesTxt = h; caixa.innerHTML = h; } }
+}
 function atualizarHud() {
+  atualizarIconeMissao();
   const q = estado.missoes.papeis_perdidos;
   const ma = missaoAtiva();
   let txtM = ma ? (ma.startsWith('debora_') ? 'Missão principal: ' : 'Missão: ') + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo() : '';
