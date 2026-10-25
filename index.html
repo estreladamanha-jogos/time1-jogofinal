@@ -323,26 +323,16 @@
   .btn .ico { font-size: 1.25em; line-height: 1; font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
   .btn small { font-size: 6.5px; letter-spacing: .3px; margin-top: 2px; max-width: 90%; white-space: normal; text-align: center; line-height: 1.05; }
   #btnJ { right: 20px; bottom: 30px; width: 80px; height: 80px; background: rgba(244, 208, 63, .9); font-size: 28px; }
-  #btnK { right: 110px; bottom: 50px; width: 62px; height: 62px; background: rgba(58, 169, 224, .9); font-size: 22px; }
   #btnS { right: 30px; bottom: 122px; width: 58px; height: 58px; background: rgba(155, 227, 107, .9); font-size: 13px; }
   #btnL { right: 100px; bottom: 120px; width: 50px; height: 50px; background: rgba(200, 200, 220, .85); font-size: 13px; }
-  #btnE { right: 186px; bottom: 30px; width: 56px; height: 56px; background: rgba(255, 255, 255, .85); font-size: 22px; }
-  #btnV { right: 160px; bottom: 100px; width: 46px; height: 46px; background: rgba(255, 170, 120, .9); font-size: 12px; }
-  #btnC { right: 214px; bottom: 96px; width: 46px; height: 46px; background: rgba(255, 120, 150, .9); font-size: 12px; }
-  #btnR { right: 252px; bottom: 30px; width: 46px; height: 46px; background: rgba(170, 220, 255, .9); font-size: 12px; }
-  #btnC.falar { background: rgba(255, 255, 255, .95); box-shadow: 0 0 0 3px #46d4ff; }
-  #btnR.travado { background: #ffd54a; box-shadow: 0 0 0 3px #fff, 0 0 12px #ffd54a; }
+  #btnC { right: 112px; bottom: 26px; width: 62px; height: 62px; background: rgba(255, 120, 150, .9); font-size: 14px; }
   #btnM { top: 6px; right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
   @media (pointer: coarse) and (orientation: landscape) {               /* deitado: esquerda = movimento, direita = ações */
     #joystick { left: calc(14px + env(safe-area-inset-left)); bottom: 14px; width: 120px; height: 120px; }
     #btnJ { right: calc(14px + env(safe-area-inset-right)); bottom: 14px; width: 72px; height: 72px; font-size: 24px; }
-    #btnK { right: 96px; bottom: 26px; width: 56px; height: 56px; }
     #btnL { right: 14px; bottom: 96px; width: 52px; height: 52px; }
     #btnS { right: 90px; bottom: 96px; width: 52px; height: 52px; }
-    #btnV { right: 160px; bottom: 26px; width: 52px; height: 52px; }
-    #btnC { right: 160px; bottom: 92px; width: 52px; height: 52px; }
-    #btnE { right: 222px; bottom: 108px; width: 48px; height: 48px; font-size: 18px; }
-    #btnR { right: 222px; bottom: 40px; width: 44px; height: 44px; }
+    #btnC { right: 96px; bottom: 26px; width: 56px; height: 56px; }
     #ctxAcoes { bottom: 170px; }
   }
   @media (pointer: coarse) {
@@ -350,14 +340,14 @@
     #joystick { display: block; }
     #dica { display: none; }
     #dialogo { bottom: 176px; width: 96vw; }
-    body.conversa .btn:not(#btnE):not(.falar), body.conversa #joystick { opacity: .35; }
+    body.conversa .btn, body.conversa #joystick { opacity: .35; }
     .dlg-retrato { width: 84px; height: 84px; margin-bottom: 8px; }
     #dlgTexto { font-size: 14px; min-height: 2.8em; }
     .dlg-caixa { padding: 16px 14px 18px 18px; min-height: 76px; }
     .dlg-dica { display: none; }
   }
   /* ===== MODO TORNEIO (lutas laterais e cenas no estilo da abertura) ===== */
-  body.modoTorneio #hud, body.modoTorneio #dica, body.modoTorneio #hudChefe, body.modoTorneio #ctxAcoes, body.modoTorneio #btnE, body.modoTorneio #btnM, body.modoTorneio #btnR { display: none !important; }
+  body.modoTorneio #hud, body.modoTorneio #dica, body.modoTorneio #hudChefe, body.modoTorneio #ctxAcoes, body.modoTorneio #btnM { display: none !important; }
   body.modoTorneio #aviso { top: auto; bottom: 22%; z-index: 8; }
   #telaTorneio { position: fixed; inset: 0; z-index: 4; font-family: 'Pixelify Sans', system-ui, sans-serif; color: #fff; overflow: hidden; user-select: none; }
   #telaTorneio[hidden] { display: none; }
@@ -542,13 +532,9 @@
 <div id="joystick"><div class="knob" id="knob"></div></div>
 <div id="girar" aria-hidden="true"><div class="icone">📱</div><p>Gire o celular para uma melhor experiência</p></div>
 <button class="btn" id="btnJ" data-k="KeyJ" type="button"><span class="ico">✨</span><small>ESPECIAL</small></button>
-<button class="btn" id="btnK" data-k="KeyK" type="button"><span class="ico">💥</span><small>ATAQUE FORTE</small></button>
 <button class="btn" id="btnS" data-k="Space" type="button"><span class="ico">💨</span><small>ESQUIVA</small></button>
 <button class="btn" id="btnL" data-k="KeyL" type="button"><span class="ico">🛡️</span><small>DEFENDER</small></button>
-<button class="btn" id="btnE" data-k="KeyE" type="button"><span class="ico">🎤</span><small>FALAR</small></button>
-<button class="btn" id="btnV" data-k="KeyV" type="button"><span class="ico">⬆️</span><small>PULAR</small></button>
 <button class="btn" id="btnC" data-k="KeyC" type="button"><span class="ico">✊</span><small>ATAQUE LEVE</small></button>
-<button class="btn" id="btnR" data-k="ShiftLeft" type="button"><span class="ico">🏃</span><small>CORRER</small></button>
 <button class="btn" id="btnM" data-k="KeyM" type="button">☰</button>
 <button type="button" id="btnPausa" aria-label="Pausar" title="Pausar">⏸️</button>
 <section id="historia" hidden aria-live="polite">
@@ -3167,37 +3153,11 @@ joystickEl.addEventListener('pointermove', e => { if (e.pointerId === joy.id) mo
 joystickEl.addEventListener('pointerup', soltarJoy);
 joystickEl.addEventListener('pointercancel', soltarJoy);
 document.querySelectorAll('.btn').forEach(b => {                       // botões do celular = teclas virtuais
-  if (b.id === 'btnR') return;                                           // correr: tratado abaixo (segurar ou travar)
   const k = b.dataset.k;
-  b.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    if (b.id === 'btnC' && b.classList.contains('falar')) { interagir(); return; }   // modo FALAR: o botão interage, não ataca
-    teclas[k] = true; edge[k] = true;
-  });
+  b.addEventListener('pointerdown', e => { e.preventDefault(); teclas[k] = true; edge[k] = true; });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => { teclas[k] = false; }));
 });
-// Correr no celular: segurar = corre enquanto pressionado; toque rápido = trava/destrava a corrida
-let correTravado = false, correT0 = 0;
-const correPressionado = () => !!(teclas.ShiftLeft || teclas.ShiftRight || correTravado);
-const btnCorrer = document.getElementById('btnR');
-btnCorrer.addEventListener('pointerdown', e => { e.preventDefault(); correT0 = performance.now(); teclas.ShiftLeft = true; });
-['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => btnCorrer.addEventListener(ev, () => {
-  if (!teclas.ShiftLeft) return;
-  teclas.ShiftLeft = false;
-  if (ev === 'pointerup' && performance.now() - correT0 < 250) { correTravado = !correTravado; btnCorrer.classList.toggle('travado', correTravado); }
-}));
-// Botão de ação dinâmica: ✊ ATAQUE LEVE vira 🎤 FALAR perto de NPC/placa/objeto (ou durante diálogo)
-let botaoAcaoModo = '';
-function atualizarBotaoAcao() {
-  const b = document.getElementById('btnC');
-  const emFalar = !!dlg.ativo || (jog.est === 'livre' && !embarcado() && !!alvoInteracao());
-  const modo = emFalar ? 'falar' : 'ataque';
-  if (modo === botaoAcaoModo) return;
-  botaoAcaoModo = modo;
-  b.classList.toggle('falar', emFalar);
-  b.querySelector('.ico').textContent = emFalar ? '🎤' : '✊';
-  b.querySelector('small').textContent = emFalar ? 'FALAR' : 'ATAQUE LEVE';
-}
+const correPressionado = () => !!(teclas.ShiftLeft || teclas.ShiftRight);   // correr: só pelo teclado (Shift)
 
 /* =====================================================================
    7. TELA, CÂMERA E COLISÃO
@@ -7972,7 +7932,7 @@ function atualizar(dt0) {
   // Câmera suave
   const [px, py] = cine && cine.foco ? iso(cine.foco[0], cine.foco[1]) : iso(jog.x, jog.y), k = 1 - Math.exp(-dt0 * (cine ? 3 : 7));
   camera.x += (px - camera.x) * k; camera.y += (py - 14 - camera.y) * k;
-  atualizarBotaoAcao(); atualizarHud(); atualizarHudChefe();
+  atualizarHud(); atualizarHudChefe();
   edge = {};
 }
 
