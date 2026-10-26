@@ -249,6 +249,33 @@
   #menu button:disabled { background: #555; color: #999; cursor: default; }
   #menu .sel { outline: 2px solid #9be36b; }
 
+  /* ===== Menu M: abas, árvore de técnicas e inventário ===== */
+  #menu.mn-grande { width: min(96vw, 820px); height: min(92vh, 640px); }
+  .mn-abas { display: flex; gap: 6px; margin: 4px 0 10px; }
+  .mn-abas button { flex: 1; }
+  .mn-abas button.ativa { outline: 2px solid #9be36b; }
+  .mn-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .mn-duas { grid-template-columns: 1fr; } }
+  .mn-linha { margin-bottom: 6px; }
+  .mn-stat { display: inline-block; min-width: 110px; }
+  .mn-slot { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid #5a6488; border-radius: 8px; margin-bottom: 6px; background: #151c33; }
+  .mn-tree { position: relative; overflow: auto; border: 1px solid #444a66; border-radius: 8px; background: #0f1424; max-width: 100%; }
+  .mn-tree svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .mn-tree line { stroke: #3a4466; stroke-width: 3; }
+  .mn-tree line.on { stroke: #f4d03f; }
+  .mn-no { position: absolute; width: 130px; height: 44px; font-size: 12px; line-height: 1.2; white-space: normal; border: 2px solid #f4d03f; }
+  .mn-no.trava { background: #3a3f52; color: #aab; border-color: #555; }
+  .mn-no.eq { outline: 2px solid #9be36b; }
+  .mn-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+  .mn-tile { position: relative; aspect-ratio: 1 / 1; padding: 0; margin: 0; font-size: 22px; background: #1d2440; color: #fff; border: 2px solid #5a6488; border-radius: 8px; }
+  .mn-tile.cons { border-color: #6ec34a; }
+  .mn-tile.equip { border-color: #4a9be8; }
+  .mn-tile.missao { border-color: #b07ae8; }
+  .mn-tile.sel { outline: 2px solid #9be36b; }
+  .mn-tile.vazio { background: #161c30; border-style: dashed; border-color: #333b58; }
+  .mn-tile em { position: absolute; right: 3px; bottom: 0; font-size: 11px; font-style: normal; color: #fff; }
+  .mn-sel-box { margin-top: 10px; padding: 8px; border: 1px solid #5a6488; border-radius: 8px; background: #0f1424; }
+
   /* ===== Aviso para girar o celular (em pé, em aparelho de toque) ===== */
   #girar { display: none; position: fixed; bottom: 40%; left: 50%; transform: translateX(-50%); z-index: 40; width: max-content; max-width: 92vw; align-items: center; gap: 8px; pointer-events: none; box-sizing: border-box;
     padding: 6px 12px; border-radius: 10px; background: rgba(8, 10, 24, .88); border: 2px solid #c9d0e6; color: #fff; font: bold 12px 'Trebuchet MS', Verdana, sans-serif; text-shadow: 1px 1px 0 #000; }
@@ -4022,29 +4049,87 @@ document.getElementById('pausa').addEventListener('click', e => {
   else if (a === 'menuPrincipal') { pausarJogo(false); document.body.classList.remove('em-jogo'); voltarAoMenu(); }
 });
 function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto; if (menuAberto) montarMenu(); }
-function montarMenu() {
-  const e = estado, f = FAIXAS[e.faixa], q = e.missoes.papeis_perdidos;
-  let h = `<h2>Akira • Nv ${e.nivel} • Faixa ${f.nome}</h2><p>XP ${e.xp}/${xpProx()} • Vitórias ${e.vitorias} • Pontos livres: <b>${e.pontos}</b></p>` + painelGraduacao() + '<h3>Atributos</h3>';
-  ATRIBUTOS.forEach(([id, nome, desc]) => { h += `<div>${nome}: <b>${e.attr[id]}</b> <button data-acao="attr" data-id="${id}" ${e.pontos < 1 ? 'disabled' : ''}>+</button> <small>${desc}</small></div>`; });
-  h += '<h3>Combos (teclas 1 a 4)</h3>';
-  COMBOS.forEach((c, i) => {
-    const ok = e.nivel >= c.nivel;
-    h += `<div><button data-acao="combo" data-id="${i}" class="${e.combo === i ? 'sel' : ''}" ${ok ? '' : 'disabled'}>${i + 1}. ${c.nome}</button> <small>${ok ? c.seq.map(s => TECNICAS[s].nome).join(' → ') : 'libera no nível ' + c.nivel}</small></div>`;
-  });
-  h += '<h3>Técnicas especiais (tecla K) — separadas dos combos</h3>';
+/* ---------- MENU M: três telas próprias (atributos, árvore de técnicas, inventário) ---------- */
+const MENU_ABAS = [['atr', 'Atributos'], ['tec', 'Técnicas'], ['inv', 'Inventário']];
+let menuAba = 'atr', menuItemSel = null;
+const ICONE_ITEM = { onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
+  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', kimono_treino: '🥋', kimono_azul: '🥋', luvas_couro: '🧤', amuleto_foco: '📿',
+  dango: '🍡', incenso: '🪔', flor_silvestre: '🌼', papel: '📜', buque: '💐', cesto_karina: '🧺', marcador: '🔖' };
+const ICONE_SLOT = { roupa: '🥋', luvas: '🧤', amuleto: '📿' }, NOME_SLOT = { roupa: 'Roupa', luvas: 'Luvas', amuleto: 'Amuleto' };
+// posição visual da árvore (coluna, linha) e de quem vem antes. A ordem é só visual: os requisitos (nível, faixa, chefes) continuam os de TEC_AKIRA.
+const TEC_ARVORE = {
+  explosaoAura: { pos: [0, 2], pre: [] },
+  projetilEspiritual: { pos: [1, 1], pre: ['explosaoAura'] },
+  punhoConcentrado: { pos: [1, 3], pre: ['explosaoAura'] },
+  ondaEspiritual: { pos: [2, 2], pre: ['projetilEspiritual', 'punhoConcentrado'] },
+  rupturaEspiritual: { pos: [3, 2], pre: ['ondaEspiritual'] }
+};
+const efeitoItemTexto = it => [it.cura ? 'recupera ' + it.cura + ' de vida' : '', it.aura ? 'recupera ' + it.aura + ' de aura' : ''].filter(Boolean).join(' e ');
+function menuAtributos() {
+  const e = estado;
+  let h = `<div class="mn-duas"><div><h3>Atributos</h3><p>Pontos livres: <b>${e.pontos}</b></p>`;
+  ATRIBUTOS.forEach(([id, nome, desc]) => { h += `<div class="mn-linha"><span class="mn-stat">${nome}</span> <b>${e.attr[id]}</b> <button data-acao="attr" data-id="${id}" ${e.pontos < 1 ? 'disabled' : ''}>+</button><br><small>${desc}</small></div>`; });
+  h += `</div><div><h3>Equipamento</h3>`;
+  ['roupa', 'luvas', 'amuleto'].forEach(sl => { const id = e.equip[sl], it = id && ITENS[id];
+    h += `<div class="mn-slot">${ICONE_SLOT[sl]} <div><small>${NOME_SLOT[sl]}</small><br>${it ? '<b>' + it.nome + '</b>' + (e.reforma[id] === 2 ? ' (nível 2)' : '') + '<br><small>' + it.desc + '</small>' : '<small>vazio</small>'}</div></div>`; });
+  h += `<h3>Efeitos totais</h3><p>Vida máxima: <b>${maxHp()}</b> • Aura máxima: <b>${maxAura()}</b></p><p>Dano: <b>x${multDano().toFixed(2)}</b></p>`;
+  h += `</div></div>`;
+  h += `<h3>Graduação e missões</h3>` + painelGraduacao();
+  const q = e.missoes.papeis_perdidos;
+  h += `<p>Papéis do Davi: ${q === 'concluida' ? 'concluída ✔' : q === 'em_andamento' ? 'em andamento (' + nPapeis() + '/7)' : 'não iniciada'}</p>`;
+  h += `<p><button data-acao="social">❤ Respeito e missões (H)</button></p>`;
+  return h;
+}
+function menuTecnicas() {
+  const e = estado, W = 150, H = 80, X0 = 20, Y0 = 20, pos = id => [X0 + TEC_ARVORE[id].pos[0] * W, Y0 + TEC_ARVORE[id].pos[1] * H];
+  let lin = '';
+  ORDEM_TEC.forEach(id => TEC_ARVORE[id] && TEC_ARVORE[id].pre.forEach(pr => { const a = pos(pr), b = pos(id);
+    lin += `<line x1="${a[0] + 65}" y1="${a[1] + 22}" x2="${b[0] + 65}" y2="${b[1] + 22}" class="${tecLiberada(id) ? 'lig on' : 'lig'}"/>`; }));
+  let nos = '';
+  ORDEM_TEC.forEach(id => { const T = TEC_ARVORE[id] ? TEC_ARVORE[id] : { pos: [0, 0] }, [x, y] = pos(id), ok = tecLiberada(id), eq = tecEquipada() === id;
+    nos += `<button class="mn-no ${ok ? '' : 'trava'} ${eq ? 'eq' : ''}" style="left:${x}px;top:${y}px" data-acao="tec" data-id="${id}" ${ok ? '' : 'disabled'} title="${TEC_AKIRA[id].desc}">${eq ? '✔ ' : ok ? '' : '🔒 '}${TEC_AKIRA[id].nome}</button>`; });
+  let h = `<h3>Árvore de técnicas (tecla K)</h3><div class="mn-tree" style="min-width:${X0 * 2 + 3 * W + 150}px;height:${Y0 * 2 + 3 * H + 40}px">`;
+  h += `<svg width="${X0 * 2 + 3 * W + 150}" height="${Y0 * 2 + 3 * H + 40}">${lin}</svg>${nos}</div>`;
   ORDEM_TEC.forEach(id => { const T = TEC_AKIRA[id], ok = tecLiberada(id), eq = tecEquipada() === id;
-    h += `<div><button data-acao="tec" data-id="${id}" class="${eq ? 'sel' : ''}" ${ok ? '' : 'disabled'}>${eq ? '✔ ' : ok ? '' : '🔒 '}${T.nome}</button> <small>${ok ? T.desc + ' • aura ' + custoTec(id) + (eq ? ' • EQUIPADA' : '') : reqTecTexto(T.req)}</small></div>`; });
-  h += '<h3>Relações e parceiro</h3><p><button data-acao="social">❤ Respeito e missões (H)</button></p>' + painelRelacoes();
+    h += `<p><b>${T.nome}</b> <small>${ok ? T.desc + ' • aura ' + custoTec(id) + (eq ? ' • EQUIPADA' : '') : reqTecTexto(T.req)}</small></p>`; });
+  h += '<h3>Combos (teclas 1 a 4)</h3><div>';
+  COMBOS.forEach((c, i) => { const ok = e.nivel >= c.nivel;
+    h += `<button data-acao="combo" data-id="${i}" class="${e.combo === i ? 'sel' : ''}" ${ok ? '' : 'disabled'}>${i + 1}. ${c.nome}</button> <small>${ok ? c.seq.map(s => TECNICAS[s].nome).join(' → ') : 'libera no nível ' + c.nivel}</small><br>`; });
+  h += '</div>';
   const conhecidos = Object.keys(ALIADOS).filter(p => RELACOES[p] && relacao(p).conhece);
-  if (conhecidos.length) { h += '<h3>Técnicas dos parceiros</h3>'; conhecidos.forEach(p => { const g = grauDe(p); h += `<div><b>${ALIADOS[p].nome || RELACOES[p].nome}</b> <small>${ALIADOS[p].tecnicas.map(t => (g >= t.grau ? '' : '🔒') + t.nome + (g >= t.grau ? '' : ' (grau ' + t.grau + ')')).join(' • ')} • finalização: ${ALIADOS[p].final.nome}</small></div>`; }); }
-  h += '<h3>Itens</h3>';
-  const ids = Object.keys(e.inv).filter(k => e.inv[k] > 0);
-  if (!ids.length) h += '<p><small>Nenhum item.</small></p>';
-  ids.forEach(id => { const it = ITENS[id], eq = it.slot && e.equip[it.slot] === id;
-    h += `<div>${it.nome} x${e.inv[id]} ${it.tipo === 'consumivel' ? `<button data-acao="usar" data-id="${id}">Usar</button>` : ''}${it.slot ? `<button data-acao="equipar" data-id="${id}">${eq ? 'Tirar' : 'Vestir'}</button> <small>${eq ? '(vestido) ' : ''}${it.desc}</small>` : ''}</div>`; });
-  h += '<h3>Missões</h3>';
-  h += q === 'nao_iniciada' ? '<p><small>Nenhuma missão ativa. Fale com o Davi na biblioteca!</small></p>'
-    : `<p>Os papéis perdidos: ${q === 'concluida' ? 'concluída ✔' : 'em andamento (' + nPapeis() + '/7)'}</p>`;
+  if (conhecidos.length) { h += '<h3>Técnicas dos parceiros</h3>'; conhecidos.forEach(p => { const g = grauDe(p); h += `<p><b>${ALIADOS[p].nome || RELACOES[p].nome}</b> <small>${ALIADOS[p].tecnicas.map(t => (g >= t.grau ? '' : '🔒') + t.nome + (g >= t.grau ? '' : ' (grau ' + t.grau + ')')).join(' • ')} • finalização: ${ALIADOS[p].final.nome}</small></p>`; }); }
+  return h;
+}
+function menuInventario() {
+  const e = estado;
+  const ids = Object.keys(e.inv).filter(k => e.inv[k] > 0 && ITENS[k]);
+  if (menuItemSel && !(e.inv[menuItemSel] > 0)) menuItemSel = null;
+  if (!menuItemSel && ids.length) menuItemSel = ids[0];
+  const total = Math.max(20, Math.ceil((ids.length + 1) / 5) * 5);
+  let h = '<div class="mn-duas"><div><h3>Equipado</h3>';
+  ['roupa', 'luvas', 'amuleto'].forEach(sl => { const id = e.equip[sl], it = id && ITENS[id];
+    h += `<div class="mn-slot">${ICONE_SLOT[sl]} <div><small>${NOME_SLOT[sl]}</small><br>${it ? '<b>' + it.nome + '</b>' : '<small>vazio</small>'}${it ? ' <button data-acao="equipar" data-id="' + id + '">Tirar</button>' : ''}</div></div>`; });
+  h += '</div><div><h3>Itens</h3><div class="mn-tiles">';
+  for (let k = 0; k < total; k++) { const id = ids[k];
+    if (!id) { h += '<div class="mn-tile vazio"></div>'; continue; }
+    const it = ITENS[id], cls = it.tipo === 'consumivel' ? 'cons' : it.tipo === 'equipamento' ? 'equip' : it.tipo === 'missao' ? 'missao' : '';
+    h += `<button class="mn-tile ${cls} ${menuItemSel === id ? 'sel' : ''}" data-acao="selItem" data-id="${id}" title="${it.nome}">${ICONE_ITEM[id] || '📦'}<em>${e.inv[id]}</em></button>`; }
+  h += '</div></div></div>';
+  if (menuItemSel) { const it = ITENS[menuItemSel], eq = it.slot && estado.equip[it.slot] === menuItemSel;
+    h += `<div class="mn-sel-box"><b>${ICONE_ITEM[menuItemSel] || '📦'} ${it.nome}</b> <small>x${e.inv[menuItemSel]}</small><br>`;
+    if (it.tipo === 'consumivel') h += `<small>Consumível: ${efeitoItemTexto(it)}.</small> <button data-acao="usar" data-id="${menuItemSel}">Usar</button>`;
+    else if (it.slot) h += `<small>${it.desc}${e.reforma[menuItemSel] === 2 ? ' (reformado, nível 2)' : ''}.</small> <button data-acao="equipar" data-id="${menuItemSel}">${eq ? 'Tirar' : 'Vestir'}</button>`;
+    else h += `<small>${it.tipo === 'missao' ? 'Item de missão: não pode ser usado ou vendido.' : 'Item comum: usado em missões e reparos.'}</small>`;
+    h += '</div>';
+  } else h += '<p><small>Nenhum item.</small></p>';
+  return h;
+}
+function montarMenu() {
+  menuEl.classList.add('mn-grande');
+  let corpo = menuAba === 'tec' ? menuTecnicas() : menuAba === 'inv' ? menuInventario() : menuAtributos();
+  let h = `<h2>Akira • Nível ${estado.nivel} • Faixa ${FAIXAS[estado.faixa].nome}</h2><p>XP ${estado.xp}/${xpProx()} • Vitórias ${estado.vitorias}</p>`;
+  h += '<nav class="mn-abas">' + MENU_ABAS.map(([id, nome]) => `<button data-acao="aba" data-id="${id}" class="${menuAba === id ? 'ativa' : ''}">${nome}</button>`).join('') + '</nav>';
+  h += corpo;
   h += '<p><button data-acao="fechar">Fechar (M)</button> <button data-acao="menuPrincipal">Voltar ao menu principal</button></p><p><small>O jogo é salvo antes de voltar ao menu.</small></p>';
   menuEl.innerHTML = h;
 }
@@ -4053,6 +4138,8 @@ menuEl.addEventListener('click', ev => {
   const a = b.dataset.acao, id = b.dataset.id;
   if (a === 'fechar') { alternarMenu(); return; }
   if (a === 'menuPrincipal') { voltarAoMenu(); return; }
+  if (a === 'aba') { menuAba = id; montarMenu(); return; }
+  if (a === 'selItem') { menuItemSel = id; montarMenu(); return; }
   if (a === 'attr' && estado.pontos > 0) { estado.attr[id]++; estado.pontos--; if (id === 'vit') estado.hp += 12; salvar(); }
   if (a === 'combo') escolherCombo(+id);
   if (a === 'tec') equiparTec(id);
