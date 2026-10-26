@@ -2891,6 +2891,7 @@ function construirCaverna() {
     if (!estado.chefes.ninja_ancestral) criarGuardiao(M, 'cavernas', s0.x, s0.y);
   }
   decorarSaloes(M, saloes);                                            // cada salão ganha um tema (ver DECO_SALOES)
+  decorarCorredores(M, saloes);                                        // raízes e cogumelos nas paredes dos túneis
   prepararChunks(M);
   M.spawn = { x: ox + n.spawn.x, y: oy + n.spawn.y };
   return M;
@@ -2908,13 +2909,27 @@ const DECO_SALOES = [
   ['Catacumbas dos Guerreiros Perdidos', [['coluna', -2.2, -1.8, .4], ['coluna', 2.2, -1.8, .4], ['altar', 0, 1.8, .45], ['tocha', -2.6, 1.6, .15], ['tocha', 2.6, 1.6, .15]]],
   ['Laboratório dos Cristais', [['mesaEstudo', 0, -1.4, .75], ['cristal', -1.9, 1.2, .3], ['cristal', 1.9, 1.2, .3], ['barril', -2.2, -1.8, .35], ['velas', 1.6, -1.8, .1]]]
 ];
+const decoDentro = (saloes, x, y) => saloes.some(q => Math.hypot(q.x - x, q.y - y) < q.r);   // dentro de um salão o túnel é só passagem livre
+function decoLivre(M, saloes, x, y, r) {
+  const i = Math.floor(x), j = Math.floor(y);
+  if (!M.tiles[j] || M.tiles[j][i] == null || M.tiles[j][i] === T.AGUA || (M.bloq[j] && M.bloq[j][i])) return false;
+  return !M.tunel.some(([tx, ty, tr]) => !decoDentro(saloes, tx, ty) && Math.hypot(tx - x, ty - y) < tr + r + .3);
+}
+/* Corredores: a cada poucos passos, uma raiz, cogumelo ou estalagmite encostada na parede do túnel (passagem continua livre) */
+function decorarCorredores(M, saloes) {
+  const cores = [['raiz', .2], ['cogumelo', .25], ['estalagmite', .3]];
+  M.tunel.forEach(([x, y, tr], k) => {
+    if (tr > 1.6 || decoDentro(saloes, x, y) || k % 5 !== 0) return;
+    const a = M.tunel[k - 1] || [x, y], b = M.tunel[k + 1] || [x, y];
+    let tx = b[0] - a[0], ty = b[1] - a[1]; const n = Math.hypot(tx, ty); if (n < .01) return;
+    const px = -ty / n, py = tx / n, lado = (k / 5) % 2 ? 1 : -1, [tipo, r] = cores[(k / 5) % cores.length];
+    const x2 = x + px * lado * (tr - .75), y2 = y + py * lado * (tr - .75);
+    const i2 = Math.floor(x2), j2 = Math.floor(y2), piso = M.tiles[j2] && M.tiles[j2][i2] != null && M.tiles[j2][i2] !== T.AGUA && !(M.bloq[j2] && M.bloq[j2][i2]);
+    if (SPR[tipo] && piso) M.objs.push(mkObj(tipo, Math.random, { x: x2, y: y2, r, temaCaverna: 'Corredor' }));
+  });
+}
 function decorarSaloes(M, saloes) {
-  const dentro = (x, y) => saloes.some(q => Math.hypot(q.x - x, q.y - y) < q.r);   // dentro de um salão o túnel é só passagem livre
-  const livre = (x, y, r) => {
-    const i = Math.floor(x), j = Math.floor(y);
-    if (!M.tiles[j] || M.tiles[j][i] == null || M.tiles[j][i] === T.AGUA || (M.bloq[j] && M.bloq[j][i])) return false;
-    return !M.tunel.some(([tx, ty, tr]) => !dentro(tx, ty) && Math.hypot(tx - x, ty - y) < tr + r + .3);
-  };
+  const livre = (x, y, r) => decoLivre(M, saloes, x, y, r);
   saloes.forEach((s, k) => { const tema = DECO_SALOES[k]; if (!tema) return; s.tema = tema[0];
     const f = Math.min(1, (s.r - .6) / 3.2);                              // salões pequenos: decoração mais junto do centro
     const mx = s.x > CAV_TAM - 12 ? -1 : 1;                              // salão perto da borda direita: a decoração vira para dentro
