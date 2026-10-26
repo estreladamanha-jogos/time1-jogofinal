@@ -78,7 +78,7 @@
     padding: 6px 8px; background: rgba(13, 16, 39, .95); border: 2px solid #c9d0e6; border-radius: 4px; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0, 229, 255, .35); font-size: 10px; line-height: 1.35; }
   .hudInfo[hidden] { display: none; }
   body.gotico .hudInfo { background: rgba(11, 5, 8, .95); border-color: #8a8f9e; font-family: 'Cinzel', serif; }
-  #hCombo { color: #bcd; font-size: 11px; }
+  #hCombo, #hDinheiro { color: #bcd; font-size: 11px; }
 
   /* ===== Dica de teclas ===== */
   #dica {
@@ -444,6 +444,7 @@
     <div id="hLoc">Bambuzal</div>
     <div id="hHora">☀ 08:00 • dia</div>
     <div id="hCombo"></div>
+    <div id="hDinheiro"></div>
     <div id="hMissao"></div>
   </div>
 </header>
@@ -593,10 +594,38 @@ const ITENS = {
   papel:   { nome: 'Papel perdido', tipo: 'missao' },
   buque:   { nome: 'Buquê da imperatriz', tipo: 'missao' },
   cesto_karina: { nome: 'Cesto de tangerinas da Karina', tipo: 'missao' },
-  onigiri: { nome: 'Onigiri (+40 vida)', tipo: 'consumivel', cura: 40 },
-  cha:     { nome: 'Chá verde (+30 aura)', tipo: 'consumivel', aura: 30 },
+  onigiri: { nome: 'Onigiri (+40 vida)', tipo: 'consumivel', cura: 40, preco: 6 },
+  cha:     { nome: 'Chá verde (+30 aura)', tipo: 'consumivel', aura: 30, preco: 5 },
+  agua:    { nome: 'Água (+15 vida)', tipo: 'consumivel', cura: 15, preco: 3 },
+  bandagem: { nome: 'Bandagem (+25 vida)', tipo: 'consumivel', cura: 25, preco: 8 },
+  sushi:   { nome: 'Sushi (+35 vida)', tipo: 'consumivel', cura: 35, preco: 12 },
+  camarao: { nome: 'Camarão grelhado (+50 vida)', tipo: 'consumivel', cura: 50, preco: 18 },
+  cha_pessego: { nome: 'Chá de pêssego (+25 aura)', tipo: 'consumivel', aura: 25, preco: 10 },
+  cha_limao: { nome: 'Chá de limão sem açúcar (+25 aura)', tipo: 'consumivel', aura: 25, preco: 9 },
+  cordas:  { nome: 'Corda de bambu', tipo: 'item', preco: 10 },
+  tochas:  { nome: 'Tochas', tipo: 'item', preco: 6 },
+  cantil:  { nome: 'Cantil', tipo: 'item', preco: 12 },
+  flor_liz: { nome: 'Flor de Liz', tipo: 'item', preco: 15 },
+  kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', preco: 60 },
+  kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', preco: 90 },
+  luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', preco: 45 },
+  amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', preco: 70 },
+  dango:   { nome: 'Dango (presente)', tipo: 'item' },
+  incenso: { nome: 'Incenso (presente)', tipo: 'item' },
+  flor_silvestre: { nome: 'Flor silvestre (presente)', tipo: 'item' },
   marcador: { nome: 'Marcador de páginas (presente do Davi)', tipo: 'missao' }
 };
+
+// Lojas: o que cada balcão vende (pela função do prédio). Preços estão em ITENS.preco
+const LOJA_VENDA = {
+  bam_loja: ['onigiri', 'agua', 'bandagem', 'cordas', 'cantil'],        // Loja da Trilha: suprimentos de viagem
+  vil_suprimentos: ['onigiri', 'cha', 'tochas', 'cordas', 'bandagem'],  // Loja de Suprimentos
+  vil_alfaiate: ['kimono_treino', 'kimono_azul'],                       // Alfaiataria: kimonos
+  vil_ceramica: ['luvas_couro', 'amuleto_foco', 'flor_liz'],            // Cerâmica e artesanato
+  padrao: ['onigiri', 'cha', 'agua']
+};
+const itensDaLoja = id => LOJA_VENDA[id] || LOJA_VENDA.padrao;
+const CARDAPIO_IDS = ['sushi', 'camarao', 'cha_pessego', 'cha_limao'];   // restaurante
 
 // Golpes de karatê: dano, alcance (tiles), arco (graus), tempos (segundos)
 const TECNICAS = {
@@ -1025,7 +1054,7 @@ const casaSpr = (w, d, H, tel, par, op) => Cen.casaSpr(w, d, H, tel, par, op);
    ===================================================================== */
 function estadoInicial() {
   return {
-    nivel: 1, xp: 0, pontos: 0, vitorias: 0, faixa: 0, combo: 0,
+    nivel: 1, xp: 0, pontos: 0, vitorias: 0, faixa: 0, combo: 0, dinheiro: 0,
     attr: { vit: 1, forca: 1, agi: 1, aur: 1, tec: 1 },
     hp: null, aura: 0, inv: {}, coletados: {},
     missoes: { papeis_perdidos: 'nao_iniciada' },
@@ -1060,6 +1089,7 @@ function validarSave(d) {
   if (!numOk(d.nivel, 1, 999) || !numOk(d.xp, 0, 1e9) || !numOk(d.faixa, 0, FAIXAS.length - 1) || d.faixa % 1) return null;
   const base = estadoInicial(), e = Object.assign(base, d);
   e.attr = Object.assign(estadoInicial().attr, d.attr && typeof d.attr === 'object' ? d.attr : {});
+  e.dinheiro = numOk(d.dinheiro, 0, 1e9) ? Math.floor(d.dinheiro) : 0;
   for (const k in e.attr) if (!numOk(e.attr[k], 1, 999)) e.attr[k] = 1;
   e.missoes = Object.assign(estadoInicial().missoes, d.missoes && typeof d.missoes === 'object' ? d.missoes : {});
   e.flags = d.flags && typeof d.flags === 'object' ? d.flags : {}; e.mprog = d.mprog && typeof d.mprog === 'object' ? d.mprog : {};
@@ -1940,13 +1970,13 @@ function falasED(nome, papel, ed) {
   const base = {
     mestre: ['Bem-vindo ao ' + n + '. Os bonecos estão aí para treinar à vontade — leia a placa de treino para cronometrar.', 'Treinar não dá experiência, mas deixa o corpo pronto para a luta de verdade.'],
     monge: ['Este é o ' + n + '. Sente-se na almofada e medite: a aura volta a encher.', L[0] || 'A calma também é uma técnica.'],
-    loja: ['Seja bem-vindo à ' + n + '!', 'Ainda não aceitamos moedas — o sistema de compras está pendente. Mas olhe o balcão: tem uma amostra grátis para quem visita pela primeira vez.'],
+    loja: ['Seja bem-vindo à ' + n + '!', 'Temos produtos à venda: veja o balcão. Quem visita pela primeira vez ganha uma amostra grátis.'],
     pousada: ['Bem-vindo à ' + n + '. As camas estão prontas: descansar recupera vida e aura e marca este lugar como seu ponto de retorno.'],
     cura: ['Sou responsável pelos tratamentos aqui. Quer que eu cuide dos seus ferimentos?'],
     leitura: ['As estantes estão abertas para consulta. Pode ler quantas vezes quiser.', L[1] || ''],
     guarda: ['Posto de vigia. O mural tem os avisos de perigo da região.'],
     forja: ['A forja está acesa, mas ainda não faço armas para alunos — o jogo não tem sistema de equipamentos. Fique à vontade para olhar.'],
-    artesao: ['Aqui trabalhamos com as mãos e com paciência. Não vendemos nada ainda: as encomendas ficam para quando houver comércio.'],
+    artesao: ['Aqui trabalhamos com as mãos e com paciência. Veja o balcão: há peças prontas à venda.'],
     eremita: ['Hmm... visitas. Vivo longe de todos para ouvir a floresta.', 'Uma vez vi uma sombra enorme, como um dragão, passando entre as árvores. Não sei de quem era. E não quero saber.'],
     'guardião': ['Eu cuido desta região há muitos anos. ' + (L[0] || '')],
     morador: ['Olá, Akira! Seja bem-vindo à ' + n + '.', L[2] || L[0] || '']
@@ -2031,8 +2061,8 @@ const SALAS = {
   fortalezaArmas: C => { const { m, ed } = C; C.linhaFundo('suporteArmas', 3); C.p('barril', .9, 3); C.p('caixote', .9, 4.2); C.i('bau', 'bau', m.w - 1.3, 3, .45, { idBau: ed.id }); },
   arenaNucleo: C => { const { m, ed } = C; pisoMeio(m, 3, 2, m.w - 3, m.h - 2, T.TATAME); C.p('arquibancada', 3, 1.1); C.p('arquibancada', m.w - 3, 1.1); C.i('inscricao', 'altar', m.w / 2, 1.2, .5, { selo: ed.op.selo }); },
   oficinaArt: C => { const { m, ed } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('ferramentasParede', 1.4, .85); C.p('prateleiraCeramica', m.w - 1.4, .85); C.p('tear', .9, 3.4); C.p('tronco', m.w - 1, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.6); },
-  alfaiataria: C => { const { m, ed } = C; C.p('tear', 2, 1); C.p('tear', m.w - 2, 1); C.p('prateleiraUtensilios', m.w / 2, .85); C.p('biombo', m.w - 1.4, 3.6); C.p('mesa', 2.6, 4.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.4, 2.4); },
-  ceramica: C => { const { m, ed } = C; C.p('prateleiraCeramica', 1.4, .85); C.p('prateleiraCeramica', 3.6, .85); C.p('forja', m.w - 2, 1.3); C.p('bancadaTrabalho', 3, 3.6); C.p('vasoGrande', m.w - 1, 4); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.4); },
+  alfaiataria: C => { const { m, ed } = C; C.p('tear', 2, 1); C.p('tear', m.w - 2, 1); C.p('prateleiraUtensilios', m.w / 2, .85); C.p('biombo', m.w - 1.4, 3.6); C.p('mesa', 2.6, 4.2); C.i('balcao', 'balcao_recepcao', m.w / 2 - .6, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.4, 2.4); },
+  ceramica: C => { const { m, ed } = C; C.p('prateleiraCeramica', 1.4, .85); C.p('prateleiraCeramica', 3.6, .85); C.p('forja', m.w - 2, 1.3); C.p('bancadaTrabalho', 3, 3.6); C.p('vasoGrande', m.w - 1, 4); C.i('balcao', 'balcao_recepcao', m.w / 2 + 1.8, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.4); },
   banhosEntrada: C => { const { m, ed } = C; C.p('balcao_recepcao', 3.4, 2.2); C.p('cesto', .9, 1.1); C.p('cesto', .9, 2.2); C.p('vasoGrande', m.w - 1, 1.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], 5, 1.7); },
   banhosTanque: C => { const { m } = C; pisoMeio(m, 1, 1, m.w - 1, m.h - 1, T.LAJE); C.i('banho', 'tanque', m.w / 2 - 2, 2.6, .8, {}); C.i('banho', 'tanque', m.w / 2 + 2.6, 4.4, .8, {}); C.p('lanternaPedra', 1, 1); C.p('lanternaPedra', m.w - 1, 1); },
   salaoCom: C => { const { m, ed } = C; for (let k = 0; k < 3; k++) { C.p('mesa', 2.6 + k * 3.2, 3.4); } C.i('mural', 'mural', m.w / 2, .9, .4, {}); C.linhaFundo('estandarte', 2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w - 2, 2); C.npc('Moradora Hisa', 'morador', 2, 5.4); },
@@ -2309,7 +2339,6 @@ function colocarEdificiosCaverna(M, saloes) {
 }
 
 /* ---------- interações dos interiores ---------- */
-const MSG_SEM_DINHEIRO = 'Ainda não existe dinheiro no jogo: a compra fica pendente até o sistema de comércio ser criado.';
 function textoInscricao(o) {
   if (o.selo === 'todos') return ORDEM_CHEFES.map(id => { const d = CHEFES[id], g = GUARDIOES[d.regiao]; return d.nome + ': ' + (estado.chefes[id] ? 'selo restaurado.' : estado.fase !== 'selos' ? 'selo intacto (por enquanto).' : g && !guardiaoVencido(d.regiao) ? 'selo corrompido, guardado por ' + ARQ[g].nome + '.' : 'selo rompido — o desafio espera.'); });
   if (!o.selo || !CHEFES[o.selo]) return ['Uma inscrição antiga sobre os oito selos que protegem o mundo.'];
@@ -2335,12 +2364,13 @@ const INTERACOES_ED = {
   banho: () => { const t = Date.now(), ult = estado.flags.banhoT || 0; if (t - ult < 120000) { aviso('A água ainda está esquentando (espere ' + Math.ceil((120000 - (t - ult)) / 1000) + ' s).'); return; }
     estado.flags.banhoT = t; estado.hp = Math.min(maxHp(), estado.hp + Math.round(maxHp() * .5)); estado.aura = Math.min(maxAura(), estado.aura + 20); aviso('Banho quente: +50% de vida e +20 de aura.'); salvar(); },
   servico: () => { const t = Date.now(), ult = estado.flags.chaT || 0; if (t - ult < 180000) { abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Calma! O próximo chá fica pronto em ' + Math.ceil((180000 - (t - ult)) / 1000) + ' segundos.' }] }); return; }
-    estado.flags.chaT = t; estado.aura = Math.min(maxAura(), estado.aura + 30); abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Um chá verde por conta da casa. (+30 de aura)' }, NARR(MSG_SEM_DINHEIRO)] }); salvar(); },
+    estado.flags.chaT = t; estado.aura = Math.min(maxAura(), estado.aura + 30); abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Um chá verde por conta da casa. (+30 de aura)' }, NARR('Para comprar, veja o cardápio ou os balcões das lojas.')] }); salvar(); },
   cardapio: () => abrirConversa({ falas: [{ p: null, nome: 'Cardápio', t: CARDAPIO.join(' • ') }], opcoes: 'cardapio' }),
-  balcao: o => { const k = 'amostra_' + o.idLoja, op = [];
+  balcao: o => { const k = 'amostra_' + o.idLoja, op = [], venda = itensDaLoja(o.idLoja);
     if (!estado.flags[k]) op.push({ t: 'Pegar a amostra grátis', eventos: [() => { if (estado.flags[k]) return; estado.flags[k] = 1; estado.inv.onigiri = (estado.inv.onigiri || 0) + 1; aviso('Recebeu: Onigiri (amostra grátis)'); salvar(); }] });
+    venda.forEach(id => op.push({ t: 'Comprar: ' + ITENS[id].nome + ' — $' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] }));
     op.push({ t: 'Só olhar' });
-    abrirConversa({ falas: [NARR('No balcão: ' + o.estoque.join(', ') + '.'), NARR(MSG_SEM_DINHEIRO)], opcoes: op }); },
+    abrirConversa({ falas: [NARR('No balcão: ' + venda.map(id => ITENS[id].nome + ' ($' + ITENS[id].preco + ')').join(', ') + '.'), NARR('Seu saldo: $' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
   bau: o => { const k = 'bau_' + o.idBau; if (estado.flags[k]) { aviso('O baú está vazio.'); return; }
     estado.flags[k] = 1; const p = o.premio || { cha: 1 }; for (const it in p) estado.inv[it] = (estado.inv[it] || 0) + p[it];
     aviso('Baú aberto: ' + Object.entries(p).map(([it, q]) => ITENS[it].nome + ' x' + q).join(', ')); salvar(); },
@@ -3922,7 +3952,7 @@ function atualizarHud() {
   let txtM = ma ? (ma.startsWith('debora_') ? 'Missão principal: ' : 'Missão: ') + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo() : '';
   if (!ma && stM('debora_fundamentos') === 'nao_iniciada') txtM = 'Missão principal: Fale com a Mestra Débora';   // começo do jogo: sempre mostra o próximo passo
   if (exameAtual) txtM = 'EXAME ' + GRADUACOES[exameAtual.ex.faixa].nome + ': ' + exameAtual.ops.filter(o => !o.vivo).length + '/' + exameAtual.ops.length + ' • ' + Math.max(0, Math.ceil(exameAtual.ex.tempo - exameAtual.t)) + 's';
-  const chave = [estado.nivel, estado.xp, Math.round(estado.hp), Math.round(estado.aura), estado.faixa, estado.pontos, mapa.nome, txtM, estado.combo, maxHp(), maxAura()].join('|');
+  const chave = [estado.nivel, estado.xp, Math.round(estado.hp), Math.round(estado.aura), estado.faixa, estado.pontos, mapa.nome, txtM, estado.combo, maxHp(), maxAura(), estado.dinheiro].join('|');
   if (chave === hudChave) return; hudChave = chave;
   const f = FAIXAS[estado.faixa];
   $('hNivel').textContent = estado.nivel; $('hFaixa').textContent = f.nome; $('hFaixaCor').style.setProperty('--faixa', f.cor);
@@ -3930,6 +3960,7 @@ function atualizarHud() {
   barra('bVida', 'tVida', estado.hp, maxHp(), 'VIDA'); barra('bAura', 'tAura', estado.aura, maxAura(), 'AURA'); barra('bXp', 'tXp', estado.xp, xpProx(), 'XP');
   $('hLoc').textContent = mapa.nome + (estado.pontos ? ' • ' + estado.pontos + ' pts (M)' : '');
   $('hCombo').textContent = 'Combo ' + (estado.combo + 1) + ': ' + COMBOS[estado.combo].nome;
+  $('hDinheiro').textContent = 'Dinheiro: $' + (estado.dinheiro || 0);
   $('hMissao').textContent = txtM;
 }
 
@@ -4028,6 +4059,18 @@ function usarItem(id) {
   if (it.cura) estado.hp = Math.min(maxHp(), estado.hp + it.cura);
   if (it.aura) estado.aura = Math.min(maxAura(), estado.aura + it.aura);
   aviso('Usou: ' + it.nome); salvar(); return true;
+}
+function ganharDinheiro(q, avisar) {
+  estado.dinheiro = (estado.dinheiro || 0) + q;
+  if (avisar) aviso('Recebeu $' + q + '. Saldo: $' + estado.dinheiro);
+}
+let compraT = 0;
+function comprarItem(id, preco) {
+  const agora = performance.now(); if (agora - compraT < 500) return false; compraT = agora;   // um toque, uma compra (evita compra dupla)
+  const it = ITENS[id]; if (!it || !(it.preco > 0)) return false;
+  if ((estado.dinheiro || 0) < preco) { aviso('Dinheiro insuficiente: faltam $' + (preco - (estado.dinheiro || 0)) + ' para ' + it.nome + '.'); return false; }
+  estado.dinheiro -= preco; estado.inv[id] = (estado.inv[id] || 0) + 1;
+  aviso('Comprou ' + it.nome + ' por $' + preco + '. Saldo: $' + estado.dinheiro); hudChave = ''; salvar(); return true;
 }
 function comerRapido() {
   if (estado.hp < maxHp() && usarItem('onigiri')) return;
@@ -4350,6 +4393,7 @@ function executarEvento(ev) {
     if (ev.estado === 'em_andamento' && ant !== 'em_andamento') aviso('Nova missão: ' + MISSOES[ev.missao].nome);
     if (ev.estado === 'concluida') { aviso('Missão concluída: ' + MISSOES[ev.missao].nome); (ev.recompensa || []).forEach(executarEvento); (MISSAO_PESSOAL[ev.missao] || []).forEach(p => ganharRespeito(p, REGRAS_RESPEITO.missaoPessoal)); }
   }
+  if (ev.dinheiro) ganharDinheiro(ev.dinheiro, true);
   if (ev.item) { estado.inv[ev.item] = Math.max(0, (estado.inv[ev.item] || 0) + (ev.qtd || 1)); if ((ev.qtd || 1) > 0 && ITENS[ev.item]) aviso('Recebeu: ' + ITENS[ev.item].nome); }
   if (ev.xp) ganharXp(ev.xp);
   if (ev.flag) estado.flags[ev.flag] = true;
@@ -4370,7 +4414,7 @@ const DIALOGOS = {
     { se: () => stM('papeis_perdidos') === 'em_andamento' && nPapeis() < 7, dinamico: () => ({ falas: [NARRADOR('Papéis recuperados: ' + nPapeis() + ' de 7. Leve todos ao Davi, na biblioteca.')] }) },
     { se: () => stM('papeis_perdidos') === 'em_andamento', falas: [F('davi', 'aliviado', 'Os sete! Todos eles! Você salvou minha organização... e provavelmente minha sanidade.'), F('akira', '', 'Fico feliz em ajudar.'), F('davi', 'sorridente', 'Se encontrar mais algum papel perdido por aí, tente não me contar até eu terminar de catalogar estes.'),
         F('davi', 'sorridente', 'Sete de sete! Meu sistema de catalogação voltou a funcionar!'), F('akira', '', 'E qual é a recompensa?'), F('davi', 'sorridente', 'Acesso à coleção de registros marciais, naturalmente. E minha eterna gratidão.'), F('akira', '', 'Eu esperava um pouco mais.'), F('davi', 'sorridente', 'Você também pode levar um marcador de páginas.'), F('akira', '', 'Vou considerar.')],
-      fim: [{ fn: () => { estado.inv.papel = 0; } }, { flag: 'colecao_registros' }, { missao: 'papeis_perdidos', estado: 'concluida', recompensa: [{ item: 'onigiri', qtd: 2 }, { item: 'cha', qtd: 1 }, { item: 'marcador', qtd: 1 }, { xp: 120 }] }] },
+      fim: [{ fn: () => { estado.inv.papel = 0; } }, { flag: 'colecao_registros' }, { missao: 'papeis_perdidos', estado: 'concluida', recompensa: [{ item: 'onigiri', qtd: 2 }, { item: 'cha', qtd: 1 }, { item: 'marcador', qtd: 1 }, { xp: 120 }, { dinheiro: 40 }] }] },
     { falas: [F('davi', 'sorridente', 'Obrigado de novo, Akira! Meus papéis estão salvos.')] }
   ],
   kenji: [{ dinamico: o => falaMestre(o) }],
@@ -4478,7 +4522,7 @@ const DIALOGOS = {
 };
 // cardápio da Casa de Chá (preços e cura ainda não definidos: a compra fica indisponível)
 const CARDAPIO = ['Sushi', 'Camarão grelhado', 'Chá de pêssego', 'Chá de limão sem açúcar'];
-const opcoesCardapio = () => CARDAPIO.map(n => ({ t: 'Comprar: ' + n, falas: [NARRADOR(n + ': o preço e a cura ainda não foram definidos. A compra fica disponível quando o dinheiro existir no jogo.')] })).concat([{ t: 'Encerrar conversa' }]);
+const opcoesCardapio = () => CARDAPIO_IDS.map(id => ({ t: 'Comprar: ' + ITENS[id].nome + ' — $' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] })).concat([{ t: 'Encerrar conversa' }]);
 
 /* ---------- motor da conversa ---------- */
 function escolherEntrada(id, npc) {
@@ -14773,7 +14817,7 @@ function objetivoMissaoEd(id) {
   return 'Encontre ' + M.coisa + ': ' + p.n + '/' + M.qtd + ' (brilham no chão perto de ' + EDIF[M.ed].nome + ')';
 }
 function EDIFICIOS_NPC(edId) { for (const pid in NPC_ED) if (NPC_ED[pid].ed === edId) return NPC_ED[pid].nome; return null; }
-const recompensaEd = M => ({ xp: 30 + 15 * (TIER_REG[M.reg] || 1), item: PRESENTE_PAPEL[(NPC_ED[M.dono] || {}).papel] || 'onigiri' });
+const recompensaEd = M => ({ xp: 30 + 15 * (TIER_REG[M.reg] || 1), dinheiro: 15 + 10 * (TIER_REG[M.reg] || 1), item: PRESENTE_PAPEL[(NPC_ED[M.dono] || {}).papel] || 'onigiri' });
 // espalha as coisas para coletar perto da construção (só em chão livre, fora da água)
 function espalharColeta(id) {
   const M = MISSOES[id], p = progM(id); if (p.pts) return;
@@ -14801,9 +14845,9 @@ function concluirMissaoEd(id) {
   const M = MISSOES[id], R = recompensaEd(M);
   estado.missoes[id] = 'concluida'; if (estado.rastreio === id) estado.rastreio = null;
   delete estado.inv['enc_' + M.ed];
-  ganharXp(R.xp); estado.inv[R.item] = (estado.inv[R.item] || 0) + 1;
+  ganharXp(R.xp); ganharDinheiro(R.dinheiro); estado.inv[R.item] = (estado.inv[R.item] || 0) + 1;
   ganharRespeito(M.dono, 25, 'missao');
-  aviso('Missão concluída: ' + M.nome + ' • +' + R.xp + ' XP • ' + ITENS[R.item].nome + ' • respeito com ' + NPC_ED[M.dono].nome + ' subiu!');
+  aviso('Missão concluída: ' + M.nome + ' • +' + R.xp + ' XP • $' + R.dinheiro + ' • ' + ITENS[R.item].nome + ' • respeito com ' + NPC_ED[M.dono].nome + ' subiu!');
   hudChave = ''; salvar();
 }
 // conversa com NPC das construções: oferece, acompanha e entrega a missão
