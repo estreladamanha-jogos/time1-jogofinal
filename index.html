@@ -606,10 +606,10 @@ const ITENS = {
   tochas:  { nome: 'Tochas', tipo: 'item', preco: 6 },
   cantil:  { nome: 'Cantil', tipo: 'item', preco: 12 },
   flor_liz: { nome: 'Flor de Liz', tipo: 'item', preco: 15 },
-  kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', preco: 60 },
-  kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', preco: 90 },
-  luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', preco: 45 },
-  amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', preco: 70 },
+  kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', slot: 'roupa', preco: 60, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#e9e2cf', giS: '#b9ae95', giSS: '#948a74' } },
+  kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', slot: 'roupa', preco: 90, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#2f5fa8', giS: '#1f3f78', giSS: '#152b55' } },
+  luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 } },
+  amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', slot: 'amuleto', preco: 70, desc: '+10 de aura máxima', efeito: { aura: 10 } },
   dango:   { nome: 'Dango (presente)', tipo: 'item' },
   incenso: { nome: 'Incenso (presente)', tipo: 'item' },
   flor_silvestre: { nome: 'Flor silvestre (presente)', tipo: 'item' },
@@ -621,7 +621,9 @@ const LOJA_VENDA = {
   bam_loja: ['onigiri', 'agua', 'bandagem', 'cordas', 'cantil'],        // Loja da Trilha: suprimentos de viagem
   vil_suprimentos: ['onigiri', 'cha', 'tochas', 'cordas', 'bandagem'],  // Loja de Suprimentos
   vil_alfaiate: ['kimono_treino', 'kimono_azul'],                       // Alfaiataria: kimonos
-  vil_ceramica: ['luvas_couro', 'amuleto_foco', 'flor_liz'],            // Cerâmica e artesanato
+  vil_ceramica: ['amuleto_foco', 'flor_liz'],                           // Cerâmica e artesanato
+  cer_oficina: ['kimono_treino', 'luvas_couro'],                        // Oficina dos Artesãos de Sakura: vestimentas e luvas
+  tg_oficina: ['kimono_azul', 'amuleto_foco'],                          // Oficina dos Artesãos do Grande Templo
   padrao: ['onigiri', 'cha', 'agua']
 };
 const itensDaLoja = id => LOJA_VENDA[id] || LOJA_VENDA.padrao;
@@ -1065,14 +1067,15 @@ function estadoInicial() {
     fase: 'treino',                                                    // história: 'treino' (até vencer o torneio) -> 'selos' (chefes liberados)
     torneio: { inscrito: false, res: {}, elim: null, campeao: false }, // chave do torneio (resultados salvos)
     relogio: 200, chuva: false,                                        // relógio do dia (começa às 8h) e se está chovendo
-    flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}                                               // marcas de diálogo e progresso dos objetivos de missão
+    flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}, equip: { roupa: null, luvas: null, amuleto: null }                                               // marcas de diálogo e progresso dos objetivos de missão
   };
 }
 let estado = estadoInicial();
+const eqEfeito = k => Object.values(estado.equip || {}).reduce((s, id) => s + ((ITENS[id] && ITENS[id].efeito && ITENS[id].efeito[k]) || 0), 0);   // soma o bônus dos equipamentos vestidos
 const maxHp = () => 80 + estado.attr.vit * 12;
-const maxAura = () => 40 + estado.attr.aur * 10;
+const maxAura = () => 40 + estado.attr.aur * 10 + eqEfeito('aura');
 const custoEsp = () => Math.max(15, Math.round(ESPECIAL.custo - (estado.attr.aur - 1) * 1.5));
-const multDano = () => (1 + (estado.attr.forca - 1) * .15) * (1 + (estado.attr.tec - 1) * .04);
+const multDano = () => (1 + (estado.attr.forca - 1) * .15) * (1 + (estado.attr.tec - 1) * .04) * (1 + eqEfeito('dano'));
 const xpProx = () => Math.round(30 * Math.pow(estado.nivel, 1.5));
 const nPapeis = () => estado.inv.papel || 0;
 
@@ -1097,6 +1100,8 @@ function validarSave(d) {
   e.respeito = d.respeito && typeof d.respeito === 'object' && !Array.isArray(d.respeito) ? d.respeito : {};
   for (const k in e.respeito) { const r = e.respeito[k]; if (!r || typeof r !== 'object' || !numOk(r.pts, 0, 1e6)) delete e.respeito[k]; }
   e.inv = d.inv && typeof d.inv === 'object' ? d.inv : {}; e.coletados = d.coletados && typeof d.coletados === 'object' ? d.coletados : {};
+  e.equip = { roupa: null, luvas: null, amuleto: null };                       // equipamentos vestidos (só se o item estiver no inventário)
+  if (d.equip && typeof d.equip === 'object') for (const sl in e.equip) { const id = d.equip[sl]; if (typeof id === 'string' && ITENS[id] && ITENS[id].slot === sl && e.inv[id] > 0) e.equip[sl] = id; }
   ['pontos', 'vitorias', 'combo', 'aura'].forEach(k => { if (!numOk(e[k], 0, 1e9)) e[k] = 0; });
   if (e.combo >= COMBOS.length) e.combo = 0;
   if (!numOk(e.hp, 0, 1e6)) e.hp = null;
@@ -1747,8 +1752,8 @@ function construirOficina() {                                             // ofi
   const m = interior('oficina', 'Oficina', 10, 8, T.PISO, saidaDe('oficina'));
   pm(m, 'ferramentasParede', 1.8, .8); pm(m, 'ferramentasParede', 8.2, .8); pm(m, 'bancadaTrabalho', 5, 1.9);
   pm(m, 'caixote', .8, 3); pm(m, 'caixote', .9, 4.1); pm(m, 'barril', .8, 5.4); pm(m, 'tronco', 8.6, 4.2); pm(m, 'caixote', 9.2, 5.6); pm(m, 'armario', 9.3, 2.4);
-  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de Equipamentos. Conserto e venda de equipamentos ficam pendentes: o jogo ainda não tem sistema de equipamentos nem dinheiro.' });
-  npc(m, { nome: 'Ferreiro Kanji', x: 6.6, y: 3.2, dir: 2, pal: palED('Ferreiro Kanji'), fala: 'ed', edLinhas: () => [{ p: null, nome: 'Ferreiro Kanji', t: 'Eu cuido das ferramentas do vilarejo. Equipamentos para lutadores? Isso ainda não existe por aqui — quando existir, eu aviso!' }] });
+  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de Equipamentos. Equipamentos de luta são vendidos na Alfaiataria, na Cerâmica e nas oficinas dos artesãos. Vista-os pelo menu (M).' });
+  npc(m, { nome: 'Ferreiro Kanji', x: 6.6, y: 3.2, dir: 2, pal: palED('Ferreiro Kanji'), fala: 'ed', edLinhas: () => [{ p: null, nome: 'Ferreiro Kanji', t: 'Eu cuido das ferramentas do vilarejo. Para equipamentos de luta, passe na Alfaiataria ou na Cerâmica. Depois é só vestir pelo menu (M).' }] });
   return m;
 }
 
@@ -2060,7 +2065,7 @@ const SALAS = {
   fortaleza: C => { const { m, ed } = C; C.linhaFundo('estandarte', 2); C.p('coluna', 2, 3); C.p('coluna', m.w - 2, 3); C.i('mural', 'mural', m.w / 2, .9, .4, {}); const n = ed.op.npc; if (n) C.npc(n[0], 'guarda', m.w / 2 + 2, 2.2); },
   fortalezaArmas: C => { const { m, ed } = C; C.linhaFundo('suporteArmas', 3); C.p('barril', .9, 3); C.p('caixote', .9, 4.2); C.i('bau', 'bau', m.w - 1.3, 3, .45, { idBau: ed.id }); },
   arenaNucleo: C => { const { m, ed } = C; pisoMeio(m, 3, 2, m.w - 3, m.h - 2, T.TATAME); C.p('arquibancada', 3, 1.1); C.p('arquibancada', m.w - 3, 1.1); C.i('inscricao', 'altar', m.w / 2, 1.2, .5, { selo: ed.op.selo }); },
-  oficinaArt: C => { const { m, ed } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('ferramentasParede', 1.4, .85); C.p('prateleiraCeramica', m.w - 1.4, .85); C.p('tear', .9, 3.4); C.p('tronco', m.w - 1, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.6); },
+  oficinaArt: C => { const { m, ed } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('ferramentasParede', 1.4, .85); C.p('prateleiraCeramica', m.w - 1.4, .85); C.p('tear', .9, 3.4); C.p('tronco', m.w - 1, 3.6); C.i('balcao', 'balcao_recepcao', m.w / 2 - .6, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.6); },
   alfaiataria: C => { const { m, ed } = C; C.p('tear', 2, 1); C.p('tear', m.w - 2, 1); C.p('prateleiraUtensilios', m.w / 2, .85); C.p('biombo', m.w - 1.4, 3.6); C.p('mesa', 2.6, 4.2); C.i('balcao', 'balcao_recepcao', m.w / 2 - .6, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.4, 2.4); },
   ceramica: C => { const { m, ed } = C; C.p('prateleiraCeramica', 1.4, .85); C.p('prateleiraCeramica', 3.6, .85); C.p('forja', m.w - 2, 1.3); C.p('bancadaTrabalho', 3, 3.6); C.p('vasoGrande', m.w - 1, 4); C.i('balcao', 'balcao_recepcao', m.w / 2 + 1.8, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.4); },
   banhosEntrada: C => { const { m, ed } = C; C.p('balcao_recepcao', 3.4, 2.2); C.p('cesto', .9, 1.1); C.p('cesto', .9, 2.2); C.p('vasoGrande', m.w - 1, 1.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], 5, 1.7); },
@@ -4014,7 +4019,8 @@ function montarMenu() {
   h += '<h3>Itens</h3>';
   const ids = Object.keys(e.inv).filter(k => e.inv[k] > 0);
   if (!ids.length) h += '<p><small>Nenhum item.</small></p>';
-  ids.forEach(id => { h += `<div>${ITENS[id].nome} x${e.inv[id]} ${ITENS[id].tipo === 'consumivel' ? `<button data-acao="usar" data-id="${id}">Usar</button>` : ''}</div>`; });
+  ids.forEach(id => { const it = ITENS[id], eq = it.slot && e.equip[it.slot] === id;
+    h += `<div>${it.nome} x${e.inv[id]} ${it.tipo === 'consumivel' ? `<button data-acao="usar" data-id="${id}">Usar</button>` : ''}${it.slot ? `<button data-acao="equipar" data-id="${id}">${eq ? 'Tirar' : 'Vestir'}</button> <small>${eq ? '(vestido) ' : ''}${it.desc}</small>` : ''}</div>`; });
   h += '<h3>Missões</h3>';
   h += q === 'nao_iniciada' ? '<p><small>Nenhuma missão ativa. Fale com o Davi na biblioteca!</small></p>'
     : `<p>Os papéis perdidos: ${q === 'concluida' ? 'concluída ✔' : 'em andamento (' + nPapeis() + '/7)'}</p>`;
@@ -4031,6 +4037,7 @@ menuEl.addEventListener('click', ev => {
   if (a === 'tec') equiparTec(id);
   if (a === 'social') { alternarSocial('respeito'); return; }
   if (a === 'usar') usarItem(id);
+  if (a === 'equipar') equipar(id);
   if (a === 'parceiro') escolherParceiro(id || null);
   montarMenu();
 });
@@ -4059,6 +4066,13 @@ function usarItem(id) {
   if (it.cura) estado.hp = Math.min(maxHp(), estado.hp + it.cura);
   if (it.aura) estado.aura = Math.min(maxAura(), estado.aura + it.aura);
   aviso('Usou: ' + it.nome); salvar(); return true;
+}
+function equipar(id) {                                                    // vestir / tirar: um item por espaço (roupa, luvas, amuleto)
+  const it = ITENS[id];
+  if (!it || !it.slot || !(estado.inv[id] > 0)) return;
+  if (estado.equip[it.slot] === id) { estado.equip[it.slot] = null; aviso('Você tirou ' + it.nome + '.'); }
+  else { estado.equip[it.slot] = id; aviso('Vestiu ' + it.nome + '.'); }
+  estado.aura = Math.min(estado.aura, maxAura()); hudChave = ''; salvar();
 }
 function ganharDinheiro(q, avisar) {
   estado.dinheiro = (estado.dinheiro || 0) + q;
@@ -8263,7 +8277,13 @@ function estiloPal(p) {                                                  // pale
   e = Akira.fazEstilo({ id: 'pal' + (idEstilo++), gi: p.gi, pele: p.pele, cab: p.cab, faixa: p.faixa, cabelo: p.cabelo, banda: p.testa, iris: p.iris, olho: p.olho, boca: p.boca, esc: p.esc, capa: p.capa });
   ESTILOS.set(p, e); return e;
 }
-const estiloAkira = () => { const c = FAIXAS[estado.faixa].cor; return ESTILOS_FAIXA[c] || (ESTILOS_FAIXA[c] = Akira.ESTILO_AKIRA(c)); };
+const estiloAkira = () => {
+  const c = FAIXAS[estado.faixa].cor, rid = estado.equip && estado.equip.roupa, vis = rid && ITENS[rid] && ITENS[rid].visual;
+  const base = ESTILOS_FAIXA[c] || (ESTILOS_FAIXA[c] = Akira.ESTILO_AKIRA(c));
+  if (!vis) return base;
+  const chave = c + '|' + rid;                                              // kimono trocado: estilo e quadros com chave própria
+  return ESTILOS_FAIXA[chave] || (ESTILOS_FAIXA[chave] = Akira.ESTILO_AKIRA(c, Object.assign({ id: 'akira' + c + rid }, vis)));
+};
 function desenharAkira(sx, sy, an, f, face, z, alfa, branco, est, costas) {
   est = est || estiloAkira();
   const k = Akira.AK.K * est.esc * (PIX.on ? 1.12 : 1), sc = k * SC, q = Akira.quadro(an, f, sc, est, !!costas && !/S$/.test(an));
@@ -8687,7 +8707,7 @@ function fazEstilo(c) {
   if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#232a62', cabS: '#11143a', cabL: '#4a6ad0', cabL2: '#b4c8ff' });
   return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura };
 }
-const ESTILO_AKIRA = faixa => fazEstilo({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: null, externo: true, capa: '#8a1230', aura: true });   // como na ficha: cabelo espetado azul-marinho, sem bandana
+const ESTILO_AKIRA = (faixa, extra) => fazEstilo(Object.assign({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: null, externo: true, capa: '#8a1230', aura: true }, extra || {}));   // como na ficha: cabelo espetado azul-marinho, sem bandana
 
 function traco(g, ax, ay, bx, by, w, cor) { g.strokeStyle = cor; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); }
 // Membro com contorno + sombra + luz (cel-shading)
@@ -15030,7 +15050,7 @@ function linhaMissao(id) {
   const rec = M.dono ? recompensaEd(M) : null;
   let det = '';
   if (aberta) det = `<div class="sc-mdet">${st === 'nao_iniciada' ? 'Vá falar com <b>' + (dono ? nomeRel(dono) : '?') + '</b>' + (ond ? ' em ' + ond : '') + '.' : st === 'em_andamento' ? '<b>Objetivo:</b> ' + M.objetivo() : 'Missão feita. Obrigado!'}
-    ${rec ? ' • <b>Recompensa:</b> ' + rec.xp + ' XP, ' + ITENS[rec.item].nome.split(' (')[0] + ', +25 respeito' : ''}
+    ${rec ? ' • <b>Recompensa:</b> ' + rec.xp + ' XP, $' + rec.dinheiro + ', ' + ITENS[rec.item].nome.split(' (')[0] + ', +25 respeito' : ''}
     ${st !== 'concluida' ? `<button class="sc-bt ${rast ? 'verde' : ''}" data-rastrear="${id}">${rast ? '📍 Rastreando (parar)' : '📍 Rastrear'}</button>` : ''}
     ${dono && RELACOES[dono] ? `<button class="sc-bt" data-ficha="${dono}">Ver ${nomeRel(dono)}</button>` : ''}</div>`;
   return `<div class="sc-mrow" data-abre="${id}"><span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}"></span><div><b>${M.nome}</b>${rast ? ' <span class="sc-rast">📍</span>' : ''}<br><small>${st === 'em_andamento' ? M.objetivo() : st === 'concluida' ? 'Feita para ' + (dono ? nomeRel(dono) : '—') : ond ? 'Onde: ' + ond : ''}</small></div><small>${dono ? 'Para: ' + nomeRel(dono) : ''}</small><span class="sc-est" style="background:${cores[0]}">${cores[1]}</span>${det}</div>`;
