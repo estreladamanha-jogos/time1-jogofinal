@@ -608,8 +608,8 @@ const ITENS = {
   flor_liz: { nome: 'Flor de Liz', tipo: 'item', preco: 15 },
   kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', slot: 'roupa', preco: 60, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#e9e2cf', giS: '#b9ae95', giSS: '#948a74' } },
   kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', slot: 'roupa', preco: 90, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#2f5fa8', giS: '#1f3f78', giSS: '#152b55' } },
-  luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 } },
-  amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', slot: 'amuleto', preco: 70, desc: '+10 de aura máxima', efeito: { aura: 10 } },
+  luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 }, efeito2: { dano: .20 } },
+  amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', slot: 'amuleto', preco: 70, desc: '+10 de aura máxima', efeito: { aura: 10 }, efeito2: { aura: 20 } },
   dango:   { nome: 'Dango (presente)', tipo: 'item' },
   incenso: { nome: 'Incenso (presente)', tipo: 'item' },
   flor_silvestre: { nome: 'Flor silvestre (presente)', tipo: 'item' },
@@ -1067,11 +1067,11 @@ function estadoInicial() {
     fase: 'treino',                                                    // história: 'treino' (até vencer o torneio) -> 'selos' (chefes liberados)
     torneio: { inscrito: false, res: {}, elim: null, campeao: false }, // chave do torneio (resultados salvos)
     relogio: 200, chuva: false,                                        // relógio do dia (começa às 8h) e se está chovendo
-    flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}, equip: { roupa: null, luvas: null, amuleto: null }                                               // marcas de diálogo e progresso dos objetivos de missão
+    flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}, equip: { roupa: null, luvas: null, amuleto: null }, obras: {}, reforma: {}                                               // marcas de diálogo e progresso dos objetivos de missão
   };
 }
 let estado = estadoInicial();
-const eqEfeito = k => Object.values(estado.equip || {}).reduce((s, id) => s + ((ITENS[id] && ITENS[id].efeito && ITENS[id].efeito[k]) || 0), 0);   // soma o bônus dos equipamentos vestidos
+const eqEfeito = k => Object.values(estado.equip || {}).reduce((s, id) => { const it = ITENS[id]; if (!it) return s; const ef = (estado.reforma && estado.reforma[id] === 2 && it.efeito2) || it.efeito; return s + ((ef && ef[k]) || 0); }, 0);   // soma o bônus dos equipamentos vestidos
 const maxHp = () => 80 + estado.attr.vit * 12;
 const maxAura = () => 40 + estado.attr.aur * 10 + eqEfeito('aura');
 const custoEsp = () => Math.max(15, Math.round(ESPECIAL.custo - (estado.attr.aur - 1) * 1.5));
@@ -1102,6 +1102,8 @@ function validarSave(d) {
   e.inv = d.inv && typeof d.inv === 'object' ? d.inv : {}; e.coletados = d.coletados && typeof d.coletados === 'object' ? d.coletados : {};
   e.equip = { roupa: null, luvas: null, amuleto: null };                       // equipamentos vestidos (só se o item estiver no inventário)
   if (d.equip && typeof d.equip === 'object') for (const sl in e.equip) { const id = d.equip[sl]; if (typeof id === 'string' && ITENS[id] && ITENS[id].slot === sl && e.inv[id] > 0) e.equip[sl] = id; }
+  e.obras = {}; if (d.obras && typeof d.obras === 'object') for (const k in OBRAS) if (d.obras[k]) e.obras[k] = 1;
+  e.reforma = {}; if (d.reforma && typeof d.reforma === 'object') for (const id in d.reforma) if (REFORMAS[id] && d.reforma[id] === 2 && e.inv[id] > 0) e.reforma[id] = 2;
   ['pontos', 'vitorias', 'combo', 'aura'].forEach(k => { if (!numOk(e[k], 0, 1e9)) e[k] = 0; });
   if (e.combo >= COMBOS.length) e.combo = 0;
   if (!numOk(e.hp, 0, 1e6)) e.hp = null;
@@ -1644,6 +1646,7 @@ function construirDojo() {
   pisoMeio(m, 1, 1, 10, 8, T.TATAME);                                  // tatame no meio, piso de madeira em volta
   pm(m, 'suporteArmas', 2.1, .9); pm(m, 'bandeiraFaixas', 3.7, .7); pm(m, 'altar', 5.5, .9); pm(m, 'bandeiraFaixas', 7.3, .7); pm(m, 'armario', 9.2, .9);
   pm(m, 'sacoPancada', .8, 3.2); pm(m, 'sacoPancada', .8, 5.6);
+  prop(m, 'balcao_recepcao', 8.6, 2.6, .9, { tipo: 'obra', idObra: 'dojo_bonecos', spr: SPR.balcao_recepcao });   // obra do dojo
   prop(m, 'boneco', 2.8, 5.4, .3, { hp: 9999, wob: 0, alvo: true }); prop(m, 'boneco', 8.4, 5.4, .3, { hp: 9999, wob: 0, alvo: true });
   [3, 4.2, 5.4].forEach(y => pm(m, 'almofada', 10.1, y));                // lugar dos alunos
   prop(m, 'lanterna', 1.1, 1.1, .15); prop(m, 'lanterna', 9.9, 7.4, .15);
@@ -1652,9 +1655,14 @@ function construirDojo() {
 }
 function construirBiblioteca() {
   const m = interior('biblioteca', 'Biblioteca', 11, 9, T.PISO, saidaDe('biblioteca'));
-  [1.4, 3.1, 7.9, 9.6].forEach(x => pm(m, 'estanteAlta', x, .8)); pm(m, 'escadinha', 4.6, .9);
+  [1.4, 3.1, 7.9, 9.6].forEach((x, k) => prop(m, 'estanteAlta', x, .8, .5, { tipo: 'leitura', spr: SPR.estanteAlta, estanteId: 'e' + k, titulo: 'Estante', textos: [
+    ['Registros de torneios antigos, organizados por ano. Alguns nomes foram riscados e reescritos.'],
+    ['Tratados de posturas e respiração. Há desenhos de pés e mãos nas margens.'],
+    ['Cadernos de graduação: cada faixa tem a data e o nome do mestre que a aprovou.'],
+    ['Mapas antigos das regiões, com caminhos marcados a tinta vermelha.']][k] })); pm(m, 'escadinha', 4.6, .9);
   [2.6, 4.4].forEach(y => pm(m, 'pergaminhos', .8, y)); pm(m, 'armario', .8, 6.3);
   pm(m, 'estanteAlta', 9.6, 5.2);                                     // corredor entre estantes
+  prop(m, 'balcao_recepcao', 7.6, 6.6, .9, { tipo: 'obra', idObra: 'bib_restauracao', spr: SPR.balcao_recepcao });   // obra da biblioteca
   pm(m, 'balcao_livros', 5.6, 2.6); pm(m, 'pilhaLivros', 7.2, 2.4);       // área de consulta e atendimento
   pm(m, 'mesaLeitura', 3, 6); [[1.9, 6.9], [4.1, 6.9]].forEach(([x, y]) => pm(m, 'almofada', x, y));
   pm(m, 'mesaEstudo', 7.6, 6.4); pm(m, 'pilhaLivros', 9.9, 6.9); pm(m, 'tapete', 5.5, 4.6);
@@ -1752,7 +1760,8 @@ function construirOficina() {                                             // ofi
   const m = interior('oficina', 'Oficina', 10, 8, T.PISO, saidaDe('oficina'));
   pm(m, 'ferramentasParede', 1.8, .8); pm(m, 'ferramentasParede', 8.2, .8); pm(m, 'bancadaTrabalho', 5, 1.9);
   pm(m, 'caixote', .8, 3); pm(m, 'caixote', .9, 4.1); pm(m, 'barril', .8, 5.4); pm(m, 'tronco', 8.6, 4.2); pm(m, 'caixote', 9.2, 5.6); pm(m, 'armario', 9.3, 2.4);
-  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de Equipamentos. Equipamentos de luta são vendidos na Alfaiataria, na Cerâmica e nas oficinas dos artesãos. Vista-os pelo menu (M).' });
+  prop(m, 'balcao_recepcao', 7.6, 6.2, .9, { tipo: 'obra', idObra: 'oficina_bancada', spr: SPR.balcao_recepcao });   // bancada de conserto
+  pm(m, 'placa', 3.2, 4.4, { texto: 'Oficina de Equipamentos. Equipamentos de luta são vendidos na Alfaiataria, na Cerâmica e nas oficinas dos artesãos. Vista-os pelo menu (M). A bancada de conserto, ao fundo, reforma os equipamentos.' });
   npc(m, { nome: 'Ferreiro Kanji', x: 6.6, y: 3.2, dir: 2, pal: palED('Ferreiro Kanji'), fala: 'ed', edLinhas: () => [{ p: null, nome: 'Ferreiro Kanji', t: 'Eu cuido das ferramentas do vilarejo. Para equipamentos de luta, passe na Alfaiataria ou na Cerâmica. Depois é só vestir pelo menu (M).' }] });
   return m;
 }
@@ -2016,7 +2025,7 @@ const NARR = t => ({ p: null, nome: '', t });
 const SALAS = {
   dojo: C => { const { m } = C; pisoMeio(m, 2, 2, m.w - 2, m.h - 2, T.TATAME); C.linhaFundo('bandeiraFaixas', 2); C.p('altar', m.w / 2, .9); C.p('sacoPancada', .8, 3.2); C.p('sacoPancada', .8, 5.4); C.p('suporteArmas', m.w - .9, 2.4);
     C.i('boneco', 'boneco', 3.2, 4.4, .3, { hp: 9999, wob: 0, alvo: true }); C.i('boneco', 'boneco', m.w - 3.2, 4.4, .3, { hp: 9999, wob: 0, alvo: true }); C.i('boneco', 'boneco', m.w / 2 + 2.4, 5.8, .3, { hp: 9999, wob: 0, alvo: true });
-    C.i('treino', 'placa', m.w / 2 - 2.2, 2.2, .22, { idTreino: C.ed.id }); const n = C.ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + .3, 2.2); },
+    C.i('treino', 'placa', m.w / 2 - 2.2, 2.2, .22, { idTreino: C.ed.id }); C.i('obra', 'balcao_recepcao', m.w - 2.4, 2.6, .9, { idObra: 'dojo_bonecos' }); const n = C.ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + .3, 2.2); },
   vestiario: C => { const { m } = C; C.linhaFundo('armario', 3); C.p('biombo', m.w - 1.2, 3); C.p('mesa', 2.6, 4.6); C.p('cesto', m.w - 1, 5.6); C.deco(2); },
   loja: C => { const { m, ed } = C; C.linhaFundo('prateleiraUtensilios', 3); C.p('caixote', .8, 3); C.p('barril', .8, 4.3); C.p('cesto', m.w - .9, 3.4);
     C.i('balcao', 'balcao_recepcao', m.w / 2, 2.6, .9, { estoque: ed.op.estoque || ['Onigiri', 'Chá verde', 'Bandagens'], idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.6, 1.7); C.deco(2); },
@@ -2360,7 +2369,18 @@ function textoMural() {
   return L;
 }
 const INTERACOES_ED = {
-  leitura: o => abrirConversa({ falas: o.textos.filter(Boolean).map(t => ({ p: null, nome: o.titulo || 'Leitura', t })) }),
+  leitura: o => {
+    if (o.estanteId && stM('catalogar_biblioteca') === 'em_andamento') {       // catalogar: cada estante lida conta uma vez
+      estado.mprog.estantes = estado.mprog.estantes || {};
+      if (!estado.mprog.estantes[o.estanteId]) { estado.mprog.estantes[o.estanteId] = 1; salvar(); aviso('Estante catalogada (' + Object.keys(estado.mprog.estantes).length + '/4)'); }
+    }
+    abrirConversa({ falas: o.textos.filter(Boolean).map(t => ({ p: null, nome: o.titulo || 'Leitura', t })) }); },
+  obra: o => { const O = OBRAS[o.idObra], op = [];
+    if (!obraFeita(o.idObra)) op.push({ t: 'Construir: ' + O.nome + ' — $' + O.custo, eventos: [() => comprarObra(o.idObra)] });
+    if (o.idObra === 'oficina_bancada' && obraFeita(o.idObra)) ['luvas', 'amuleto'].forEach(sl => { const id = estado.equip[sl];
+      if (id && REFORMAS[id] && estado.reforma[id] !== 2) op.push({ t: 'Reformar ' + ITENS[id].nome + ' (nível 2) — $' + REFORMAS[id], eventos: [() => reformarEquip(sl)] }); });
+    op.push({ t: 'Só olhar' });
+    abrirConversa({ falas: [NARR(O.nome + ': ' + O.desc + (obraFeita(o.idObra) ? ' (concluída)' : ' Custo: $' + O.custo + '.')), NARR('Seu saldo: $' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
   contemplar: o => abrirConversa({ falas: o.textos.filter(Boolean).map(NARR) }),
   reliquia: o => abrirConversa({ falas: o.textos.map(NARR) }),
   inscricao: o => abrirConversa({ falas: (o.textos || textoInscricao(o)).map(NARR) }),
@@ -2382,8 +2402,9 @@ const INTERACOES_ED = {
   sino: o => { Som.efeito('impacto'); shake = 3; popup(o.x, o.y, 'DONG!', '#ffe0a0'); ondasCine.push({ x: o.x, y: o.y, t: 0, vida: .9, r: 4, cor: '#ffe0a0' }); },
   treino: o => {
     if (jog.treino) { aviso('Treino encerrado.'); jog.treino = null; return; }
-    jog.treino = { t: 30, n: 0, id: o.idTreino }; const rec = estado.flags['treino_' + o.idTreino] || 0;
-    aviso('Treino de 30 s: acerte os bonecos! (recorde: ' + rec + ' acertos) — não dá XP'); }
+    const dur = obraFeita('dojo_bonecos') ? 45 : 30;
+    jog.treino = { t: dur, n: 0, id: o.idTreino }; const rec = estado.flags['treino_' + o.idTreino] || 0;
+    aviso('Treino de ' + dur + ' s: acerte os bonecos! (recorde: ' + rec + ' acertos) — não dá XP'); }
 };
 function tickTreino(dt) {
   const T0 = jog.treino; if (!T0 || dt <= 0) return;
@@ -4074,6 +4095,25 @@ function equipar(id) {                                                    // ves
   else { estado.equip[it.slot] = id; aviso('Vestiu ' + it.nome + '.'); }
   estado.aura = Math.min(estado.aura, maxAura()); hudChave = ''; salvar();
 }
+/* ---------- OBRAS: construções que o dinheiro melhora (dojo, biblioteca, oficina) ---------- */
+const OBRAS = {
+  dojo_bonecos: { nome: 'Bonecos de treino reforçados', custo: 120, desc: 'O treino cronometrado do dojo passa a durar 45 s (antes eram 30 s).' },
+  bib_restauracao: { nome: 'Restauração da biblioteca', custo: 150, desc: 'As estantes são restauradas. O Davi passa a ter uma missão nova: catalogar a biblioteca.' },
+  oficina_bancada: { nome: 'Bancada de conserto', custo: 200, desc: 'Permite reformar os equipamentos vestidos. O nível 2 aumenta o efeito do item.' }
+};
+const REFORMAS = { luvas_couro: 60, amuleto_foco: 80 };                  // custo da reforma para o nível 2
+const obraFeita = id => !!(estado.obras && estado.obras[id]);
+function comprarObra(id) {
+  const O = OBRAS[id]; if (!O || obraFeita(id)) return;
+  if ((estado.dinheiro || 0) < O.custo) { aviso('Dinheiro insuficiente: faltam $' + (O.custo - (estado.dinheiro || 0)) + ' para ' + O.nome + '.'); return; }
+  estado.dinheiro -= O.custo; estado.obras[id] = 1; aviso('Obra concluída: ' + O.nome + '. Saldo: $' + estado.dinheiro); hudChave = ''; salvar();
+}
+function reformarEquip(slot) {
+  const id = estado.equip[slot]; if (!id || !REFORMAS[id] || estado.reforma[id] === 2) return;
+  if (!obraFeita('oficina_bancada')) { aviso('Antes é preciso construir a bancada de conserto.'); return; }
+  const c = REFORMAS[id]; if ((estado.dinheiro || 0) < c) { aviso('Dinheiro insuficiente: faltam $' + (c - (estado.dinheiro || 0)) + ' para reformar ' + ITENS[id].nome + '.'); return; }
+  estado.dinheiro -= c; estado.reforma[id] = 2; aviso(ITENS[id].nome + ' reformado (nível 2). Saldo: $' + estado.dinheiro); hudChave = ''; salvar();
+}
 function ganharDinheiro(q, avisar) {
   estado.dinheiro = (estado.dinheiro || 0) + q;
   if (avisar) aviso('Recebeu $' + q + '. Saldo: $' + estado.dinheiro);
@@ -4336,6 +4376,7 @@ const MISSOES = {
   debora_gemeos: { nome: 'O desafio dos gêmeos', objetivo: () => 'Enfrente David e Miguel juntos' },
   buque_imperatriz: { nome: 'O buquê da imperatriz', objetivo: () => (estado.inv.buque ? 'Leve o buquê para Luiza, no Grande Templo' : 'Busque o buquê na Flor de Liz (Caminhos das Cerejeiras)') },
   ajudar_nicolas: { nome: 'Ajude o Nicolas', objetivo: () => 'Derrote os inimigos que cercam o Nicolas nas Cavernas' },
+  catalogar_biblioteca: { nome: 'Catalogar a biblioteca', objetivo: () => 'Leia as 4 estantes da biblioteca do Davi (' + Object.keys(estado.mprog.estantes || {}).length + '/4)' },
   cesto_roubado: { nome: 'O cesto roubado', objetivo: () => 'Recuperar o cesto de tangerinas da Karina (o local do ladrão ainda não foi definido)' }
 };
 const stM = id => estado.missoes[id] || 'nao_iniciada';
@@ -4345,7 +4386,7 @@ const stM = id => estado.missoes[id] || 'nao_iniciada';
    (retrato, nome, situação, 10 corações de respeito e as missões feitas para ele)
    ===================================================================== */
 const SOCIAL_MISSOES = {                                                // missões de cada personagem (as que existem no jogo)
-  davi: ['papeis_perdidos'], debora: ['debora_fundamentos', 'debora_alvo', 'debora_defesa', 'debora_gemeos'], nicolas: ['ajudar_nicolas'],
+  davi: ['papeis_perdidos', 'catalogar_biblioteca'], debora: ['debora_fundamentos', 'debora_alvo', 'debora_defesa', 'debora_gemeos'], nicolas: ['ajudar_nicolas'],
   rita: ['buque_imperatriz'], luiza: ['buque_imperatriz'], karina: ['cesto_roubado'], gil: ['grande_torneio'], gemeo_agua: ['debora_gemeos'], gemeo_vento: ['debora_gemeos']
 };
 const SOCIAL_ORDEM = ['henrique', 'nicolas', 'pietra', 'luna', 'gemeo_agua', 'gemeo_vento', 'rita', 'davi', 'debora', 'luiza', 'karina', 'gil'];
@@ -4429,6 +4470,8 @@ const DIALOGOS = {
     { se: () => stM('papeis_perdidos') === 'em_andamento', falas: [F('davi', 'aliviado', 'Os sete! Todos eles! Você salvou minha organização... e provavelmente minha sanidade.'), F('akira', '', 'Fico feliz em ajudar.'), F('davi', 'sorridente', 'Se encontrar mais algum papel perdido por aí, tente não me contar até eu terminar de catalogar estes.'),
         F('davi', 'sorridente', 'Sete de sete! Meu sistema de catalogação voltou a funcionar!'), F('akira', '', 'E qual é a recompensa?'), F('davi', 'sorridente', 'Acesso à coleção de registros marciais, naturalmente. E minha eterna gratidão.'), F('akira', '', 'Eu esperava um pouco mais.'), F('davi', 'sorridente', 'Você também pode levar um marcador de páginas.'), F('akira', '', 'Vou considerar.')],
       fim: [{ fn: () => { estado.inv.papel = 0; } }, { flag: 'colecao_registros' }, { missao: 'papeis_perdidos', estado: 'concluida', recompensa: [{ item: 'onigiri', qtd: 2 }, { item: 'cha', qtd: 1 }, { item: 'marcador', qtd: 1 }, { xp: 120 }, { dinheiro: 40 }] }] },
+    { se: () => stM('papeis_perdidos') === 'concluida' && obraFeita('bib_restauracao') && stM('catalogar_biblioteca') === 'nao_iniciada', falas: [F('davi', 'sorridente', 'Com a biblioteca restaurada, quero catalogar as estantes. Leia cada uma delas para mim. São quatro.')], fim: [{ missao: 'catalogar_biblioteca', estado: 'em_andamento' }] },
+    { se: () => stM('catalogar_biblioteca') === 'em_andamento' && Object.keys(estado.mprog.estantes || {}).length >= 4, falas: [F('davi', 'sorridente', 'Catalogado! Agora sei onde está cada registro.')], fim: [{ missao: 'catalogar_biblioteca', estado: 'concluida', recompensa: [{ dinheiro: 60 }, { xp: 80 }] }] },
     { falas: [F('davi', 'sorridente', 'Obrigado de novo, Akira! Meus papéis estão salvos.')] }
   ],
   kenji: [{ dinamico: o => falaMestre(o) }],
@@ -4572,7 +4615,7 @@ const REGRAS_RESPEITO = {
 // PROVISÓRIO até o criador decidir (troque aqui; o resto do jogo segue esta tabela):
 const GEMEOS_ELEMENTO = { agua: 'david', vento: 'miguel' };
 // Missões que contam como "missão pessoal" de cada personagem
-const MISSAO_PESSOAL = { ajudar_nicolas: ['nicolas'], debora_gemeos: ['gemeo_agua', 'gemeo_vento'], papeis_perdidos: ['davi'], buque_imperatriz: ['rita'] };
+const MISSAO_PESSOAL = { ajudar_nicolas: ['nicolas'], debora_gemeos: ['gemeo_agua', 'gemeo_vento'], papeis_perdidos: ['davi'], catalogar_biblioteca: ['davi'], buque_imperatriz: ['rita'] };
 // Quem tem relação de respeito e onde está (local null = ainda não definido no projeto)
 const RELACOES = {
   henrique: { nome: 'Henrique', elemento: 'fogo', local: 'Arena de Artes Marciais (Vilarejo)', aliado: true },
@@ -6578,7 +6621,7 @@ function tickMissoes(dt, antX, antY) {
 }
 
 const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar',
-  leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', bau: 'Abrir', sino: 'Tocar o sino', treino: 'Treinar' };
+  leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', obra: 'Ver obras', bau: 'Abrir', sino: 'Tocar o sino', treino: 'Treinar' };
 function alvoInteracao() {
   let melhor = null, menor = 1.5, melhorP = 9;
   const PRIO = { npc: 0, placa: 1 };                                   // prioridade: NPC > placa > outros
