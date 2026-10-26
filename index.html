@@ -3230,6 +3230,12 @@ function pixelarCv(c) {
 }
 addEventListener('resize', redimensionar);
 canvas.addEventListener('pointerdown', () => { window.focus(); canvas.focus(); });
+// Celular: tocar na tela com um NPC, placa ou objeto ao alcance interage (mesma regra da tecla E)
+canvas.addEventListener('pointerdown', () => {
+  if (MODO_TELA !== 'jogo' || pausado) return;
+  if (dlg.ativo || alvoInteracao()) interagir();
+  else aviso('Chegue perto de uma pessoa ou placa e toque nela para interagir.');
+});
 
 function tileBloqueado(x, y, e) {
   const i = Math.floor(x), j = Math.floor(y);
