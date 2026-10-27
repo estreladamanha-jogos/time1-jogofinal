@@ -74,10 +74,49 @@
   #hudMissoes div { margin: 0 0 4px; }
   #hudMissoes small { color: #bcd; font-size: 9px; }
   #hMissao { display: none; }   /* a lista de missões (📋) mostra isso agora */
+  /* FINAL DO JOGO: cena curta + tela de vitória + créditos */
+  #fimJogo { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; overflow: auto; padding: 18px; box-sizing: border-box; color: #f6e2a0; text-align: center;
+    font-family: 'Pixelify Sans', 'Cinzel', monospace; background: radial-gradient(ellipse at 50% 25%, #4a1f58 0%, #1a0f2e 45%, #05030a 100%); }
+  #fimJogo[hidden] { display: none; }
+  #fimJogo .fimPag { width: min(640px, 100%); margin: auto; animation: fimEntra .9s ease both; }
+  @keyframes fimEntra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  #fimJogo h2 { font-family: 'Cinzel', serif; color: #f6e2a0; font-size: clamp(22px, 5vw, 34px); margin: 0 0 12px; text-shadow: 0 0 14px rgba(217,178,90,.8), 2px 2px 0 #000; letter-spacing: 1px; }
+  #fimJogo p { margin: 0 0 12px; font-size: clamp(14px, 3.4vw, 18px); line-height: 1.5; color: #f1e6d0; text-shadow: 1px 1px 0 #000; }
+  #fimJogo .fimTime { color: #d9b25a; font-size: clamp(12px, 3vw, 15px); letter-spacing: 1px; }
+  #fimJogo .fimEstrela { font-size: 48px; line-height: 1; filter: drop-shadow(0 0 12px #ffd84a); animation: fimBrilha 2s ease-in-out infinite; }
+  @keyframes fimBrilha { 50% { transform: scale(1.12) rotate(6deg); } }
+  #fimJogo .fimStats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0 18px; }
+  #fimJogo .fimStats div { background: rgba(10,4,18,.7); border: 1px solid #d9b25a; border-radius: 4px; padding: 8px 6px; font-size: 13px; }
+  #fimJogo .fimStats b { display: block; color: #fff6d0; font-size: 18px; }
+  #fimJogo .fimBotoes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+  #fimJogo button { font: inherit; font-size: 16px; padding: 10px 18px; min-height: 44px; color: #f6e2a0; cursor: pointer; background: linear-gradient(180deg, #5a1630, #14061c); border: 2px solid #d9b25a; border-radius: 4px; box-shadow: 0 0 0 1px #000; }
+  #fimJogo button:hover, #fimJogo button:focus-visible { background: #d9b25a; color: #1a0a10; outline: none; }
+  #fimJogo .fimLista { text-align: left; margin: 0 auto 12px; max-width: 520px; }
+  #fimJogo .fimLista p { margin: 0 0 9px; }
+  #fimCreditos { overflow: hidden; height: min(62vh, 440px); margin-bottom: 14px; -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); }
+  #fimCreditos .rola { animation: fimRola 38s linear forwards; padding-top: 40vh; }
+  @keyframes fimRola { from { transform: translateY(0); } to { transform: translateY(-135%); } }
+  #fimCreditos h3 { color: #fff6d0; margin: 22px 0 6px; font-family: 'Cinzel', serif; }
+  #estrelaZerou { display: inline-block; font-size: 22px; margin-left: 8px; vertical-align: middle; filter: drop-shadow(0 0 6px #ffd84a); }
+  #estrelaZerou[hidden] { display: none; }
+  /* faixa de missão no topo da tela: SEMPRE mostra a missão principal (uma linha) e, menor, a missão extra */
+  #faixaMissao { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; width: max-content; max-width: min(520px, max(200px, calc(100vw - 480px))); pointer-events: none; text-align: center;
+    padding: 4px 12px 5px; border-radius: 6px; background: rgba(13, 10, 24, .72); border: 1px solid rgba(217, 178, 90, .75); box-shadow: 0 0 0 1px #000; font-family: inherit; }
+  #faixaMissao[hidden], body:not(.em-jogo) #faixaMissao, body.modoTorneio #faixaMissao, body.mapaAberto #faixaMissao { display: none; }
+  #faixaMissao div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 1px 1px 0 #000; }
+  #fmPrinc { color: #ffe36a; font-size: 13px; font-weight: bold; }
+  #fmExtra { color: #cfd8ff; font-size: 10px; margin-top: 1px; }
+  #fmExtra:empty { display: none; }
+  body.gotico #faixaMissao { font-family: 'Cinzel', serif; }
+  @media (max-width: 700px) and (orientation: portrait) { #faixaMissao { top: 96px; left: 8px; transform: none; max-width: calc(100vw - 72px); text-align: left; } #fmPrinc { font-size: 12px; } #aviso { top: 142px; } }
   .hudInfo { position: absolute; top: calc(100% + 6px); left: 0; width: min(230px, 78vw); max-height: 36vh; overflow: auto; box-sizing: border-box; pointer-events: auto;
     padding: 6px 8px; background: rgba(13, 16, 39, .95); border: 2px solid #c9d0e6; border-radius: 4px; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0, 229, 255, .35); font-size: 10px; line-height: 1.35; }
   .hudInfo[hidden] { display: none; }
   body.gotico .hudInfo { background: rgba(11, 5, 8, .95); border-color: #8a8f9e; font-family: 'Cinzel', serif; }
+  .ryoChip { margin-top: 3px; font-size: 11px; color: #ffe9a8; text-shadow: 2px 2px 0 #000; transition: transform .2s; }
+  .ryoChip.ganho { animation: ryoGanho .7s ease-out; } .ryoChip.gasto { animation: ryoGasto .7s ease-out; }
+  @keyframes ryoGanho { 0% { transform: scale(1.35); color: #7dff8a; } 100% { transform: scale(1); } }
+  @keyframes ryoGasto { 0% { transform: scale(.85); color: #ff6a6a; } 100% { transform: scale(1); } }
   #hCombo, #hDinheiro { color: #bcd; font-size: 11px; }
 
   /* ===== Dica de teclas ===== */
@@ -149,7 +188,7 @@
   @keyframes pulsoFinal { from { transform: scale(1); } to { transform: scale(1.08); } }
   #painelPerf { position: fixed; right: 6px; top: 34px; z-index: 50; white-space: pre; font: 11px/1.35 monospace; color: #c8ffd0; background: rgba(6, 10, 18, .78); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
   #aviso {
-    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: 62px; left: 50%; transform: translateX(-50%);
     background: rgba(244, 208, 63, .95); color: #3a2a00; padding: 5px 12px;
     border-radius: 16px; font-weight: bold; font-size: 13px; pointer-events: none;
     text-align: center; max-width: 80vw;
@@ -353,7 +392,7 @@
   #btnS { right: 30px; bottom: 122px; width: 58px; height: 58px; background: rgba(155, 227, 107, .9); font-size: 13px; }
   #btnL { right: 100px; bottom: 120px; width: 50px; height: 50px; background: rgba(200, 200, 220, .85); font-size: 13px; }
   #btnC { right: 112px; bottom: 26px; width: 62px; height: 62px; background: rgba(255, 120, 150, .9); font-size: 14px; }
-  #btnM { top: 6px; right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
+  #btnM { top: calc(clamp(78px, 17vmin, 132px) + 18px); right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
   @media (pointer: coarse) and (orientation: landscape) {               /* deitado: esquerda = movimento, direita = ações */
     #joystick { left: calc(14px + env(safe-area-inset-left)); bottom: 14px; width: 120px; height: 120px; }
     #btnJ { right: calc(14px + env(safe-area-inset-right)); bottom: 14px; width: 72px; height: 72px; font-size: 24px; }
@@ -449,6 +488,62 @@
   .l3faixas::before { top: 0; } .l3faixas::after { bottom: 0; }
   .l3faixas.on::before, .l3faixas.on::after { height: 9vh; }
   @media (max-width: 700px) { .l3topo { top: 6px; grid-template-columns: 1fr 48px 1fr; } .l3vida { height: 13px; } .l3pular { top: 54px; } .l3leg { bottom: 30%; } }
+
+/* ===== CAMADA VISUAL "Hades II" (só apresentação: nenhuma regra de jogo alterada) ===== */
+:root { --hd-vinho:#3a0b1c; --hd-roxo:#1a0f2e; --hd-ouro:#d9b25a; --hd-ouro2:#f6e2a0; --hd-sangue:#c0182f; --hd-espectro:#5fffd0; }
+#hdLuz { position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 38%, rgba(14,4,26,.38) 72%, rgba(6,0,14,.78) 100%),
+    linear-gradient(180deg, rgba(120,40,160,.16) 0%, rgba(0,0,0,0) 38%, rgba(190,30,60,.14) 100%);
+  mix-blend-mode: multiply; }
+#hdTom { position: fixed; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: soft-light; opacity: .55;
+  background: radial-gradient(circle at 50% 38%, rgba(255,196,110,.55), rgba(120,40,200,.35) 60%, rgba(10,60,90,.4) 100%); }
+#hdBrasas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+body #hud, body.gotico #hud { background: linear-gradient(180deg, rgba(58,11,28,.94), rgba(14,6,26,.96)) !important; border: 2px solid var(--hd-ouro) !important; border-image: none !important; border-radius: 4px !important;
+  box-shadow: 0 0 0 2px #05020a, 0 0 18px rgba(192,24,47,.5), inset 0 0 0 1px rgba(246,226,160,.35), inset 0 0 14px rgba(0,0,0,.7) !important; font-family: 'Cinzel', serif !important; font-style: normal !important; }
+body .barra, body.gotico .barra { background: #0a0410 !important; border: 1px solid var(--hd-ouro) !important; border-radius: 2px; box-shadow: 0 0 0 1px #000, inset 0 0 6px #000 !important; }
+body .vida i, body.gotico .vida i { background: linear-gradient(180deg, #ff8a9a 0%, #e0233c 40%, #8a0a22 100%) !important; }
+body .aura i, body.gotico .aura i { background: linear-gradient(180deg, #d9fff3 0%, #5fffd0 35%, #6a3fe0 100%) !important; }
+body .xp i, body.gotico .xp i { background: linear-gradient(180deg, #fff3c0 0%, var(--hd-ouro) 55%, #7a5a14 100%) !important; }
+.barra i::after { animation: hdBrilho 3.2s ease-in-out infinite; }
+@keyframes hdBrilho { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+.hudInfoBtn { border-color: var(--hd-ouro) !important; background: radial-gradient(circle at 35% 30%, #5a1630, #14061c) !important; }
+.ryoChip, #hLoc, #hHora, #hMissao { color: var(--hd-ouro2) !important; text-shadow: 0 0 6px rgba(217,178,90,.6), 2px 2px 0 #000 !important; }
+#dialogo .dlg-caixa { background: linear-gradient(180deg, rgba(34,12,38,.96), rgba(10,4,18,.97)) !important; border: 2px solid var(--hd-ouro) !important; box-shadow: 0 0 0 2px #000, 0 0 24px rgba(120,40,200,.45), inset 0 0 0 1px rgba(246,226,160,.3) !important; }
+#dialogo h2, #histNome { font-family: 'Cinzel', serif !important; color: var(--hd-ouro2) !important; text-shadow: 0 0 8px rgba(217,178,90,.7), 1px 1px 0 #000 !important; letter-spacing: 1px; }
+#dialogo .dlg-retrato { border: 2px solid var(--hd-ouro) !important; box-shadow: 0 0 16px rgba(192,24,47,.5); background: radial-gradient(circle, #3a1450, #0a0410) !important; }
+#aviso { background: rgba(26,8,34,.95) !important; color: var(--hd-ouro2) !important; border: 2px solid var(--hd-ouro) !important; font-family: 'Cinzel', serif !important; box-shadow: 0 0 16px rgba(192,24,47,.4); }
+#menu, .painel { background: linear-gradient(180deg, rgba(40,12,40,.97), rgba(10,4,20,.98)) !important; border: 2px solid var(--hd-ouro) !important; box-shadow: 0 0 0 2px #000, 0 0 28px rgba(192,24,47,.45), inset 0 0 0 1px rgba(246,226,160,.28) !important; font-family: 'Cinzel', serif !important; color: #f3e6c8; }
+.painel h2, #menu h2 { color: var(--hd-ouro2) !important; text-shadow: 0 0 10px rgba(217,178,90,.6); letter-spacing: 2px; }
+.menuP button, .painel button, #menu button { font-family: 'Cinzel', serif !important; background: linear-gradient(180deg, #4a1230, #1a0820) !important; color: var(--hd-ouro2) !important; border: 1px solid var(--hd-ouro) !important; border-radius: 3px; transition: filter .15s, box-shadow .15s, transform .1s; }
+.menuP button:hover, .painel button:hover, #menu button:hover { filter: brightness(1.3); box-shadow: 0 0 14px rgba(217,178,90,.55); }
+.menuP button:active, .painel button:active { transform: scale(.97); }
+.menuP button.ouro, .painel button.ouro { background: linear-gradient(180deg, #e8c46a, #8a6418) !important; color: #1a0c04 !important; }
+#telaInicial .logo { font-family: 'Cinzel', serif !important; background: linear-gradient(180deg, #fff3c0, #d9b25a 50%, #8a5a14); -webkit-background-clip: text; background-clip: text; color: transparent !important; text-shadow: none !important; filter: drop-shadow(0 0 14px rgba(192,24,47,.8)) drop-shadow(0 2px 0 #000); letter-spacing: 6px; }
+#telaInicial .sub { color: var(--hd-ouro2) !important; font-family: 'Cinzel', serif !important; letter-spacing: 4px; text-shadow: 0 0 8px rgba(120,40,200,.8); }
+.btn { background: radial-gradient(circle at 35% 30%, #5a1630, #12061a) !important; border: 2px solid var(--hd-ouro) !important; box-shadow: 0 0 12px rgba(192,24,47,.5), inset 0 0 8px #000 !important; }
+.btn small { font-family: 'Cinzel', serif; color: var(--hd-ouro2); }
+#dica { color: rgba(246,226,160,.75) !important; font-family: 'Cinzel', serif; text-shadow: 1px 1px 0 #000; }
+
+/* ===== cutscene da história: caixa e legendas no estilo Hades II ===== */
+#histCaixa { background: linear-gradient(180deg, rgba(28,10,34,.94), rgba(8,3,14,.97)) !important; border: 2px solid #d9b25a !important; border-radius: 3px !important; box-shadow: 0 0 0 2px #000, 0 0 30px rgba(120,40,200,.4), inset 0 0 0 1px rgba(246,226,160,.3), inset 0 0 22px rgba(0,0,0,.8) !important; font-family: 'Cinzel', serif !important; }
+#histTexto { font-family: 'Cinzel', serif !important; color: #f3e6c8 !important; text-shadow: 1px 1px 0 #000 !important; letter-spacing: .3px; }
+#histNome { font-family: 'Cinzel', serif !important; letter-spacing: 3px !important; text-shadow: 0 0 10px currentColor, 1px 1px 0 #000 !important; }
+#histLegenda { font-family: 'Cinzel', serif !important; letter-spacing: .35em !important; color: #f6e2a0 !important; text-shadow: 0 0 18px rgba(192,24,47,.95), 0 0 4px #000 !important; }
+#histLegenda::before, #histLegenda::after { content: ''; display: block; height: 1px; width: min(60vw, 420px); margin: 10px auto; background: linear-gradient(90deg, transparent, #d9b25a, transparent); }
+#histPular { font-family: 'Cinzel', serif !important; color: #f6e2a0 !important; background: rgba(20,6,26,.8) !important; border: 1px solid #d9b25a !important; }
+#histSeta { color: #d9b25a !important; text-shadow: 0 0 8px rgba(217,178,90,.8); }
+
+  /* celular deitado / telas baixas: a tela inicial inteira cabe (título menor, botões em duas colunas) */
+  @media (max-height: 470px) {
+    .tela { padding: 6px; gap: 2px; }
+    .logo { font-size: clamp(40px, 16vh, 70px) !important; }
+    .sub { margin: 0 0 8px; font-size: clamp(11px, 3.6vh, 16px); letter-spacing: .22em; }
+    .menuP { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(90vw, 480px); }
+    .menuP button { min-height: 40px; padding: 8px 10px; }
+    .dicaTitulo { display: none; }
+    #somDica { margin-top: 6px; font-size: 11px; }
+  }
 </style>
 </head>
 <body>
@@ -462,6 +557,7 @@
     </div>
     <button type="button" id="btnInfo" class="hudInfoBtn" aria-expanded="false" aria-controls="hudInfo" title="Lista de missões">📋</button>
   </div>
+  <div id="hRyo" class="ryoChip">🪙 0 Ryō</div>
   <div id="hudInfo" class="hudInfo" hidden>
     <div id="hudMissoes"></div>
     <div class="linha">
@@ -475,6 +571,8 @@
     <div id="hMissao"></div>
   </div>
 </header>
+
+<div id="faixaMissao" hidden aria-live="polite"><div id="fmPrinc"></div><div id="fmExtra"></div></div>
 
 <main>
   <canvas id="jogo" tabindex="0"></canvas>
@@ -507,7 +605,7 @@
 <section id="telaInicial" hidden>
   <div class="tela tela-principal">
     <h1 class="logo">AKIRA</h1>
-    <p class="sub">A JORNADA DO KARATÊ</p>
+    <p class="sub">A JORNADA DO KARATÊ<span id="estrelaZerou" hidden title="Você já zerou o jogo!">⭐</span></p>
     <nav class="menuP">
       <button type="button" data-a="continuar" id="btnContinuar" class="ouro">CONTINUAR</button>
       <button type="button" data-a="novo">NOVO JOGO</button>
@@ -531,7 +629,7 @@
     <label>Controles de toque <select id="opToque"><option value="auto">Automático</option><option value="sempre">Sempre mostrar</option><option value="nunca">Esconder</option></select></label>
     <label>Tamanho da tela <span class="escolhas"><button type="button" data-a="menorTela">Diminuir</button><button type="button" data-a="maiorTela">Aumentar</button><button type="button" data-a="telaCheia">Tela cheia</button></span></label>
     <button type="button" data-a="controles">📖 CONTROLES DO JOGO</button>
-    <p class="teclas">Teclado: WASD/Setas andar • J especial • K ataque forte • C ataque leve • Espaço esquiva • L defender • E interagir • V pular • M menu</p>
+    <p class="teclas">Teclado: WASD/Setas andar • J especial • K ataque forte • C ataque leve • Espaço esquiva • L defender • E interagir • Y sentar • U meditar • I dormir • O comer • B banho • M menu</p>
     <button type="button" data-a="voltar">VOLTAR</button>
   </div></div>
   <div class="tela tela-creditos" hidden><div class="painel">
@@ -571,6 +669,7 @@
   <div id="histCaixa"><div id="histNome"></div><p id="histTexto"></p><span id="histSeta" aria-hidden="true">▼</span></div>
   <button type="button" id="histPular">PULAR ▸</button>
 </section>
+<section id="fimJogo" hidden aria-live="polite"><div class="fimPag" id="fimPag"></div></section>
 <section id="pausa" hidden>
   <div class="tela pausaMenu"><div class="painel">
     <h2>PAUSA</h2>
@@ -633,6 +732,11 @@ const ITENS = {
   tochas:  { nome: 'Tochas', tipo: 'item', preco: 6 },
   cantil:  { nome: 'Cantil', tipo: 'item', preco: 12 },
   flor_liz: { nome: 'Flor de Liz', tipo: 'item', preco: 15 },
+  erva_cura: { nome: 'Erva de cura (+30 vida)', tipo: 'consumivel', cura: 30, preco: 7 },
+  pomada: { nome: 'Pomada medicinal (+45 vida)', tipo: 'consumivel', cura: 45, preco: 14 },
+  raiz_ginseng: { nome: 'Raiz de ginseng (+30 aura)', tipo: 'consumivel', aura: 30, preco: 12 },
+  lirio_branco: { nome: 'Lírio branco (presente)', tipo: 'item', preco: 12 },
+  arranjo_floral: { nome: 'Arranjo floral (presente)', tipo: 'item', preco: 25 },
   kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', slot: 'roupa', preco: 60, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#e9e2cf', giS: '#b9ae95', giSS: '#948a74' } },
   kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', slot: 'roupa', preco: 90, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#2f5fa8', giS: '#1f3f78', giSS: '#152b55' } },
   luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 }, efeito2: { dano: .20 } },
@@ -651,6 +755,9 @@ const LOJA_VENDA = {
   vil_ceramica: ['amuleto_foco', 'flor_liz'],                           // Cerâmica e artesanato
   cer_oficina: ['kimono_treino', 'luvas_couro'],                        // Oficina dos Artesãos de Sakura: vestimentas e luvas
   tg_oficina: ['kimono_azul', 'amuleto_foco'],                          // Oficina dos Artesãos do Grande Templo
+  vil_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'bandagem'], bam_ervas: ['erva_cura', 'pomada', 'raiz_ginseng'],
+  out_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'cha'], cac_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'cha_pessego'],       // Casas de ervas e remédios
+  flor_de_liz: ['flor_liz', 'lirio_branco', 'arranjo_floral', 'flor_silvestre'],                                                  // Floricultura da Lane
   padrao: ['onigiri', 'cha', 'agua']
 };
 const itensDaLoja = id => LOJA_VENDA[id] || LOJA_VENDA.padrao;
@@ -736,12 +843,36 @@ const PAL_NPC = {
   aj(P.maya, { cabelo: 'longo', cab: '#f0d890' });
   aj(P.karina, { cabelo: 'coque', cab: '#2a1a10', testa: '#d8c098', vis: [['cachos', '#2a1a10', .75]] });                       // Karina: coque crespo com faixa de tecido
   aj(P.alana, { cabelo: 'longo', cab: '#141014' });
+  P.debora.vis = [['coqueEstruturado', '#c89a5a', '#8a6a3a'], ['franja', '#c89a5a', -1], ['mechasLaterais', '#c89a5a']];              // Débora: coque alto estruturado, franja lateral, expressão séria
+  P.nicolas.vis = [['pontas', '#2a1a40'], ['mechasLaterais', '#2a1a40']];                                                         // Nicolas: pontas definidas
+  P.henrique.vis = (P.henrique.vis || []).concat([['mechasLaterais', '#2a1a10']]);
+  P.luiza.vis = (P.luiza.vis || []).concat([['franja', '#111111', 1]]); P.lane.vis = (P.lane.vis || []).concat([['franja', '#2a1a10', -1]]);
+  P.rita = P.rita || null; PAL_RITA.vis = (PAL_RITA.vis || []).concat([['coqueEstruturado', '#1a120e', '#e8c860'], ['mechasLaterais', '#1a120e']]);   // Rita: tranças + diadema dourado
+  P.miguel.vis = (P.miguel.vis || []).concat([['mechasLaterais', '#1a1010']]);
 })();
+(() => { const aj = (p, v) => { if (p) p.vis = (p.vis || []).concat(v); };    // traços novos de cabelo por personagem
+  aj(PAL_HANA, [['franja', '#3a2a3a', 1], ['mechasLaterais', '#3a2a3a']]); aj(PAL_MEI, [['franja', '#2a1a1a', -1], ['mechasLaterais', '#2a1a1a']]);
+  aj(PAL_JUN, [['franja', '#2a1a1a', 1]]); aj(PAL_KENJI, [['franja', '#dcdcdc', -1]]); aj(PAL_PIETRA, [['franja', '#d9502b', 1], ['mechasLaterais', '#d9502b']]);
+})();
+/* Acabamento das roupas (direção de arte): dobras do tecido, costura central, gola em V e nó da faixa com pontas — sutis, por cima do quimono */
+// escurece uma cor #rrggbb (o 'esc' original só existe dentro de outros módulos, por isso aqui tem o próprio)
+function escurecerGi(hex, k) { const n = parseInt(hex.slice(1), 16), h = v => Math.max(0, Math.min(255, Math.round(v * k))).toString(16).padStart(2, '0'); return '#' + h((n >> 16) & 255) + h((n >> 8) & 255) + h(n & 255); }
+function roupaDetalhe(g, o, hx, hy, e, f, costas) {
+  const p = o.pal; if (!p.gi || o.invisivel) return;
+  g.save(); g.lineCap = 'round'; g.globalAlpha = .26; g.strokeStyle = escurecerGi(p.gi.length === 7 ? p.gi : '#888888', .55); g.lineWidth = .8 * e;
+  for (const [dx, a, b] of [[-4, 9, 17], [3.5, 10, 18], [-1, 12, 20]]) { g.beginPath(); g.moveTo(hx + dx * e, hy + a * e); g.quadraticCurveTo(hx + (dx + 1.6) * e, hy + (a + b) / 2 * e, hx + (dx - .6) * e, hy + b * e); g.stroke(); }
+  g.globalAlpha = .45; if (!costas) { g.strokeStyle = escurecerGi(p.gi.length === 7 ? p.gi : '#888888', .45); g.beginPath(); g.moveTo(hx - 3.2 * e, hy + 7.6 * e); g.lineTo(hx + f * .6 * e, hy + 13 * e); g.lineTo(hx + 3.2 * e, hy + 7.6 * e); g.stroke(); g.setLineDash([1, 1.6]); g.beginPath(); g.moveTo(hx + f * .6 * e, hy + 13 * e); g.lineTo(hx + f * .6 * e, hy + 20 * e); g.stroke(); g.setLineDash([]); }
+  g.globalAlpha = .9; const fx = hx + f * .4 * e, fy = hy + 19.4 * e; g.fillStyle = p.faixa || '#222'; g.strokeStyle = '#14101a'; g.lineWidth = .5;
+  g.beginPath(); g.ellipse(fx, fy, 2 * e, 1.3 * e, 0, 0, TAU); g.fill(); g.stroke();
+  [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(fx, fy); g.lineTo(fx + sd * 3.2 * e, fy + 4.6 * e); g.lineTo(fx + sd * 1.6 * e, fy + 4.8 * e); g.closePath(); g.fill(); });
+  g.restore();
+}
 function desenharVisNPC(g, o, sx, sy) {
-  const vis = o.pal && o.pal.vis; if (!vis || !vis.length) return;
+  if (!o.pal) return; const vis = o.pal.vis || [];
   const e = o.pal.esc || 1, f = o.face || 1, po = poseOff(o._an, o._fr, f, e), hx = sx + f * 1 * e + po.dhx, hy = sy - 35 * e + po.dhy, costas = o.costas;
   g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
   const OL = '#1a1220';
+  roupaDetalhe(g, o, hx, hy, e, f, costas);
   for (const [tipo, c1, c2] of vis) {
     switch (tipo) {
       case 'barba': { if (costas) break; const L = (c2 || 1) * 9 * e; g.beginPath(); g.moveTo(hx - 5 * e + f * e, hy + 2 * e); g.quadraticCurveTo(hx - 6 * e + f * e, hy + L, hx + f * 1.5 * e, hy + L + 2 * e); g.quadraticCurveTo(hx + 6 * e + f * e, hy + L, hx + 5 * e + f * e, hy + 2 * e); g.quadraticCurveTo(hx + f * e, hy + 5 * e, hx - 5 * e + f * e, hy + 2 * e); g.fillStyle = c1; g.fill(); g.strokeStyle = OL; g.lineWidth = .6; g.stroke(); break; }
@@ -762,6 +893,12 @@ function desenharVisNPC(g, o, sx, sy) {
           g.strokeStyle = c1; g.lineWidth = 2.2 * e; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + s * 4 * e, y0 + L * .5, x0 + s * 3 * e + bal, y0 + L); g.stroke();
           if (c2) { g.strokeStyle = c2; g.beginPath(); g.moveTo(x0 + s * 3 * e + bal, y0 + L - 3 * e); g.lineTo(x0 + s * 3 * e + bal, y0 + L); g.stroke(); } }
         g.beginPath(); g.ellipse(hx, hy - 4 * e, 7.6 * e, 5.6 * e, 0, Math.PI, 0); g.fillStyle = c1; g.fill(); break; }
+      case 'chifres': { g.fillStyle = c1; g.strokeStyle = OL; g.lineWidth = .6; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(hx + sd * 3 * e, hy - 7.6 * e); g.quadraticCurveTo(hx + sd * 6 * e, hy - 11 * e, hx + sd * 4.4 * e, hy - 15 * e); g.quadraticCurveTo(hx + sd * 3.6 * e, hy - 11 * e, hx + sd * .8 * e, hy - 8 * e); g.closePath(); g.fill(); g.stroke(); }); break; }
+      case 'flor': { const fx = hx + f * 5.6 * e, fy = hy - 6 * e; for (let k = 0; k < 5; k++) { const a = k * TAU / 5; g.beginPath(); g.ellipse(fx + Math.cos(a) * 1.8 * e, fy + Math.sin(a) * 1.8 * e, 1.5 * e, 1.1 * e, a, 0, TAU); g.fillStyle = c1; g.fill(); } g.beginPath(); g.arc(fx, fy, .9 * e, 0, TAU); g.fillStyle = c2 || '#ffe27a'; g.fill(); break; }
+      case 'franja': { if (costas) break; const d = (c2 || 1) * f; g.beginPath(); g.moveTo(hx - 8 * e, hy - 7 * e); g.quadraticCurveTo(hx - 2 * e * d, hy - 11 * e, hx + 8 * e, hy - 6 * e); g.quadraticCurveTo(hx + 5 * e * d, hy - 3.2 * e, hx + 1 * e * d, hy - 1.6 * e); g.quadraticCurveTo(hx - 3 * e, hy - 4.5 * e, hx - 8 * e, hy - 7 * e); g.closePath(); g.fillStyle = c1; g.fill(); g.strokeStyle = OL; g.lineWidth = .5; g.stroke(); g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = .6; g.beginPath(); g.moveTo(hx - 5 * e, hy - 7.6 * e); g.quadraticCurveTo(hx, hy - 9 * e, hx + 5 * e, hy - 6.6 * e); g.stroke(); break; }
+      case 'mechasLaterais': { if (costas) break; g.strokeStyle = c1; g.lineWidth = 1.6 * e; g.lineCap = 'round'; [-1, 1].forEach(sd => { g.beginPath(); g.moveTo(hx + sd * 6.6 * e, hy - 5 * e); g.quadraticCurveTo(hx + sd * 8 * e, hy, hx + sd * 6.2 * e, hy + 6 * e); g.stroke(); }); break; }
+      case 'pontas': { g.fillStyle = c1; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(hx + k * 2.8 * e - 1.8 * e, hy - 7 * e); g.lineTo(hx + k * 3.2 * e, hy - (11 + (k % 2 ? 0 : 2)) * e); g.lineTo(hx + k * 2.8 * e + 1.8 * e, hy - 7 * e); g.closePath(); g.fill(); } break; }
+      case 'coqueEstruturado': { const bx = hx - f * 1 * e, by = hy - 12 * e; g.beginPath(); g.arc(bx, by, 5.4 * e, 0, TAU); g.fillStyle = c1; g.fill(); g.strokeStyle = OL; g.lineWidth = .6; g.stroke(); g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = .7; g.beginPath(); g.arc(bx, by, 3.6 * e, 3.6, 5.2); g.stroke(); g.fillStyle = c2 || '#c9a24a'; g.fillRect(bx - 5.4 * e, by + 4.4 * e, 10.8 * e, 1.6 * e); g.strokeStyle = c2 || '#c9a24a'; g.lineWidth = .9; g.beginPath(); g.moveTo(bx - 2 * e, by - 2 * e); g.lineTo(bx + 4 * e, by - 6 * e); g.stroke(); break; }
       case 'coqueAlto': { g.beginPath(); g.arc(hx - f * 1 * e, hy - 11 * e, 4.8 * e, 0, TAU); g.fillStyle = c1; g.fill(); g.strokeStyle = 'rgba(60,10,0,.5)'; g.lineWidth = .7; g.beginPath(); g.arc(hx - f * 1 * e, hy - 11 * e, 3 * e, .5, 4); g.stroke(); break; }
       case 'chanel': { g.beginPath(); g.moveTo(hx - 8 * e, hy + 4 * e); g.quadraticCurveTo(hx - 9 * e, hy - 9 * e, hx, hy - 9.5 * e); g.quadraticCurveTo(hx + 9 * e, hy - 9 * e, hx + 8 * e, hy + 4 * e); g.lineTo(hx + 5.6 * e, hy + 4 * e); g.lineTo(hx + 5 * e, hy - 3 * e); g.lineTo(hx - 5 * e, hy - 3 * e); g.lineTo(hx - 5.6 * e, hy + 4 * e); g.closePath(); g.fillStyle = c1; g.fill();
         g.strokeStyle = c2; g.lineWidth = 2 * e; g.beginPath(); g.moveTo(hx + f * 3 * e, hy - 8.6 * e); g.quadraticCurveTo(hx + f * 7 * e, hy - 4 * e, hx + f * 6.6 * e, hy + 3 * e); g.stroke(); break; }
@@ -1093,6 +1230,7 @@ function estadoInicial() {
     respeito: {}, parceiro: null, chefes: {},                          // relações (4 graus), parceiro escolhido e chefes vencidos
     fase: 'treino',                                                    // história: 'treino' (até vencer o torneio) -> 'selos' (chefes liberados)
     torneio: { inscrito: false, res: {}, elim: null, campeao: false }, // chave do torneio (resultados salvos)
+    tempoJogo: 0,                                                      // segundos jogados (aparece na tela de vitória)
     relogio: 200, chuva: false,                                        // relógio do dia (começa às 8h) e se está chovendo
     flags: {}, mprog: {}, tecEquip: 'explosaoAura', tecVistas: {}, equip: { roupa: null, luvas: null, amuleto: null }, obras: {}, reforma: {}                                               // marcas de diálogo e progresso dos objetivos de missão
   };
@@ -1135,6 +1273,7 @@ function validarSave(d) {
   if (e.combo >= COMBOS.length) e.combo = 0;
   if (!numOk(e.hp, 0, 1e6)) e.hp = null;
   if (!numOk(e.relogio, 0, 2400)) e.relogio = 200; e.chuva = e.chuva === true;
+  if (!numOk(e.tempoJogo, 0, 1e9)) e.tempoJogo = 0;
   if (!numOk(e.dia, 0, 1e7)) e.dia = 0; if (typeof e.rastreio !== 'string') e.rastreio = null;
   const lugarOk = l => l && typeof l.mapa === 'string' && (MAPAS[l.mapa] || CELULA[l.mapa] || l.mapa === 'mundo' || l.mapa === 'caverna' || l.mapa === 'cavernas') && numOk(l.x, -1, 1e4) && numOk(l.y, -1, 1e4);
   if (!lugarOk(e.respawn)) e.respawn = estadoInicial().respawn;
@@ -2016,7 +2155,7 @@ function falasED(nome, papel, ed) {
     cura: ['Sou responsável pelos tratamentos aqui. Quer que eu cuide dos seus ferimentos?'],
     leitura: ['As estantes estão abertas para consulta. Pode ler quantas vezes quiser.', L[1] || ''],
     guarda: ['Posto de vigia. O mural tem os avisos de perigo da região.'],
-    forja: ['A forja está acesa, mas ainda não faço armas para alunos — o jogo não tem sistema de equipamentos. Fique à vontade para olhar.'],
+    forja: ['A forja está acesa e o ferro está no ponto. Fique à vontade para olhar o trabalho, mas cuidado com as fagulhas!'],
     artesao: ['Aqui trabalhamos com as mãos e com paciência. Veja o balcão: há peças prontas à venda.'],
     eremita: ['Hmm... visitas. Vivo longe de todos para ouvir a floresta.', 'Uma vez vi uma sombra enorme, como um dragão, passando entre as árvores. Não sei de quem era. E não quero saber.'],
     'guardião': ['Eu cuido desta região há muitos anos. ' + (L[0] || '')],
@@ -2112,6 +2251,10 @@ const SALAS = {
   enfermaria: C => { const { m, ed } = C; for (let k = 0; k < 3; k++) C.i('cama', 'futon', 2.2 + k * 3.2, 1.6, .6, { ed: ed.id }); C.p('prateleiraErvas', m.w - 1.2, 3.4); C.p('biombo', 1.2, 3.8); const n = ed.op.npc; if (n) C.npc(n[0], 'cura', m.w / 2, 3.6, { servico: 'cura' }); },
   alojamento: C => { const { m, ed } = C; for (let k = 0; k < 4; k++) C.i(k === 0 ? 'cama' : 'enfeite', 'futon', 1.9 + k * 2.7, 1.6, .6, { ed: ed.id }); C.p('armario', .8, 3.6); C.p('armario', m.w - .8, 3.6); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.5, 3.6); },
   residencia: C => { const { m, ed } = C; C.p('mesaBaixa', m.w / 2, 3.2); C.p('almofada', m.w / 2 - 1.2, 4); C.p('almofada', m.w / 2 + 1.2, 4); C.leitura('estanteAlta', 1.4, .85, 'Cadernos dos mestres', [LORE[ed.reg][1], 'Técnicas não se aprendem lendo: se aprendem treinando. Mas ler ajuda a entender o que treinar.']); C.p('biombo', m.w - 1.4, 1.6); C.p('vasoGrande', m.w - 1, 4);
+    if (MISSOES_ED[ed.id] && MISSOES_ED[ed.id][0] === 'treinar') {                           // mestre que pede treino: a residência tem placa e bonecos
+      C.i('treino', 'placa', m.w / 2 - 2.2, 2.2, .22, { idTreino: ed.id });
+      [[2.2, m.h - 2.6], [m.w - 2.2, m.h - 2.6], [m.w / 2, m.h - 2]].forEach(([x, y]) => C.i('boneco', 'boneco', x, y, .3, { hp: 9999, wob: 0, alvo: true }));
+    }
     const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2.2, 1.8); },
   palacioAudiencia: C => { const { m } = C; pisoMeio(m, 4, 1, m.w - 4, m.h - 1, T.TATAME); C.p('trono', m.w / 2, 1.2); C.p('coluna', 2.4, 2.6); C.p('coluna', m.w - 2.4, 2.6); C.p('coluna', 2.4, 6); C.p('coluna', m.w - 2.4, 6); C.linhaFundo('estandarte', 2);
     C.npc('Guarda Imperial Kaname', 'guarda', m.w / 2 + 2.2, 2.2, { edLinhas: () => [{ p: null, nome: 'Guarda Imperial Kaname', t: 'A Imperatriz Rita está recebendo visitantes no pátio do Grande Templo. Este é o salão de audiência dela.' }, { p: null, nome: 'Guarda Imperial Kaname', t: 'Ela ouve todos com bondade — alunos, mestres e moradores.' }] }); },
@@ -2222,7 +2365,21 @@ function salaLocal(ed, sala, E, rnd, portas) {                          // monta
   if (mundoYokai() && sombria && !['camaraSelo', 'arenaNucleo'].includes(sala.k)) C.p('escombros', 1.6 + rnd() * (w - 3.2), h - 2.4);
   return { m, w, h, sombria };
 }
-function construirPlanta(ed) {
+/* Decoração dos interiores: objetos pequenos junto às paredes, escolhidos pela função do lugar. Só entram em tiles livres, longe de móveis, NPCs, portas e do ponto de entrada. */
+function decorarInterior(m, ed) {
+  const id = String(ed.id || ''), rnd = mulberry32(([...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 99)) >>> 0);
+  const tipos = /resta|cha/.test(id) ? ['vasoPequeno', 'velas', 'cesto'] : /flor/.test(id) ? ['vasoPequeno', 'vasoGrande', 'cesto'] : /bib|livr/.test(id) ? ['pilhaLivros', 'pergaminhos', 'velas']
+    : /oficina|armaz/.test(id) ? ['caixote', 'barril', 'cesto'] : /pousada/.test(id) ? ['vasoPequeno', 'velas', 'cesto'] : ['vasoPequeno', 'cesto', 'velas', 'pilhaLivros'];
+  const livre = (i, j) => j >= 0 && i >= 0 && j < m.h && i < m.w && m.bloq[j] && !m.bloq[j][i];
+  const longe = (x, y, d) => !m.objs.some(o => o.tipo !== 'paredeInt' && Math.hypot(o.x - x, o.y - y) < d) && !(m.exits || []).some(e => x > e.x - d && x < e.x + e.w + d && y > e.y - d && y < e.y + e.h + d) && (!m.spawn || Math.hypot(m.spawn.x - x, m.spawn.y - y) > 2.2);
+  const cand = []; for (let j = 1; j < m.h - 1; j++) for (let i = 1; i < m.w - 1; i++) if (livre(i, j) && m.bloq[j - 1][i] && livre(i - 1, j) && livre(i + 1, j) && livre(i, j + 1) && livre(i, j + 2)) cand.push([i + .5, j + .5]);
+  for (let k = cand.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); [cand[k], cand[q]] = [cand[q], cand[k]]; }
+  if (/pousada/.test(id) && SPR.balcao_recepcao) { const c = cand.find(([x, y]) => longe(x, y, 1.9)); if (c) prop(m, 'balcao_recepcao', c[0], c[1] + .2, .9, { tipo: 'obra', idObra: 'pousada_conforto', spr: SPR.balcao_recepcao }); }   // melhoria da pousada
+  let n = 0; const lim = /armaz/.test(id) ? 9 : 6;
+  for (const [x, y] of cand) { if (n >= lim) break; const k = tipos[Math.floor(rnd() * tipos.length)]; if (!SPR[(DEF_OBJ[k] || {}).k || k] || !longe(x, y, 1.25)) continue; pm(m, k, x, y, { decor: true }); n++; }
+}
+function construirPlanta(ed) { const m = construirPlantaBase(ed); try { decorarInterior(m, ed); } catch (e) { } return m; }
+function construirPlantaBase(ed) {
   const E = ESTILO_INT[ed.reg] || ESTILO_INT.vilarejo, rnd = mulberry32(([...ed.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 11)) >>> 0);
   garantirPosEdif(ed.id);
   const salas = ed.salas, ent = salas[0], [we, he] = TAM_SALA[ent.k] || [11, 8], outras = salas.slice(1);
@@ -2381,7 +2538,7 @@ function colocarEdificiosCaverna(M, saloes) {
 
 /* ---------- interações dos interiores ---------- */
 function textoInscricao(o) {
-  if (o.selo === 'todos') return ORDEM_CHEFES.map(id => { const d = CHEFES[id], g = GUARDIOES[d.regiao]; return d.nome + ': ' + (estado.chefes[id] ? 'selo restaurado.' : estado.fase !== 'selos' ? 'selo intacto (por enquanto).' : g && !guardiaoVencido(d.regiao) ? 'selo corrompido, guardado por ' + ARQ[g].nome + '.' : 'selo rompido — o desafio espera.'); });
+  if (o.selo === 'todos') return ORDEM_CHEFES.map(id => { const d = CHEFES[id], g = GUARDIOES[d.regiao]; return d.nome + ': ' + (estado.chefes[id] ? 'selo restaurado.' : estado.fase !== 'selos' ? 'selo intacto.' : g && !guardiaoVencido(d.regiao) ? 'selo corrompido, guardado por ' + ARQ[g].nome + '.' : 'selo rompido — o desafio espera.'); });
   if (!o.selo || !CHEFES[o.selo]) return ['Uma inscrição antiga sobre os oito selos que protegem o mundo.'];
   const d = CHEFES[o.selo], g = GUARDIOES[d.regiao];
   if (estado.chefes[o.selo]) return ['A inscrição brilha em paz: o selo de ' + d.nome + ' foi restaurado.'];
@@ -2403,16 +2560,18 @@ const INTERACOES_ED = {
     }
     abrirConversa({ falas: o.textos.filter(Boolean).map(t => ({ p: null, nome: o.titulo || 'Leitura', t })) }); },
   obra: o => { const O = OBRAS[o.idObra], op = [];
-    if (!obraFeita(o.idObra)) op.push({ t: 'Construir: ' + O.nome + ' — $' + O.custo, eventos: [() => comprarObra(o.idObra)] });
+    if (!obraFeita(o.idObra)) op.push({ t: 'Construir: ' + O.nome + ' — Ryō ' + O.custo, eventos: [() => comprarObra(o.idObra)] });
     if (o.idObra === 'oficina_bancada' && obraFeita(o.idObra)) ['luvas', 'amuleto'].forEach(sl => { const id = estado.equip[sl];
-      if (id && REFORMAS[id] && estado.reforma[id] !== 2) op.push({ t: 'Reformar ' + ITENS[id].nome + ' (nível 2) — $' + REFORMAS[id], eventos: [() => reformarEquip(sl)] }); });
+      if (id && REFORMAS[id] && estado.reforma[id] !== 2) op.push({ t: 'Reformar ' + ITENS[id].nome + ' (nível 2) — Ryō ' + REFORMAS[id], eventos: [() => reformarEquip(sl)] }); });
     op.push({ t: 'Só olhar' });
-    abrirConversa({ falas: [NARR(O.nome + ': ' + O.desc + (obraFeita(o.idObra) ? ' (concluída)' : ' Custo: $' + O.custo + '.')), NARR('Seu saldo: $' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
+    abrirConversa({ falas: [NARR(O.nome + ': ' + O.desc + (obraFeita(o.idObra) ? ' (concluída)' : ' Custo: Ryō ' + O.custo + '.')), NARR('Seu saldo: Ryō ' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
   contemplar: o => abrirConversa({ falas: o.textos.filter(Boolean).map(NARR) }),
   reliquia: o => abrirConversa({ falas: o.textos.map(NARR) }),
   inscricao: o => abrirConversa({ falas: (o.textos || textoInscricao(o)).map(NARR) }),
   mural: () => abrirConversa({ falas: textoMural().map(t => ({ p: null, nome: 'Mural de avisos', t })) }),
-  cama: o => { estado.hp = maxHp(); estado.aura = maxAura(); const P = EDIF_POS[o.ed]; if (P) estado.respawn = { mapa: P.mapa, x: P.x, y: P.y }; aviso('Você descansou: vida e aura cheias. Ponto de retorno salvo aqui.'); salvar(); },
+  cama: o => { estado.hp = maxHp(); estado.aura = maxAura(); const P = EDIF_POS[o.ed]; if (P) estado.respawn = { mapa: P.mapa, x: P.x, y: P.y }; aviso('Você descansou: vida e aura cheias. Ponto de retorno salvo aqui.');
+    if (obraFeita('pousada_conforto')) { let got = []; for (const [it, nm] of [['onigiri', 'onigiri'], ['cha', 'chá']]) if ((estado.inv[it] || 0) < 3) { estado.inv[it] = (estado.inv[it] || 0) + 1; got.push(nm); } if (got.length) aviso('Café da manhã da pousada: +1 ' + got.join(' e +1 ') + '.'); }
+    salvar(); },
   banho: () => { const t = Date.now(), ult = estado.flags.banhoT || 0; if (t - ult < 120000) { aviso('A água ainda está esquentando (espere ' + Math.ceil((120000 - (t - ult)) / 1000) + ' s).'); return; }
     estado.flags.banhoT = t; estado.hp = Math.min(maxHp(), estado.hp + Math.round(maxHp() * .5)); estado.aura = Math.min(maxAura(), estado.aura + 20); aviso('Banho quente: +50% de vida e +20 de aura.'); salvar(); },
   servico: () => { const t = Date.now(), ult = estado.flags.chaT || 0; if (t - ult < 180000) { abrirConversa({ falas: [{ p: 'ramor', nome: 'Ramor', t: 'Calma! O próximo chá fica pronto em ' + Math.ceil((180000 - (t - ult)) / 1000) + ' segundos.' }] }); return; }
@@ -2420,9 +2579,9 @@ const INTERACOES_ED = {
   cardapio: () => abrirConversa({ falas: [{ p: null, nome: 'Cardápio', t: CARDAPIO.join(' • ') }], opcoes: 'cardapio' }),
   balcao: o => { const k = 'amostra_' + o.idLoja, op = [], venda = itensDaLoja(o.idLoja);
     if (!estado.flags[k]) op.push({ t: 'Pegar a amostra grátis', eventos: [() => { if (estado.flags[k]) return; estado.flags[k] = 1; estado.inv.onigiri = (estado.inv.onigiri || 0) + 1; aviso('Recebeu: Onigiri (amostra grátis)'); salvar(); }] });
-    venda.forEach(id => op.push({ t: 'Comprar: ' + ITENS[id].nome + ' — $' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] }));
+    venda.forEach(id => op.push({ t: 'Comprar: ' + ITENS[id].nome + ' — Ryō ' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] }));
     op.push({ t: 'Só olhar' });
-    abrirConversa({ falas: [NARR('No balcão: ' + venda.map(id => ITENS[id].nome + ' ($' + ITENS[id].preco + ')').join(', ') + '.'), NARR('Seu saldo: $' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
+    abrirConversa({ falas: [NARR('No balcão: ' + venda.map(id => ITENS[id].nome + ' (Ryō ' + ITENS[id].preco + ')').join(', ') + '.'), NARR('Seu saldo: Ryō ' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
   bau: o => { const k = 'bau_' + o.idBau; if (estado.flags[k]) { aviso('O baú está vazio.'); return; }
     estado.flags[k] = 1; const p = o.premio || { cha: 1 }; for (const it in p) estado.inv[it] = (estado.inv[it] || 0) + p[it];
     aviso('Baú aberto: ' + Object.entries(p).map(([it, q]) => ITENS[it].nome + ' x' + q).join(', ')); salvar(); },
@@ -2597,8 +2756,42 @@ function preaquecer(prazo, orcamento) {
 })();
 function removerObj(M, o) { o.removido = true; M.objs = M.objs.filter(x => x !== o); }
 // inimigos derrotados voltam depois de um tempo (só longe do Akira)
+// Missões de caça em regiões sem inimigos (Vilarejo, Grande Templo): lutadores rebeldes invadem a estrada de fora enquanto a missão está ativa
+function garantirInvasores(M) {
+  if (M.id !== 'mundo' || !M.cel || !estado) return;
+  const ativas = {};
+  for (const id in MISSOES) { const Q = MISSOES[id]; if (Q.tipo === 'cacar' && SEM_INIMIGOS[Q.reg] && stM(id) === 'em_andamento' && progM(id).n < Q.qtd) ativas[Q.reg] = (ativas[Q.reg] || 0) + Q.qtd - progM(id).n; }
+  if (M.dyn.some(e => e.invasor && (!ativas[e.invasor] || (!e.vivo && e.t <= 0)))) { M.dyn = M.dyn.filter(e => !(e.invasor && (!ativas[e.invasor] || (!e.vivo && e.t <= 0)))); M.sujo = true; }
+  for (const reg in ativas) {
+    let falta = ativas[reg] + 3 - M.dyn.filter(e => e.invasor === reg && e.vivo).length; if (falta <= 0) continue;
+    let R = null; for (const linha of M.cel) for (const c of linha) if (c && c.id === reg) R = c;
+    if (!R) continue;
+    const n = R.nucleo, rnd = mulberry32(777 + Math.floor(tempo * 10));
+    for (let t = 0; t < 600 && falta > 0; t++) {
+      const x = R.x0 + 3 + rnd() * (RW - 6), y = R.y0 + 3 + rnd() * (RW - 6);
+      const dentro = x > n[0] - 3 && x < n[2] + 3 && y > n[1] - 3 && y < n[3] + 3;
+      if (dentro && reg !== 'gt_patio') continue;                                           // Vilarejo: só na estrada de fora (os serviços continuam seguros)
+      if (dentro && (Math.hypot(x - jog.x, y - jog.y) < 9 || reservado(M, x, y, 3))) continue;   // Grande Templo: o pátio é o único chão — longe dos prédios e do jogador
+      if (reservado(M, x, y, 1.5) || !livreG(M, x, y, .3, .3, false) || M.tiles[Math.floor(y)][Math.floor(x)] === T.AGUA) continue;
+      const e = novoInimigo('bandido', x, y); e.nome = 'Lutador Rebelde'; e.home = [x, y]; e.tipoInim = 'bandido'; e.invasor = reg; e.semRenascer = true; M.dyn.push(e); falta--;
+    }
+    M.sujo = true;
+  }
+}
+// O ladrão da Karina: aparece na Floresta das Tangerinas quando a missão começa
+function garantirLadrao(M) {
+  if (M.id !== 'mundo' || !M.cel || !estado) return;
+  if (stM('cesto_roubado') !== 'em_andamento' || estado.inv.cesto_karina) return;
+  if (M.dyn.some(e => e.ladraoCesto && e.vivo)) return;
+  const [ox, oy] = origemNucleo('tangerinas'), rnd = mulberry32(31337 + Math.floor(tempo * 10));
+  for (let t = 0; t < 400; t++) {
+    const x = ox + 15.8 + (rnd() - .5) * 18, y = oy + 22.6 - 5 - rnd() * 10;
+    if (Math.hypot(x - (ox + 15.8), y - (oy + 22.6)) < 7 || reservado(M, x, y, 1.5) || !livreG(M, x, y, .3, .3, false) || M.tiles[Math.floor(y)][Math.floor(x)] === T.AGUA) continue;
+    const e = novoInimigo('veterano', x, y); Object.assign(e, { nome: 'Ladrão de Tangerinas', ladraoCesto: true, semRenascer: true, home: [x, y], tipoInim: 'veterano' }); M.dyn.push(e); M.sujo = true; return;
+  }
+}
 function renascerInimigos(M) {
-  yokaisNoVilarejo(M);
+  yokaisNoVilarejo(M); garantirInvasores(M); garantirLadrao(M);
   for (const e of M.dyn) {
     if (e.tipo !== 'inimigo' || e.vivo || e.t > 0 || e.semRenascer) continue;
     if (e.mortoEm == null) e.mortoEm = tempo;
@@ -2867,7 +3060,7 @@ function construirCaverna() {
     const alvo = k % 2 ? saloes[(k + 1) % saloes.length] : null, e = entradasNucleo[k % entradasNucleo.length];
     tunel([s.x, s.y], alvo ? [alvo.x, alvo.y] : e, 1.5);
     if (!alvo) { const ss = saloes[(k + 3) % saloes.length]; tunel([s.x, s.y], [ss.x, ss.y], 1.4); }
-    if (k % 3 === 0) M.tiles[Math.floor(s.y)][Math.floor(s.x)] = T.AGUA;        // poça no meio de alguns salões
+    if (false) M.tiles[Math.floor(s.y)][Math.floor(s.x)] = T.AGUA;        // poça no meio de alguns salões
     if (k % 2 === 0) { const e2 = novoInimigo(k % 4 === 0 ? 'mestre' : 'veterano', s.x + 1.2, s.y + 1.2); M.objs.push(e2); }
   });
   // fora do labirinto antigo, tudo que não é túnel vira parede de rocha
@@ -3430,13 +3623,20 @@ function sobQuedaSagrada(x, y, mg) {                                    // faixa
   return u > -.15 - mg && u < 2.15 + mg && v > cv - .42 - mg && v < cv + .4 + mg;
 }
 function gotaAgua(x, y, z, forca) { EFX.add({ tipo: 'gota', x, y, z, vx: (Math.random() - .5) * forca, vy: (Math.random() - .5) * forca * .6, vz: 30 + Math.random() * 50 * forca / 2, g: 200, vida: .5, tam: 1.1 + Math.random() * .8, rot: 0 }); }
+function iniciarAcao(n) {
+  if (jog.est !== 'livre' || jog.agua === 2 || jog.barcoTr) return;
+  if (n === 'banho' && !(jog.agua === 1 || jog.sobQueda)) { aviso('Para tomar banho, entre na água rasa ou fique sob a cachoeira.'); return; }
+  if (n !== 'banho' && jog.agua) { aviso('Saia da água primeiro.'); return; }
+  if (n === 'comer') { const it = ['onigiri', 'sushi', 'camarao'].find(k => estado.inv[k] > 0); if (!it) { aviso('Você não tem comida na mochila.'); return; } estado.inv[it]--; estado.hp = Math.min(maxHp(), (estado.hp == null ? maxHp() : estado.hp) + ITENS[it].cura); }
+  jog.est = 'acao'; jog.acao = n; jog.t = 0; jog.dir = 2; jog.costas = false;
+}
 function atualizarAguaJogador(dt) {
   const noAr = jog.z > 4 || (jog.est === 'pulo' && jog.ar), a = aguaEm(jog.x, jog.y), novo = noAr ? (jog.agua || 0) : a === 2 ? 2 : a === 1 ? 1 : 0, ant = jog.agua || 0;
   if (novo !== ant && !noAr) {                                           // transições terra ⇄ rasa ⇄ funda
     const trans = { '0-1': ['wadeIn', .42], '0-2': ['swimIn', .36], '1-2': ['swimIn', .36], '2-1': ['swimOut', .46], '2-0': ['swimOut', .46], '1-0': ['wadeOut', .42] }[ant + '-' + novo];
     if (trans && jog.est === 'livre' && !(novo === jog.trDe && tempo - (jog.trAgua || -9) < .6)) jog.aguaAnim = { n: trans[0], t: 0, dur: trans[1] };   // na beirada não fica repetindo a transição (vai-e-volta)
     jog.trAgua = tempo; jog.trDe = ant;
-    const n = novo > ant ? (novo === 2 ? 14 : 9) : 5; for (let k = 0; k < n; k++) gotaAgua(jog.x, jog.y, 3, novo === 2 ? 2.6 : 1.8);
+    const n = novo > ant ? (novo === 2 ? 14 : 9) : 5; for (let k = 0; k < n; k++) gotaAgua(jog.x, jog.y, 3, novo === 2 ? 2.6 : 1.8); for (let q = 0; q < 3; q++) aneis.push({ x: jog.x, y: jog.y, t: q * .12, r: .6 + q * .35, agua: true });
     if (novo === 2 && !avisoNado) { avisoNado = true; aviso('Nadando! Na água funda o Akira não luta (sem golpes, pulo ou esquiva).'); }
     if (novo === 0) jog.molhado = 3;
     jog.agua = novo; jog.faceAgua = jog.face;
@@ -3448,7 +3648,7 @@ function atualizarAguaJogador(dt) {
   jog.linhaV = (jog.linhaV || 0) + (lAlvo - (jog.linhaV || 0)) * kk; jog.afundaV = (jog.afundaV || 0) + (fAlvo - (jog.afundaV || 0)) * kk;
   // respingos dos passos e das braçadas, gotas pingando depois de sair
   jog.passoAg = (jog.passoAg || 0) - dt;
-  if (jog.agua && jog.andaAnt && jog.passoAg <= 0) { jog.passoAg = jog.agua === 2 ? .32 : .26; const fw = sv2w(DIRV[jog.dir][0], DIRV[jog.dir][1]); for (let k = 0; k < (jog.agua === 2 ? 6 : 4); k++) gotaAgua(jog.x + fw.x * (jog.agua === 2 ? .35 : .1), jog.y + fw.y * (jog.agua === 2 ? .35 : .1), 2, 1.4); }
+  if (jog.agua && jog.andaAnt && jog.passoAg <= 0) { jog.passoAg = jog.agua === 2 ? .32 : .26; aneis.push({ x: jog.x, y: jog.y, t: 0, r: jog.agua === 2 ? .7 : .45, agua: true }, { x: jog.x, y: jog.y, t: .18, r: jog.agua === 2 ? 1.1 : .7, agua: true }); const fw = sv2w(DIRV[jog.dir][0], DIRV[jog.dir][1]); for (let k = 0; k < (jog.agua === 2 ? 6 : 4); k++) gotaAgua(jog.x + fw.x * (jog.agua === 2 ? .35 : .1), jog.y + fw.y * (jog.agua === 2 ? .35 : .1), 2, 1.4); }
   if (jog.agua && dt > 0) { const [cx, cy] = correnteza(jog.x, jog.y); if (cx || cy) mover(jog, cx * dt * (jog.agua === 2 ? .8 : .5), cy * dt * (jog.agua === 2 ? .8 : .5)); }   // correnteza leva quem está na água
   if (jog.molhado > 0) { jog.molhado -= dt; if (Math.random() < dt * 9) EFX.add({ tipo: 'gota', x: jog.x + (Math.random() - .5) * .3, y: jog.y + (Math.random() - .5) * .2, z: 14 + Math.random() * 26, vx: 0, vy: 0, vz: -10, g: 160, vida: .4, tam: .9, rot: 0 }); }
   // pé da cachoeira: a força da água empurra o Akira para longe da pedra
@@ -3660,7 +3860,7 @@ function construirCais(M) {
     let vend = { x: i + .5 - px * 1.3 - di * .4, y: j + .5 - py * 1.3 - dj * .4 };
     if (!ok(Math.floor(vend.x), Math.floor(vend.y))) vend = { x: i + .5 - di * 1.3, y: j + .5 - dj * 1.3 };
     npc(M, { nome: c.nome, x: vend.x, y: vend.y, dir: dirDeMundo(di, dj), pal: PAL_BARQ[n % PAL_BARQ.length], fala: 'barqueiro', cais: M.cais.length });
-    placa(M, i + .5 + px * 1.5 - di * .6, j + .5 + py * 1.5 - dj * .6, 'Cais — ' + (M.cel[CELULA[c.reg][1]][CELULA[c.reg][0]].nome) + '. Fale com ' + c.nome.split(' ')[1] + ' para pegar um barco (de graça por enquanto).');
+    placa(M, i + .5 + px * 1.5 - di * .6, j + .5 + py * 1.5 - dj * .6, 'Cais — ' + (M.cel[CELULA[c.reg][1]][CELULA[c.reg][0]].nome) + '. Fale com ' + c.nome.split(' ')[1] + ' para pegar um barco (a travessia é por conta da casa).');
     reservar(M, i + .5, j + .5, 3); reservar(M, vaga.x, vaga.y, 2);
     M.cais.push({ reg: c.reg, nome: c.nome, vila: !!c.vila, vaga, x: i + .5, y: j + .5 });
   });
@@ -3693,7 +3893,7 @@ function falarBarqueiro(o) {
   const M = mapa, c = M.cais && M.cais[o.cais]; if (!c) return false;
   const F = t => ({ p: null, nome: o.nome, t });
   if (!temBarco()) {
-    abrirConversa({ npc: o, falas: [F('Quer um barco? Por enquanto é de graça: o vilarejo ainda está combinando os preços.'), F('Ele fica amarrado aqui no fim do píer. Chegue perto e aperte E para embarcar. Para descer, encoste numa margem e aperte E de novo.'), F('A correnteza ajuda rio abaixo e atrapalha rio acima. Na corredeira, segure firme! E não chegue perto da queda da Cachoeira Sagrada nem do penhasco do lago.')],
+    abrirConversa({ npc: o, falas: [F('Quer um barco? Embarque quando quiser: a travessia é por conta da casa.'), F('Ele fica amarrado aqui no fim do píer. Chegue perto e aperte E para embarcar. Para descer, encoste numa margem e aperte E de novo.'), F('A correnteza ajuda rio abaixo e atrapalha rio acima. Na corredeira, segure firme! E não chegue perto da queda da Cachoeira Sagrada nem do penhasco do lago.')],
       fim: [{ fn: () => { estado.barco = { tem: true, x: c.vaga.x, y: c.vaga.y, ang: c.vaga.ang }; sincronizarBarco(); aviso('Você ganhou um barco! Ele está no fim do píer.'); autoSalvar('barco', true); } }] });
     return true;
   }
@@ -4040,12 +4240,54 @@ function atualizarIconeMissao() {                                        // 📋
   const caixa = document.getElementById('hudMissoes');
   if (caixa && !document.getElementById('hudInfo').hidden) { const h = listaMissoesHtml(); if (h !== listaMissoesTxt) { listaMissoesTxt = h; caixa.innerHTML = h; } }
 }
+// ---------- MISSÃO PRINCIPAL EM CADEIA ----------
+// Cada passo tem um texto (aparece no topo da tela) e um alvo (a seta na borda da tela aponta para ele).
+// alvo: { saida: id da porta no mundo, mapaId: id do interior, fala: quem procurar lá dentro, reg + x + y: ponto fixo de reserva, nome }
+const ALVOS_P = {
+  davi:     { saida: 'biblioteca', mapaId: 'biblioteca', fala: 'davi', nome: 'Davi (Biblioteca)' },
+  kenji:    { saida: 'dojo', mapaId: 'dojo', fala: 'kenji', nome: 'Mestre Kenji (Dojo)' },
+  luiza:    { reg: 'gt_patio', x: 9.4, y: 12.6, fala: 'luiza', nome: 'Luiza (Grande Templo)' },
+  flor:     { saida: 'flor_de_liz', mapaId: 'flor_de_liz', fala: 'lane', nome: 'Flor de Liz (Lane)' },
+  nicolas:  { saida: 'cavernas', mapaId: 'caverna', fala: 'nicolas', nome: 'Nicolas (Cavernas)' },
+  salao:    { saida: 'salao', mapaId: 'salao', fala: 'mestre_graduacao', nome: 'Salão de Graduação' },
+  gil:      { saida: 'arena_mestres', mapaId: 'arena_mestres', fala: 'gil', nome: 'Gil (Arena dos Grandes Mestres)' }
+};
+function passoPrincipal() {       // devolve { t: texto, a: alvo } do passo atual — o próximo aparece sozinho quando o anterior termina
+  const c = id => stM(id) === 'concluida', em = id => stM(id) === 'em_andamento';
+  for (const [id, t] of [['debora_fundamentos', 'Fale com a Mestra Débora'], ['debora_alvo', 'Continue o treino com a Mestra Débora'], ['debora_defesa', 'Continue o treino com a Mestra Débora'], ['debora_gemeos', 'Enfrente David e Miguel (Mestra Débora)']]) if (!c(id)) return { t, a: null, debora: true };
+  if (!c('papeis_perdidos')) {
+    if (em('papeis_perdidos') && nPapeis() < 7) return { t: 'Ache os papéis perdidos do Davi (' + nPapeis() + '/7)', a: 'papel' };
+    return { t: em('papeis_perdidos') ? 'Leve os papéis ao Davi, na biblioteca do Vilarejo' : 'Fale com o Davi na biblioteca do Vilarejo', a: ALVOS_P.davi };
+  }
+  if (estado.faixa < 1) return { t: 'Mestre Kenji (Dojo do Vilarejo): prova da faixa amarela', a: ALVOS_P.kenji };
+  if (!c('ajudar_nicolas')) return { t: 'Ajude o Nicolas nas Cavernas', a: ALVOS_P.nicolas };
+  if (estado.faixa < 2) return { t: 'Mestre Kenji (Dojo do Vilarejo): prova da faixa laranja', a: ALVOS_P.kenji };
+  if (!c('buque_imperatriz')) {
+    if (estado.nivel < 6) return { t: 'Chegue ao nível 6 para entrar no Grande Templo (você: ' + estado.nivel + ')', a: null };
+    if (em('buque_imperatriz') && !estado.inv.buque) return { t: 'Busque o buquê na Flor de Liz (Caminhos das Cerejeiras)', a: ALVOS_P.flor };
+    return { t: em('buque_imperatriz') ? 'Leve o buquê para a Luiza, no Grande Templo' : 'Fale com a Luiza, no Grande Templo', a: ALVOS_P.luiza };
+  }
+  if (estado.faixa < 7) return { t: 'Salão de Graduação (Grande Templo): prova da faixa ' + FAIXAS[estado.faixa + 1].nome, a: ALVOS_P.salao };
+  if (!(estado.torneio && estado.torneio.campeao)) {
+    const t = estado.torneio || {}, f = typeof faltamConhecer === 'function' ? faltamConhecer().length : 0;
+    return { t: !t.inscrito && f ? 'Torneio: conheça os 8 competidores (' + (8 - f) + '/8) e fale com o Gil' : !t.inscrito ? 'Fale com o Gil: inscrição no Torneio do Grande Templo' : 'Vença o Torneio do Grande Templo (Arena dos Grandes Mestres)', a: !t.inscrito && f ? null : ALVOS_P.gil };
+  }
+  const ch = estado.chefes || {}, falta = ORDEM_CHEFES.filter(id => id !== 'oitavo_dragao' && !ch[id]);
+  if (falta.length) return { t: 'Derrote o guardião e o chefe de cada região (' + (7 - falta.length) + '/7): ' + CHEFES[falta[0]].nome + ', em ' + nomeRegiaoEd(CHEFES[falta[0]].regiao), a: { chefe: falta } };
+  if (!ch.oitavo_dragao) return { t: 'Enfrente O Oitavo Dragão', a: { chefe: ['oitavo_dragao'] } };
+  return { t: '', a: null };
+}
+const principalAtual = () => passoPrincipal().t;
+let passoKey = null;                                                    // passo da missão principal já mostrado (para avisar quando muda)
 function atualizarHud() {
   atualizarIconeMissao();
   const q = estado.missoes.papeis_perdidos;
   const ma = missaoAtiva();
-  let txtM = ma ? (ma.startsWith('debora_') ? 'Missão principal: ' : 'Missão: ') + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo() : '';
-  if (!ma && stM('debora_fundamentos') === 'nao_iniciada') txtM = 'Missão principal: Fale com a Mestra Débora';   // começo do jogo: sempre mostra o próximo passo
+  const pr = principalAtual(), mDeb = ma && ma.startsWith('debora_');
+  { const k = pr.replace(/\d+/g, '#'); if (passoKey !== null && k !== passoKey && pr && MODO_TELA === 'jogo') aviso('Nova missão principal: ' + pr); passoKey = k; }   // aviso quando a próxima missão principal aparece
+  let txtM = '';
+  if (mDeb) txtM = 'Missão principal: ' + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo();
+  else { txtM = pr ? 'Missão principal: ' + pr : ''; if (ma) txtM += (txtM ? '\n' : '') + 'Extra: ' + MISSOES[ma].nome + ' — ' + MISSOES[ma].objetivo(); }
   if (exameAtual) txtM = 'EXAME ' + GRADUACOES[exameAtual.ex.faixa].nome + ': ' + exameAtual.ops.filter(o => !o.vivo).length + '/' + exameAtual.ops.length + ' • ' + Math.max(0, Math.ceil(exameAtual.ex.tempo - exameAtual.t)) + 's';
   const chave = [estado.nivel, estado.xp, Math.round(estado.hp), Math.round(estado.aura), estado.faixa, estado.pontos, mapa.nome, txtM, estado.combo, maxHp(), maxAura(), estado.dinheiro].join('|');
   if (chave === hudChave) return; hudChave = chave;
@@ -4055,8 +4297,9 @@ function atualizarHud() {
   barra('bVida', 'tVida', estado.hp, maxHp(), 'VIDA'); barra('bAura', 'tAura', estado.aura, maxAura(), 'AURA'); barra('bXp', 'tXp', estado.xp, xpProx(), 'XP');
   $('hLoc').textContent = mapa.nome + (estado.pontos ? ' • ' + estado.pontos + ' pts (M)' : '');
   $('hCombo').textContent = 'Combo ' + (estado.combo + 1) + ': ' + COMBOS[estado.combo].nome;
-  $('hDinheiro').textContent = 'Dinheiro: $' + (estado.dinheiro || 0);
+  $('hDinheiro').textContent = 'Dinheiro: Ryō ' + (estado.dinheiro || 0); { const r = $('hRyo'); if (r) r.textContent = '🪙 ' + (estado.dinheiro || 0) + ' ' + RYO_NOME; }
   $('hMissao').textContent = txtM;
+  { const [l1, l2] = txtM.split('\n'), fm = $('faixaMissao'); $('fmPrinc').textContent = l1 || ''; $('fmPrinc').title = l1 || ''; $('fmExtra').textContent = l2 || ''; fm.hidden = !l1; }
 }
 
 document.getElementById('btnInfo').addEventListener('pointerdown', e => {               // botão de missão: abre/fecha a caixinha
@@ -4095,7 +4338,7 @@ function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto;
 const MENU_ABAS = [['atr', 'Atributos'], ['tec', 'Técnicas'], ['inv', 'Inventário']];
 let menuAba = 'atr', menuItemSel = null;
 const ICONE_ITEM = { onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
-  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', kimono_treino: '🥋', kimono_azul: '🥋', luvas_couro: '🧤', amuleto_foco: '📿',
+  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', kimono_treino: '🥋', kimono_azul: '🥋', luvas_couro: '🧤', amuleto_foco: '📿',
   dango: '🍡', incenso: '🪔', flor_silvestre: '🌼', papel: '📜', buque: '💐', cesto_karina: '🧺', marcador: '🔖' };
 const ICONE_SLOT = { roupa: '🥋', luvas: '🧤', amuleto: '📿' }, NOME_SLOT = { roupa: 'Roupa', luvas: 'Luvas', amuleto: 'Amuleto' };
 // posição visual da árvore (coluna, linha) e de quem vem antes. A ordem é só visual: os requisitos (nível, faixa, chefes) continuam os de TEC_AKIRA.
@@ -4228,32 +4471,39 @@ function equipar(id) {                                                    // ves
 const OBRAS = {
   dojo_bonecos: { nome: 'Bonecos de treino reforçados', custo: 120, desc: 'O treino cronometrado do dojo passa a durar 45 s (antes eram 30 s).' },
   bib_restauracao: { nome: 'Restauração da biblioteca', custo: 150, desc: 'As estantes são restauradas. O Davi passa a ter uma missão nova: catalogar a biblioteca.' },
+  pousada_conforto: { nome: 'Quartos reformados da pousada', custo: 90, desc: 'Ao descansar, a hospedeira serve um café da manhã: +1 onigiri e +1 chá (até 3 de cada).' },
   oficina_bancada: { nome: 'Bancada de conserto', custo: 200, desc: 'Permite reformar os equipamentos vestidos. O nível 2 aumenta o efeito do item.' }
 };
 const REFORMAS = { luvas_couro: 60, amuleto_foco: 80 };                  // custo da reforma para o nível 2
 const obraFeita = id => !!(estado.obras && estado.obras[id]);
 function comprarObra(id) {
   const O = OBRAS[id]; if (!O || obraFeita(id)) return;
-  if ((estado.dinheiro || 0) < O.custo) { aviso('Dinheiro insuficiente: faltam $' + (O.custo - (estado.dinheiro || 0)) + ' para ' + O.nome + '.'); return; }
-  estado.dinheiro -= O.custo; estado.obras[id] = 1; aviso('Obra concluída: ' + O.nome + '. Saldo: $' + estado.dinheiro); hudChave = ''; salvar();
+  if ((estado.dinheiro || 0) < O.custo) { aviso('Dinheiro insuficiente: faltam Ryō ' + (O.custo - (estado.dinheiro || 0)) + ' para ' + O.nome + '.'); return; }
+  estado.dinheiro -= O.custo; pulsoRyo('gasto'); estado.obras[id] = 1; aviso('Obra concluída: ' + O.nome + '. Saldo: Ryō ' + estado.dinheiro); hudChave = ''; salvar();
 }
 function reformarEquip(slot) {
   const id = estado.equip[slot]; if (!id || !REFORMAS[id] || estado.reforma[id] === 2) return;
   if (!obraFeita('oficina_bancada')) { aviso('Antes é preciso construir a bancada de conserto.'); return; }
-  const c = REFORMAS[id]; if ((estado.dinheiro || 0) < c) { aviso('Dinheiro insuficiente: faltam $' + (c - (estado.dinheiro || 0)) + ' para reformar ' + ITENS[id].nome + '.'); return; }
-  estado.dinheiro -= c; estado.reforma[id] = 2; aviso(ITENS[id].nome + ' reformado (nível 2). Saldo: $' + estado.dinheiro); hudChave = ''; salvar();
+  const c = REFORMAS[id]; if ((estado.dinheiro || 0) < c) { aviso('Dinheiro insuficiente: faltam Ryō ' + (c - (estado.dinheiro || 0)) + ' para reformar ' + ITENS[id].nome + '.'); return; }
+  estado.dinheiro -= c; pulsoRyo('gasto'); estado.reforma[id] = 2; aviso(ITENS[id].nome + ' reformado (nível 2). Saldo: Ryō ' + estado.dinheiro); hudChave = ''; salvar();
 }
+const RYO_NOME = 'Ryō';
+// recompensa em Ryō por missão (parâmetro de balanceamento: simples 20–60, intermediária 60–150, difícil 150–350)
+const REC_RYO = { papeis_perdidos: 40, debora_fundamentos: 20, debora_alvo: 25, debora_defesa: 30, debora_gemeos: 90, buque_imperatriz: 70, ajudar_nicolas: 120, catalogar_biblioteca: 100, cesto_roubado: 60, grande_torneio: 300 };
+function pulsoRyo(cls) { const e = document.getElementById('hRyo'); if (!e) return; e.classList.remove('ganho', 'gasto'); void e.offsetWidth; e.classList.add(cls); }
 function ganharDinheiro(q, avisar) {
-  estado.dinheiro = (estado.dinheiro || 0) + q;
-  if (avisar) aviso('Recebeu $' + q + '. Saldo: $' + estado.dinheiro);
+  q = Math.floor(q); if (!isFinite(q) || q <= 0) return;
+  estado.dinheiro = Math.min(1e9, (estado.dinheiro || 0) + q); hudChave = ''; pulsoRyo('ganho');
+  if (avisar) aviso('Recebeu Ryō ' + q + '. Saldo: Ryō ' + estado.dinheiro);
+  salvar();
 }
 let compraT = 0;
 function comprarItem(id, preco) {
   const agora = performance.now(); if (agora - compraT < 500) return false; compraT = agora;   // um toque, uma compra (evita compra dupla)
   const it = ITENS[id]; if (!it || !(it.preco > 0)) return false;
-  if ((estado.dinheiro || 0) < preco) { aviso('Dinheiro insuficiente: faltam $' + (preco - (estado.dinheiro || 0)) + ' para ' + it.nome + '.'); return false; }
-  estado.dinheiro -= preco; estado.inv[id] = (estado.inv[id] || 0) + 1;
-  aviso('Comprou ' + it.nome + ' por $' + preco + '. Saldo: $' + estado.dinheiro); hudChave = ''; salvar(); return true;
+  if ((estado.dinheiro || 0) < preco) { aviso('Dinheiro insuficiente: faltam Ryō ' + (preco - (estado.dinheiro || 0)) + ' para ' + it.nome + '.'); return false; }
+  estado.dinheiro -= preco; pulsoRyo('gasto'); estado.inv[id] = (estado.inv[id] || 0) + 1;
+  aviso('Comprou ' + it.nome + ' por Ryō ' + preco + '. Saldo: Ryō ' + estado.dinheiro); hudChave = ''; salvar(); return true;
 }
 function comerRapido() {
   if (estado.hp < maxHp() && usarItem('onigiri')) return;
@@ -4282,7 +4532,7 @@ function falaDe(o) {
         fim: () => {
           estado.inv.papel = 0; estado.missoes.papeis_perdidos = 'concluida';
           estado.inv.onigiri = (estado.inv.onigiri || 0) + 2; estado.inv.cha = (estado.inv.cha || 0) + 1; ganharXp(120);
-          aviso('Missão concluída! +120 XP, 2 onigiris, 1 chá (recompensa provisória)'); salvar();
+          aviso('Missão concluída! +120 XP, 2 onigiris, 1 chá'); salvar();
         } };
       return { nome: 'Davi', linhas: ['Obrigado de novo, Akira! Meus papéis estão salvos.'] };
     case 'pietra':
@@ -4303,7 +4553,7 @@ function falaDe(o) {
     case 'monge': return { nome: 'Monge Ishi', linhas: ['Respire fundo. Sente-se numa almofada e aperte E para meditar.', 'A aura se acalma quando a mente se acalma.'] };
     case 'sora': return { nome: 'Monja Sora', linhas: ['Os jardins ajudam a mente a descansar. Medite numa almofada para recuperar a sua aura.'] };
     case 'arquivista': return { nome: 'Arquivista Noa', linhas: ['Este é o Arquivo de Técnicas. Cada combo novo se libera com o nível: 2, 3 e 5.', 'Abra o menu com M para equipar o combo que preferir.'] };
-    case 'gmestre': return { nome: 'Grande Mestre Gen', linhas: ['A Arena dos Grandes Mestres vai receber torneios no futuro. Por enquanto, treine nos bonecos.'] };
+    case 'gmestre': return { nome: 'Grande Mestre Gen', linhas: [(estado.torneio && estado.torneio.campeao) ? 'Parabéns pelo torneio! A arena sempre estará aberta para você.' : 'Esta é a Arena dos Grandes Mestres. O Gil cuida do Grande Torneio: fale com ele para se inscrever. Enquanto isso, treine nos bonecos.'] };
     case 'mei': return { nome: 'Aldeã Mei', linhas: ['O dojo fica ao norte da praça. A biblioteca é logo ao lado, e a arena mais à direita.', 'A hospedaria fica ao sul: lá você descansa e salva o ponto de retorno.'] };
     case 'jun': return { nome: 'Aldeão Jun', linhas: ['Dizem que há lutadores rebeldes no Bambuzal, a leste daqui. Cuidado, jovem!'] };
   }
@@ -4377,7 +4627,7 @@ function falaMestre(o) {
   const G = GRADUACOES[prox], ex = EXAMES[G.exame];
   if (!ex || ex.mestre !== mid) {
     const quem = ex && MESTRES[ex.mestre];
-    return { nome, linhas: ['Não sou eu quem conduz o exame da ' + G.nome + '.' + (quem ? ' Procure ' + quem.nome + ' (' + quem.local + ').' : ' Esse exame ainda não tem mestre definido.')] };
+    return { nome, linhas: ['Não sou eu quem conduz o exame da ' + G.nome + '.' + (quem ? ' Procure ' + quem.nome + ' (' + quem.local + ').' : ' Procure o mestre da graduação no Grande Templo.')] };
   }
   const pT = G.treinos.filter(r => !treinoOk(r)), pM = G.missoes.filter(r => !missaoOk(r));
   if (pT.length || pM.length) {
@@ -4452,7 +4702,7 @@ function painelGraduacao() {
   h += '<p><small>Treinamento:</small></p>' + (P.treinos.length ? P.treinos.map(r => `<div>${treinoOk(r) ? '✔' : '✗'} ${textoTreino(r)}</div>`).join('') : '<div><small>Nenhum treino definido.</small></div>');
   h += '<p><small>Missões:</small></p>' + (P.missoes.length ? P.missoes.map(r => `<div>${missaoOk(r) ? '✔' : '✗'} ${r.texto || r.id}</div>`).join('') : '<div><small>Nenhuma missão definida para esta faixa.</small></div>');
   h += `<p><small>Exame:</small> ${st === 'PRONTA_PARA_EXAME' ? 'liberado — fale com o mestre' : st === 'EXAME_EM_ANDAMENTO' ? 'em andamento' : 'bloqueado até cumprir os requisitos'}</p>`;
-  h += `<p><small>Mestre responsável:</small> ${m ? m.nome + ' — ' + m.local : 'ainda não definido'}</p>`;
+  h += `<p><small>Mestre responsável:</small> ${m ? m.nome + ' — ' + m.local : 'Mestre da Graduação — Salão de Graduação, no Grande Templo'}</p>`;
   return h;
 }
 
@@ -4480,13 +4730,14 @@ function atlasRetrato(id) {
   if (!RETRATO_IMG[id]) { const im = new Image(); im.src = 'data:image/webp;base64,' + A.webp; RETRATO_IMG[id] = im; }
   return RETRATO_IMG[id];
 }
+const RET_RUIM = { rita: [2], debora: [1], davi: [1], ramor: [2], pibe: [0, 1, 3, 4], michele: [3], lane: [2], lucas: [4], henrique: [2], david: [0], maya: [2, 3], alana: [1, 4], akira: [2] };   // recortes do atlas sem rosto ou de outro personagem
 function desenharRetrato(cvs, pid, expr, npc) {
   const g = cvs.getContext('2d'), L = cvs.width; g.clearRect(0, 0, L, L);
   const P = PERSONAGENS[pid] || {}, aid = P.retrato || pid, A = RETRATOS[aid], im = atlasRetrato(aid);
   if (A && im) {
     let k = A.expr.indexOf(expr);
     if (k < 0 && A.linha) { const r = { neutral: 0, happy: 1, angry: 2, surprised: 3, thinking: 4 }[expr]; if (r !== undefined) k = A.linha.indexOf(r); }
-    k = Math.max(0, k);
+    k = Math.max(0, k); const rr = RET_RUIM[aid]; if (rr && rr.includes(k)) { let j = 0; while (rr.includes(j)) j++; k = j; }
     const ok = () => { g.clearRect(0, 0, L, L); g.drawImage(im, k * 144, 0, 144, 144, 0, 0, L, L); };
     if (im.complete && im.naturalWidth) ok(); else im.onload = ok;
     cvs.classList.remove('provisorio'); return;
@@ -4506,7 +4757,7 @@ const MISSOES = {
   buque_imperatriz: { nome: 'O buquê da imperatriz', objetivo: () => (estado.inv.buque ? 'Leve o buquê para Luiza, no Grande Templo' : 'Busque o buquê na Flor de Liz (Caminhos das Cerejeiras)') },
   ajudar_nicolas: { nome: 'Ajude o Nicolas', objetivo: () => 'Derrote os inimigos que cercam o Nicolas nas Cavernas' },
   catalogar_biblioteca: { nome: 'Catalogar a biblioteca', objetivo: () => 'Leia as 4 estantes da biblioteca do Davi (' + Object.keys(estado.mprog.estantes || {}).length + '/4)' },
-  cesto_roubado: { nome: 'O cesto roubado', objetivo: () => 'Recuperar o cesto de tangerinas da Karina (o local do ladrão ainda não foi definido)' }
+  cesto_roubado: { nome: 'O cesto roubado', objetivo: () => estado.inv.cesto_karina ? 'Leve o cesto de volta para a Karina' : 'Derrote o Ladrão de Tangerinas, que fugiu pela Floresta das Tangerinas, e recupere o cesto' }
 };
 const stM = id => estado.missoes[id] || 'nao_iniciada';
 /* =====================================================================
@@ -4516,7 +4767,7 @@ const stM = id => estado.missoes[id] || 'nao_iniciada';
    ===================================================================== */
 const SOCIAL_MISSOES = {                                                // missões de cada personagem (as que existem no jogo)
   davi: ['papeis_perdidos', 'catalogar_biblioteca'], debora: ['debora_fundamentos', 'debora_alvo', 'debora_defesa', 'debora_gemeos'], nicolas: ['ajudar_nicolas'],
-  rita: ['buque_imperatriz'], luiza: ['buque_imperatriz'], karina: ['cesto_roubado'], gil: ['grande_torneio'], gemeo_agua: ['debora_gemeos'], gemeo_vento: ['debora_gemeos']
+  luiza: ['buque_imperatriz'], karina: ['cesto_roubado'], gil: ['grande_torneio'], gemeo_agua: ['debora_gemeos'], gemeo_vento: ['debora_gemeos']
 };
 const SOCIAL_ORDEM = ['henrique', 'nicolas', 'pietra', 'luna', 'gemeo_agua', 'gemeo_vento', 'rita', 'davi', 'debora', 'luiza', 'karina', 'gil'];
 let socialAberto = false, socialAba = 'respeito', socialBloq = 0;
@@ -4574,8 +4825,9 @@ function executarEvento(ev) {
     const ant = stM(ev.missao);
     if (ant === 'concluida') return;                                  // concluída não volta atrás nem paga de novo
     estado.missoes[ev.missao] = ev.estado;
-    if (ev.estado === 'em_andamento' && ant !== 'em_andamento') aviso('Nova missão: ' + MISSOES[ev.missao].nome);
-    if (ev.estado === 'concluida') { aviso('Missão concluída: ' + MISSOES[ev.missao].nome); (ev.recompensa || []).forEach(executarEvento); (MISSAO_PESSOAL[ev.missao] || []).forEach(p => ganharRespeito(p, REGRAS_RESPEITO.missaoPessoal)); }
+    if (ev.missao === 'cesto_roubado') estado.rastreio = ev.estado === 'em_andamento' ? 'cesto_roubado' : (estado.rastreio === 'cesto_roubado' ? null : estado.rastreio);
+    if (ev.estado === 'em_andamento' && ant !== 'em_andamento') aviso('Nova missão: ' + MISSOES[ev.missao].nome + (REC_RYO[ev.missao] ? ' • Recompensa: ' + REC_RYO[ev.missao] + ' Ryō' : ''));
+    if (ev.estado === 'concluida') { aviso('Missão concluída: ' + MISSOES[ev.missao].nome); (ev.recompensa || []).forEach(executarEvento); if (REC_RYO[ev.missao] && !(ev.recompensa || []).some(r => r.dinheiro)) ganharDinheiro(REC_RYO[ev.missao], true); (MISSAO_PESSOAL[ev.missao] || []).forEach(p => ganharRespeito(p, REGRAS_RESPEITO.missaoPessoal)); }
   }
   if (ev.dinheiro) ganharDinheiro(ev.dinheiro, true);
   if (ev.item) { estado.inv[ev.item] = Math.max(0, (estado.inv[ev.item] || 0) + (ev.qtd || 1)); if ((ev.qtd || 1) > 0 && ITENS[ev.item]) aviso('Recebeu: ' + ITENS[ev.item].nome); }
@@ -4611,7 +4863,8 @@ const DIALOGOS = {
   monge: [{ falas: [F('monge', '', 'Respire fundo. Sente-se numa almofada e aperte E para meditar.'), F('monge', '', 'A aura se acalma quando a mente se acalma.')] }],
   sora: [{ falas: [F('sora', '', 'Os jardins ajudam a mente a descansar. Medite numa almofada para recuperar a sua aura.')] }],
   arquivista: [{ falas: [F('arquivista', '', 'Este é o Arquivo de Técnicas. Cada combo novo se libera com o nível: 2, 3 e 5.'), F('arquivista', '', 'Abra o menu com M para equipar o combo que preferir.')] }],
-  gmestre: [{ falas: [F('gmestre', '', 'A Arena dos Grandes Mestres vai receber torneios no futuro. Por enquanto, treine nos bonecos.')] }],
+  gmestre: [{ se: () => estado.torneio && estado.torneio.campeao, falas: [F('gmestre', '', 'Parabéns pelo torneio! A arena sempre estará aberta para você.')] },
+    { falas: [F('gmestre', '', 'Esta é a Arena dos Grandes Mestres. O Gil cuida do Grande Torneio: fale com ele para se inscrever. Enquanto isso, treine nos bonecos.')] }],
   mei: [{ falas: [F('mei', '', 'O dojo fica ao norte da praça. A biblioteca é logo ao lado, e a arena mais à direita.'), F('mei', '', 'A hospedaria fica ao sul: lá você descansa e salva o ponto de retorno.')] }],
   jun: [{ falas: [F('jun', '', 'Dizem que há lutadores rebeldes no Bambuzal, a leste daqui. Cuidado, jovem!')] }],
 
@@ -4647,7 +4900,7 @@ const DIALOGOS = {
     { se: () => estado.flags.gil_inscricao && !estado.flags.gil_pessoal, falas: [F('gil', 'confiante', 'Vejo potencial em você garoto, sabia que eu quase fui mestre? Eu so não fui porque minha coluna dói muito.')], fim: [{ flag: 'gil_pessoal' }] },
     { falas: [F('gil', 'receptivo', 'Muito bem, garoto! Bem-vindo ao torneio do Grande Templo. Quer entrar na disputa? Primeiro preciso conferir sua graduação e seu nível. Aqui ninguém sobe ao tatame sem estar preparado.')],
       fim: [{ flag: 'gil_inscricao' }],
-      opcoes: [{ t: 'Quero me inscrever.', falas: [NARRADOR('O torneio ainda está em preparação: os requisitos de graduação e nível serão definidos depois.')] }, { t: 'Ainda não estou pronto.' }] }
+      opcoes: [{ t: 'Quero me inscrever.', falas: [NARRADOR('O Gil confere sua ficha e anota seu nome na chave do torneio. Boa sorte!')] }, { t: 'Ainda não estou pronto.' }] }
   ],
   casal_cha: [
     { se: () => !estado.flags.cha_1, falas: [
@@ -4676,7 +4929,7 @@ const DIALOGOS = {
   luiza: [
     { se: () => stM('buque_imperatriz') === 'nao_iniciada', falas: [F('luiza', 'educada', 'Opa... você está aí, poderia fazer um favor para mim?'), F('akira', '', 'Claro, só pedir.'),
         F('luiza', 'determinada', 'Vá até a Floresta das Cerejeiras e traga um buquê de flores para mim.'), F('akira', '', 'O... o... o quê???'), F('luiza', 'impaciente', 'Não seja tolo, as flores são para a imperatriz. Você vai ou não?')],
-      opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'buque_imperatriz', estado: 'em_andamento' }] }, { t: 'Recusar por enquanto' }] },
+      opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'buque_imperatriz', estado: 'em_andamento' }] }, { t: 'Agora não.' }] },
     { se: () => stM('buque_imperatriz') === 'em_andamento' && estado.inv.buque > 0, falas: [NARRADOR('Você entregou o buquê para Luiza. As flores são para a imperatriz Rita.')],
       fim: [{ item: 'buque', qtd: -1 }, { missao: 'buque_imperatriz', estado: 'concluida' }] },
     { se: () => stM('buque_imperatriz') === 'em_andamento', falas: [NARRADOR('Luiza espera o buquê da Flor de Liz, em Caminhos das Cerejeiras.')] },
@@ -4699,16 +4952,16 @@ const DIALOGOS = {
   valkira: [{ falas: [F('valkira', 'nostalgica', 'Houve uma época em que eu era uma lutadora, você precisava ver.')] }],
   karina: [
     { se: () => stM('cesto_roubado') === 'nao_iniciada', falas: [F('karina', 'cansada', 'Meu Deus, que dia! Eu estava levando um cesto de tangerinas para casa quando um ladrão apareceu e saiu correndo com ele. Passei tanto tempo cuidando dessas frutas... Você poderia me ajudar a recuperá-lo?')],
-      opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'cesto_roubado', estado: 'em_andamento' }] }, { t: 'Recusar por enquanto' }] },
+      opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'cesto_roubado', estado: 'em_andamento' }] }, { t: 'Agora não.' }] },
     { se: () => stM('cesto_roubado') === 'em_andamento' && estado.inv.cesto_karina > 0, falas: [F('karina', 'agradecida', 'Você conseguiu! Muito obrigada, meu filho. Essas tangerinas dão trabalho para cultivar, e perder tudo assim seria uma tristeza. Ainda bem que existem pessoas dispostas a ajudar!')],
       fim: [{ item: 'cesto_karina', qtd: -1 }, { missao: 'cesto_roubado', estado: 'concluida' }] },
-    { se: () => stM('cesto_roubado') === 'em_andamento', falas: [NARRADOR('Missão em andamento. O ladrão e o local do cesto ainda vão ser definidos.')] },
+    { se: () => stM('cesto_roubado') === 'em_andamento', falas: [F('karina', 'cansada', 'O ladrão fugiu para dentro da floresta, aqui perto. Derrote ele e traga meu cesto de volta, por favor!')] },
     { falas: [NARRADOR('Karina recuperou o cesto de tangerinas.')] }
   ]
 };
 // cardápio da Casa de Chá (preços e cura ainda não definidos: a compra fica indisponível)
 const CARDAPIO = ['Sushi', 'Camarão grelhado', 'Chá de pêssego', 'Chá de limão sem açúcar'];
-const opcoesCardapio = () => CARDAPIO_IDS.map(id => ({ t: 'Comprar: ' + ITENS[id].nome + ' — $' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] })).concat([{ t: 'Encerrar conversa' }]);
+const opcoesCardapio = () => CARDAPIO_IDS.map(id => ({ t: 'Comprar: ' + ITENS[id].nome + ' — Ryō ' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] })).concat([{ t: 'Encerrar conversa' }]);
 
 /* ---------- motor da conversa ---------- */
 function escolherEntrada(id, npc) {
@@ -6230,10 +6483,75 @@ function vencerChefe() {
   aviso(ch.def.nome + ' foi vencido! O selo foi restaurado.'); jog.vit = .5;
   if (ch.selo) { ch.selo.spr = SPR.seloOk; ch.selo.restaurado = true; if (ch.selo.seloMundo) { ch.selo.seloMundo.spr = SPR.seloOk; ch.selo.seloMundo.restaurado = true; } }
   if (ch.selo && ch.selo.arena) setTimeout(() => aviso('O portal de volta se abriu (sul da arena).'), 2500);
+  if (id === 'oitavo_dragao' && !estado.flags.zerou) setTimeout(() => { if (MODO_TELA === 'jogo') iniciarFimDoJogo(); }, 5000);   // FINAL: cena + tela de vitória
   chefeAtual = null; hudChave = '';
   if (al) setTimeout(() => { al.removido = true; if (mapa.grande) mapa.sujo = true; else mapa.objs = mapa.objs.filter(o => o !== al); }, 3200);
   setTimeout(() => { b.removido = true; if (mapa.grande) mapa.sujo = true; }, 600);
   salvar();
+}
+/* =====================================================================
+   FINAL DO JOGO: 3 telas de texto com quem o Akira ajudou -> tela de vitória -> créditos
+   ===================================================================== */
+const TEMPO_FMT = seg => { const h = Math.floor(seg / 3600), m = Math.floor(seg % 3600 / 60); return h ? h + ' h ' + String(m).padStart(2, '0') + ' min' : m + ' min'; };
+function paginasFinal() {
+  const c = id => stM(id) === 'concluida', L = [];
+  if (c('debora_gemeos')) L.push('A Mestra Débora, que viu o Akira dar os primeiros passos no Bambuzal, agora conta a história dele para cada novo aluno.');
+  if (c('papeis_perdidos')) L.push('O Davi reencontrou os sete papéis e a biblioteca do Vilarejo nunca esteve tão organizada.');
+  if (c('ajudar_nicolas')) L.push('O Nicolas treina sem parar... e jura que nunca precisou de ajuda nas Cavernas.');
+  if (c('buque_imperatriz')) L.push('A Luiza entregou o buquê à imperatriz Rita, e o Grande Templo ganhou flores novas.');
+  if (c('cesto_roubado')) L.push('A Karina recuperou o cesto e distribuiu tangerinas para a Floresta inteira.');
+  const par = estado.parceiro && RELACOES[estado.parceiro] ? RELACOES[estado.parceiro].nome : null;
+  if (par) L.push(par + ', seu parceiro de luta, jura que a última técnica foi ideia dele.');
+  const extras = Object.keys(MISSOES).filter(id => id.indexOf('npc_') === 0 && c(id)).length;
+  if (extras) L.push('E ' + extras + (extras === 1 ? ' morador' : ' moradores') + ' de todas as regiões lembram de quando você bateu à porta e disse: "Pode deixar comigo!"');
+  if (!L.length) L.push('Mesmo sem ouvir todas as histórias, o povo das oito regiões sabe quem salvou os selos.');
+  return [
+    { t: 'Os selos brilham outra vez', p: ['Do Bambuzal às Tangerinas, dos Templos Antigos às Cavernas, os oito selos voltaram a brilhar.', 'O Oitavo Dragão se desfez em luz dourada, e o vento voltou a soprar manso pelas folhas.', 'O portal de volta se abriu, ao sul da arena.'] },
+    { t: 'Quem você ajudou no caminho', lista: L.slice(0, 5) },
+    { t: 'O caminho continua', p: ['O Mestre Kenji sorri de longe: "O caminho do karatê não tem fim, Akira."', 'O Gil já prepara a arena para o próximo torneio, e agora você é o campeão que todos querem desafiar.', 'Mas isso é outra história... por enquanto, descanse, campeão.'] }
+  ];
+}
+let fimPag = 0, fimPags = [];
+function iniciarFimDoJogo() {
+  if (MODO_TELA === 'fim') return;
+  estado.flags.zerou = true; try { localStorage.setItem('karate-rpg-zerou', '1'); } catch (e) {}
+  salvar();
+  MODO_TELA = 'fim'; for (const k in teclas) teclas[k] = false; edge = {};
+  if (dlg.ativo) fecharConversa();
+  fimPags = paginasFinal(); fimPag = 0;
+  $('fimJogo').hidden = false; mostrarFimPagina();
+}
+function mostrarFimPagina() {
+  const el = $('fimPag'), P = fimPags[fimPag]; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  const ultima = fimPag === fimPags.length - 1;
+  el.innerHTML = '<h2></h2>' + (P.lista ? '<div class="fimLista">' + P.lista.map(() => '<p></p>').join('') + '</div>' : P.p.map(() => '<p></p>').join('')) +
+    '<div class="fimBotoes"><button type="button" id="fimProx">' + (ultima ? 'Continuar ▸' : 'Próximo ▸') + '</button></div>';
+  el.querySelector('h2').textContent = P.t;
+  const ps = el.querySelectorAll('p'); (P.lista || P.p).forEach((t, i) => { ps[i].textContent = t; });
+  const b = $('fimProx'); b.onclick = () => { Som.efeito && Som.efeito('confirma'); if (ultima) mostrarVitoria(); else { fimPag++; mostrarFimPagina(); } }; b.focus({ preventScroll: true });
+}
+function mostrarVitoria() {
+  const el = $('fimPag'), ids = Object.keys(MISSOES), feitas = ids.filter(id => stM(id) === 'concluida').length;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  el.innerHTML = '<div class="fimEstrela">⭐</div><h2>Você restaurou os selos!</h2><p class="fimTime"></p>' +
+    '<div class="fimStats"><div>Tempo de jogo<b id="fsTempo"></b></div><div>Missões terminadas<b id="fsMiss"></b></div><div>Nível<b id="fsNivel"></b></div><div>Faixa<b id="fsFaixa"></b></div></div>' +
+    '<div class="fimBotoes"><button type="button" id="fimCred">Ver créditos</button><button type="button" id="fimCont">Continuar explorando</button></div>';
+  el.querySelector('.fimTime').textContent = 'Akira: A Jornada do Karatê — Time 1, Estrela da Manhã Jogos';
+  $('fsTempo').textContent = TEMPO_FMT(estado.tempoJogo || 0); $('fsMiss').textContent = feitas + ' de ' + ids.length; $('fsNivel').textContent = estado.nivel; $('fsFaixa').textContent = FAIXAS[estado.faixa].nome;
+  $('fimCred').onclick = () => { Som.efeito && Som.efeito('confirma'); mostrarCreditosFim(); };
+  $('fimCont').onclick = () => { Som.efeito && Som.efeito('confirma'); fecharFimDoJogo(); };
+  $('fimCont').focus({ preventScroll: true });
+}
+function mostrarCreditosFim() {
+  const el = $('fimPag');
+  el.innerHTML = '<div id="fimCreditos"><div class="rola"><h2>AKIRA</h2><p>A Jornada do Karatê</p><h3>Equipe</h3><p>Time 1 — Estrela da Manhã Jogos</p><h3>Personagens e retratos</h3><p>Bíblia oficial de NPCs e splash arts da equipe</p>' +
+    '<h3>Cenário</h3><p>Tiles de referência: arte de referência da equipe</p><h3>Código, pixel art, música e efeitos</h3><p>Gerados por código com ajuda do Claude (Anthropic)</p><h3>Professora</h3><p>Por acreditar no jogo desde o primeiro pátio de treino</p><h3>E você</h3><p>Obrigado por jogar até o fim!</p></div></div>' +
+    '<div class="fimBotoes"><button type="button" id="fimVolta">Voltar</button></div>';
+  $('fimVolta').onclick = () => { Som.efeito && Som.efeito('confirma'); mostrarVitoria(); }; $('fimVolta').focus({ preventScroll: true });
+}
+function fecharFimDoJogo() {
+  $('fimJogo').hidden = true; MODO_TELA = 'jogo'; for (const k in teclas) teclas[k] = false; edge = {}; hudChave = ''; canvas.focus();
+  aviso('Você pode continuar explorando. Volte pelo portal ao sul da arena.');
 }
 function perderChefe() {
   const ch = chefeAtual; if (!ch) return;
@@ -6538,6 +6856,7 @@ function desenharChefeObj(o, sx, sy) {
   if (o.vivo && aura && !o.invisivel) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; brilhoCtx(ctx, sx, sy - 22 * (o.pal.esc || 1), 26 * (o.pal.esc || 1), aura, o.est === 'ataque' ? .28 : .14); ctx.restore(); }
   if (!o.invisivel && ehDragao(o)) dragaoTras(o, sx, sy);              // cachecol e abas do casaco atrás do corpo
   desenharAkira(sx, sy, an, fr, o.face, 0, o.invisivel ? .12 : o.clone ? .78 : 1, o.flash > 0 ? true : o.congelado > 0 ? 'r' : false, est, o.costas);
+  if (!o.invisivel && !ehDragao(o)) desenharVisNPC(ctx, o, sx, sy);
   if (!o.invisivel) { acessorioChefe(o, sx, sy); desenharArmaChefe(o, sx, sy); }
   ctx.globalAlpha = 1;
   const e = o.pal.esc || 1, hy = sy - 62 * e;
@@ -6893,6 +7212,7 @@ function danoEm(o, dano, tk, dx, dy) {
   if (o.arq) posGolpeArq(o, tk);
   if (o.hp <= 0 && o.vivo) {
     o.vivo = false; o.t = .5; estado.vitorias++; ganharXp(o.xp); missaoCacou(o);
+    if (o.ladraoCesto && stM('cesto_roubado') === 'em_andamento') { estado.inv.cesto_karina = 1; aviso('O ladrão largou o cesto! Leve-o de volta para a Karina.'); popup(o.x, o.y, '🧺', '#ffb347'); hudChave = ''; salvar(); }
     if (o.guardiao) guardiaoFoiVencido(o);
     popup(o.x, o.y, '+' + o.xp + ' XP', '#f4d03f');
     const r = Math.random();
@@ -7102,14 +7422,26 @@ function atualizarJogador(dt, ix, iy, mag, ctrl) {
         if (pegou('KeyJ')) iniciarAtaque(0, ix, iy);
         else if (pegou('KeyK')) iniciarEspecial();
         else if (pegou('Space')) iniciarEsquiva(ix, iy);
-        else if (pegou('KeyV')) { jog.est = 'pulo'; jog.t = 0; jog.pre = .08; jog.vz = 0; jog.z = 0; jog.ar = false; jog.pos = 0; }
+        else if (pegou('KeyY')) iniciarAcao('sentar');
+        else if (pegou('KeyU')) iniciarAcao('meditar');
+        else if (pegou('KeyI')) iniciarAcao('dormir');
+        else if (pegou('KeyO')) iniciarAcao('comer');
+        else if (pegou('KeyB')) iniciarAcao('banho');
         else if (pegou('KeyC')) iniciarRajada(ix, iy);
         else if (pegou('KeyT')) { jog.est = 'vitoria'; jog.t = 0; }
       }
       break;
     }
     case 'barco': atualizarBarco(dt, ix, iy, mag || 1); break;
-    case 'pulo': {                                                       // pulo com altura (z): sombra fica no chão
+    case 'acao': {                                                       // sentar, meditar, dormir, comer, tomar banho (qualquer movimento cancela)
+      jog.t += dt; jog.dir = 2; jog.costas = false; const ac = jog.acao;
+      if (ac === 'meditar') estado.aura = Math.min(maxAura(), (estado.aura || 0) + dt * 5);
+      else if (ac === 'dormir' || ac === 'sentar') estado.hp = Math.min(maxHp(), (estado.hp == null ? maxHp() : estado.hp) + dt * (ac === 'dormir' ? 4 : 1.5));
+      if (ac === 'banho' && Math.random() < dt * 25) gotaAgua(jog.x + (Math.random() - .5) * .4, jog.y + (Math.random() - .5) * .2, 40, 1.4);
+      if (ix || iy || pegou('Space') || pegou('KeyE') || pegou('KeyJ') || (ac === 'comer' && jog.t > 2.4)) { jog.est = 'livre'; jog.acao = null; }
+      break;
+    }
+    case 'pulo': {                                                       // (pulo removido do jogo livre; estado mantido por compatibilidade)
       jog.t += dt;
       if (jog.pre > 0) { jog.pre -= dt; if (jog.pre <= 0) { jog.vz = 125; jog.ar = true; fxPoeira(4, true); } break; }
       if (jog.ar) {
@@ -8050,10 +8382,18 @@ function atualizarInimigo(e, dt) {
    11. CARREGAR MAPA E TRANSIÇÕES
    ===================================================================== */
 let fade = null;
+function limparPontesIsoladas(m) {          // ponte sem água por perto não leva a lugar nenhum: volta a ser chão
+  if (!m || m.interior || m.limpoPontes || !m.tiles || !m.tiles[0]) return; m.limpoPontes = true;
+  const H = m.tiles.length, W = m.tiles[0].length, base = m.base != null ? m.base : T.GRAMA;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (m.tiles[j][i] === T.PONTE) {
+    let a = false; for (let dj = -1; dj <= 1 && !a; dj++) for (let di = -1; di <= 1; di++) if ((di || dj) && m.tiles[j + dj] && m.tiles[j + dj][i + di] === T.AGUA) { a = true; break; }
+    if (!a) m.tiles[j][i] = base;
+  }
+}
 function carregarMapa(id, sx, sy) {
   if (chefeAtual) perderChefe(); perigos.length = 0; projeteis.length = 0; baloes.length = 0; projAmigos.length = 0; cine = null;
   const L = resolverLugar(id, sx, sy);
-  mapa = L.m; jog.x = L.x; jog.y = L.y;
+  mapa = L.m; jog.x = L.x; jog.y = L.y; limparPontesIsoladas(mapa);
   if (mapa.grande) { if (!mapa.fchunks || mapa.cacheSC !== SC) prepararCache(mapa); mapa.regAtual = null; atualizarAtivos(mapa, true); atualizarRegiao(); }
   else { prepararCache(mapa); mapa.arvores = mapa.objs.filter(o => o.spr && o.spr.copa); }
   jog.est = 'livre'; jog.dir = 2; jog.treino = null; textos.length = 0; fagulhas.length = 0; aneis.length = 0; fx.length = 0; rastros.length = 0;
@@ -8063,7 +8403,7 @@ function carregarMapa(id, sx, sy) {
   if (jogoIniciado) autoSalvar('mapa');
 }
 // MODO DE TESTE: true = todos os portões, casas e passagens ficam abertos (sem exigir faixa/nível). Volte para false quando terminar os testes.
-const LIBERAR_TUDO_TESTE = true;
+const LIBERAR_TUDO_TESTE = false;   // modo de teste desligado: portões, torneio e chefes respeitam nível/faixa
 const reqOk = r => LIBERAR_TUDO_TESTE || !r || ((!r.nivel || estado.nivel >= r.nivel) && (r.faixa == null || estado.faixa >= r.faixa));
 function irPara(id, sx, sy, cb) { fade = { f: 0, t: 0, id, sx, sy, cb }; }
 function tickFade(dt) {
@@ -8328,6 +8668,17 @@ function rig(t, P, view, pal) {
   }
 }
 
+/* Acabamento pintado dos personagens: gradiente de luz (quente em cima, fria embaixo) só sobre o corpo + luz de contorno quente na borda de cima/esquerda */
+function pinturaPersonagem(cv, g) {
+  const w = cv.width, h = cv.height;
+  g.save(); g.globalCompositeOperation = 'source-atop';
+  const gr = g.createLinearGradient(0, 0, w * .55, h); gr.addColorStop(0, 'rgba(255,214,150,.20)'); gr.addColorStop(.55, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(50,40,130,.26)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore();
+  const t = document.createElement('canvas'); t.width = w; t.height = h; const c = t.getContext('2d');
+  c.drawImage(cv, 0, 0); c.globalCompositeOperation = 'destination-out'; c.drawImage(cv, 1, 1);
+  c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(255,232,190,.55)'; c.fillRect(0, 0, w, h);
+  g.drawImage(t, 0, 0);
+}
 function renderFrame(P, view, pal) {
   const cv = document.createElement('canvas'); cv.width = cv.height = QF;
   const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
@@ -8339,6 +8690,7 @@ function renderFrame(P, view, pal) {
     rig(tmp.getContext('2d'), P, view, pal);
     g.save(); g.translate(16 + 14 * kk, 31 - 4 * kk); g.rotate(-rot * Math.PI / 180); g.translate(-16, -31); g.drawImage(tmp, 0, 0); g.restore();
   } else rig(g, P, view, pal);
+  if (!PIX.on) pinturaPersonagem(cv, g);
   if (P.estrela && (P.ph || 0) % 2 === 0) {                                                   // estrelinhas do hit
     g.fillStyle = '#ffe45e';
     [[23, 5], [8, 7], [16, 1]].forEach(([x, y]) => { g.fillRect(x, y - 1, 1, 3); g.fillRect(x - 1, y, 3, 1); });
@@ -8394,7 +8746,7 @@ function personagem(sx, sy, dir, anim, f, palAntiga, flash) {
 }
 // Qual animação/quadro cada lutador usa agora
 function animJogador() {
-  const t = jog.t, A = Akira.ANIM;
+  const t = jog.t, A = Akira.ANIM, SF = jog.dir === 2 ? 'S' : jog.dir === 6 ? 'N' : '';
   // animação mais fluida: 3 desenhos por quadro (os tempos dos golpes e as hitboxes não mudam)
   const fr = (n, q) => Math.max(0, Math.min(A[n].frames - 1, Math.round(q * (A[n].frames - 1) * 3) / 3));
   const ciclo = (v, n) => (Math.floor(v * 3) / 3) % n;
@@ -8405,7 +8757,8 @@ function animJogador() {
       return [n, fr(n, q)];
     }
     case 'rajada': return [jog.dir === 2 ? 'comboS' : jog.dir === 6 ? 'comboN' : 'combo', Math.min(11, Math.floor(t / .72 * 36) / 3)];
-    case 'esquiva': return ['dodge', fr('dodge', t / .26)];
+    case 'esquiva': return ['dodge' + SF, fr('dodge' + SF, t / .26)];
+    case 'acao': return [jog.acao, ciclo(tempo * 6, A[jog.acao].frames)];
     case 'dano': return ['hit', fr('hit', (.28 - t) / .28)];
     case 'ko': return ['ko', fr('ko', t / .8)];
     case 'especial': {
@@ -8425,8 +8778,8 @@ function animJogador() {
       if (jog.agua === 2) { if (jog.virando) return ['swimTurn', fr('swimTurn', Math.min(1, jog.virando.t / .22))]; return jog.anda ? ['swim', ciclo(jog.fase / 6.283 * 8, 8)] : ['tread', ciclo(tempo * 6, 6)]; }
       if (jog.sobQueda && !jog.anda && !jog.def) return ['underFall', ciclo(tempo * 8, 4)];
       if (jog.agua === 1 && jog.anda && !jog.def) return ['wade', ciclo(jog.fase / 6.283 * 8, 8)];
-      if (jog.def) return ['block', ciclo(tempo * 10, 4)];
-      if (jog.anda) return jog.corre ? ['run', ciclo(jog.fase / 6.283 * 8, 8)] : ['walk', ciclo(jog.fase / 6.283 * 8, 8)];
+      if (jog.def) return ['block' + SF, ciclo(tempo * 10, 4)];
+      if (jog.anda) return jog.corre ? ['run' + SF, ciclo(jog.fase / 6.283 * 8, 8)] : ['walk', ciclo(jog.fase / 6.283 * 8, 8)];
       return ['idle', ciclo(tempo * 8, 6)];
   }
 }
@@ -8446,7 +8799,7 @@ const SCR_AK = document.createElement('canvas');
 const ESTILOS = new WeakMap(), ESTILOS_FAIXA = {}; let idEstilo = 0;
 function estiloPal(p) {                                                  // paleta do inimigo/NPC -> estilo anime (cores + cabelo)
   let e = ESTILOS.get(p); if (e) return e;
-  e = Akira.fazEstilo({ id: 'pal' + (idEstilo++), gi: p.gi, pele: p.pele, cab: p.cab, faixa: p.faixa, cabelo: p.cabelo, banda: p.testa, iris: p.iris, olho: p.olho, boca: p.boca, esc: p.esc, capa: p.capa });
+  e = Akira.fazEstilo({ id: 'pal' + (idEstilo++), gi: p.gi, pele: p.pele, cab: p.cab, faixa: p.faixa, cabelo: p.cabelo, banda: p.testa, iris: p.iris, olho: p.olho, boca: p.boca, esc: p.esc, capa: p.capa, barba: p.barba, brilho: p.brilho });
   ESTILOS.set(p, e); return e;
 }
 const estiloAkira = () => {
@@ -8868,6 +9221,12 @@ function quente(hex) { const n = parseInt(hex.slice(1), 16); return '#' + hx(((n
 function claro(hex, f) { const n = parseInt(hex.slice(1), 16), m = k => ((n >> k) & 255) + (255 - ((n >> k) & 255)) * f; return '#' + hx(m(16)) + hx(m(8)) + hx(m(0)); }   // clareia
 const COR_AKIRA = COR;
 let EST = null;
+const _hv = {};
+function HVAR() {                                                       // fator 0.8–1.3 estável por personagem (Akira não muda com a faixa)
+  if (!EST) return 1; let id = String(EST.id || ''); if (id.indexOf('akira') === 0) id = 'akira';
+  if (_hv[id] == null) { let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; _hv[id] = .8 + ((h >>> 0) % 1000) / 2000; }
+  return _hv[id];
+}
 /* Estilo de personagem: cores + tipo de cabelo. Serve pro Akira, inimigos e NPCs (mesmo corpo, roupa/cabelo diferentes) */
 function fazEstilo(c) {
   const branco = c.gi === '#fdfbf6';
@@ -8877,7 +9236,7 @@ function fazEstilo(c) {
     cab: c.cab, cabS: esc(c.cab, .5), cabL: c.cabL || claro(c.cab, .28), cabL2: claro(c.cab, .55)
   };
   if (c.id && c.id.indexOf('akira') === 0) Object.assign(cor, { cab: '#232a62', cabS: '#11143a', cabL: '#4a6ad0', cabL2: '#b4c8ff' });
-  return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura };
+  return { id: c.id, cor, faixa: c.faixa || '#f2f2f2', cabelo: c.cabelo || 'espeto', banda: c.banda || null, iris: c.iris || '#b4561c', olho: c.olho || null, boca: c.boca || null, esc: c.esc || 1, externo: !!c.externo, capa: c.capa || null, aura: !!c.aura, barba: c.barba || null, brilho: c.brilho || null };
 }
 const ESTILO_AKIRA = (faixa, extra) => fazEstilo(Object.assign({ id: 'akira' + faixa, gi: '#fdfbf6', pele: '#f6c19a', cab: '#222850', faixa, cabelo: 'espeto', banda: null, externo: true, capa: '#8a1230', aura: true }, extra || {}));   // como na ficha: cabelo espetado azul-marinho, sem bandana
 
@@ -8915,11 +9274,19 @@ function dobraJunta(g, A, B, C, raio, cor) {
   for (const [k, w] of [[.35, 1.3], [.62, 1]]) { const cx = B[0] + dx * raio * k, cy = B[1] + dy * raio * k; g.lineWidth = w; g.beginPath(); g.moveTo(cx - dy * raio * .45, cy + dx * raio * .45); g.quadraticCurveTo(cx + dx * 1.2, cy + dy * 1.2, cx + dy * raio * .45, cy - dx * raio * .45); g.stroke(); }
 }
 // Forma qualquer com contorno + sombra recortada
+/* contorno colorido (pintura digital): em vez de preto chapado, cada forma ganha uma linha escura da própria cor, puxada para o roxo */
+const _ct = {};
+function contornoCor(sombra, base) {
+  const k = String(sombra) + base; if (_ct[k]) return _ct[k];
+  const m = /^#([0-9a-f]{6})$/i.exec(String(sombra)); if (!m) return _ct[k] = OUT;
+  const n = parseInt(m[1], 16), r = (n >> 16) & 255, gg = (n >> 8) & 255, bb = n & 255;
+  return _ct[k] = 'rgb(' + Math.round(r * .3 + 22) + ',' + Math.round(gg * .26 + 12) + ',' + Math.round(bb * .34 + 34) + ')';
+}
 function forma(g, caminho, base, sombra, desl, linha) {
   g.save(); g.beginPath(); caminho(g); g.clip();
   g.fillStyle = sombra; g.fillRect(-400, -400, 800, 800);
   g.translate(LUZ[0] * desl, LUZ[1] * desl); g.beginPath(); caminho(g); g.fillStyle = base; g.fill(); g.restore();
-  g.beginPath(); caminho(g); g.lineJoin = 'round'; g.lineWidth = linha || 3; g.strokeStyle = OUT; g.stroke();
+  g.beginPath(); caminho(g); g.lineJoin = 'round'; g.lineWidth = linha || 3; g.strokeStyle = contornoCor(sombra, base); g.stroke();
 }
 const poli = (pts, fech) => g => { g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); if (fech !== false) g.closePath(); };
 
@@ -9013,6 +9380,9 @@ function cabeca(g, J, P, faixa) {
     g.beginPath(); g.moveTo(ra[0], ra[1]); g.quadraticCurveTo((ra[0] + tp[0]) / 2 + nx * curva * .6, (ra[1] + tp[1]) / 2 + ny * curva * .6, ra[0] + dx * .86, ra[1] + dy * .86);
     g.lineWidth = 2.6; g.strokeStyle = COR.cabL; g.lineCap = 'round'; g.stroke();
     g.beginPath(); g.moveTo(ra[0] + dx * .18, ra[1] + dy * .18); g.lineTo(ra[0] + dx * .45, ra[1] + dy * .45); g.lineWidth = 1.1; g.strokeStyle = COR.cabL2; g.stroke();
+    g.globalAlpha = .55; g.lineWidth = .8; g.strokeStyle = COR.cabS; g.lineCap = 'round';                    // fios separados dentro da mecha
+    for (const o of [-.32, .3]) { g.beginPath(); g.moveTo(ra[0] + nx * o * 3, ra[1] + ny * o * 3); g.quadraticCurveTo((ra[0] + tp[0]) / 2 + nx * (curva * .6 + o * 4), (ra[1] + tp[1]) / 2 + ny * (curva * .6 + o * 4), ra[0] + dx * .96 + nx * o, ra[1] + dy * .96 + ny * o); g.stroke(); }
+    g.globalAlpha = 1;
     g.restore();
   };
   // cabelo de trás (atrás do rosto): muda conforme o tipo (espeto, curto, coque, longo, trança, rabo, careca)
@@ -9302,6 +9672,30 @@ Object.assign(KEYS, {
   const a = AKIRA_ANIMATIONS[n]; AKIRA_ANIMATIONS[n + 'S'] = Object.assign({}, a, { frente: true });
 });
 
+  // ===== animações novas: corrida, esquiva e defesa de frente (sul) e de costas (norte) + ações de descanso =====
+  const FRN = (n, frames, fps, loop) => { AKIRA_ANIMATIONS[n] = { frames, fps, loop, frente: true }; };
+  const NEU = { lean: 6, lift: 2, brow: 1, belt: 6 };
+  KEYS.runS = [
+    kg(0, Object.assign({}, NEU, { lk: [8, 24], rk: [8, 24], re: [6, 10], rh: [-3, -8], rhs: 1.15, le: [8, 17], lh: [-4, -12] })),
+    kg(.25, Object.assign({}, NEU, { lk: [9, 15], la: [6, 14], lfs: 1.25, rk: [8, 24], re: [6, 10], rh: [-3, -8], rhs: 1.15, le: [8, 17], lh: [-4, -12], belt: -8 })),
+    kg(.5, Object.assign({}, NEU, { lift: 4, lk: [8, 22], rk: [8, 22], le: [6, 10], lh: [-3, -8], lhs: 1.15, re: [8, 17], rh: [-4, -12] })),
+    kg(.75, Object.assign({}, NEU, { rk: [9, 15], ra: [6, 14], rfs: 1.25, lk: [8, 24], le: [6, 10], lh: [-3, -8], lhs: 1.15, re: [8, 17], rh: [-4, -12], belt: 10 })),
+    kg(1, Object.assign({}, NEU, { lk: [8, 24], rk: [8, 24], re: [6, 10], rh: [-3, -8], rhs: 1.15, le: [8, 17], lh: [-4, -12] }))];
+  KEYS.dodgeS = [kg(0),
+    kg(.3, { dx: -10, lean: -12, lk: [11, 20], rk: [11, 20], hair: 8, belt: 12, brow: 1 }),
+    kg(.6, { dx: -22, lean: -26, lk: [13, 18], rk: [10, 22], la: [7, 20], ra: [5, 23], hair: 16, belt: 22, brow: 1, eye: 'angry' }),
+    kg(1, { dx: -4, lean: -4, brow: 1 })];
+  const GB = { le: [7, 6], re: [7, 6], lh: [-6, -14], rh: [-6, -14], lk: [10, 21], rk: [10, 21], la: [6, 23], ra: [6, 23], lean: 3, eye: 'angry', brow: 1, glow: 1 };
+  KEYS.blockS = [kg(0, Object.assign({}, GB, { belt: 4 })), kg(.5, Object.assign({}, GB, { belt: -4, lean: 4 })), kg(1, Object.assign({}, GB, { belt: 4 }))];
+  FRN('runS', 8, 16, true); FRN('dodgeS', 6, 16, false); FRN('blockS', 4, 10, true);
+  const SENT = { lk: [18, 3], rk: [18, 3], la: [-15, 4], ra: [-15, 4], le: [12, 14], re: [12, 14], lh: [3, 9], rh: [3, 9], lean: 0, belt: 2 };
+  const S2 = o => Object.assign({}, SENT, o);
+  KEYS.sentar = [kg(0, S2({ eye: 'open', mouth: 'smile' })), kg(.5, S2({ eye: 'open', mouth: 'smile', lean: 1, head: 2, belt: 3 })), kg(1, S2({ eye: 'open', mouth: 'smile' }))];
+  KEYS.meditar = [kg(0, S2({ eye: 'closed', glow: .2, lh: [1, 12], rh: [1, 12], le: [9, 12], re: [9, 12] })), kg(.5, S2({ eye: 'closed', glow: .8, lean: -1, lh: [1, 12], rh: [1, 12], le: [9, 12], re: [9, 12] })), kg(1, S2({ eye: 'closed', glow: .2, lh: [1, 12], rh: [1, 12], le: [9, 12], re: [9, 12] }))];
+  KEYS.dormir = [kg(0, S2({ eye: 'closed', lean: 6, head: 10 })), kg(.5, S2({ eye: 'closed', mouth: 'open', lean: 10, head: 16 })), kg(1, S2({ eye: 'closed', lean: 6, head: 10 }))];
+  KEYS.comer = [kg(0, S2({ eye: 'open', re: [10, 12], rh: [1, 9] })), kg(.35, S2({ eye: 'open', mouth: 'open', re: [9, 6], rh: [-6, -16] })), kg(.6, S2({ eye: 'happy', mouth: 'smile', re: [9, 6], rh: [-6, -16] })), kg(1, S2({ eye: 'open', re: [10, 12], rh: [1, 9] }))];
+  KEYS.banho = [kg(0, { eye: 'closed', mouth: 'smile', le: [9, -2], lh: [-7, -15], re: [9, 6], rh: [-4, -10], belt: 3 }), kg(.5, { eye: 'closed', mouth: 'smile', re: [9, -2], rh: [-7, -15], le: [9, 6], lh: [-4, -10], belt: -3 }), kg(1, { eye: 'closed', mouth: 'smile', le: [9, -2], lh: [-7, -15], re: [9, 6], rh: [-4, -10], belt: 3 })];
+  FRN('sentar', 4, 4, true); FRN('meditar', 6, 4, true); FRN('dormir', 6, 3, true); FRN('comer', 8, 8, true); FRN('banho', 6, 6, true);
 // ATAQUES PRO NORTE (de costas pra tela): braço/perna que ataca vai pra longe da câmera (sobe e fica menor)
 function norteDe(p) {
   const q = Object.assign({}, p, { costas: 1 });
@@ -9383,24 +9777,31 @@ function desenharFrente(g, P, est) {
 function cabecaF(g, C, P, lean) {
   g.save(); g.translate(C[0], C[1] - 0); g.rotate((lean * .5 + P.head * D2R)); g.translate(0, -17); g.scale(1.1, 1.1);
   const H = EST.cabelo, hs = P.hair;
+  // cabelos cacheados (Yagami: volumoso; Gabriel: curto e enrolado): cachos em círculos com luz e espiral
+  const CACH = H === 'cacheado' ? { t: [[-14, -8, 6], [14, -8, 6], [-12, -17, 6.5], [12, -17, 6.5], [-5, -22, 7], [5, -22, 7], [0, -24.5, 6.5], [-17, 1, 4.6], [17, 1, 4.6]], f: [[-9.5, -14, 5], [-3, -16.5, 5], [4, -16.5, 5.2], [10, -13.5, 4.8], [-12.5, -9, 3.8], [12.5, -9, 3.8]] }
+    : H === 'enrolado' ? { t: [[-11.5, -12, 4.6], [11.5, -12, 4.6], [-7, -18, 5], [0, -20.5, 5.2], [7, -18, 5], [-13, -4, 3.4], [13, -4, 3.4]], f: [[-8, -14.5, 4], [-2, -16.5, 4], [5, -16, 4], [10, -12, 3.4], [-11, -10, 3.2]] } : null;
+  const rolos = L => L.forEach(([x, y, r]) => { forma(g, c => c.arc(x, y, r, 0, 7), COR.cab, COR.cabS, 2.2, 2.6); g.lineCap = 'round'; g.beginPath(); g.arc(x - r * .22, y - r * .3, r * .55, 3.4, 5.4); g.lineWidth = 1.1; g.strokeStyle = COR.cabL; g.stroke(); g.beginPath(); g.arc(x + r * .12, y + r * .1, r * .32, .4, 4.2); g.lineWidth = .9; g.strokeStyle = COR.cabS; g.stroke(); });
   const bal = (r, t, f) => { const a = hs * f * D2R, dx = t[0] - r[0], dy = t[1] - r[1]; return [r[0] + dx * Math.cos(a) + dy * Math.sin(a), r[1] - dx * Math.sin(a) + dy * Math.cos(a)]; };
   const mecha = (b1, b2, t, curva, k) => {
     const ra = [(b1[0] + b2[0]) / 2, (b1[1] + b2[1]) / 2]; t = [ra[0] + (t[0] - ra[0]) * k, ra[1] + (t[1] - ra[1]) * k];
     const tp = bal(ra, t, 1), dx = tp[0] - ra[0], dy = tp[1] - ra[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
-    const c1 = [(b1[0] + tp[0]) / 2 + nx * curva, (b1[1] + tp[1]) / 2 + ny * curva], c2 = [(b2[0] + tp[0]) / 2 + nx * curva * .5, (b2[1] + tp[1]) / 2 + ny * curva * .5];
+    const c1 = [(b1[0] + tp[0]) / 2 + nx * curva * HVAR(), (b1[1] + tp[1]) / 2 + ny * curva * HVAR()], c2 = [(b2[0] + tp[0]) / 2 + nx * curva * HVAR() * .5, (b2[1] + tp[1]) / 2 + ny * curva * HVAR() * .5];
     forma(g, c => { c.moveTo(b1[0], b1[1]); c.quadraticCurveTo(c1[0], c1[1], tp[0], tp[1]); c.quadraticCurveTo(c2[0], c2[1], b2[0], b2[1]); c.closePath(); }, COR.cab, COR.cabS, 2.2, 2.4);
     g.beginPath(); g.moveTo(ra[0], ra[1]); g.lineTo(ra[0] + dx * .82, ra[1] + dy * .82); g.lineWidth = 1.2; g.strokeStyle = COR.cabL; g.lineCap = 'round'; g.stroke();
+    g.globalAlpha = .5; g.beginPath(); g.moveTo(ra[0] + nx * .9, ra[1] + ny * .9); g.lineTo(ra[0] + dx * .9 + nx * .9, ra[1] + dy * .9 + ny * .9); g.lineWidth = .8; g.strokeStyle = COR.cabS; g.stroke();
+    g.beginPath(); g.moveTo(ra[0] + dx * .5, ra[1] + dy * .5); g.lineTo(ra[0] + dx * .78, ra[1] + dy * .78); g.lineWidth = .9; g.strokeStyle = COR.cabL2; g.stroke(); g.globalAlpha = 1;
   };
   if (EST.banda) { [[-1], [1]].forEach(([s]) => { const x1 = s * 21, y1 = -7 - hs * .2; traco(g, s * 12, -8, x1, y1, 5.6, OUT); traco(g, s * 12, -8, x1, y1, 3.4, EST.banda); }); }
   const k = H === 'espeto' ? 1 : H === 'curto' ? .45 : 0;
   if (k > 0) {
     mecha([-12, -10], [-7, -16], [-26, -20], -4, k); mecha([12, -10], [7, -16], [26, -20], 4, k);
-    mecha([-9, -16], [-3, -18], [-12, -37], -3, k); mecha([9, -16], [3, -18], [12, -37], 3, k); mecha([-3, -18], [3, -18], [0, -40], 2, k);
+    mecha([-9, -16], [-3, -18], [-12, -37], -3, k); mecha([9, -16], [3, -18], [12, -37], 3, k); mecha([-3, -18], [3, -18], [0, -40], 2, k); mecha([-6, -17], [-1, -18], [-8, -35], -2, k * .85); mecha([6, -17], [1, -18], [8, -35], 2, k * .85);
   }
   if (H === 'coque') forma(g, c => c.arc(0, -23, 7.2, 0, 7), COR.cab, COR.cabS, 2.2, 2.6);
   if (H === 'longo' || H === 'tranca') [-1, 1].forEach(s => forma(g, c => { c.moveTo(s * 11, -12); c.bezierCurveTo(s * 20, -8, s * 19, 20, s * 15, 34); c.lineTo(s * 9, 32); c.bezierCurveTo(s * 11, 18, s * 11, 4, s * 9, -2); c.closePath(); }, COR.cab, COR.cabS, 2.4, 2.6));
   traco(g, 0, 8, 0, 18, 8, OUT); traco(g, 0, 8, 0, 18, 5.4, COR.peleS);                         // pescoço
   [-1, 1].forEach(s => forma(g, c => c.ellipse(s * 12.4, 1, 2.8, 4.2, 0, 0, 7), COR.pele, COR.peleS, 1, 2));    // orelhas
+  if (CACH) rolos(CACH.t);
   forma(g, c => { c.moveTo(-12, -6); c.bezierCurveTo(-13, -16, -6, -18.5, 0, -18.5); c.bezierCurveTo(6, -18.5, 13, -16, 12, -6); c.bezierCurveTo(12.5, 4, 8, 13, 0, 14.8); c.bezierCurveTo(-8, 13, -12.5, 4, -12, -6); c.closePath(); }, COR.pele, COR.peleS, 3, 3);
   if (P.costas) {                                                      // de costas: cabelo cobre a cabeça toda
     if (H !== 'careca') {
@@ -9424,17 +9825,25 @@ function cabecaF(g, C, P, lean) {
       g.beginPath(); g.moveTo(-5.4, -.2 + ang); g.quadraticCurveTo(0, -6.8 + ang * 1.5, 5.6, -1.6); g.lineWidth = 2.4; g.strokeStyle = OUT; g.stroke();
     }
     if (CONF.got && (eye === 'open' || eye === 'angry')) glowOlho(g, 0, .4, 7);
+    if (EST.brilho && (eye === 'open' || eye === 'angry')) { g.save(); g.globalCompositeOperation = 'lighter'; const kb = window.__hdBrilho || 1, gb = g.createRadialGradient(0, .4, 0, 0, .4, 11 * kb); gb.addColorStop(0, 'rgba(255,244,110,.95)'); gb.addColorStop(.45, 'rgba(255,214,40,.45)'); gb.addColorStop(1, 'rgba(255,200,0,0)'); g.fillStyle = gb; g.fillRect(-13, -12, 26, 26); g.restore(); }   // olhos amarelos brilhantes (corrupção)
     g.restore();
   };
   olho(-5.2, 1.5, -1); olho(5.2, 1.5, 1);
   g.lineWidth = 1.3; g.strokeStyle = '#a45f48'; g.beginPath(); g.moveTo(-.6, 5.6); g.lineTo(.6, 7); g.stroke();
+  if (EST.barba) {                                                   // barba branca (Gabriel mais velho)
+    const bb = EST.barba, bs = esc(bb, .72);
+    forma(g, c => { c.moveTo(-12.4, 0); c.bezierCurveTo(-13.5, 12, -8.5, 20.5, 0, 24); c.bezierCurveTo(8.5, 20.5, 13.5, 12, 12.4, 0); c.bezierCurveTo(10.5, 6.5, 7, 7.5, 4, 7.6); c.quadraticCurveTo(0, 5.6, -4, 7.6); c.bezierCurveTo(-7, 7.5, -10.5, 6.5, -12.4, 0); c.closePath(); }, bb, bs, 2.6, 2.6);
+    forma(g, c => { c.moveTo(-6, 8.8); c.bezierCurveTo(-5, 5.2, -1.4, 6, 0, 7.4); c.bezierCurveTo(1.4, 6, 5, 5.2, 6, 8.8); c.bezierCurveTo(3, 8, 1.4, 8.6, 0, 8.2); c.bezierCurveTo(-1.4, 8.6, -3, 8, -6, 8.8); c.closePath(); }, bb, bs, 2, 2.2);
+    g.lineWidth = 1; g.lineCap = 'round'; g.strokeStyle = bs; g.globalAlpha = .7; g.beginPath(); for (const [a, b, c2, d2] of [[-7, 12, -5.5, 20], [0, 13, 0, 22], [7, 12, 5.5, 20]]) { g.moveTo(a, b); g.lineTo(c2, d2); } g.stroke(); g.globalAlpha = 1;
+  }
   const m = P.mouth;
   if (m === 'shout' || m === 'open') { g.beginPath(); g.ellipse(0, 10.2, m === 'shout' ? 3.6 : 2.4, m === 'shout' ? 3.4 : 2.4, 0, 0, 7); g.fillStyle = '#6b1d2a'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = OUT; g.stroke(); g.beginPath(); g.ellipse(0, 11.4, 2, 1.1, 0, 0, 7); g.fillStyle = '#e8737f'; g.fill(); }
   else if (m === 'smile') { g.beginPath(); g.moveTo(-4, 9); g.quadraticCurveTo(0, 14.5, 4, 9); g.closePath(); g.fillStyle = '#6b1d2a'; g.fill(); g.lineWidth = 1.4; g.strokeStyle = OUT; g.stroke(); }
   else { g.beginPath(); g.moveTo(-3, 10.4); g.quadraticCurveTo(0, 11.8, 3, 10.4); g.lineWidth = 1.5; g.strokeStyle = '#8a4a3c'; g.stroke(); }
   }
   // franja
-  if (H !== 'careca' && !P.costas) {
+  if (CACH && !P.costas) rolos(CACH.f);
+  else if (H !== 'careca' && !P.costas) {
     const fr = c => {
       c.moveTo(-13.5, -4); c.bezierCurveTo(-15, -20, 15, -20, 13.5, -4); c.quadraticCurveTo(12, -7, 10.5, -9);
       const t = [bal([9, -9], [11, -1.6], 1), bal([3.5, -9], [4.5, -2], 1), bal([-3, -9], [-4, -2], 1), bal([-9, -9], [-11, -1.6], 1)];
@@ -12060,6 +12469,7 @@ function desenharObj(o, sx, sy) {
       const [an, fr] = animInimigo(o);
       virarObj(o);
       desenharAkira(sx + (o.est === 'prep' ? (Math.floor(tempo * 30) % 2) : 0), sy, an, fr, o.face, 0, 1, o.flash > 0, estiloPal(o.pal), o.costas);
+      o._an = an; o._fr = fr; desenharVisNPC(ctx, o, sx, sy);
       const hy = Math.round(sy - 46 * (o.pal.esc || 1));
       if (o.vivo && o.hp < o.hpMax) { R(ctx, Math.round(sx) - 8, hy, 16, 3, '#000'); R(ctx, Math.round(sx) - 7, hy + 1, Math.max(0, Math.round(14 * o.hp / o.hpMax)), 1, '#e0453a'); }
       if (o.est === 'prep') { ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff4040'; ctx.fillText('!', Math.round(sx), hy - 3); }
@@ -12223,6 +12633,24 @@ function desenharParallax(g) {
   if (!cav) g.drawImage(fundoPar.nevoa, 0, 0, W, H);                  // névoa entre as montanhas (pronta)
   g.restore();
 }
+/* Direção de arte (inspirada em Hades II): luz quente no topo, sombra fria nas bordas, brilho (bloom) nas fontes de luz e poeira flutuando */
+function gradeArte(g, x0, y0, x1, y1) {
+  const w = x1 - x0, h = y1 - y0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  g.save();
+  let gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, 'rgba(255,214,150,' + (mapa.interior ? .05 : .09) + ')'); gr.addColorStop(.55, 'rgba(255,214,150,0)'); gr.addColorStop(1, 'rgba(40,30,90,.10)');
+  g.fillStyle = gr; g.fillRect(x0, y0, w, h);                                              // quente em cima, frio embaixo
+  g.globalCompositeOperation = 'lighter';
+  let n = 0; for (const l of LUZES) { if (n > 14 || l.x < x0 - 80 || l.x > x1 + 80 || l.y < y0 - 80 || l.y > y1 + 80) continue; n++;
+    const r = l.r * 2.4 * (.94 + .06 * Math.sin(tempo * 8 + l.k)); gr = g.createRadialGradient(l.x, l.y, 1, l.x, l.y, r); gr.addColorStop(0, 'rgba(255,190,110,.20)'); gr.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = gr; g.fillRect(l.x - r, l.y - r, r * 2, r * 2); }
+  g.fillStyle = 'rgba(255,236,190,.35)';                                                   // poeira / pólen em suspensão
+  for (let k = 0; k < 26; k++) { const px = x0 + ((k * 97 + tempo * (4 + k % 3 * 2.5)) % w + w) % w, py = y0 + ((k * 53 + Math.sin(tempo * .6 + k) * 8 + tempo * 1.6) % h + h) % h; g.globalAlpha = .25 + .35 * Math.abs(Math.sin(tempo * .9 + k)); g.fillRect(Math.round(px), Math.round(py), 1, 1); }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'soft-light';                            // contraste pintado: realça luzes e aprofunda sombras
+  gr = g.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, 'rgba(255,200,120,.30)'); gr.addColorStop(.5, 'rgba(255,255,255,.10)'); gr.addColorStop(1, 'rgba(70,60,170,.34)'); g.fillStyle = gr; g.fillRect(x0, y0, w, h);
+  g.globalCompositeOperation = 'source-over';
+  gr = g.createRadialGradient(cx, cy, Math.min(w, h) * .38, cx, cy, Math.max(w, h) * .72); gr.addColorStop(0, 'rgba(12,8,30,0)'); gr.addColorStop(1, 'rgba(12,8,30,.34)');
+  g.fillStyle = gr; g.fillRect(x0, y0, w, h);                                              // vinheta fria: puxa o olhar para o centro
+  g.restore();
+}
 function renderizar(dt) {
   const g = ctx;
   g.setTransform(SC, 0, 0, SC, 0, 0);
@@ -12252,8 +12680,8 @@ function renderizar(dt) {
   }
   // Efeito no chão: anel da técnica de aura
   for (const a of aneis) {
-    const [cx, cy] = iso(a.x, a.y), p = Math.max(0, Math.min(1, a.t / .3)), rx = (a.r || ESPECIAL.raio) * HW * 1.41 * p;
-    g.globalAlpha = 1 - a.t / .9; g.strokeStyle = '#7fdcff'; g.lineWidth = 2;
+    const [cx, cy] = iso(a.x, a.y), p = Math.max(0, Math.min(1, a.t / (a.agua ? .8 : .3))), rx = (a.r || ESPECIAL.raio) * HW * 1.41 * p;
+    g.globalAlpha = Math.max(0, 1 - a.t / (a.agua ? .8 : .9)) * (a.agua ? .75 : 1); g.strokeStyle = a.agua ? '#e8f8ff' : '#7fdcff'; g.lineWidth = a.agua ? 1.2 : 2;
     g.beginPath(); g.ellipse(Math.round(cx), Math.round(cy), rx, rx / 2, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
   desenharArena(g); desenharCineMundo(g); desenharPerigos(g);
@@ -12278,6 +12706,7 @@ function renderizar(dt) {
   }
   desenharSaidasVisiveis(g); desenharItensMissao(g); desenharSetaRastreio(g); desenharSetaMissao(g);
   if (noiteN > .02 && !mapa.escuro) luzesGoticas(g, camTx, camTy, noiteN * (mapa.interior ? .55 : 1));          // luz de tochas por cima de tudo (menos dos textos)
+  if (!PIX.on) gradeArte(g, vx0, vy0, vx1, vy1);
   if (mapa.escuro) {                                                   // cavernas: escuro, com brilho dos cristais
     g.fillStyle = 'rgba(10,8,34,.3)'; g.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0 + 120);
     g.globalCompositeOperation = 'lighter';
@@ -12582,7 +13011,8 @@ const Abertura = (() => {
     if (t < 5.3) {                                                      // cenas 1, 2 e 3 (frente do Akira, porta atrás)
       const abrir = fase(2.6, 3.6);
       if (!fundo || fundo.abr !== Math.round(abrir * 20)) { fundo = pintarDojo(Math.round(abrir * 20) / 20); fundo.abr = Math.round(abrir * 20); }
-      if (t > 2) { const z = fase(2, 4.2); cam = { z: lerp(1, 2.5, z), x: lerp(160, face[0], z), y: lerp(90, face[1] - 6, z) }; }
+      if (t <= 2) cam = { z: lerp(1, 1.1, t / 2), x: 160, y: 90 };
+      if (t > 2) { const z = fase(2, 4.2); cam = { z: lerp(1.1, 2.5, z), x: lerp(160, face[0], z), y: lerp(90, face[1] - 6, z) }; }
       if (t > 4.2) { const z = fase(4.2, 5.3); cam = { z: lerp(2.5, 3.3, z), x: face[0], y: face[1] - 8 }; }
       g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k, ch / 2 - cam.y * cam.z * k);
       g.drawImage(fundo, 0, 0);
@@ -12595,7 +13025,7 @@ const Abertura = (() => {
       if (t > 4.5 && t < 4.75) { g.fillStyle = 'rgba(255,255,255,' + (1 - (t - 4.5) / .25) * .7 + ')'; g.fillRect(150, 80, 20, 8); }      // brilho nos olhos
     } else if (t < 6.9) {                                               // cena 4: contraplano
       const sobe = fase(5.6, 6.4), vira = t > 6.45;
-      cam = { z: lerp(1.15, 1.35, fase(5.3, 6.9)), x: 160, y: 98 };
+      cam = { z: lerp(1.15, 1.35, fase(5.3, 6.9)), x: 160, y: lerp(116, 98, sobe) };
       g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k, ch / 2 - cam.y * cam.z * k);
       g.drawImage(contra, 0, 0);
       for (let i = 0; i < 3; i++) {                                     // sombras compridas dos inimigos (atrás da câmera)
@@ -12610,7 +13040,7 @@ const Abertura = (() => {
       const p1 = fase(6.9, 7.4), p2 = fase(7.4, 7.62), p3 = fase(7.62, 7.78);
       const pose = t < 7.4 ? misturar(GUARDA, GUARDA, p1) : t < 7.62 ? misturar(GUARDA, PREP, p2) : misturar(PREP, SOCO, p3);
       const zz = fase(7.66, 8.05), punho = [166, 106];
-      cam = { z: lerp(1.35, 5.2, zz * zz), x: lerp(160, punho[0], zz), y: lerp(98, punho[1], zz) };
+      cam = { z: lerp(1.35, 5.2, zz * zz), x: lerp(150 + 20 * p1, punho[0], zz), y: lerp(98, punho[1], zz) };
       if (t > 7.75 && t < 8.3) shake = (1 - (t - 7.75) / .55) * 6 * k;
       g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k + (Math.random() - .5) * shake, ch / 2 - cam.y * cam.z * k + (Math.random() - .5) * shake);
       g.drawImage(contra, 0, 0);
@@ -12643,6 +13073,7 @@ const HIST_CENAS = [
   { cena: 'rasgado', falas: [['GABRIEL', 'Não faça isso! Você não compreende o que está tentando controlar!'], ['YAGAMI', 'Se não querem me dar o poder, eu o conquistarei sozinho!'], ['MESTRE', 'Na disputa, o pergaminho sagrado foi rasgado. Gabriel ficou com uma metade. Yagami fugiu levando a outra.']] },
   { cena: 'corrupcao', falas: [['MESTRE', 'Consumido pelo orgulho, Yagami acreditou que poderia dominar a técnica usando apenas metade do conhecimento.'], ['MESTRE', 'Sem compreender os ensinamentos completos, ele abriu uma passagem para forças que não conseguia controlar.'], ['YAGAMI', 'Gabriel... você me tirou tudo. Eu voltarei. E, quando voltar, ninguém poderá me impedir.']] },
   { cena: 'dojo_sombrio', falas: [['YAGAMI', 'Entregue a outra metade. Com ela, poderei completar aquilo que comecei.'], ['GABRIEL', 'Olhe para si mesmo, Yagami. Isso não é poder. É corrupção.'], ['GABRIEL', 'Você ainda pode parar.'], ['YAGAMI', 'É tarde demais!']] },
+  { cena: 'duelo_final', falas: [['MESTRE', 'Yagami não veio sozinho. Invocou os sete guerreiros das sombras e os lançou contra Gabriel.'], ['MESTRE', 'Gabriel lutou contra cada um deles, mas eram demais para um homem só.'], ['MESTRE', 'Enquanto isso, Yagami atravessou o salão, e caminhou até mim.'], ['MESTRE', 'Gabriel gritou meu nome. As sombras o seguravam, e ele não conseguiu chegar a tempo.'], ['MESTRE', 'Então a lâmina de trevas de Yagami me atravessou.']] },
   { cena: 'queda', falas: [['GABRIEL', 'MESTRE!'], ['MESTRE', 'Gabriel... não permita que a escuridão destrua tudo aquilo que juramos proteger.'], ['NARRADOR', 'O mestre morre.'], ['YAGAMI', 'Agora não há mais ninguém para me impedir.'], ['GABRIEL', 'Você pode destruir meu corpo... mas não permitirá que destrua o equilíbrio deste reino.']] },
   { cena: 'selo', falas: [['MESTRE', 'Gabriel compreendeu que precisaria usar a técnica espiritual em sua forma mais poderosa.'], ['YAGAMI', 'VOCÊ NÃO PODE ME APRISIONAR!'], ['GABRIEL', 'Eu não farei isso por vingança. Farei para proteger aqueles que ainda podem viver em paz.'], ['NARRADOR', 'Yagami é selado. Gabriel desaparece no clarão da técnica.']] },
   { cena: 'templo', falas: [['NICOLAS', 'Isso foi incrível! Então Gabriel conseguiu salvar o reino inteiro?!'], ['HENRIQUE', 'Ele fez o que precisava ser feito para proteger as pessoas. Eu quero ter coragem para fazer o mesmo.'], ['PIETRA', 'Coragem não é suficiente, Henrique.'], ['LUNA', 'Eu só queria saber se depois de salvar o reino alguém finalmente teve tempo para dormir.'], ['AKIRA', 'Mestre... o que aconteceu com Gabriel depois do selamento?'], ['MESTRE', 'Essa é uma pergunta cuja resposta você precisará descobrir por si mesmo.'], ['AKIRA', 'Se uma força tão poderosa pode proteger o mundo ou destruí-lo... então precisamos aprender a controlá-la.'], ['MESTRE', 'Talvez um dia você compreenda o verdadeiro significado dessas palavras, Akira.']] },
@@ -12671,7 +13102,9 @@ function histMostrarCena() {
   leg.textContent = c && c.legenda || ''; leg.classList.toggle('ativa', !!(c && c.legenda));
   histMostrarFala();
 }
+let histBeatT0 = 0, histSfx = {};
 function histMostrarFala() {
+  histBeatT0 = histT; histSfx = {};
   const f = histFalaAtual(), nome = document.getElementById('histNome'), txt = document.getElementById('histTexto');
   if (!f) { nome.textContent = ''; txt.textContent = ''; return; }
   nome.textContent = f[0]; nome.style.color = HIST_CORES[f[0]] || '#ffd56a'; histChars = 0; txt.textContent = '';
@@ -12702,35 +13135,175 @@ function histLoop(agora) {
   const f = histFalaAtual();
   if (f && histChars < f[1].length) { histChars = Math.min(f[1].length, histChars + dt * 42); document.getElementById('histTexto').textContent = f[1].slice(0, Math.floor(histChars)); }
   document.getElementById('histSeta').classList.toggle('ativa', !!f && histChars >= f[1].length);
-  histDesenharCena(HIST_CENAS[histCena] ? HIST_CENAS[histCena].cena : 'templo', histT - histCenaT0);
+  histDesenharCena(HIST_CENAS[histCena] ? HIST_CENAS[histCena].cena : 'templo', histT - histCenaT0, histFala, histT - histBeatT0);
   histRaf = requestAnimationFrame(histLoop);
 }
-function histDesenharCena(nome, t) {
+/* ===== CUTSCENES DA HISTÓRIA — acabamento Hades II (só apresentação: textos, ordem e fluxo das cenas não mudam) ===== */
+const HCINE = {
+  templo:       { mul: '#e9dcef', soft: 'rgba(255,170,90,.35)', luz: [160, 60, 150, '#ffcf8a', .22], fx: '#ffd9a0', part: ['poeira', '#ffe2a8'], rim: '#ffcf7a', dolly: .05 },
+  treino:       { fl: 1, mul: '#efe2c8', soft: 'rgba(255,190,100,.4)', luz: [160, 70, 160, '#ffc873', .25], fx: '#ffd9a0', part: ['poeira', '#ffe2a8'], rim: '#ffd08a', imp: 5, dolly: .08 },
+  pergaminho:   { fl: 1, mul: '#d6e4f2', soft: 'rgba(80,200,255,.4)', luz: [160, 95, 110, '#6fd8ff', .35], part: ['espectro', '#8fe8ff'], rim: '#7fe0ff', dolly: .07 },
+  briga_templo: { fl: 1, mul: '#f2d0c8', soft: 'rgba(255,60,50,.4)', luz: [160, 90, 140, '#ff5a3a', .22], part: ['brasas', '#ff8a4a'], rim: '#ff7a5a', imp: 6, rot: 1, dolly: .08, vig: .9 },
+  noite:        { fl: 1, mul: '#cbd0f0', soft: 'rgba(80,90,255,.4)', luz: [272, 16, 150, '#cfd8ff', .35], fx: '#aab8ff', part: ['cinza', '#c8d0ff'], rim: '#9fb4ff', imp: 7, rot: 1.2, vig: .9 },
+  rasgado:      { fl: 1, mul: '#f0e0c0', soft: 'rgba(255,200,80,.4)', luz: [160, 95, 120, '#ffd36a', .4], part: ['brasas', '#ffd36a'], rim: '#ffd36a', dolly: .12 },
+  corrupcao:    { fl: 1, mul: '#d9c0e8', soft: 'rgba(170,60,255,.45)', luz: [160, 100, 130, '#b45aff', .35], part: ['espectro', '#c58bff'], rim: '#c06aff', rot: -1, vig: 1.1 },
+  duelo_final:  { fl: 1, mul: '#c8b0c8', soft: 'rgba(170,40,255,.4)', luz: [90, 100, 130, '#b45aff', .3], part: ['brasas', '#c58bff'], rim: '#c06aff', imp: 4, vig: 1.1 },
+  dojo_sombrio: { fl: 1, mul: '#c8b0c8', soft: 'rgba(200,20,50,.4)', luz: [186, 110, 110, '#ff2a3a', .25], part: ['cinza', '#ff6a7a'], rim: '#ff4a5a', vig: 1.1, dolly: .06 },
+  queda:        { fl: 1, mul: '#ecd8d0', soft: 'rgba(255,120,80,.35)', luz: [150, 110, 130, '#fff0d0', .3], part: ['brasas', '#ffb070'], rim: '#ff9a70', dolly: .1, vig: .9 },
+  selo:         { fl: 1, mul: '#cfe0f2', soft: 'rgba(80,200,255,.4)', luz: [160, 110, 150, '#7ad8ff', .4], fx: '#bfeaff', part: ['espectro', '#9fe8ff'], rim: '#8fe0ff', dolly: .08 },
+  funeral:      { mul: '#cbd2e0', soft: 'rgba(255,170,100,.3)', luz: [160, 80, 120, '#ffb36a', .2], part: ['cinza', '#d8d8e8'], rim: '#ffbf88', vig: .9 },
+  revelacao:    { mul: '#dce6f2', soft: 'rgba(90,210,255,.3)', luz: [240, 130, 90, '#7ad8ff', .3], part: ['poeira', '#bfeaff'], rim: '#8fe0ff' }
+};
+const hdRgba = (c, a) => { const n = parseInt(c.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; };
+const hdH = (i, k) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+let hdGrao = null;
+function hdMeandro(g, x0, x1, base, dir, u) {          // faixa de gregas (meandro) dourada
+  const Q = [[0, 0], [0, 1], [1.3, 1], [1.3, .3], [.45, .3], [.45, .65], [.9, .65]];
+  g.beginPath(); g.moveTo(x0, base); g.lineTo(x1, base);
+  for (let x = x0; x < x1; x += u * 1.7) Q.forEach((p, i) => { const X = x + p[0] * u, Y = base + dir * p[1] * u; i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+  g.stroke();
+}
+function histPosFx(g, cw, ch, nome, t, M, imp) {
+  const C = HCINE[nome] || HCINE.templo, s = Math.max(1, Math.min(cw, ch) / 360), N = M || { A: 1, B: 0, e: 0, f: 0 };
+  const S = (x, y) => [N.A * x - N.B * y + N.e, N.B * x + N.A * y + N.f], R = (a, b, c, d) => g.fillRect(a, b, c, d);
+  const K = C.fl ? Math.min(1, t / 1.2) : 1;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  // 1) gradação de cor (pintura): sombras frias/vinho, luzes quentes; flashback = memória dourada e dessaturada
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = .55 + .45 * K; g.fillStyle = C.mul; R(0, 0, cw, ch); g.globalAlpha = 1;
+  g.globalCompositeOperation = 'soft-light'; g.fillStyle = C.soft; R(0, 0, cw, ch);
+  if (C.fl) { g.globalCompositeOperation = 'color'; g.globalAlpha = .3 * K; g.fillStyle = '#c9a26a'; R(0, 0, cw, ch); g.globalAlpha = 1; }
+  g.globalCompositeOperation = 'lighter';
+  // 2) luz dramática da cena (tocha, lua, magia) com tremulação
+  if (C.luz) { const [x, y, r, c, a] = C.luz, [X, Y] = S(x, y), R0 = r * N.A * (1 + .04 * Math.sin(t * 7 + x)), gr = g.createRadialGradient(X, Y, 0, X, Y, R0); gr.addColorStop(0, hdRgba(c, a * (.85 + .15 * Math.sin(t * 11 + 1)))); gr.addColorStop(1, hdRgba(c, 0)); g.fillStyle = gr; R(X - R0, Y - R0, R0 * 2, R0 * 2); }
+  // 3) raios de luz volumétricos
+  if (C.fx) for (let i = 0; i < 4; i++) { const x0 = cw * (.1 + i * .25) + Math.sin(t * .3 + i * 2) * cw * .02, w = cw * .05, d = cw * .2, gr = g.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, hdRgba(C.fx, .17 * (.7 + .3 * Math.sin(t * .8 + i)))); gr.addColorStop(1, hdRgba(C.fx, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + w, 0); g.lineTo(x0 + w + d, ch); g.lineTo(x0 + d - w * .5, ch); g.closePath(); g.fill(); }
+  // 4) partículas (brasas, cinzas, espíritos, poeira)
+  const [tp, cor] = C.part || ['poeira', '#ffe2a8'];
+  for (let i = 0; i < 44; i++) {
+    const f = (((t * (.5 + hdH(i, 1)) * (tp === 'cinza' ? .05 : .07) + hdH(i, 2)) % 1) + 1) % 1, x = hdH(i, 3) * cw + Math.sin(t * .8 + i * 2.1) * 14 * s, y = tp === 'cinza' ? f * ch : ch * (1 - f);
+    const a = Math.sin(f * Math.PI) * (.35 + .6 * hdH(i, 4)) * (.7 + .3 * Math.sin(t * 6 + i)), r = (.7 + hdH(i, 5) * 1.8) * s;
+    g.fillStyle = hdRgba(cor, a * .18); g.beginPath(); g.arc(x, y, r * 3.2, 0, 6.2832); g.fill();
+    g.fillStyle = hdRgba(cor, a); g.fillRect(x - r / 2, y - r / 2, r, r);
+  }
+  // 5) impacto: riscos de velocidade, anel de choque e clarão
+  if (imp > .05) { const [X, Y] = S(160, 104); g.strokeStyle = hdRgba(C.rim, imp * .8); g.lineWidth = 1.5 * s; g.beginPath(); for (let i = 0; i < 18; i++) { const a = i * .349 + hdH(i, 7), r0 = (14 + 30 * (1 - imp)) * s, r1 = r0 + (30 + 50 * hdH(i, 8)) * s * imp; g.moveTo(X + Math.cos(a) * r0, Y + Math.sin(a) * r0 * .6); g.lineTo(X + Math.cos(a) * r1, Y + Math.sin(a) * r1 * .6); } g.stroke(); g.fillStyle = hdRgba(C.rim, imp * .1); R(0, 0, cw, ch); }
+  g.globalCompositeOperation = 'source-over';
+  // 6) vinheta pintada + grão de filme (mais forte nas lembranças)
+  const vg = g.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * .28, cw / 2, ch / 2, Math.hypot(cw, ch) * .58); vg.addColorStop(0, 'rgba(8,2,18,0)'); vg.addColorStop(1, 'rgba(8,2,18,' + Math.min(.95, .6 * (C.vig || .7)) + ')'); g.fillStyle = vg; R(0, 0, cw, ch);
+  if (!hdGrao) { const c = document.createElement('canvas'); c.width = c.height = 96; const q = c.getContext('2d'), d = q.createImageData(96, 96); for (let i = 0; i < d.data.length; i += 4) { d.data[i] = d.data[i + 1] = d.data[i + 2] = Math.random() * 255; d.data[i + 3] = 255; } q.putImageData(d, 0, 0); hdGrao = g.createPattern(c, 'repeat'); }
+  g.save(); g.translate(Math.random() * 96, Math.random() * 96); g.scale(s * 1.6, s * 1.6); g.globalCompositeOperation = 'overlay'; g.globalAlpha = C.fl ? .22 : .12; g.fillStyle = hdGrao; g.fillRect(-200, -200, cw / s + 400, ch / s + 400); g.restore();
+  // 7) entrada: lembrança = clarão dourado; presente = fade do preto
+  if (C.fl && t < 1.1) { g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,226,170,' + Math.pow(1 - t / 1.1, 2) * .7 + ')'; R(0, 0, cw, ch); g.globalCompositeOperation = 'source-over'; }
+  else if (!C.fl && t < .7) { g.fillStyle = 'rgba(0,0,0,' + (1 - t / .7) + ')'; R(0, 0, cw, ch); }
+  // 8) tarjas de cinema com friso grego dourado
+  const bh = ch * .105; g.fillStyle = '#05020a'; R(0, 0, cw, bh); R(0, ch - bh, cw, bh);
+  g.strokeStyle = 'rgba(217,178,90,.85)'; g.lineWidth = Math.max(1, s * .9); g.lineJoin = 'miter';
+  hdMeandro(g, 0, cw, bh - 3 * s, -1, bh * .5); hdMeandro(g, 0, cw, ch - bh + 3 * s, 1, bh * .5);
+  g.strokeStyle = 'rgba(217,178,90,.45)'; g.lineWidth = Math.max(1, s * .7); g.beginPath(); g.moveTo(0, bh + 3 * s); g.lineTo(cw, bh + 3 * s); g.moveTo(0, ch - bh - 3 * s); g.lineTo(cw, ch - bh - 3 * s); g.stroke();
+  g.restore();
+}
+let HIST_PAL = null;
+function histPals() {        // paletas dos personagens da lenda (criadas uma vez só)
+  if (HIST_PAL) return HIST_PAL;
+  const fb = q => Object.assign({}, q, { faixa: '#f2f2f2' }), fp = q => Object.assign({}, q, { faixa: '#111111' });
+  const yag = { gi: '#15131c', som: '#0d0b12', pele: '#f6dcc8', cab: '#f1eff4', cabelo: 'cacheado', testa: '#c8182a', faixa: '#0a0a0e', iris: '#d41e2a', olho: 'angry', boca: null };   // Yagami: cachos brancos, olhos vermelhos, bandana vermelha, quimono e faixa pretos
+  return HIST_PAL = {
+    mestre: fp(PAL_NPC.kenzo),      // o mestre dos irmãos (flashbacks)
+    gabrielVelho: Object.assign({}, fp(PAL_NPC.kenzo), { cabelo: 'enrolado', cab: '#1c1c24', barba: '#f6f6fa', pele: '#f1c9a5', vis: [] }),   // Gabriel mais velho: o contador da história, de barba branca
+    gabriel: Object.assign({}, fb(PAL_DAVI), { cabelo: 'enrolado', cab: '#0b0b0f', pele: '#f6dcc8', iris: '#2a1c12' }),                    // Gabriel jovem: cabelo curto enrolado
+    yagami: yag,
+    yagamiCorr: Object.assign({}, yag, { iris: '#ffe433', brilho: '#ffe433', cab: '#e6e0f0' }),                                           // corrompido: olhos amarelos brilhantes
+    henrique: fb(PAL_NPC.henrique), luna: fb(PN('#6a4aa8', '#f1c9a5', '#3a2a50', 'longo', '#222222')),
+    nicolas: fb(PAL_NPC.nicolas), pietra: fb(PAL_PIETRA), debora: fb(PAL_NPC.debora)
+  };
+}
+function histDesenharCena(nome, t, beat, tbeat) {
   const cv = document.getElementById('histCanvas');
   if (cv.width !== innerWidth || cv.height !== innerHeight) { cv.width = innerWidth; cv.height = innerHeight; }
   const cw = cv.width, ch = cv.height, g = cv.getContext('2d'), VW = 320, VH = 180, H = Abertura.H;
   g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch);
   const k = Math.max(cw / VW, ch / VH);
   let cam = { z: 1, x: 160, y: 95 }, shake = 0;
+  const CN = HCINE[nome] || HCINE.templo, imp = CN.imp ? Math.pow(Math.max(0, Math.sin(t * CN.imp)), 12) : 0; let MT = null;
   const bg = (key, fn) => histBgCache[key] || (histBgCache[key] = fn());   // cenários prontos (mesmos da abertura)
-  const pers = (x, y, esc, pal, pose, flip, costas) => {                   // personagem com o mesmo boneco e as mesmas poses do jogo
+  const pers = (x, y, esc, pal, pose, flip, costas) => {
+    g.save(); g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); g.ellipse(x, y, 17 * esc, 4 * esc, 0, 0, 6.2832); g.fill();   // sombra de contato
+    g.globalCompositeOperation = 'lighter'; { const hy = y - 38 * esc, hr = 50 * esc, gr = g.createRadialGradient(x, hy, 2, x, hy, hr); gr.addColorStop(0, hdRgba(CN.rim, .3)); gr.addColorStop(1, hdRgba(CN.rim, 0)); g.fillStyle = gr; g.fillRect(x - hr, hy - hr, hr * 2, hr * 2); }   // contraluz
+    g.restore();                   // personagem com o mesmo boneco e as mesmas poses do jogo
     g.save(); g.translate(x, y); g.scale(flip ? -esc : esc, esc);
     Akira.poseFrente(g, Object.assign({}, pose, { costas: costas ? 1 : 0 }), pal ? estiloPal(pal) : estiloAkira()); g.restore();
   };
-  const cen = (c) => g.setTransform(k * cam.z, 0, 0, k * cam.z, cw / 2 - cam.x * cam.z * k + (Math.random() - .5) * shake * k, ch / 2 - (cam.y + 22) * cam.z * k + (Math.random() - .5) * shake * k);   // +22: sobe a cena para a caixa de texto não cobrir os personagens
+  const cen = () => {   // câmera: dolly lento, mão tremida e tremor; o zoom e o centro respeitam as tarjas para NUNCA cortar as cabeças
+    const FY = cam.fy || 158, ht = cam.h != null ? cam.h : 52, barra = ch * .105, kz = k * cam.z * (1 + (CN.dolly || .05) * Math.min(1, t / 7) + (CN.rot ? .03 : 0));
+    const zmax = (ch - 2 * barra - 10) / (k * (FY - (ht - 8))), z = Math.min(kz / k, zmax), ang = (CN.rot || 0) * Math.sin(t * .4 + 1) * Math.PI / 180,
+      A = k * z * Math.cos(ang), B = k * z * Math.sin(ang), meia = ch / (2 * k * z) - barra / (k * z), cx = cam.x + Math.sin(t * .6) * 1.2,
+      cy = Math.max(FY - meia, Math.min(ht - 8 + meia, (ht - 8 + FY) / 2 + Math.cos(t * .5) * .8)), sh = (shake + imp * 3) * k;
+    const e = cw / 2 - (A * cx - B * cy) + (Math.random() - .5) * sh, f = ch / 2 - (B * cx + A * cy) + (Math.random() - .5) * sh;
+    g.setTransform(A, B, -B, A, e, f); MT = { A, B, e, f };
+  };
   const tint = (c) => { g.fillStyle = c; g.fillRect(-400, -400, VW + 800, VH + 800); };
   const sent = (o) => Object.assign({}, H.SENTADO, { eye: 'open' }, o || {});
   const faixaBranca = (q) => Object.assign({}, q, { faixa: '#f2f2f2' });    // alunos: faixa branca
   const faixaPreta = (q) => Object.assign({}, q, { faixa: '#111111' });     // mestre: faixa preta
-  const P = {
-    mestre: faixaPreta(PAL_NPC.kenzo),
-    gabriel: faixaBranca(PAL_DAVI),
-    yagami: faixaBranca(Object.assign({}, PAL_NPC.lucas, { gi: '#f6f6f2', som: '#d3d7de' })),
-    henrique: faixaBranca(PAL_NPC.henrique),
-    luna: faixaBranca(PN('#6a4aa8', '#f1c9a5', '#3a2a50', 'longo', '#222222')),
-    nicolas: faixaBranca(PAL_NPC.nicolas), pietra: faixaBranca(PAL_PIETRA), debora: faixaBranca(PAL_NPC.debora)
-  };
+  const P = histPals();
   const ataque = (p, a, b) => Math.sin(p) > .4 ? a : b;
+  const b = beat || 0, tb = tbeat || 0, Lp = (a, c, q) => a + (c - a) * Math.max(0, Math.min(1, q));
+  const flashW = (a, c) => { if (a > 0) { g.fillStyle = hdRgba(c || '#ffffff', Math.min(1, a)); g.fillRect(-400, -400, VW + 800, VH + 800); } };
+  const faisca = (x, y) => { g.fillStyle = 'rgba(255,240,180,.8)'; g.fillRect(x - 10, y - 4, 20, 8); };
+  const raio = (x0, y0, x1, y1, c) => { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = c; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, y0); for (let i = 1; i < 7; i++) g.lineTo(x0 + (x1 - x0) * i / 7 + (Math.random() - .5) * 8, y0 + (y1 - y0) * i / 7 + (Math.random() - .5) * 8); g.lineTo(x1, y1); g.stroke(); g.restore(); };
+  const duelo = (xa, xb, p, am, pa, pb) => { const a = am || 4; pers(xa + Math.sin(p) * a, 150, .62, pa || P.gabriel, ataque(p, H.SOCO, H.GUARDA), false); pers(xb - Math.sin(p) * a, 150, .62, pb || P.yagami, ataque(p + Math.PI, H.SOCO, H.GUARDA), true); if (Math.sin(p) > .9) faisca((xa + xb) / 2, 100); };
+  const pergam = (x, y, pulso, metade) => { const w = metade ? 7 : 14; g.save(); g.fillStyle = '#f4e6b0'; g.fillRect(x - w / 2, y - 7, w, 14); g.fillStyle = '#b89a50'; g.fillRect(x - w / 2 - 1, y - 8, w + 2, 2); g.fillRect(x - w / 2 - 1, y + 6, w + 2, 2); g.globalCompositeOperation = 'lighter'; brilhoCtx(g, x, y, 16, '#7ad8ff', .3 * (pulso || 1)); g.restore(); };
+  const GO = { jab: [.14, .08, .16], direto: [.22, .1, .2], gancho: [.26, .12, .22], chute: [.3, .14, .26], giro: [.42, .18, .3] };   // antecipação, execução, recuperação (s)
+  const troca = (R, tt, xa, xb) => {   // coreografia determinística: [atacante 0|1, golpe, reação bloq|esq|acerta, alvo, câmera lenta]
+    const dur = R.map(r => (GO[r[1]][0] + GO[r[1]][1] + GO[r[1]][2] + .28) * (r[4] ? 2 : 1)), tot = dur.reduce((s, d) => s + d, 0), lp = Math.floor(tt / tot), T = tt - lp * tot;
+    let i = 0, a0 = 0; while (i < R.length - 1 && T >= a0 + dur[i]) { a0 += dur[i]; i++; }
+    const r = R[i], G = GO[r[1]], sl = r[4] ? 2 : 1, an = G[0] * sl, ex = G[1] * sl, rc = G[2] * sl, u = T - a0, A = r[0], Dd = 1 - A, di = A ? -1 : 1, re = r[2];
+    const ph = u < an ? 0 : u < an + ex ? 1 : u < an + ex + rc ? 2 : 3, pe = Math.min(1, Math.max(0, (u - an) / ex)), ez = q => q * q * (3 - 2 * q), vol = Math.min(1, Math.max(0, (u - an - ex) / rc));
+    const x = [xa, xb], pose = [H.GUARDA, H.GUARDA], perna = r[1] === 'chute' || r[1] === 'giro';
+    pose[A] = ph === 0 ? Object.assign({}, H.PREP, { lean: -6 * (u / an) }) : ph === 1 ? Object.assign({}, H.SOCO, perna ? { lean: -14, lift: 7 } : r[1] === 'gancho' ? { lean: 10 } : {}) : ph === 2 && u < an + ex + .1 ? H.SOCO : H.GUARDA;   // segura o golpe um instante (hitstop)
+    x[A] += di * (ph === 0 ? -4 * (u / an) : ph === 1 ? -4 + 24 * ez(pe) : ph === 2 ? 20 * (1 - vol) : 0);
+    const rea = ph === 0 ? 0 : ph === 1 ? ez(pe) : ph === 2 ? 1 - vol : 0;
+    if (re === 'acerta') { x[Dd] += di * 16 * rea; pose[Dd] = Object.assign({}, H.EM_PE, { lean: -22 * rea, belt: 4 }); }
+    else if (re === 'esq') { x[Dd] += di * 9 * rea; pose[Dd] = Object.assign({}, H.GUARDA, { lean: -26 * rea, lift: -5 * rea }); }
+    else { x[Dd] += di * 4 * rea; pose[Dd] = H.GUARDA; }
+    const ti = u - (an + ex * .6), imp = re === 'esq' ? 0 : ti > 0 && ti < .3 ? 1 - ti / .3 : 0;
+    return { x, pose, A, Dd, di, ph, imp, re, tgt: r[3] || 0, mid: (x[0] + x[1]) / 2, sh: imp * (re === 'acerta' ? 3 : 1), k: lp + ':' + i, golpe: ph >= 1, bate: imp > 0 };
+  };
+  const luta = (R, xa, xb, z, pb, pre, pa, hh) => {   // um intercâmbio completo: câmera segue o atacante, zoom e tremor no impacto, poeira, linhas de velocidade e som
+    const S = troca(R, tb, xa, xb); shake = S.sh;
+    cam = { z: z + .3 * S.imp, x: Lp(S.mid, S.x[S.A], S.ph < 2 ? .35 : 0), y: 112, h: hh || 52 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+    try { if (S.golpe && !histSfx['g' + S.k]) { histSfx['g' + S.k] = 1; Som.efeito('golpe'); } if (S.bate && S.re !== 'esq' && !histSfx['i' + S.k]) { histSfx['i' + S.k] = 1; Som.efeito('impacto'); } } catch (er) {}
+    if (pre) pre(S);
+    if (S.ph === 1) { const ax = S.x[S.A]; g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 1; for (let n = 0; n < 4; n++) { g.beginPath(); g.moveTo(ax - S.di * (34 + n * 3), 98 + n * 11); g.lineTo(ax - S.di * 10, 98 + n * 11); g.stroke(); } g.fillStyle = 'rgba(220,200,170,.35)'; g.beginPath(); g.ellipse(ax - S.di * 8, 151, 9, 2.5, 0, 0, 7); g.fill(); g.restore(); }
+    pers(S.x[0], 150, .62, pa || P.gabriel, S.pose[0], false);
+    if (pb) pb(S); else pers(S.x[1], 150, .62, P.yagami, S.pose[1], true);
+    if (S.imp > 0 && S.re !== 'esq') { const mx = S.x[S.Dd] - S.di * 6; g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,240,180,' + S.imp * (S.re === 'acerta' ? .9 : .5) + ')'; g.fillRect(mx - 7 * S.imp, 94, 14 * S.imp, 7); g.restore(); if (S.re === 'acerta') flashW(.18 * S.imp, '#fff0c0'); }
+    return S;
+  };
+  const SUBS = ['samurai_oni', 'mestre_cachoeira', 'general_ancestral', 'ninja_ancestral', 'ronin_ancestral', 'mestra_cerejeiras', 'colosso_sumo'];
+  const SLOT = [[119, 144, .36], [157, 144, .36], [195, 144, .36], [100, 156, .42], [138, 156, .42], [176, 156, .42], [214, 156, .42]];
+  const sub = (i, x, y, e0, pose, a) => {          // subchefe do jogo (mesma paleta, chifres, chapéu, armadura...) olhando para Gabriel
+    const id = SUBS[i], d = CHEFES[id], e = d.pal.esc || 1;
+    g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'lighter'; brilhoCtx(g, x, y - 50 * e0 * e, 50 * e0 * e, d.aura, .25 * a); g.globalCompositeOperation = 'source-over';
+    pers(x, y, e0 * e, d.pal, pose, true);
+    try { g.save(); g.translate(x, y); g.scale(e0 / Akira.AK.K, e0 / Akira.AK.K); acessorioChefe({ chefe: id, pal: { esc: e }, face: -1, _an: 'idle', _fr: 0, vivo: true, est: '' }, 0, 0, g); g.restore(); } catch (er) { g.restore(); }
+    g.restore();
+  };
+  const invocar = (ate, tt, anim, p, ox, atk, pul) => {     // anim: sobem um a um do chão com círculo roxo; atk: atacam
+    for (let i = 0; i < ate; i++) {
+      if (i === pul) continue;
+      const [x, y, e0] = SLOT[i], a = anim ? Math.max(0, Math.min(1, (tt - i * .45) / .4)) : 1; if (a <= 0) continue;
+      if (anim && a < 1) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(190,90,255,' + (1 - a) + ')'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(x + (ox || 0), y, 22 * a, 7 * a, 0, 0, 7); g.stroke(); g.restore(); }
+      sub(i, x + (ox || 0), y + (1 - a) * 8, e0, atk ? ataque(p + i * 1.3, H.SOCO, H.GUARDA) : H.GUARDA, a);
+    }
+  };
+  const yagCorr = (x, y, e, flip, pose) => {   // Yagami corrompido: aura sombria roxa e olhos amarelos pulsando
+    window.__hdBrilho = 1 + .25 * Math.sin(t * 9);
+    g.save(); g.globalCompositeOperation = 'source-over'; { const hy = y - 40 * e, hr = 70 * e, gr = g.createRadialGradient(x, hy, 4, x, hy, hr); gr.addColorStop(0, 'rgba(60,0,90,.65)'); gr.addColorStop(1, 'rgba(20,0,40,0)'); g.fillStyle = gr; g.fillRect(x - hr, hy - hr, hr * 2, hr * 2); }
+    g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 7; i++) { const a = t * 1.4 + i * .9; g.fillStyle = 'rgba(160,70,255,' + (.22 + .12 * Math.sin(t * 5 + i)) + ')'; g.beginPath(); g.arc(x + Math.cos(a) * 20 * e, y - 12 * e - ((t * 30 + i * 17) % 80) * e, (16 + 6 * Math.sin(t * 3 + i)) * e * .35, 0, 7); g.fill(); }
+    g.restore();
+    pers(x, y, e, P.yagamiCorr, pose || Object.assign({}, H.EM_PE, { belt: 2 + Math.sin(t * 3) * 2 }), flip);
+  };
   const sc = {
     templo: () => {
       cam = { z: 1 + .02 * Math.min(t, 4), x: 160, y: 96 };
@@ -12739,80 +13312,118 @@ function histDesenharCena(nome, t) {
       [[52, 'pietra', .46], [100, 'henrique', .46], [218, null, .46], [262, 'nicolas', .46]].forEach(([x, q, e], i) => {
         pers(x, 150, e, P[q], sent({ lean: q === 'nicolas' ? Math.sin(t * 3) * 2 : 0, belt: 2 + Math.sin(t * 2 + i) * 1.5 }));
       });
-      pers(160, 150, .62, P.mestre, sent({ rh: [3 + ondas * 2, 9], lh: [3 - ondas, 8] }));
+      pers(160, 150, .62, P.gabrielVelho, sent({ rh: [3 + ondas * 2, 9], lh: [3 - ondas, 8] }));
       pers(296, 150, .46, P.luna, sent({ eye: 'closed' }));
       g.setTransform(1, 0, 0, 1, 0, 0);
     },
     treino: () => {
-      cam = { z: 1.35, x: 160, y: 120 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
-      const p = t * 5, gp = ataque(p, H.SOCO, H.GUARDA), yp = ataque(p + Math.PI, H.SOCO, H.GUARDA);
-      pers(116 + Math.sin(p) * 4, 150, .62, P.gabriel, gp, false);
-      pers(206 - Math.sin(p) * 4, 150, .62, P.yagami, yp, true);
-      if (Math.sin(p) > .92) { g.fillStyle = 'rgba(255,240,180,.7)'; g.fillRect(150, 96, 22, 8); }
+      cam = { z: [1.15, 1.5, 1.45, 1.5][b] || 1.3, x: [160, 160, 150, 215][b] || 160, y: 112 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      if (b < 2) duelo(116, 206, t * (b ? 8 : 5), b ? 6 : 3);                       // 0-1: treino que nunca decide um vencedor
+      else if (b === 2) { pers(122, 150, .62, P.gabriel, H.EM_PE, false); pers(198, 150, .62, P.yagami, sent({ eye: 'closed' }), true); }   // Gabriel de pé, Yagami caído no chão
+      else { pers(108, 150, .5, P.gabriel, H.EM_PE, false); pers(232, 150, .62, P.yagami, Object.assign({}, H.PREP, { belt: 3 + Math.sin(tb * 9) * 3 }), true); }   // Yagami cerra os punhos
     },
     pergaminho: () => {
-      cam = { z: 1.2, x: 160, y: 100 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
-      const pulso = .6 + .4 * Math.sin(t * 3);
+      cam = { z: 1.25, x: b > 2 ? Lp(160, 236, tb / 2) : 160, y: 104 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      const pulso = .6 + .4 * Math.sin(t * 3), q = b === 1 ? Math.min(1, tb / 2.5) : b > 1 ? 1 : 0;
       g.fillStyle = 'rgba(120,200,255,' + (.25 * pulso) + ')'; g.fillRect(120, 60, 80, 70);
-      pers(128, 150, .62, P.gabriel, H.EM_PE, false);
-      pers(200, 150, .62, P.mestre, sent({ eye: 'open' }), false);
-      H.silhueta(g, 272, 150, .62, Math.floor(t * 6), .45, true);
+      pers(128, 150, .62, P.gabriel, H.EM_PE, false); pers(205, 150, .62, P.mestre, sent(), false);
+      pergam(Lp(192, 136, q), 110 - Math.sin(q * 3.14) * 12, pulso);                  // o mestre entrega o pergaminho a Gabriel
+      if (b >= 3) { const a = Math.min(1, tb / 1.2); g.save(); g.globalAlpha = a * .85; pers(284 - a * 10, 150, .62, P.yagami, H.EM_PE, true); g.globalCompositeOperation = 'lighter'; brilhoCtx(g, 276 - a * 10, 112, 7, '#ff2a3a', a); g.restore(); }   // Yagami espia da porta
     },
     briga_templo: () => {
-      cam = { z: 1.25, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
-      pers(44, 150, .6, P.mestre, sent({ eye: 'open' }), false);
-      const p = t * 6, gp = ataque(p, H.SOCO, H.GUARDA), yp = ataque(p + Math.PI, H.SOCO, H.GUARDA);
-      pers(120 + Math.sin(p) * 4, 150, .62, P.gabriel, gp, false);
-      pers(204 - Math.sin(p) * 4, 150, .62, P.yagami, yp, true);
+      cam = { z: 1.2, x: [200, 190, 130, 90, 90][b], y: 108 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      pers(30, 150, .6, P.mestre, b < 2 ? sent() : H.EM_PE, false);
+      const yx = b === 0 ? Lp(300, 215, tb / 2.5) : b === 1 ? 215 : b === 2 ? Lp(215, 104, tb / .6) : 104;
+      pers(yx, 150, .62, P.yagami, b < 2 ? H.GUARDA : b < 4 ? H.PREP : ataque(t * 6, H.SOCO, H.GUARDA), true);
+      if (b >= 3) { pers(Lp(-10, 68, tb / .45), 150, .62, P.gabriel, H.GUARDA, false); if (b === 4 && Math.sin(t * 6) > .6) { g.strokeStyle = 'rgba(255,230,160,.8)'; g.lineWidth = 1.2; g.beginPath(); g.arc(86, 104, 10 + 6 * Math.sin(t * 6), 0, 7); g.stroke(); } }   // Gabriel entra na frente e defende o mestre
     },
     noite: () => {
-      cam = { z: 1.3, x: 160, y: 118 }; shake = 0; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      shake = b === 2 ? 3 : 0; cam = { z: 1.3, x: 160, y: 112 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
       const p = t * 7;
-      if (Math.sin(p) > .95) shake = 3;
-      pers(118 + Math.sin(p) * 6, 150, .62, P.gabriel, ataque(p, H.PREP, H.GUARDA), false);
-      pers(202 - Math.sin(p) * 6, 150, .62, P.yagami, ataque(p + 1, H.PREP, H.SOCO), true);
-      tint('rgba(10,14,50,.45)');
-      g.fillStyle = '#fff6d8'; g.fillRect(268, 14, 8, 8);
+      if (b < 2) duelo(118, 202, p, 6, null, null);
+      else if (b === 2) { pers(112, 150, .62, P.gabriel, H.GUARDA, false); pers(196 + Math.sin(p * 2) * 3, 150, .62, P.yagami, Object.assign({}, H.PREP, { belt: 4 }), true); }                // Yagami grita de fúria
+      else if (b === 3) { pers(138 + Math.sin(p * .6) * 22, 150, .62, P.gabriel, H.GUARDA, false); pers(190, 150, .62, P.yagami, ataque(p * 1.4, H.SOCO, H.PREP), true); }                // Gabriel desvia com calma
+      else { const q = Math.max(0, (tb - .45) / .6); pers(150, 150, .62, P.gabriel, tb < .6 ? H.SOCO : H.EM_PE, false); pers(Lp(200, 272, q), 150, .62, P.yagami, Object.assign({}, H.EM_PE, { lean: -30 * Math.min(1, q * 3) }), true); if (tb > .4 && tb < .7) faisca(176, 100); }   // contragolpe
+      tint('rgba(10,14,50,.45)'); g.fillStyle = '#fff6d8'; g.fillRect(268, 14, 8, 8);
     },
     rasgado: () => {
-      cam = { z: 1.5, x: 160, y: 98 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
-      const sep = Math.min(16, t * 10);
-      g.fillStyle = '#f4e6b0'; g.fillRect(160 - sep - 14, 80, 14, 30); g.fillRect(160 + sep, 80, 14, 30);
-      g.fillStyle = '#b89a50'; g.fillRect(160 - sep - 14, 80, 14, 2); g.fillRect(160 + sep, 80, 14, 2);
-      pers(122, 150, .62, P.gabriel, H.PREP, false);
-      pers(198, 150, .62, P.yagami, H.PREP, true);
+      cam = { z: 1.5, x: 160, y: 100 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      const tj = Math.sin(t * 40) * (b === 0 ? 1.5 : 0);
+      if (b === 0) { pers(122 + tj, 150, .62, P.gabriel, H.PREP, false); pers(198 - tj, 150, .62, P.yagami, H.PREP, true); pergam(160 + tj, 112, 1); }   // cabo de guerra pelo pergaminho
+      else if (b === 1) { const s = Math.min(18, tb * 14); pers(122, 150, .62, P.gabriel, H.PREP, false); pers(198, 150, .62, P.yagami, H.PREP, true); pergam(160 - s, 112, 1, .5); pergam(160 + s, 112, 1, .5); flashW(.8 - tb * 1.6, '#fff0b0'); }   // o pergaminho rasga
+      else { pers(122, 150, .62, P.gabriel, sent({ belt: 3 }), false); pergam(130, 128, 1, .5); pers(Lp(198, 350, tb / 2.6), 150, .62, P.yagami, ataque(t * 9, H.PREP, H.GUARDA), false); }   // Yagami foge com a outra metade
     },
     corrupcao: () => {
-      const kk = Math.min(1, t / 4);
+      const kk = b === 0 ? 0 : b === 1 ? Math.min(1, tb / 3) : 1;
       cam = { z: 1.3, x: 160, y: 100 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
-      tint('rgba(60,0,80,' + (.5 * kk) + ')');
-      if (kk < .5) pers(160, 150, .62, P.yagami, H.EM_PE, false);
-      else H.silhueta(g, 160, 150, .62, Math.floor(t * 6), kk, false);
+      tint('rgba(60,0,80,' + (.15 + .45 * kk) + ')');
+      if (b === 0) { pers(160, 150, .62, P.yagami, sent({ eye: 'open' }), false); pergam(160, 124, 1, .5); }
+      else if (b === 1) { for (let i = 0; i < 5; i++) raio(160 + (i - 2) * 50, 10, 160, 112, 'rgba(190,90,255,.8)'); pers(160, 150, .62, kk < .6 ? P.yagami : P.yagamiCorr, H.EM_PE, false); }   // trevas descem sobre ele
+      else { yagCorr(160, 150 - Math.min(10, tb * 8), .62, false); flashW(.6 - tb, '#c06aff'); }
       for (let i = 0; i < 10; i++) { g.fillStyle = 'rgba(190,90,255,.8)'; g.fillRect(120 + (i * 17) % 80, 150 - ((t * 40 + i * 13) % 110), 2, 2); }
     },
     dojo_sombrio: () => {
-      cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      cam = { z: 1.1, x: 160, y: 108, h: 40 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
       tint('rgba(10,0,20,.55)');
-      [[46, .5], [78, .5], [110, .5]].forEach(([x, e], i) => H.silhueta(g, x, 150, e, Math.floor(t * 6) + i, 1, false));
-      H.silhueta(g, 186, 150, .62, Math.floor(t * 6), 1, false);
-      pers(262, 150, .62, P.gabriel, H.EM_PE, true);
+      pers(52, 150, .62, P.gabriel, b > 1 ? H.GUARDA : H.EM_PE, false);
+      yagCorr(Lp(330, 262, t / 2), 150, .6, true, b === 0 ? Object.assign({}, H.EM_PE, { rh: [12, -30] }) : null);
+      // Yagami invoca os 7 subchefes (no lugar das antigas sombras)
+      invocar(7, tb, b === 0, t * 5, 0, b === 3 ? 1 : 0);
+    },
+    duelo_final: () => {
+      if (b === 1) {   // Gabriel contra os sete, um de cada vez, com os demais cercando
+        const R1 = [[1, 'jab', 'bloq', 0], [0, 'direto', 'acerta', 0], [1, 'chute', 'esq', 1], [0, 'chute', 'acerta', 1], [1, 'gancho', 'esq', 2], [1, 'direto', 'bloq', 3], [0, 'giro', 'acerta', 2, 1], [1, 'gancho', 'esq', 4], [0, 'gancho', 'acerta', 4], [1, 'chute', 'bloq', 5], [1, 'direto', 'esq', 6], [0, 'direto', 'acerta', 6]];
+        luta(R1, 90, 142, 1.1, S => sub(S.tgt, S.x[1], 150, .5, S.pose[1], 1), S => { pers(26, 150, .62, P.mestre, H.EM_PE, false); invocar(7, 9, false, t * 6, 70, 0, S.tgt); yagCorr(300, 150, .6, true); }, 0, 36);
+        tint('rgba(18,0,26,.5)'); return;
+      }
+      cam = { z: 1.1, x: [160, 150, Lp(220, 110, tb / 3.5), 160, 160][b], y: 108, h: 40 }; shake = b === 4 && tb > .5 ? 4 : 0; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      tint('rgba(18,0,26,.5)');
+      pers(26, 150, .62, P.mestre, H.EM_PE, false);                                   // o mestre espera ao fundo
+      if (b <= 1) { pers(90 + (b ? Math.sin(t * 7) * 6 : 0), 150, .62, P.gabriel, b ? ataque(t * 7, H.SOCO, H.GUARDA) : H.GUARDA, false); invocar(7, 9, false, t * 6, 15, b); yagCorr(270, 150, .6, true); }   // cercam Gabriel / ele luta contra todos
+      else if (b === 2) { pers(300, 150, .45, P.gabriel, H.GUARDA, true); yagCorr(Lp(250, 96, tb / 3.5), 150, .6, true); }   // Yagami atravessa o salão rumo ao mestre
+      else { invocar(3, 9, false, 0, 96, 0); pers(253, 150, .5, P.gabriel, Object.assign({}, H.PREP, { rh: [12, -10] }), true); yagCorr(78, 150, .62, true, b === 3 ? Object.assign({}, H.PREP, { rh: [12, -30] }) : H.SOCO);
+        if (b === 3) raio(66, 80, 90, 112, 'rgba(190,90,255,.8)');
+        if (b === 4) { if (tb > .5) { g.strokeStyle = '#d9a8ff'; g.lineWidth = 3; g.beginPath(); g.moveTo(40, 110); g.lineTo(96, 100); g.stroke(); } flashW(Math.max(0, .9 - Math.abs(tb - .6) * 3), '#e8c8ff'); } }   // a lâmina de trevas atravessa o mestre
     },
     queda: () => {
-      cam = { z: 1.4, x: 160, y: 130 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
-      g.fillStyle = '#e6e6e6'; g.fillRect(104, 150, 90, 8); g.beginPath(); g.arc(98, 153, 5, 0, 7); g.fill();
-      pers(150, 150, .6, P.gabriel, sent({ belt: 4 }), false);
-      H.silhueta(g, 236, 150, .6, Math.floor(t * 6), 1, true);
-      if (t > 2.2) { g.fillStyle = 'rgba(255,255,255,' + Math.min(1, (t - 2.2) / .8) + ')'; g.fillRect(-400, -400, VW + 800, VH + 800); }
+      cam = { z: 1.4, x: 160, y: 130, h: 62 }; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+      const morto = b >= 2, q = Math.min(1, tb / 1.2);
+      g.fillStyle = '#e6e6e6'; g.fillRect(104, 150, 90, 8);
+      pers(Lp(90, 120, b === 0 ? q : 1), 150, .56, P.mestre, b === 0 ? Object.assign({}, H.EM_PE, { lean: -70 * q }) : sent({ eye: morto ? 'closed' : 'open' }), false);   // o mestre cai e é amparado
+      pers(b === 0 ? Lp(290, 150, tb / 1.2) : 150, 150, .6, P.gabriel, b === 0 ? ataque(t * 10, H.PREP, H.GUARDA) : sent({ belt: 4 }), b !== 0);
+      if (b >= 2) { g.save(); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 12; i++) { g.fillStyle = 'rgba(255,240,200,' + (.7 - ((t * 25 + i * 9) % 70) / 100) + ')'; g.fillRect(112 + (i * 7) % 20, 130 - ((t * 25 + i * 9) % 70), 2, 2); } g.restore(); }   // a luz do mestre sobe
+      if (b >= 3) yagCorr(Lp(330, 246, b === 3 ? tb / 2 : 1), 150, .6, true);
+      if (b === 4) { const x = 150 + Math.min(1, tb / 1.4) * 36; g.fillStyle = 'rgba(255,255,255,' + Math.min(1, Math.max(0, (tb - 1.6) / .8)) + ')'; if (tb > 1.4) faisca(x, 100); g.fillRect(-400, -400, VW + 800, VH + 800); }
     },
     selo: () => {
       cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
       tint('rgba(20,40,90,.35)');
-      const r = 26 + Math.sin(t * 2) * 4;
-      g.strokeStyle = '#7ad8ff'; g.lineWidth = 1;
-      g.beginPath(); g.arc(160, 150, r + 20, 0, 7); g.stroke(); g.beginPath(); g.arc(160, 150, r + 8, 0, 7); g.stroke();
+      const r = 26 + Math.sin(t * 2) * 4, A = b === 0 ? Math.min(1, tb / 1.5) : 1;
+      g.strokeStyle = '#7ad8ff'; g.lineWidth = 1; g.globalAlpha = A;
+      g.beginPath(); g.arc(160, 150, r + 20, 0, 7); g.stroke(); g.beginPath(); g.arc(160, 150, r + 8, 0, 7); g.stroke(); g.globalAlpha = 1;
       for (let i = 0; i < 6; i++) { const a = t * 1.5 + i; g.fillStyle = '#dff7ff'; g.fillRect(160 + Math.cos(a) * 40, 140 + Math.sin(a) * 14, 2, 2); }
-      pers(120, 150, .62, P.gabriel, H.EM_PE, false);
-      H.silhueta(g, Math.max(160, 200 - t * 12), 150, .62, Math.floor(t * 6), 1, true);
+      const gal = b === 3 ? 1 - Math.min(1, tb / 2.2) : 1;
+      g.save(); g.globalAlpha = gal; pers(120, 150, .62, P.gabriel, Object.assign({}, H.EM_PE, { rh: [10, -26], lh: [10, -26] }), false); g.restore();
+      if (b >= 1) { const yx = b === 1 ? Lp(260, 200, tb / 2) : 200, ya = b === 3 ? 1 - Math.min(1, tb / 1.6) : 1; g.save(); g.globalAlpha = ya; yagCorr(yx, 150, .62, true); g.restore(); if (b >= 2) for (let i = 0; i < 4; i++) raio(120, 120, yx, 120 + i * 8, 'rgba(120,216,255,.8)'); }   // correntes espirituais
+      if (b === 3) flashW(Math.min(1, tb / 2.2) * .9, '#dff7ff');
+    },
+    treino: () => {
+      const R = [[[0, 'jab', 'esq'], [1, 'direto', 'bloq']], [[0, 'jab', 'bloq'], [0, 'direto', 'bloq'], [0, 'gancho', 'esq'], [1, 'gancho', 'esq']], [[0, 'chute', 'esq'], [1, 'chute', 'esq'], [1, 'giro', 'esq'], [0, 'direto', 'bloq'], [1, 'gancho', 'bloq']]][b];
+      if (R) luta(R, 116, 206, [1.15, 1.35, 1.3][b]);
+      else { cam = { z: 1.5, x: 215, y: 112 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0); pers(108, 150, .5, P.gabriel, H.EM_PE, false); pers(232, 150, .62, P.yagami, Object.assign({}, H.PREP, { belt: 3 + Math.sin(tb * 9) * 3 }), true); }
+    },
+    briga_templo: () => {
+      const mestre = () => pers(30, 150, .6, P.mestre, H.EM_PE, false);
+      if (b >= 3) { luta(b === 3 ? [[1, 'direto', 'bloq'], [1, 'jab', 'esq'], [1, 'jab', 'bloq'], [0, 'chute', 'bloq'], [1, 'gancho', 'esq']] : [[0, 'chute', 'bloq'], [1, 'direto', 'bloq'], [0, 'jab', 'esq'], [1, 'gancho', 'esq']], 68, 104, 1.25, 0, mestre); return; }
+      cam = { z: 1.2, x: b ? 160 : 200, y: 108 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0);
+      pers(30, 150, .6, P.mestre, b < 1 ? sent() : H.EM_PE, false);
+      pers(b === 0 ? Lp(300, 215, tb / 2.5) : b === 1 ? 215 : Lp(215, 104, tb / .6), 150, .62, P.yagami, b < 2 ? H.GUARDA : H.PREP, true);
+    },
+    noite: () => {
+      const RR = [[[1, 'direto', 'esq'], [1, 'gancho', 'esq']], [[1, 'jab', 'bloq'], [1, 'direto', 'esq'], [1, 'gancho', 'bloq'], [1, 'chute', 'bloq'], [1, 'jab', 'esq']], null, [[1, 'gancho', 'esq'], [1, 'direto', 'esq'], [1, 'gancho', 'esq']], [[1, 'direto', 'esq'], [0, 'direto', 'acerta', 0, 1], [0, 'chute', 'acerta', 0, 1]]][b];
+      if (RR) luta(RR, 118, 190, 1.3);
+      else { shake = 3; cam = { z: 1.3, x: 160, y: 112 }; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0); pers(112, 150, .62, P.gabriel, H.GUARDA, false); pers(196 + Math.sin(t * 14) * 3, 150, .62, P.yagami, Object.assign({}, H.PREP, { belt: 4 }), true); }
+      tint('rgba(10,14,50,.45)'); g.fillStyle = '#fff6d8'; g.fillRect(268, 14, 8, 8);
     },
     funeral: () => {
       cam = { z: 1.1, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
@@ -12825,18 +13436,70 @@ function histDesenharCena(nome, t) {
     revelacao: () => {
       cam = { z: 1.2, x: 160, y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
       g.fillStyle = '#000'; g.fillRect(158, 0, 4, VH);
-      pers(80, 150, .62, P.mestre, sent({ eye: 'open' }), false);
+      pers(80, 150, .62, P.gabrielVelho, sent({ eye: 'open' }), false);
       pers(240, 150, .62, P.gabriel, H.EM_PE, false);
       g.fillStyle = 'rgba(120,200,255,.3)'; g.fillRect(220, 110, 40, 60);
     }
+  };
+  const _q = sc.queda, _df = sc.duelo_final;
+  sc.rasgado = () => {      // cabo de guerra, puxão, rasgo e fuga, com câmera alternando rostos, mãos e pergaminho
+    cam = b === 0 ? [{ z: 1.5, x: 160, h: 52 }, { z: 2.1, x: 124, h: 54, fy: 112 }, { z: 2.4, x: 160, h: 70, fy: 122 }, { z: 2.1, x: 196, h: 54, fy: 112 }][Math.floor(tb / .9) % 4] : b === 1 ? { z: 1.5 + .8 * Math.min(1, tb), x: 160, h: 70, fy: 124 } : { z: 1.3, x: Lp(Lp(160, 260, tb / 1.4), 125, (tb - 1.4) / 1.2), h: 52 };
+    shake = b === 0 ? 1 : b === 1 && tb < .3 ? 5 : 0; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+    const tj = Math.sin(t * 9) * 3, pux = b === 0 && tb > 3.2 ? Math.min(1, (tb - 3.2) / .4) : 0;
+    if (b === 0) { pers(122 - tj - 16 * pux, 150, .62, P.gabriel, Object.assign({}, H.PREP, { lean: -10 + 8 * pux }), false); pers(198 + tj - 22 * pux, 150, .62, P.yagami, Object.assign({}, H.PREP, { lean: -10 }), true); pergam(160 + tj - 18 * pux, 112, 1); }
+    else if (b === 1) { const s = Math.min(18, tb * 14); pers(122, 150, .62, P.gabriel, H.PREP, false); pers(198, 150, .62, P.yagami, H.PREP, true); pergam(160 - s, 112, 1, 1); pergam(160 + s, 112, 1, 1); flashW(.8 - tb * 1.6, '#fff0b0'); if (tb < .6) for (let i = 0; i < 8; i++) { g.fillStyle = '#f4e6b0'; g.fillRect(160 + Math.cos(i * .8) * tb * 40, 112 + Math.sin(i * .8) * tb * 30, 2, 2); } }
+    else { const yx = Lp(198, 350, tb / 2.4); pers(122, 150, .62, P.gabriel, sent({ belt: 3 }), false); pergam(130, 128, 1, 1); pers(yx, 150, .62, P.yagami, tb < .6 ? H.GUARDA : ataque(t * 9, H.PREP, H.GUARDA), false); }
+  };
+  sc.corrupcao = () => {    // poder proibido -> perda de controle (raios crescentes, closes) -> transformação (dolly-out)
+    const kk = b === 0 ? Math.min(.35, tb / 12) : b === 1 ? .35 + Math.min(.5, tb / 6) : 1, c3 = Math.floor(tb / 1.1) % 3;
+    cam = b === 0 ? { z: 1.2 + .25 * Math.min(1, tb / 6), x: 160, h: 52 } : b === 1 ? (c3 === 1 ? { z: 2.3, x: 160, h: 54, fy: 100 } : c3 === 2 ? { z: 2.2, x: 168, h: 90, fy: 130 } : { z: 1.4, x: 160, h: 52 }) : { z: Lp(2, 1.15, tb / 3), x: 160, h: 46 };
+    shake = b === 1 ? .5 + kk * 2.5 : b === 2 && tb < .4 ? 4 : 0; cen(); g.drawImage(bg('contra', () => H.pintarContra()), 0, 0);
+    tint('rgba(60,0,80,' + (.2 + .4 * kk) + ')'); g.save(); g.globalCompositeOperation = 'lighter'; brilhoCtx(g, 160, 110, 40 + 60 * kk, '#9a3aff', .15 + .35 * kk); g.restore();
+    if (b === 0) { pers(160, 150, .62, P.yagami, Object.assign({}, H.PREP, { belt: 3 + Math.sin(t * 3) }), false); pergam(160, 124, 1, 1); }
+    else if (b === 1) { const n = 1 + Math.floor(tb * 1.6); for (let i = 0; i < n; i++) raio(160 + (i % 2 ? 1 : -1) * (30 + i * 12), 20, 160 + (i % 3 - 1) * 10, 112, 'rgba(190,90,255,.8)'); pers(160, 150, .62, kk > .7 ? P.yagamiCorr : P.yagami, Object.assign({}, H.PREP, { lean: -4 + Math.sin(t * 11) * 3 }), false); pergam(160, 124, kk, 1); }
+    else { yagCorr(160, 150 - Math.min(8, tb * 6), .62, false); flashW(.5 - tb * 1.2, '#c06aff'); }
+  };
+  sc.queda = () => {        // último confronto: troca curta e tensa antes do selamento
+    if (b !== 4) return _q();
+    luta([[1, 'direto', 'bloq'], [0, 'chute', 'bloq'], [1, 'gancho', 'esq'], [0, 'direto', 'acerta', 0, 1]], 110, 200, 1.2, S => yagCorr(S.x[1], 150, .62, true, S.pose[1]));
+    if (tb > 3.2) flashW(Math.min(1, (tb - 3.2) / .8), '#ffffff');
+  };
+  sc.duelo_final = () => {  // o ataque fatal: mestre -> mão do Yagami -> Gabriel -> trajetória -> impacto -> plano geral
+    if (b !== 4) return _df();
+    cam = tb < .8 ? { z: 2.1, x: 26, h: 54, fy: 112 } : tb < 1.5 ? { z: 2.2, x: 84, h: 60, fy: 122 } : tb < 2.1 ? { z: 1.8, x: 250, h: 56, fy: 116 } : { z: 1.1, x: 160, h: 40 };
+    shake = tb > 2.2 && tb < 2.7 ? 4 : 0; cen(); g.drawImage(bg('dojo1', () => H.pintarDojo(1)), 0, 0); tint('rgba(18,0,26,.5)');
+    const hit = tb > 2.2, qm = hit ? Math.min(1, (tb - 2.2) / .5) : 0;
+    invocar(3, 9, false, 0, 96, 0); pers(253, 150, .5, P.gabriel, Object.assign({}, H.PREP, { rh: [12, -10] }), true);
+    pers(26, 150, .62, P.mestre, Object.assign({}, H.EM_PE, { lean: -18 * qm }), false);
+    yagCorr(Lp(130, 78, tb / 1.4), 150, .62, true, tb < 1.5 ? H.PREP : H.SOCO);
+    if (tb > 1.5 && tb < 2.3) raio(70, 100, 40, 108, 'rgba(190,90,255,.9)');
+    if (hit) flashW(.9 - Math.abs(tb - 2.35) * 2, '#e8c8ff');
+  };
+  const _ds = sc.dojo_sombrio;
+  sc.dojo_sombrio = () => {   // última fala: primeiro intercâmbio de Gabriel contra os guerreiros invocados
+    if (b !== 3) return _ds();
+    luta([[1, 'direto', 'bloq', 0], [0, 'gancho', 'acerta', 0], [1, 'chute', 'esq', 1], [0, 'jab', 'bloq', 1], [1, 'direto', 'esq', 2], [0, 'chute', 'bloq', 2, 1]], 70, 128, 1.15, S => sub(S.tgt, S.x[1], 150, .5, S.pose[1], 1), S => { invocar(7, 9, false, t * 6, 40, 0, S.tgt); yagCorr(300, 150, .6, true); }, 0, 36);
+    tint('rgba(10,0,20,.55)');
+  };
+  sc.selo = () => {   // dolly-in contínuo, círculos e correntes crescentes, Yagami resiste e treme, clarão final
+    const gr = 1 + .22 * b;
+    shake = b === 2 ? 1 + 2 * Math.pow(Math.sin(t * 17), 2) : 0;
+    cam = { z: 1.15 + .1 * b + .15 * Math.min(1, tb / 3), x: Lp(160, 150, b / 3), y: 110 }; cen(); g.drawImage(bg('dojo0', () => H.pintarDojo(0)), 0, 0);
+    tint('rgba(20,40,90,.35)');
+    const r = 26 + Math.sin(t * 2) * 4, A = b === 0 ? Math.min(1, tb / 1.5) : 1;
+    g.strokeStyle = '#7ad8ff'; g.lineWidth = 1; g.globalAlpha = A;
+    [20, 8].concat(b ? [32] : []).forEach(o => { g.beginPath(); g.arc(160, 150, (r + o) * gr, 0, 7); g.stroke(); }); g.globalAlpha = 1;
+    for (let k = 0; k < 6 + 3 * b; k++) { const a = t * 1.5 + k; g.fillStyle = '#dff7ff'; g.fillRect(160 + Math.cos(a) * 40, 140 + Math.sin(a) * 14, 2, 2); }
+    const gal = b === 3 ? 1 - Math.min(1, tb / 2.2) : 1;
+    g.save(); g.globalAlpha = gal; pers(120, 150, .62, P.gabriel, Object.assign({}, H.EM_PE, { rh: [10, -26], lh: [10, -26], lean: b === 2 ? -6 : 0 }), false); g.restore();
+    if (b >= 1) { const yx = b === 1 ? Lp(260, 200, tb / 2) : b === 2 ? 200 + 6 * Math.sin(t * 9) : 200, ya = b === 3 ? 1 - Math.min(1, tb / 1.6) : 1; g.save(); g.globalAlpha = ya; yagCorr(yx, 150, .62, true, b === 2 ? ataque(t * 6, H.SOCO, H.PREP) : null); g.restore(); if (b >= 2) for (let k = 0; k < 4 + b; k++) raio(120, 120, yx, 120 + k * 8, 'rgba(120,216,255,.8)'); }
+    if (b === 3) flashW(Math.min(1, tb / 2.2) * .9, '#dff7ff');
   };
   g.save(); g.imageSmoothingEnabled = true;
   (sc[nome] || sc.templo)();
   g.restore();
   g.setTransform(1, 0, 0, 1, 0, 0);
-  // tarjas de cinema e fade entre as cenas (como na abertura)
-  const barra = ch * .09; g.fillStyle = '#000'; g.fillRect(0, 0, cw, barra); g.fillRect(0, ch - barra, cw, barra);
-  const fade = Math.max(0, 1 - t / .5); if (fade > 0) { g.fillStyle = 'rgba(0,0,0,' + fade + ')'; g.fillRect(0, 0, cw, ch); }
+  histPosFx(g, cw, ch, nome, t, MT, imp);
 }
 function pularHistoria() { if (histAtiva) finalizarHistoria(); }
 document.getElementById('histPular').addEventListener('click', e => { e.stopPropagation(); pularHistoria(); });
@@ -12856,7 +13519,11 @@ const CONTROLES = [
   ['💨', 'ESQUIVA', 'desviar de ataques', 'Espaço'],
   ['🛡️', 'DEFENDER', 'bloquear dano (segure)', 'L'],
   ['🏃', 'CORRER', 'mover mais rápido', 'Shift'],
-  ['⬆️', 'PULAR', 'saltar', 'V'],
+  ['🧘', 'MEDITAR', 'recupera aura (mover cancela)', 'U'],
+  ['🪑', 'SENTAR', 'descansar sentado', 'Y'],
+  ['😴', 'DORMIR', 'recupera vida devagar', 'I'],
+  ['🍙', 'COMER', 'usa uma comida da mochila', 'O'],
+  ['🚿', 'BANHO', 'água rasa ou sob a cachoeira', 'B'],
   ['✨', 'ESPECIAL', 'habilidade especial', 'J']
 ];
 function htmlControles() {
@@ -12882,6 +13549,7 @@ const MenuP = (() => {
   function abrir() {
     ativo = true; tela = 'principal'; sel = 0; el.hidden = false; document.body.classList.add('tela-titulo');
     $('btnContinuar').disabled = !saveGuardado();
+    { let z = false; try { z = localStorage.getItem('karate-rpg-zerou') === '1'; } catch (e) {} $('estrelaZerou').hidden = !z; }   // ⭐ = o jogo já foi zerado
     mostrar('principal'); Som.tocarMusica();
     $('somDica').hidden = Som.ativo();
   }
@@ -12999,6 +13667,7 @@ function comecarJogo(novo) {
   if (novo) { MUNDO_CACHE.mundo = null; MUNDO_CACHE.caverna = null; estado = estadoInicial(); estado.hp = maxHp(); }
   else carregarSave();
   for (const k in teclas) teclas[k] = false; edge = {};                  // nada de golpe "sobrando" do menu
+  passoKey = null;
   jogoIniciado = true; MODO_TELA = 'jogo'; Akira.limparCache(); document.body.classList.add('em-jogo'); pausado = false;
   const L = (!novo && estado.local) || estado.respawn;
   try { carregarMapa(L.mapa, L.x, L.y); } catch (e) { carregarMapa(estado.respawn.mapa, estado.respawn.x, estado.respawn.y); }
@@ -14140,7 +14809,23 @@ const PAL_COMP = {                                                       // apar
   oitavo: Object.assign({}, CHEFES.oitavo_dragao.pal, { esc: 1.08 })
 };
 PAL_NPC.luna = PAL_NPC.luna || PN('#2a2a4a', '#e8c0a0', '#1a1a2a', 'longo', '#ffe45e', { iris: '#4a6aaa' });
+PAL_NPC.luna.vis = [['cachos', '#1a1a2a', 1.05], ['coqueEstruturado', '#1a1a2a', '#ffe45e'], ['franja', '#1a1a2a', 1]];   // Luna: cacheada, presa em coque
 
+(() => {
+  const A = (p, v) => { if (p) p.vis = (p.vis || []).concat(v); }, N = PAL_NPC;
+  A(PAL_INIM, [['coqueEstruturado', '#17171c', '#d42a2a'], ['mechasLaterais', '#17171c']]);                          // bandidos: coque com testeira vermelha
+  A(PAL_VET, [['coqueEstruturado', '#17171c', '#2f6fe0'], ['mechasLaterais', '#17171c'], ['sobrancelha', '#17171c']]);
+  A(PAL_MESTRE, [['coqueEstruturado', '#e8e8e8', '#e0b020'], ['barba', '#e8e8e8', 1.1], ['sobrancelha', '#e8e8e8']]);    // mestre rebelde: coque e barba brancos
+  A(PAL_MONGE, [['sobrancelha', '#7a5a3a']]); A(PAL_DAVI, [['sobrancelha', '#8a5a2a']]); A(PAL_REN, [['franja', '#3a2a1a', 1], ['mechasLaterais', '#3a2a1a']]);
+  A(N.ayame, [['coqueEstruturado', '#c8c8d0', '#e0b44a'], ['mechasLaterais', '#c8c8d0']]); A(N.lucas, [['franja', '#151515', -1]]);
+  A(N.maya, [['franja', '#f0d890', 1], ['flor', '#ff9fc0', '#ffe27a']]); A(N.alana, [['franja', '#141014', -1], ['mechasLaterais', '#141014']]);
+  A(N.valkira, [['sobrancelha', '#d8c8a0']]); A(N.levi, [['pontas', '#1a1010']]);
+  A(PAL_COMP.renji, [['pontas', '#e4e6ee']]); A(PAL_COMP.goro, [['mechasLaterais', '#151010'], ['sobrancelha', '#151010']]); A(PAL_COMP.mei_torneio, [['coqueEstruturado', '#1a1010', '#d96b8a'], ['franja', '#1a1010', 1]]);
+  const C = CHEFES; A(C.samurai_oni.pal, [['chifres', '#e8dcc0'], ['mechasLaterais', '#151018']]); A(C.mestre_cachoeira.pal, [['barba', '#e8eef4', 1.3], ['sobrancelha', '#e8eef4']]);
+  A(C.general_ancestral.pal, [['coqueEstruturado', '#202020', '#8a1a1a'], ['mechasLaterais', '#202020']]); A(C.ninja_ancestral.pal, [['mechasLaterais', '#0a0a10']]);
+  A(C.ronin_ancestral.pal, [['coqueEstruturado', '#202020', '#2a1a10'], ['franja', '#202020', -1], ['barba', '#202020', .7]]);
+  A(C.mestra_cerejeiras.pal, [['franja', '#3a1a2a', 1], ['flor', '#ff9fc0', '#fff0f6'], ['mechasLaterais', '#3a1a2a']]); A(C.colosso_sumo.pal, [['coqueEstruturado', '#151010', '#3a2a5a']]);
+})();
 const faseCampanha = () => estado.fase || 'treino';
 function tor() { return estado.torneio || (estado.torneio = { inscrito: false, res: {}, elim: null, campeao: false }); }
 function conheceCompetidor(id) {
@@ -14847,12 +15532,13 @@ function loop(agora) {                                                // um loop
   if (MODO_TELA === 'abertura') { Abertura.atualizar(dt); if (Abertura.ativa()) Abertura.desenhar(ctx, canvas.width, canvas.height); else if (MODO_TELA === 'menu') MenuP.desenhar(ctx, canvas.width, canvas.height, dt); }
   else if (MODO_TELA === 'menu') { MenuP.desenhar(ctx, canvas.width, canvas.height, dt); if (Abertura.ativa()) { Abertura.atualizar(dt); Abertura.desenhar(ctx, canvas.width, canvas.height); } }
   else if (MODO_TELA === 'torneio') { try { Luta2D.quadro(dt); } catch (e) { console.error(e); } }
-  else if (MODO_TELA === 'historia') { /* cutscene: tem o próprio quadro (histLoop) */ }
+  else if (MODO_TELA === 'historia' || MODO_TELA === 'fim') { /* cutscene / tela final: parte parada */ }
   else if (!MapaMundo.aberto && !pausado) {                              // com o mapa em tela cheia aberto ou o menu de pausa, a partida fica parada
     const a = performance.now(); atualizar(dt); const b = performance.now(); renderizar(dt); const c = performance.now();
     perfQuadro(Math.min(250, agora - (loop.ant || agora - 16.7)), b - a, c - b);
     if (c - a < 9 && (loop.k = (loop.k || 0) + 1) % 3 === 0) preaquecer(null, 3);   // sobrou tempo no quadro: adianta um pouco do que vem pela frente
   }
+  if (jogoIniciado && (MODO_TELA === 'jogo' || MODO_TELA === 'torneio') && !pausado && estado) estado.tempoJogo = (estado.tempoJogo || 0) + dt;   // relógio de jogo (tela de vitória)
   loop.ant = agora;
   try { MapaMundo.quadro(dt); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
@@ -15039,7 +15725,7 @@ function concluirMissaoEd(id) {
   delete estado.inv['enc_' + M.ed];
   ganharXp(R.xp); ganharDinheiro(R.dinheiro); estado.inv[R.item] = (estado.inv[R.item] || 0) + 1;
   ganharRespeito(M.dono, 25, 'missao');
-  aviso('Missão concluída: ' + M.nome + ' • +' + R.xp + ' XP • $' + R.dinheiro + ' • ' + ITENS[R.item].nome + ' • respeito com ' + NPC_ED[M.dono].nome + ' subiu!');
+  aviso('Missão concluída: ' + M.nome + ' • +' + R.xp + ' XP • Ryō ' + R.dinheiro + ' • ' + ITENS[R.item].nome + ' • respeito com ' + NPC_ED[M.dono].nome + ' subiu!');
   hudChave = ''; salvar();
 }
 // conversa com NPC das construções: oferece, acompanha e entrega a missão
@@ -15222,7 +15908,7 @@ function linhaMissao(id) {
   const rec = M.dono ? recompensaEd(M) : null;
   let det = '';
   if (aberta) det = `<div class="sc-mdet">${st === 'nao_iniciada' ? 'Vá falar com <b>' + (dono ? nomeRel(dono) : '?') + '</b>' + (ond ? ' em ' + ond : '') + '.' : st === 'em_andamento' ? '<b>Objetivo:</b> ' + M.objetivo() : 'Missão feita. Obrigado!'}
-    ${rec ? ' • <b>Recompensa:</b> ' + rec.xp + ' XP, $' + rec.dinheiro + ', ' + ITENS[rec.item].nome.split(' (')[0] + ', +25 respeito' : ''}
+    ${rec ? ' • <b>Recompensa:</b> ' + rec.xp + ' XP, Ryō ' + rec.dinheiro + ', ' + ITENS[rec.item].nome.split(' (')[0] + ', +25 respeito' : ''}
     ${st !== 'concluida' ? `<button class="sc-bt ${rast ? 'verde' : ''}" data-rastrear="${id}">${rast ? '📍 Rastreando (parar)' : '📍 Rastrear'}</button>` : ''}
     ${dono && RELACOES[dono] ? `<button class="sc-bt" data-ficha="${dono}">Ver ${nomeRel(dono)}</button>` : ''}</div>`;
   return `<div class="sc-mrow" data-abre="${id}"><span class="sc-box ${st === 'concluida' ? 'ok' : st === 'em_andamento' ? 'and' : ''}"></span><div><b>${M.nome}</b>${rast ? ' <span class="sc-rast">📍</span>' : ''}<br><small>${st === 'em_andamento' ? M.objetivo() : st === 'concluida' ? 'Feita para ' + (dono ? nomeRel(dono) : '—') : ond ? 'Onde: ' + ond : ''}</small></div><small>${dono ? 'Para: ' + nomeRel(dono) : ''}</small><span class="sc-est" style="background:${cores[0]}">${cores[1]}</span>${det}</div>`;
@@ -15274,12 +15960,19 @@ socialEl.addEventListener('click', ev => {
 // destino da missão rastreada (para a seta na tela)
 function alvoRastreio() {
   const id = estado.rastreio; if (!id || stM(id) !== 'em_andamento') return null;
+  if (id === 'cesto_roubado') {
+    if (estado.inv.cesto_karina) { if (mapa.id !== 'mundo') return null; const [ox, oy] = origemNucleo('tangerinas'); return { x: ox + 15.8, y: oy + 22.6, nome: 'Karina' }; }
+    const l = (mapa.dyn || []).find(o => o.ladraoCesto && o.vivo); return l ? { x: l.x, y: l.y, nome: 'Ladrão de Tangerinas' } : null;
+  }
   const M = MISSOES[id]; if (!M || !M.dono) return null;
   const p = progM(id);
   if (M.tipo === 'coletar' && p.n < M.qtd && p.pts && p.mapa === mapa.id) {
     let melhor = null, dm = 1e9; p.pts.forEach((q, k) => { if (p.pegos[k]) return; const d = Math.hypot(q[0] - jog.x, q[1] - jog.y); if (d < dm) { dm = d; melhor = { x: q[0], y: q[1], nome: M.coisa } }; }); return melhor;
   }
-  if (M.tipo === 'cacar' && p.n < M.qtd) return null;
+  if (M.tipo === 'cacar' && p.n < M.qtd) {                              // regiões sem inimigos: a seta aponta o lutador rebelde mais perto
+    let m = null, dm = 1e9; for (const e of mapa.dyn || []) { if (e.invasor !== M.reg || !e.vivo) continue; const d = Math.hypot(e.x - jog.x, e.y - jog.y); if (d < dm) { dm = d; m = e; } }
+    return m ? { x: m.x, y: m.y, nome: 'Lutador Rebelde' } : null;
+  }
   const ed = M.tipo === 'entregar' && p.n < 1 ? M.alvoEd : M.ed, P = EDIF_POS[ed];
   if (!P) return null;
   if (P.mapa === mapa.id) return { x: P.x, y: P.y, nome: ed === M.ed ? NPC_ED[M.dono].nome : EDIFICIOS_NPC(ed) };
@@ -15308,8 +16001,36 @@ function desenharSetaRastreio(g) {
 const ALVO_DEBORA = { x: 18.6, y: 10.4, nome: 'Mestra Débora' };      // posições no mapa do Bambuzal (no mundo: somadas à origem da região)
 const ALVO_BONECO = { x: 22, y: 11.4, nome: 'Boneco de treino' };
 const ALVO_PATIO = { x: 12.5, y: 9.5, nome: 'Pátio de treino' };
+function saidaDoMundoMaisPerto(alvo, nome) {                          // porta do mundo (ex.: 'biblioteca') mais perto do jogador
+  let m = null, dm = 1e9;
+  for (const e of mapa.exits || []) { if (e.alvo !== alvo) continue; const x = e.x + (e.w || 1) / 2, y = e.y + (e.h || 1) / 2, d = Math.hypot(x - jog.x, y - jog.y); if (d < dm) { dm = d; m = { x, y, nome }; } }
+  return m;
+}
+function resolverAlvoPasso(a) {                                       // transforma o alvo de um passo da história em um ponto do mapa em que o jogador está
+  if (!a) return null;
+  if (a === 'papel') { let m = null, dm = 1e9; for (const o of mapa.objs || []) { if (o.tipo !== 'papel' || o.removido) continue; const d = Math.hypot(o.x - jog.x, o.y - jog.y); if (d < dm) { dm = d; m = o; } } return m ? { x: m.x, y: m.y, nome: 'Papel perdido' } : null; }
+  if (a.chefe) {
+    const id = a.chefe[0], def = CHEFES[id], S = SELO_POS[id], nome = def.nome;
+    if (S && S.mapa === mapa.id) return { x: S.x, y: S.y, nome };
+    if (mapa.id === 'mundo') {
+      if (def.regiao === 'cavernas') return saidaDoMundoMaisPerto('cavernas', nome + ' (Cavernas)');
+      const [ox, oy] = origemNucleo(def.regiao), [w, h] = tamNucleo(def.regiao); return { x: ox + w / 2, y: oy + h / 2, nome: 'Região: ' + nomeRegiaoEd(def.regiao) };
+    }
+    return saidaMaisPerto();
+  }
+  const dest = a.mapaId || a.saida;
+  if (dest && mapa.id === dest) { const o = a.fala && (mapa.objs || []).find(o => o.fala === a.fala && !o.removido); return o ? { x: o.x, y: o.y, nome: a.nome } : null; }
+  if (mapa.id === 'mundo') {
+    if (a.fala) { const o = (mapa.objs || []).find(o => o.fala === a.fala && !o.removido); if (o) return { x: o.x, y: o.y, nome: a.nome }; }
+    if (a.saida) { const r = saidaDoMundoMaisPerto(a.saida, a.nome); if (r) return r; }
+    if (a.reg) { const [ox, oy] = origemNucleo(a.reg); return { x: ox + a.x, y: oy + a.y, nome: a.nome }; }
+    return null;
+  }
+  return saidaMaisPerto();                                            // dentro de outro lugar: a seta aponta a saída
+}
 function alvoMissaoPrincipal() {
   if (!mapa || !estado || MODO_TELA !== 'jogo' || dlg.ativo || jog.morto) return null;
+  if (exameAtual) return null;
   const mp = estado.mprog || {};
   let A = null;
   if (stM('debora_fundamentos') === 'nao_iniciada') A = ALVO_DEBORA;
@@ -15320,12 +16041,12 @@ function alvoMissaoPrincipal() {
     const g2 = (mapa.objs || []).find(o => o.pid === 'david' || o.pid === 'miguel');
     A = g2 ? { x: g2.x, y: g2.y, nome: 'Gêmeos', direto: true } : ALVO_DEBORA;
   }
-  if (!A) return null;
+  if (!A) { const P = passoPrincipal(); if (!P.debora) return resolverAlvoPasso(P.a); A = ALVO_DEBORA; }   // entre as missões da Débora, a seta aponta para ela
   if (A.direto) return { x: A.x, y: A.y, nome: A.nome };
   if (mapa.id === 'bambuzal') return { x: A.x, y: A.y, nome: A.nome };
   if (mapa.id === 'mundo') { const [ox, oy] = origemNucleo('bambuzal'); return { x: ox + A.x, y: oy + A.y, nome: A.nome }; }
   const saida = (mapa.exits || []).find(e => e.alvo === 'mundo' || e.alvo === 'bambuzal');   // em outro lugar: a seta aponta para a saída que leva até lá
-  return saida ? { x: saida.x + saida.w / 2, y: saida.y + saida.h / 2, nome: 'Saída para ' + A.nome } : null;
+  return saida ? { x: saida.x + saida.w / 2, y: saida.y + saida.h / 2, nome: 'Saída para ' + A.nome } : saidaMaisPerto();
 }
 function desenharSetaMissao(g) {
   const A = alvoMissaoPrincipal(); if (!A) return;
@@ -15354,7 +16075,7 @@ function desenharSetaMissao(g) {
 }
 
 window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
-Object.assign(window.AKIRA.dbg, { hist: () => ({ c: histCena, f: histFala }), alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
+Object.assign(window.AKIRA.dbg, { danoEm, iniciarFimDoJogo, hist: () => ({ c: histCena, f: histFala }), alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
@@ -15493,6 +16214,17 @@ function gerarTexturas3D() {
   V.cav1 = texPedras(91, 11, ['#3a3666', '#4e4a84', '#6a64a6'].map(hexRGB), '#16122a', false); V.cav2 = texPedras(92, 13, ['#3a3666', '#4e4a84', '#6a64a6'].map(hexRGB), '#16122a', false);
   V.cav3 = texPedras(93, 9, ['#3a3666', '#4e4a84', '#6a64a6'].map(hexRGB), '#16122a', false, true);
   V.madeira = texMadeira(101); V.agua1 = texAgua(111); V.agua2 = texAgua(112);
+  // acabamento de pintura digital: pinceladas claras e escuras curtas, desenhadas também do outro lado da borda (a textura continua sem emenda)
+  Object.keys(V).forEach((nome, idx) => {
+    const cv = V[nome]; if (!(cv instanceof HTMLCanvasElement) || /^agua/.test(nome)) return;
+    const c = cv.getContext('2d'), w = cv.width, h = cv.height, r = mulberry32(900 + idx * 17);
+    c.lineCap = 'round';
+    for (let k = 0; k < Math.round(w * h / 90); k++) {
+      const x = r() * w, y = r() * h, L = 2 + r() * 5, a = -.5 + r() * .3, luz = r() < .5;
+      c.strokeStyle = luz ? 'rgba(255,238,196,' + (.05 + r() * .07) + ')' : 'rgba(34,26,70,' + (.05 + r() * .08) + ')'; c.lineWidth = 1 + r() * 1.4;
+      for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) { c.beginPath(); c.moveTo(x + ox, y + oy); c.lineTo(x + ox + Math.cos(a) * L, y + oy + Math.sin(a) * L); c.stroke(); }
+    }
+  });
   TEX3.pronto = true;
 }
 
@@ -15573,6 +16305,38 @@ jogoIniciado = false; MODO_TELA = 'abertura'; document.body.classList.add('tela-
 canvas.focus();
 requestAnimationFrame(loop);
 
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  try {
+    var b = document.body, mk = function (t, id) { var e = document.createElement(t); e.id = id; b.appendChild(e); return e; };
+    mk('div', 'hdLuz'); mk('div', 'hdTom');
+    var cv = mk('canvas', 'hdBrasas'), g = cv.getContext('2d');
+    if (!g || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var W = 0, H = 0, N = 34, P = [], COR = ['255,179,71', '255,106,58', '197,139,255', '255,233,168', '95,255,208'];
+    function tam() { W = cv.width = Math.max(160, Math.round(innerWidth / 2)); H = cv.height = Math.max(90, Math.round(innerHeight / 2)); }
+    function nova(i) { return { x: Math.random() * W, y: i ? H + 4 : Math.random() * H, r: .6 + Math.random() * 1.4, vy: -(4 + Math.random() * 10), vx: (Math.random() - .5) * 5, f: Math.random() * 6.28, c: COR[(Math.random() * COR.length) | 0] }; }
+    tam(); for (var i = 0; i < N; i++) P.push(nova(0));
+    addEventListener('resize', tam);
+    var t0 = 0, acc = 0;
+    function loop(t) {
+      requestAnimationFrame(loop);
+      var dt = Math.min(.1, (t - t0) / 1000); t0 = t; acc += dt;
+      if (document.hidden || acc < 1 / 30) return;
+      dt = acc; acc = 0;
+      g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+      for (var k = 0; k < P.length; k++) {
+        var p = P[k]; p.f += dt * 2.2; p.x += (p.vx + Math.sin(p.f) * 4) * dt; p.y += p.vy * dt;
+        if (p.y < -4 || p.x < -4 || p.x > W + 4) { P[k] = nova(1); continue; }
+        var a = (.25 + .35 * Math.abs(Math.sin(p.f * 1.3))) * Math.min(1, (H - p.y) / (H * .25 + 1) + .3);
+        g.fillStyle = 'rgba(' + p.c + ',' + a.toFixed(2) + ')'; g.fillRect(p.x, p.y, p.r * 1.5, p.r * 1.5);
+        g.fillStyle = 'rgba(' + p.c + ',' + (a * .18).toFixed(2) + ')'; g.fillRect(p.x - p.r * 1.5, p.y - p.r * 1.5, p.r * 4.5, p.r * 4.5);
+      }
+    }
+    requestAnimationFrame(loop);
+  } catch (e) { /* camada visual é opcional: se falhar, o jogo segue igual */ }
 })();
 </script>
 </body>
