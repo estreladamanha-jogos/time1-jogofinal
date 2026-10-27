@@ -388,17 +388,17 @@
   }
   .btn .ico { font-size: 1.25em; line-height: 1; font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
   .btn small { font-size: 6.5px; letter-spacing: .3px; margin-top: 2px; max-width: 90%; white-space: normal; text-align: center; line-height: 1.05; }
-  #btnJ { right: 20px; bottom: 30px; width: 80px; height: 80px; background: rgba(244, 208, 63, .9); font-size: 28px; }
+  #btnJ { right: 112px; bottom: 26px; width: 62px; height: 62px; background: rgba(244, 208, 63, .9); font-size: 14px; }
   #btnS { right: 30px; bottom: 122px; width: 58px; height: 58px; background: rgba(155, 227, 107, .9); font-size: 13px; }
   #btnL { right: 100px; bottom: 120px; width: 50px; height: 50px; background: rgba(200, 200, 220, .85); font-size: 13px; }
-  #btnC { right: 112px; bottom: 26px; width: 62px; height: 62px; background: rgba(255, 120, 150, .9); font-size: 14px; }
+  #btnC { right: 20px; bottom: 30px; width: 80px; height: 80px; background: rgba(255, 120, 150, .9); font-size: 28px; }
   #btnM { top: calc(clamp(78px, 17vmin, 132px) + 18px); right: 8px; width: 44px; height: 44px; background: rgba(255, 255, 255, .8); font-size: 20px; }
   @media (pointer: coarse) and (orientation: landscape) {               /* deitado: esquerda = movimento, direita = ações */
     #joystick { left: calc(14px + env(safe-area-inset-left)); bottom: 14px; width: 120px; height: 120px; }
-    #btnJ { right: calc(14px + env(safe-area-inset-right)); bottom: 14px; width: 72px; height: 72px; font-size: 24px; }
+    #btnJ { right: 96px; bottom: 26px; width: 56px; height: 56px; font-size: 14px; }
     #btnL { right: 14px; bottom: 96px; width: 52px; height: 52px; }
     #btnS { right: 90px; bottom: 96px; width: 52px; height: 52px; }
-    #btnC { right: 96px; bottom: 26px; width: 56px; height: 56px; }
+    #btnC { right: calc(14px + env(safe-area-inset-right)); bottom: 14px; width: 72px; height: 72px; font-size: 24px; }
     #ctxAcoes { bottom: 170px; }
   }
   @media (pointer: coarse) {
@@ -13065,24 +13065,24 @@ const Abertura = (() => {
    ===================================================================== */
 /* ---------- cutscene da história: começa no NOVO JOGO, antes de Akira assumir o controle ---------- */
 const HIST_CENAS = [
-  { cena: 'templo', falas: [['MESTRE', 'Existem histórias que não são contadas apenas para lembrar o passado...'], ['MESTRE', 'Algumas precisam ser contadas para impedir que os mesmos erros aconteçam novamente.'], ['NICOLAS', 'É uma história de guerreiros lendários?!'], ['LUNA', 'Espero que seja curta...'], ['PIETRA', 'Você fala isso antes de todas as histórias, Luna.'], ['HENRIQUE', 'Deixe o mestre contar. Tenho certeza de que existe uma razão para ele nos reunir.'], ['AKIRA', 'Mestre... o que aconteceu?'], ['MESTRE', 'Há muito tempo, dois irmãos eram considerados os maiores guerreiros de todo o reino.']] },
+  { cena: 'templo', falas: [['SENSEI', 'Existem histórias que não são contadas apenas para lembrar o passado...'], ['SENSEI', 'Algumas precisam ser contadas para impedir que os mesmos erros aconteçam novamente.'], ['NICOLAS', 'É uma história de guerreiros lendários?!'], ['LUNA', 'Espero que seja curta...'], ['PIETRA', 'Você fala isso antes de todas as histórias, Luna.'], ['HENRIQUE', 'Deixe o mestre contar. Tenho certeza de que existe uma razão para ele nos reunir.'], ['AKIRA', 'Mestre... o que aconteceu?'], ['SENSEI', 'Há muito tempo, dois irmãos eram considerados os maiores guerreiros de todo o reino.']] },
   { cena: 'treino', legenda: 'Há muito tempo...', falas: [['NARRADOR', 'Gabriel e Yagami eram irmãos. Desde jovens, treinavam juntos e aperfeiçoavam suas habilidades.'], ['NARRADOR', 'Não importava quantas vezes lutassem: nenhum dos dois conseguia superar o outro.'], ['NARRADOR', 'Gabriel compreendia que a verdadeira força não estava apenas em derrotar um adversário.'], ['NARRADOR', 'Yagami, por outro lado, começou a acreditar que ser o mais forte era a única forma de provar seu valor.']] },
-  { cena: 'pergaminho', falas: [['MESTRE', 'Eu sabia que Gabriel possuía algo além da habilidade de um guerreiro.'], ['MESTRE', 'Por isso, decidi confiar a ele uma técnica milenar capaz de invocar espíritos e preservar o equilíbrio do reino.'], ['MESTRE', 'Mas aquele conhecimento exigia mais do que força. Exigia equilíbrio, responsabilidade e respeito.'], ['YAGAMI', 'Por que Gabriel? Por que ele foi escolhido... e eu não?']] },
-  { cena: 'briga_templo', falas: [['YAGAMI', 'Você ensinou tudo a Gabriel. E a mim? Eu também sou seu discípulo!'], ['MESTRE', 'Você tem grande poder, Yagami. Mas ainda não compreendeu o peso daquilo que deseja controlar.'], ['YAGAMI', 'Se Gabriel pode receber esse poder, eu também posso!'], ['GABRIEL', 'Yagami! Pare!'], ['GABRIEL', 'Não vou permitir que machuque o mestre.']] },
-  { cena: 'noite', falas: [['MESTRE', 'Gabriel tentou impedir que seu irmão cometesse um erro irreversível. Mas Yagami já não conseguia ouvir a razão.'], ['YAGAMI', 'Por que você sempre precisa ser o escolhido?!'], ['GABRIEL', 'Eu nunca fui seu inimigo! Você não precisa provar nada para mim!'], ['YAGAMI', 'CALE-SE!'], ['MESTRE', 'Naquele momento, não foi a força que decidiu a batalha. Foi a calma de Gabriel diante da fúria de seu irmão.']] },
-  { cena: 'rasgado', falas: [['GABRIEL', 'Não faça isso! Você não compreende o que está tentando controlar!'], ['YAGAMI', 'Se não querem me dar o poder, eu o conquistarei sozinho!'], ['MESTRE', 'Na disputa, o pergaminho sagrado foi rasgado. Gabriel ficou com uma metade. Yagami fugiu levando a outra.']] },
-  { cena: 'corrupcao', falas: [['MESTRE', 'Consumido pelo orgulho, Yagami acreditou que poderia dominar a técnica usando apenas metade do conhecimento.'], ['MESTRE', 'Sem compreender os ensinamentos completos, ele abriu uma passagem para forças que não conseguia controlar.'], ['YAGAMI', 'Gabriel... você me tirou tudo. Eu voltarei. E, quando voltar, ninguém poderá me impedir.']] },
+  { cena: 'pergaminho', falas: [['SENSEI', 'Eu sabia que Gabriel possuía algo além da habilidade de um guerreiro.'], ['SENSEI', 'Por isso, decidi confiar a ele uma técnica milenar capaz de invocar espíritos e preservar o equilíbrio do reino.'], ['SENSEI', 'Mas aquele conhecimento exigia mais do que força. Exigia equilíbrio, responsabilidade e respeito.'], ['YAGAMI', 'Por que Gabriel? Por que ele foi escolhido... e eu não?']] },
+  { cena: 'briga_templo', falas: [['YAGAMI', 'Você ensinou tudo a Gabriel. E a mim? Eu também sou seu discípulo!'], ['SENSEI', 'Você tem grande poder, Yagami. Mas ainda não compreendeu o peso daquilo que deseja controlar.'], ['YAGAMI', 'Se Gabriel pode receber esse poder, eu também posso!'], ['GABRIEL', 'Yagami! Pare!'], ['GABRIEL', 'Não vou permitir que machuque o mestre.']] },
+  { cena: 'noite', falas: [['SENSEI', 'Gabriel tentou impedir que seu irmão cometesse um erro irreversível. Mas Yagami já não conseguia ouvir a razão.'], ['YAGAMI', 'Por que você sempre precisa ser o escolhido?!'], ['GABRIEL', 'Eu nunca fui seu inimigo! Você não precisa provar nada para mim!'], ['YAGAMI', 'CALE-SE!'], ['SENSEI', 'Naquele momento, não foi a força que decidiu a batalha. Foi a calma de Gabriel diante da fúria de seu irmão.']] },
+  { cena: 'rasgado', falas: [['GABRIEL', 'Não faça isso! Você não compreende o que está tentando controlar!'], ['YAGAMI', 'Se não querem me dar o poder, eu o conquistarei sozinho!'], ['SENSEI', 'Na disputa, o pergaminho sagrado foi rasgado. Gabriel ficou com uma metade. Yagami fugiu levando a outra.']] },
+  { cena: 'corrupcao', falas: [['SENSEI', 'Consumido pelo orgulho, Yagami acreditou que poderia dominar a técnica usando apenas metade do conhecimento.'], ['SENSEI', 'Sem compreender os ensinamentos completos, ele abriu uma passagem para forças que não conseguia controlar.'], ['YAGAMI', 'Gabriel... você me tirou tudo. Eu voltarei. E, quando voltar, ninguém poderá me impedir.']] },
   { cena: 'dojo_sombrio', falas: [['YAGAMI', 'Entregue a outra metade. Com ela, poderei completar aquilo que comecei.'], ['GABRIEL', 'Olhe para si mesmo, Yagami. Isso não é poder. É corrupção.'], ['GABRIEL', 'Você ainda pode parar.'], ['YAGAMI', 'É tarde demais!']] },
-  { cena: 'duelo_final', falas: [['MESTRE', 'Yagami não veio sozinho. Invocou os sete guerreiros das sombras e os lançou contra Gabriel.'], ['MESTRE', 'Gabriel lutou contra cada um deles, mas eram demais para um homem só.'], ['MESTRE', 'Enquanto isso, Yagami atravessou o salão, e caminhou até mim.'], ['MESTRE', 'Gabriel gritou meu nome. As sombras o seguravam, e ele não conseguiu chegar a tempo.'], ['MESTRE', 'Então a lâmina de trevas de Yagami me atravessou.']] },
-  { cena: 'queda', falas: [['GABRIEL', 'MESTRE!'], ['MESTRE', 'Gabriel... não permita que a escuridão destrua tudo aquilo que juramos proteger.'], ['NARRADOR', 'O mestre morre.'], ['YAGAMI', 'Agora não há mais ninguém para me impedir.'], ['GABRIEL', 'Você pode destruir meu corpo... mas não permitirá que destrua o equilíbrio deste reino.']] },
-  { cena: 'selo', falas: [['MESTRE', 'Gabriel compreendeu que precisaria usar a técnica espiritual em sua forma mais poderosa.'], ['YAGAMI', 'VOCÊ NÃO PODE ME APRISIONAR!'], ['GABRIEL', 'Eu não farei isso por vingança. Farei para proteger aqueles que ainda podem viver em paz.'], ['NARRADOR', 'Yagami é selado. Gabriel desaparece no clarão da técnica.']] },
-  { cena: 'templo', falas: [['NICOLAS', 'Isso foi incrível! Então Gabriel conseguiu salvar o reino inteiro?!'], ['HENRIQUE', 'Ele fez o que precisava ser feito para proteger as pessoas. Eu quero ter coragem para fazer o mesmo.'], ['PIETRA', 'Coragem não é suficiente, Henrique.'], ['LUNA', 'Eu só queria saber se depois de salvar o reino alguém finalmente teve tempo para dormir.'], ['AKIRA', 'Mestre... o que aconteceu com Gabriel depois do selamento?'], ['MESTRE', 'Essa é uma pergunta cuja resposta você precisará descobrir por si mesmo.'], ['AKIRA', 'Se uma força tão poderosa pode proteger o mundo ou destruí-lo... então precisamos aprender a controlá-la.'], ['MESTRE', 'Talvez um dia você compreenda o verdadeiro significado dessas palavras, Akira.']] },
+  { cena: 'duelo_final', falas: [['SENSEI', 'Yagami não veio sozinho. Invocou os sete guerreiros das sombras e os lançou contra Gabriel.'], ['SENSEI', 'Gabriel lutou contra cada um deles, mas eram demais para um homem só.'], ['SENSEI', 'Enquanto isso, Yagami atravessou o salão, e caminhou até mim.'], ['SENSEI', 'Gabriel gritou meu nome. As sombras o seguravam, e ele não conseguiu chegar a tempo.'], ['SENSEI', 'Então a lâmina de trevas de Yagami me atravessou.']] },
+  { cena: 'queda', falas: [['GABRIEL', 'SENSEI!'], ['SENSEI', 'Gabriel... não permita que a escuridão destrua tudo aquilo que juramos proteger.'], ['NARRADOR', 'O sensei morre.'], ['YAGAMI', 'Agora não há mais ninguém para me impedir.'], ['GABRIEL', 'Você pode destruir meu corpo... mas não permitirá que destrua o equilíbrio deste reino.']] },
+  { cena: 'selo', falas: [['SENSEI', 'Gabriel compreendeu que precisaria usar a técnica espiritual em sua forma mais poderosa.'], ['YAGAMI', 'VOCÊ NÃO PODE ME APRISIONAR!'], ['GABRIEL', 'Eu não farei isso por vingança. Farei para proteger aqueles que ainda podem viver em paz.'], ['NARRADOR', 'Yagami é selado. Gabriel desaparece no clarão da técnica.']] },
+  { cena: 'templo', falas: [['NICOLAS', 'Isso foi incrível! Então Gabriel conseguiu salvar o reino inteiro?!'], ['HENRIQUE', 'Ele fez o que precisava ser feito para proteger as pessoas. Eu quero ter coragem para fazer o mesmo.'], ['PIETRA', 'Coragem não é suficiente, Henrique.'], ['LUNA', 'Eu só queria saber se depois de salvar o reino alguém finalmente teve tempo para dormir.'], ['AKIRA', 'Mestre... o que aconteceu com Gabriel depois do selamento?'], ['SENSEI', 'Essa é uma pergunta cuja resposta você precisará descobrir por si mesmo.'], ['AKIRA', 'Se uma força tão poderosa pode proteger o mundo ou destruí-lo... então precisamos aprender a controlá-la.'], ['SENSEI', 'Talvez um dia você compreenda o verdadeiro significado dessas palavras, Akira.']] },
   { cena: 'funeral', legenda: 'Algum tempo depois...', falas: [['DÉBORA', 'Akira... preciso conversar com você.'], ['AKIRA', 'Você conhecia o mestre há muito tempo?'], ['DÉBORA', 'Conhecia. Antes de partir, ele me pediu uma coisa: que eu treinasse você pessoalmente.'], ['AKIRA', 'Eu? Mas por quê?'], ['DÉBORA', 'Ele acreditava que você possuía um potencial espiritual incomum.'], ['AKIRA', 'Estou. Quero aprender. Quero ficar mais forte.'], ['DÉBORA', 'Então, quando estiver pronto, venha ao dojo. Seu treinamento começa agora.']] },
   { cena: 'revelacao', falas: [['NARRADOR', 'Akira encontra um símbolo deixado pelo mestre: o mesmo que Gabriel usava na história antiga.'], ['NARRADOR', 'O mestre que contava a história às crianças era Gabriel.']] },
   { cena: 'templo', legenda: 'A JORNADA DE AKIRA COMEÇA', falas: [] },
   { cena: 'templo', legenda: 'NOVO OBJETIVO: ENCONTRE DÉBORA NO DOJO.', falas: [] }
 ];
-const HIST_CORES = { MESTRE: '#e8e0c8', NARRADOR: '#ffe27a', AKIRA: '#46d4ff', HENRIQUE: '#ff9b4a', PIETRA: '#ff7ac8', LUNA: '#b9a6ff', NICOLAS: '#8fe36a', GABRIEL: '#9fdcff', YAGAMI: '#ff5a6a', 'DÉBORA': '#f0c0ff' };
+const HIST_CORES = { SENSEI: '#e8e0c8', NARRADOR: '#ffe27a', AKIRA: '#46d4ff', HENRIQUE: '#ff9b4a', PIETRA: '#ff7ac8', LUNA: '#b9a6ff', NICOLAS: '#8fe36a', GABRIEL: '#9fdcff', YAGAMI: '#ff5a6a', 'DÉBORA': '#f0c0ff' };
 let histAtiva = false, histCena = 0, histFala = 0, histChars = 0, histT = 0, histRaf = 0, histLegendaT = 0, histCenaT0 = 0;
 const histBgCache = {};
 function histFim() { return histCena >= HIST_CENAS.length; }
@@ -13222,7 +13222,7 @@ function histDesenharCena(nome, t, beat, tbeat) {
   if (cv.width !== innerWidth || cv.height !== innerHeight) { cv.width = innerWidth; cv.height = innerHeight; }
   const cw = cv.width, ch = cv.height, g = cv.getContext('2d'), VW = 320, VH = 180, H = Abertura.H;
   g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch);
-  const k = Math.max(cw / VW, ch / VH);
+  const k = ch > cw ? cw / VW : Math.max(cw / VW, ch / VH);   // celular em pé: cabe a cena inteira na largura (sem cortar os rostos das laterais)
   let cam = { z: 1, x: 160, y: 95 }, shake = 0;
   const CN = HCINE[nome] || HCINE.templo, imp = CN.imp ? Math.pow(Math.max(0, Math.sin(t * CN.imp)), 12) : 0; let MT = null;
   const bg = (key, fn) => histBgCache[key] || (histBgCache[key] = fn());   // cenários prontos (mesmos da abertura)
@@ -13544,11 +13544,11 @@ function telaCheia() {
 
 const MenuP = (() => {
   let ativo = false, sel = 0, tela = 'principal', confirmar = false, mx = 0, my = 0, t = 0;
-  const el = $('telaInicial'), botoes = () => [...el.querySelectorAll('.tela-' + tela + ' button:not([disabled]), .tela-' + tela + ' input, .tela-' + tela + ' select')];
+  const el = $('telaInicial'), botoes = () => [...el.querySelectorAll('.tela-' + tela + ' button:not([disabled]):not([hidden]), .tela-' + tela + ' input, .tela-' + tela + ' select')];
   const particulas = Array.from({ length: 40 }, (_, i) => ({ x: Math.random(), y: Math.random(), v: .02 + Math.random() * .03, r: Math.random() * 6, c: ['#ffc0d6', '#ff9fc0', '#e8742a', '#f0b03a', '#8fd45a', '#fff2f6'][i % 6], s: 1.4 + Math.random() * 1.2 }));
   function abrir() {
     ativo = true; tela = 'principal'; sel = 0; el.hidden = false; document.body.classList.add('tela-titulo');
-    $('btnContinuar').disabled = !saveGuardado();
+    $('btnContinuar').hidden = !saveGuardado();
     { let z = false; try { z = localStorage.getItem('karate-rpg-zerou') === '1'; } catch (e) {} $('estrelaZerou').hidden = !z; }   // ⭐ = o jogo já foi zerado
     mostrar('principal'); Som.tocarMusica();
     $('somDica').hidden = Som.ativo();
