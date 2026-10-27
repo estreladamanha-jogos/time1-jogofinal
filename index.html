@@ -740,6 +740,8 @@ const ITENS = {
   kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', slot: 'roupa', preco: 60, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#e9e2cf', giS: '#b9ae95', giSS: '#948a74' } },
   kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', slot: 'roupa', preco: 90, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#2f5fa8', giS: '#1f3f78', giSS: '#152b55' } },
   luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 }, efeito2: { dano: .20 } },
+  luvas_combate: { nome: 'Luvas de combate', tipo: 'equipamento', slot: 'luvas', preco: 95, desc: 'Aumenta o dano de todos os seus ataques em +15%', efeito: { dano: .15 }, efeito2: { dano: .25 } },
+  kimono_reforcado: { nome: 'Kimono reforçado', tipo: 'equipamento', slot: 'roupa', preco: 150, desc: 'Tecido reforçado: reduz em 15% o dano que você recebe', efeito: { def: .15 }, efeito2: { def: .25 }, visual: { gi: '#5f6f86', giS: '#43506a', giSS: '#2e3850' } },
   amuleto_foco: { nome: 'Amuleto de foco', tipo: 'equipamento', slot: 'amuleto', preco: 70, desc: '+10 de aura máxima', efeito: { aura: 10 }, efeito2: { aura: 20 } },
   dango:   { nome: 'Dango (presente)', tipo: 'item' },
   incenso: { nome: 'Incenso (presente)', tipo: 'item' },
@@ -751,10 +753,10 @@ const ITENS = {
 const LOJA_VENDA = {
   bam_loja: ['onigiri', 'agua', 'bandagem', 'cordas', 'cantil'],        // Loja da Trilha: suprimentos de viagem
   vil_suprimentos: ['onigiri', 'cha', 'tochas', 'cordas', 'bandagem'],  // Loja de Suprimentos
-  vil_alfaiate: ['kimono_treino', 'kimono_azul'],                       // Alfaiataria: kimonos
+  vil_alfaiate: ['kimono_treino', 'kimono_azul', 'kimono_reforcado'],                       // Alfaiataria: kimonos
   vil_ceramica: ['amuleto_foco', 'flor_liz'],                           // Cerâmica e artesanato
-  cer_oficina: ['kimono_treino', 'luvas_couro'],                        // Oficina dos Artesãos de Sakura: vestimentas e luvas
-  tg_oficina: ['kimono_azul', 'amuleto_foco'],                          // Oficina dos Artesãos do Grande Templo
+  cer_oficina: ['kimono_treino', 'luvas_couro', 'luvas_combate'],                        // Oficina dos Artesãos de Sakura: vestimentas e luvas
+  tg_oficina: ['kimono_azul', 'kimono_reforcado', 'amuleto_foco'],                          // Oficina dos Artesãos do Grande Templo
   vil_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'bandagem'], bam_ervas: ['erva_cura', 'pomada', 'raiz_ginseng'],
   out_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'cha'], cac_ervas: ['erva_cura', 'pomada', 'raiz_ginseng', 'cha_pessego'],       // Casas de ervas e remédios
   flor_de_liz: ['flor_liz', 'lirio_branco', 'arranjo_floral', 'flor_silvestre'],                                                  // Floricultura da Lane
@@ -4338,7 +4340,7 @@ function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto;
 const MENU_ABAS = [['atr', 'Atributos'], ['tec', 'Técnicas'], ['inv', 'Inventário']];
 let menuAba = 'atr', menuItemSel = null;
 const ICONE_ITEM = { onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
-  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', kimono_treino: '🥋', kimono_azul: '🥋', luvas_couro: '🧤', amuleto_foco: '📿',
+  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', kimono_treino: '🥋', kimono_azul: '🥋', kimono_reforcado: '🥋', luvas_combate: '🥊', luvas_couro: '🧤', amuleto_foco: '📿',
   dango: '🍡', incenso: '🪔', flor_silvestre: '🌼', papel: '📜', buque: '💐', cesto_karina: '🧺', marcador: '🔖' };
 const ICONE_SLOT = { roupa: '🥋', luvas: '🧤', amuleto: '📿' }, NOME_SLOT = { roupa: 'Roupa', luvas: 'Luvas', amuleto: 'Amuleto' };
 // posição visual da árvore (coluna, linha) e de quem vem antes. A ordem é só visual: os requisitos (nível, faixa, chefes) continuam os de TEC_AKIRA.
@@ -4357,7 +4359,7 @@ function menuAtributos() {
   h += `</div><div><h3>Equipamento</h3>`;
   ['roupa', 'luvas', 'amuleto'].forEach(sl => { const id = e.equip[sl], it = id && ITENS[id];
     h += `<div class="mn-slot">${ICONE_SLOT[sl]} <div><small>${NOME_SLOT[sl]}</small><br>${it ? '<b>' + it.nome + '</b>' + (e.reforma[id] === 2 ? ' (nível 2)' : '') + '<br><small>' + it.desc + '</small>' : '<small>vazio</small>'}</div></div>`; });
-  h += `<h3>Efeitos totais</h3><p>Vida máxima: <b>${maxHp()}</b> • Aura máxima: <b>${maxAura()}</b></p><p>Dano: <b>x${multDano().toFixed(2)}</b></p>`;
+  h += `<h3>Efeitos totais</h3><p>Vida máxima: <b>${maxHp()}</b> • Aura máxima: <b>${maxAura()}</b></p><p>Dano: <b>x${multDano().toFixed(2)}</b> • Defesa: <b>-${Math.round(Math.min(.5, eqEfeito('def')) * 100)}% do dano recebido</b></p>`;
   h += `</div></div>`;
   h += `<h3>Graduação e missões</h3>` + painelGraduacao();
   const q = e.missoes.papeis_perdidos;
@@ -7368,6 +7370,7 @@ function iniciarEsquiva(ix, iy) {
 }
 function danoJogador(dano, ox, oy) {
   if (jog.iframes > 0 || jog.morto || jog.z > 5) return;               // no ar o golpe passa por baixo
+  dano = Math.max(1, Math.round(dano * (1 - Math.min(.5, eqEfeito('def')))));   // kimono reforçado: reduz o dano recebido
   const guarda = jog.est === 'livre' && teclas.KeyL;
   const d = Math.hypot(jog.x - ox, jog.y - oy) || 1;
   if (guarda && jog.defT < .18) {                                        // defesa perfeita: no tempo certo!
@@ -16076,6 +16079,7 @@ function desenharSetaMissao(g) {
 
 window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
 Object.assign(window.AKIRA.dbg, { danoEm, iniciarFimDoJogo, hist: () => ({ c: histCena, f: histFala }), alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
+Object.assign(window.AKIRA.dbg, { danoJogador, eqEfeito, equipar, multDano });
 
 /* ---------- Texturas do chão: SÓ os tiles do painel "TILES / CENÁRIOS" da arte de referência (recortados, 38x38) ----------
    O resto do cenário é desenhado por código e passa pelo filtro de pixel art HD para ficar com o mesmo gráfico. */
