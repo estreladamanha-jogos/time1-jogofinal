@@ -1469,7 +1469,7 @@ function construirBambuzal() {
   [[8.2, 12.3], [1.8, 12.3], [8.4, 21.8], [18.3, 6.6], [19.2, 2.8]].forEach(([x, y]) => res.push({ x, y, r: .8 }));
   [[23.2, 7.2], [23.2, 10.8]].forEach(([x, y]) => { res.push({ x, y, r: .8 }); m.objs.push({ tipo: 'makiwara', x, y, r: .25, spr: SPR.makiwara }); });
   npc(m, { nome: 'Treinador Ren', x: 20.5, y: 8, dir: 2, pal: PAL_REN, fala: 'ren' });
-  npc(m, { nome: 'Mestra Débora', x: 18.6, y: 10.4, dir: 2, pal: PAL_NPC.debora, fala: 'debora' });      // área inicial de treinamento
+  npc(m, { nome: 'Mestra Débora', x: 15.6, y: 12.6, dir: 2, pal: PAL_NPC.debora, fala: 'debora' });      // área inicial de treinamento
   m.objs.push({ tipo: 'boneco', x: 22, y: 11.4, r: .3, spr: SPR.boneco, hp: 9999, wob: 0, alvo: true, treino: true });
   res.push({ x: 18.6, y: 10.4, r: 1.2 }, { x: 22, y: 11.4, r: 1 });
 
@@ -1583,7 +1583,7 @@ const DEF_OBJ = {
   coluna: { r: .35 }, colunaQuebrada: { r: .35 }, estatua: { r: .4 }, altar: { r: .6 }, lanternaPedra: { r: .15 },
   cerca: { r: .4 }, cesto: { r: .25 }, torii: { r: 0 }, cachoeira: { r: .9, arr: true }, boneco: { r: .3 },
   meditar: { r: 0, k: 'almofada' }, estante: { r: .5 }, mesa: { r: .7 },
-  cogumelo: { r: 0 }, tocha: { r: .12 }, carrinho: { r: .55 }, caixote: { r: .38 }, barril: { r: .3 }, estandarte: { r: .12 }, folhasMonte: { r: 0 }, tronco: { r: .5 }, tufo: { r: 0 }
+  cogumelo: { r: 0 }, tocha: { r: .12 }, carrinho: { r: .55 }, caixote: { r: .38 }, barril: { r: .3 }, estandarte: { r: .12 }, folhasMonte: { r: 0 }, tronco: { r: .5 }, tufo: { r: 0 }, nenufar: { r: 0 }
 };
 function mkObj(k, rnd, ex) {
   const d = DEF_OBJ[k] || {}; let s = SPR[d.k || k];
@@ -1823,7 +1823,7 @@ const CFG = {
       fixos, npcs: [N({ nome: 'Rita', x: 15, y: 16, dir: 2, pal: PAL_RITA, fala: 'rita' }),
         N({ nome: 'Ayame', x: 20.5, y: 12.6, dir: 3, pal: PAL_NPC.ayame, fala: 'ayame' }), N({ nome: 'Luiza', x: 9.4, y: 12.6, dir: 1, pal: PAL_NPC.luiza, fala: 'luiza' }),
         N({ nome: 'Lucas', x: 9.2, y: 22.2, dir: 1, pal: PAL_NPC.lucas, fala: 'lucas' }), N({ nome: 'Levi', x: 21, y: 21.6, dir: 3, pal: PAL_NPC.levi, fala: 'levi' }),
-        N({ nome: 'Maya', x: 22.6, y: 19.2, dir: 3, pal: PAL_NPC.maya, fala: 'maya' })],
+        N({ nome: 'Maya', x: 26.4, y: 18.4, dir: 3, pal: PAL_NPC.maya, fala: 'maya' })],
       placas: [[17.6, 28.6, 'Grande Templo das Artes Marciais. Cada área abre conforme a sua faixa.']],
       borda: 'cerejeira', bordaPasso: .9, flores: 0,
       amb: { cores: ['#ffc0d6', '#ffffff'], kx: .5, ky: .5, t: 2 }
@@ -3201,8 +3201,15 @@ function renascerInimigos(M) {
 function gerarChunk(M, c) {
   c.gerado = true;
   const x0 = c.ci * CHUNK, y0 = c.cj * CHUNK, x1 = Math.min(M.w, x0 + CHUNK), y1 = Math.min(M.h, y0 + CHUNK);
-  const R = M.regiaoEm(x0 + 1, y0 + 1); if (!R || R.lago) return;
+  const R = M.regiaoEm(x0 + 1, y0 + 1); if (!R) return;
   const rnd = mulberry32((c.ci * 92821 + c.cj * 68917 + M.semente) | 0);
+  if (R.lago) {                                                        // lago: folhas de nenúfar espalhadas pela água (não bloqueiam)
+    for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
+      if (M.tiles[j][i] !== T.AGUA || M.bloq[j][i] || rnd() > .09) continue;
+      guardarEstatico(M, mkObj('nenufar', rnd, { x: i + .15 + rnd() * .7, y: j + .15 + rnd() * .7 }));
+    }
+    return;
+  }
   const noNucleo = (x, y) => R.nucleo && x >= R.nucleo[0] - 1 && x < R.nucleo[2] + 1 && y >= R.nucleo[1] - 1 && y < R.nucleo[3] + 1;
   const por = (k, x, y, ex) => guardarEstatico(M, mkObj(k, rnd, Object.assign({ x, y }, ex)));
   // 1. cerca viva nas bordas da região (menos onde passa caminho)
@@ -3236,6 +3243,14 @@ function gerarChunk(M, c) {
     }
   }
   const area = (x1 - x0) * (y1 - y0), fator = area / R.areaOrig * .85;
+  // 5. preenchimento: o chão vazio ganha tufos de capim e nenúfares nas poças de água da região
+  for (let t = 0, n = 0, alvo = Math.round(area * .09); n < alvo && t < alvo * 5; t++) {
+    const x = x0 + .5 + rnd() * (x1 - x0 - 1), y = y0 + .5 + rnd() * (y1 - y0 - 1);
+    if (noNucleo(x, y) || (M.exits && M.exits.some(e => Math.hypot(e.x - x, e.y - y) < 2.5))) continue;
+    const i = Math.floor(x), j = Math.floor(y);
+    if (M.tiles[j][i] === T.AGUA) { if (!M.bloq[j][i] && rnd() < .25) { por('nenufar', x, y); n++; } continue; }
+    if (livreG(M, x, y, 0, .25, true)) { por('tufo', x, y); n++; }
+  }
   // 2. grupos (moitas de bambu, bosques)
   (R.grupos || []).forEach(([k, n, r, a, b]) => {
     let q = n * fator; q = Math.floor(q) + (rnd() < q % 1 ? 1 : 0);
@@ -4084,9 +4099,12 @@ function iniciarAcao(n, op) {
   if (!op.obj && (n === 'sentar' || n === 'dormir')) op.obj = mapa.objs.find(o => Math.hypot(o.x - jog.x, o.y - jog.y) < 1.5 && (n === 'dormir' ? o.tipo === 'cama' : ['banco', 'almofada', 'cadeira'].includes(o.tipo)));
   jog.atividade = { dur: op.dur || (n === 'comer' ? 2.4 : 0), fim: op.fim, relogio: op.relogio || (n === 'dormir' ? 30 : 1) };
   if (op.obj) { jog.atividade.volta = [jog.x, jog.y]; jog.x = op.obj.x; jog.y = op.obj.y + .12; }
+  if (op.obj && n === 'dormir') jog.atividade.altura = ALTURA_CAMA;   // deitado: o corpo fica sobre o colchão, não no chão
   jog.est = 'acao'; jog.acao = n; jog.t = 0; jog.dir = 2; jog.costas = false; jog.z = 0; jog.anda = false;
   salvar(); return true;
 }
+const ALTURA_CAMA = 15;                                              // altura do colchão em pixels (desenho)
+function alturaCorpo() { return jog.z + (jog.est === 'acao' && jog.atividade && jog.atividade.altura || 0); }
 function descansarNaCama(o) {
   iniciarAcao('dormir', { obj: o, dur: 4, relogio: 150, fim: () => {
     estado.hp = maxHp(); estado.aura = maxAura();
@@ -4674,8 +4692,8 @@ function desenharBarco(sx, sy, comAkira) {
   const p = W(-.1, 0, 6), tr = jog.barcoTr, remando = (B.rapido > .5 || jog.remar > 0) && !tr;
   const an = tr ? (tr.tipo === 'in' ? 'boatIn' : 'boatOut') : remando ? 'boatRow' : 'boatSit', A = Akira.ANIM[an];
   const fr = tr ? Math.min(A.frames - 1, Math.floor(Math.min(1, tr.t / tr.dur) * (A.frames - 1) * 3) / 3) : (Math.floor((remando ? B.remo : B.bob * 2) * 3) / 3) % A.frames;
-  if (tr) { const [px, py] = iso(jog.x, jog.y); desenharAkira(px, py, an, fr, jog.face, jog.z, 1, false, null, jog.costas); return; }
-  g.save(); g.beginPath(); g.rect(p[0] - 60, p[1] - 160, 120, 162); g.clip(); desenharAkira(p[0], p[1] + 4, an, fr, jog.face, 0, .999, false, null, jog.costas); g.restore();
+  if (tr) { const [px, py] = iso(jog.x, jog.y); desenharAkira(px, py, an, fr, jog.face, alturaCorpo(), 1, false, null, jog.costas); return; }
+  g.save(); g.beginPath(); g.rect(p[0] - 60, p[1] - 160, 120, 162); g.clip(); desenharAkira(p[0], p[1] + 4, an, fr, jog.face, alturaCorpo(), .999, false, null, jog.costas); g.restore();
   if (remando) {                                                          // remo entrando na água no ritmo da remada
     const ph = Math.sin(B.remo * Math.PI * 2 / A.frames * 1), hx = p[0] + jog.face * 7, hy = p[1] - 18, wx = p[0] - jog.face * (6 + ph * 8), wy = p[1] + 9;
     bRisco(g, hx, hy, wx, wy, 1.6, '#6e4626'); g.fillStyle = '#9a6a3a'; g.beginPath(); g.ellipse(wx, wy, 2.6, 1.2, 0, 0, TAU); g.fill();
@@ -4864,7 +4882,7 @@ function akiraCoberto(lista) {
 }
 function desenharSilhuetaAkira(g) {
   const [jx, jy] = iso(jog.x, jog.y), [an, fr] = animJogador();
-  desenharAkira(jx, jy, an, fr, jog.face, jog.z, .5, false, null, jog.costas);
+  desenharAkira(jx, jy, an, fr, jog.face, alturaCorpo(), .5, false, null, jog.costas);
   g.save(); g.globalAlpha = .55 + .15 * Math.sin(tempo * 4); g.strokeStyle = '#7ff3ff'; g.lineWidth = 1.2;
   g.beginPath(); g.ellipse(jx, jy, 7, 3.5, 0, 0, TAU); g.stroke(); g.restore();   // anel no pé para achar o Akira
 }
@@ -12997,6 +13015,11 @@ function cogumeloSpr(cor) {                                              // cogu
   }, { luz: { x: 0, y: -8, r: 14, c: cor } });
 }
 const SP2 = {
+  nenufar: v => hi(18, 10, 9, 6, g => {                                   // folhas de nenúfar boiando na água (com flor rosa às vezes)
+    [[9, 5, 6.5, 3.4, 0], [12.5, 4.5, 4, 2.4, .6]].forEach(([x, y, rx, ry, a], k) => {
+      g.beginPath(); g.ellipse(x, y, rx, ry, a, .35, Math.PI * 2 - .35); g.lineTo(x, y); g.closePath(); g.fillStyle = k ? '#4f9a50' : '#5fb35a'; g.fill(); g.strokeStyle = 'rgba(20,60,40,.7)'; g.lineWidth = .5; g.stroke(); });
+    if (v) { g.beginPath(); g.arc(8, 4, 1.6, 0, Math.PI * 2); g.fillStyle = '#ffd0e0'; g.fill(); g.beginPath(); g.arc(8, 4, .6, 0, Math.PI * 2); g.fillStyle = '#e0508a'; g.fill(); }
+  }),
   tocha: () => hi(16, 40, 8, 36, g => {                                   // tocha de parede/chão (caverna)
     sombraSuave(g, 8, 36, 4, 1.6, .35); madeira(g, 6.6, 14, 2.8, 22, '#5a3a20', .6);
     retR(g, 4.5, 12, 7, 3, .8); contorno(g, '#3a3a4a', .5, '#141420');
@@ -13511,7 +13534,7 @@ function criarSprites(SPR) {
   SPR.paredeCavCristal = [paredeCavSpr(32, 91, 1), paredeCavSpr(36, 92, 2), paredeCavSpr(30, 93, 1), paredeCavSpr(34, 94, 2)];
   SPR.cogumelo = [cogumeloSpr('#7fe0ff'), cogumeloSpr('#d08aff'), cogumeloSpr('#ff8fd0')];
   for (const k of ['tocha', 'carrinho', 'caixote', 'barril', 'folhasMonte', 'tronco']) SPR[k] = SP2[k]();
-  SPR.estandarte = [SP2.estandarte('#c8322a'), SP2.estandarte('#2f5fb8')]; SPR.tufo = [SP2.tufo(0), SP2.tufo(1)];
+  SPR.estandarte = [SP2.estandarte('#c8322a'), SP2.estandarte('#2f5fb8')]; SPR.tufo = [SP2.tufo(0), SP2.tufo(1)]; SPR.nenufar = [SP2.nenufar(0), SP2.nenufar(1)];
   SPR.corrimaoI = SP.corrimao(true); SPR.corrimaoJ = SP.corrimao(false); SPR.cavernaBoca = SP.cavernaBoca();
   SPR.selo = seloSpr(false); SPR.seloOk = seloSpr(true);
   for (const k in SP4) SPR[k] = SP4[k]();
@@ -13560,7 +13583,7 @@ function desenharObj(o, sx, sy) {
       if (embarcado()) { const [bx, by] = iso(BARCO.x, BARCO.y); desenharBarco(bx, by, true); break; }
       const face = jog.virando && jog.virando.t < .11 ? jog.virando.de : jog.face;      // virando na água: meia volta ainda com o lado antigo
       if (jog.z < 4 && ((jog.linhaV || 0) > .6 || (jog.afundaV || 0) > .6)) desenharAkiraNaAgua(sx, sy, an, fr, face, o.flash > 0 ? 'r' : false);
-      else desenharAkira(sx, sy, an, fr, face, jog.z, 1, o.flash > 0 ? 'r' : false, null, jog.costas); break;
+      else desenharAkira(sx, sy, an, fr, face, alturaCorpo(), 1, o.flash > 0 ? 'r' : false, null, jog.costas); break;
     }
     case 'npc': {
       virarObj(o);
@@ -17214,7 +17237,7 @@ function desenharSetaMarca(g) {
   g.restore();
 }
 /* ---------- missão principal: seta na borda da tela e próximo lugar de cada passo (Mestra Débora e treino) ---------- */
-const ALVO_DEBORA = { x: 18.6, y: 10.4, nome: 'Mestra Débora' };      // posições no mapa do Bambuzal (no mundo: somadas à origem da região)
+const ALVO_DEBORA = { x: 15.6, y: 12.6, nome: 'Mestra Débora' };      // posições no mapa do Bambuzal (no mundo: somadas à origem da região)
 const ALVO_BONECO = { x: 22, y: 11.4, nome: 'Boneco de treino' };
 const ALVO_PATIO = { x: 12.5, y: 9.5, nome: 'Pátio de treino' };
 function saidaDoMundoMaisPerto(alvo, nome) {                          // porta do mundo (ex.: 'biblioteca') mais perto do jogador
