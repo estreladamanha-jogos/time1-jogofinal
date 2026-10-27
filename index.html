@@ -546,6 +546,7 @@ body .xp i, body.gotico .xp i { background: linear-gradient(180deg, #fff3c0 0%, 
   }
 </style>
 <style>
+#telaMorte[hidden] { display:none !important; }
 #telaMorte { position:fixed; inset:0; z-index:10000; background: radial-gradient(ellipse at 50% 30%, #3a0b1c 0%, #1a0a24 55%, #07030c 100%); color:#f6e2a0; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:auto; font-family:'Cinzel', serif; }
 #telaMorte::before { content:''; position:absolute; inset:10px; border:2px solid #d9b25a; box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #000; pointer-events:none; }
 #morteArte { width:min(75vh,94vw,660px); height:min(61vh,76vw,537px); overflow:hidden; flex-shrink:0; border:2px solid #d9b25a; box-shadow: 0 0 0 2px #000, 0 0 28px rgba(192,24,47,.55); }
@@ -750,6 +751,9 @@ const ITENS = {
   raiz_ginseng: { nome: 'Raiz de ginseng (+30 aura)', tipo: 'consumivel', aura: 30, preco: 12 },
   lirio_branco: { nome: 'Lírio branco (presente)', tipo: 'item', preco: 12 },
   arranjo_floral: { nome: 'Arranjo floral (presente)', tipo: 'item', preco: 25 },
+  flores_gabriela: { nome: 'Flores da admiradora (para o Lucas)', tipo: 'missao' },
+  carta_gabriela: { nome: 'Carta sem assinatura', tipo: 'missao' },
+  presente_lucas: { nome: 'Presente do Lucas (para a Luiza)', tipo: 'missao' },
   kimono_treino: { nome: 'Kimono de treino', tipo: 'equipamento', slot: 'roupa', preco: 60, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#e9e2cf', giS: '#b9ae95', giSS: '#948a74' } },
   kimono_azul: { nome: 'Kimono azul', tipo: 'equipamento', slot: 'roupa', preco: 90, desc: 'troca a cor do kimono (sem efeito de combate)', visual: { gi: '#2f5fa8', giS: '#1f3f78', giSS: '#152b55' } },
   luvas_couro: { nome: 'Luvas de couro', tipo: 'equipamento', slot: 'luvas', preco: 45, desc: '+10% de dano', efeito: { dano: .10 }, efeito2: { dano: .20 } },
@@ -841,7 +845,7 @@ const PAL_NPC = {
   kenzo: PN('#2f4f8a', '#d9a37c', '#eeeeee', 'longo', '#7a5a2a', { olho: 'angry' }), ayame: PN('#7a6a8a', '#e8c8a8', '#c8c8d0', 'coque', '#e0b44a'),
   gil: PN('#1e1e24', '#5a3a28', '#4a2a1a', 'longo', '#222222'), pibe: PN('#f2f2f2', '#e8b890', '#5a3a1a', 'curto', '#333333', { testa: '#2a2a2a' }),
   ramor: PN('#f2f2f2', '#f1c9a5', '#151515', 'longo', '#7a3ab0', { olho: 'angry', boca: null }), michele: PN('#7a4a2a', '#6a4030', '#2a1a10', 'coque', '#5a3a1a'),
-  luiza: PN('#5a1e3a', '#5a3a28', '#111111', 'longo', '#e0b44a'), lane: PN('#f6f6f2', '#6a4030', '#1a1010', 'coque', '#f08ab0'),
+  luiza: PN('#5a1e3a', '#5a3a28', '#111111', 'longo', '#e0b44a'), gabriela: PN('#f4f4f0', '#f6dcc8', '#111111', 'coque', '#e8e8e8', { boca: 'smile' }), lane: PN('#f6f6f2', '#6a4030', '#1a1010', 'coque', '#f08ab0'),
   lucas: PN('#3a4a5a', '#c08a60', '#151515', 'curto', '#222222'), henrique: PN('#f6f6f2', '#5a3a28', '#2a1a10', 'longo', '#27ae60', { olho: 'angry', boca: null }),
   nicolas: PN('#f6f6f2', '#5a3a28', '#2a1a3a', 'curto', '#f39c12'), david: PN('#f6f6f2', '#5a3a28', '#1a1010', 'espeto', '#f4d03f'),
   miguel: PN('#f6f6f2', '#4e3222', '#1a1010', 'curto', '#f4d03f'), levi: PN('#f6f6f2', '#b88a60', '#1a1010', 'espeto', '#f4d03f', { esc: .82 }),
@@ -1741,6 +1745,7 @@ const CFG = {
       { x: 29.1, y: 7, w: .9, h: 2, alvo: 'templos', sx: 1.8, sy: 14, nome: 'Templos Antigos' }
     ],
     fixos: [['estatua', 4.6, 19.6], ['lanternaPedra', 6.8, 18.2]],
+    npcs: [{ nome: 'Gabriela', x: 17.5, y: 16.5, dir: 3, pal: PAL_NPC.gabriela, fala: 'gabriela' }],
     placas: [[12.4, 24, 'Floresta do Outono. Dizem que há um caminho escondido entre as árvores, a oeste.']],
     grupos: [['arvoreOutono', 20, .35, 3, 6]], borda: 'arvoreOutono', bordaPasso: .9, espalhar: [['toco', 8], ['pedra', 8], ['arbusto', 6]],
     floresCores: ['#d9482b', '#f0b03a', '#e8742a'],
@@ -4997,7 +5002,7 @@ function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto;
 const MENU_ABAS = [['atr', 'Atributos'], ['tec', 'Técnicas'], ['inv', 'Inventário']];
 let menuAba = 'atr', menuItemSel = null;
 const ICONE_ITEM = { onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
-  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', kimono_treino: '🥋', kimono_azul: '🥋', kimono_reforcado: '🥋', luvas_combate: '🥊', luvas_couro: '🧤', amuleto_foco: '📿',
+  cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', flores_gabriela: '💐', carta_gabriela: '💌', presente_lucas: '🎁', kimono_treino: '🥋', kimono_azul: '🥋', kimono_reforcado: '🥋', luvas_combate: '🥊', luvas_couro: '🧤', amuleto_foco: '📿',
   dango: '🍡', incenso: '🪔', flor_silvestre: '🌼', papel: '📜', buque: '💐', cesto_karina: '🧺', marcador: '🔖',
   mochi: '🍡', ramen: '🍜', cha_jasmim: '🫖', refresco_yuzu: '🧃', tonico_bambu: '🎋', elixir_sakura: '🌸', luvas_ferro: '🥊', amuleto_tigre: '🐯', amuleto_lotus: '🪷', kimono_mestre: '🥋', fragmento_jade: '💚', pergaminho_antigo: '📜', cogumelo_shiitake: '🍄', semente_lotus: '🌰' };
 const ICONE_SLOT = { roupa: '🥋', luvas: '🧤', amuleto: '📿' }, NOME_SLOT = { roupa: 'Roupa', luvas: 'Luvas', amuleto: 'Amuleto' };
@@ -5152,7 +5157,7 @@ function reformarEquip(slot) {
 }
 const RYO_NOME = 'Ryō';
 // recompensa em Ryō por missão (parâmetro de balanceamento: simples 20–60, intermediária 60–150, difícil 150–350)
-const REC_RYO = { papeis_perdidos: 80, debora_fundamentos: 40, debora_alvo: 50, debora_defesa: 60, debora_gemeos: 160, buque_imperatriz: 130, ajudar_nicolas: 200, catalogar_biblioteca: 170, cesto_roubado: 110, grande_torneio: 500 };
+const REC_RYO = { cartas_gabriela: 150, papeis_perdidos: 80, debora_fundamentos: 40, debora_alvo: 50, debora_defesa: 60, debora_gemeos: 160, buque_imperatriz: 130, ajudar_nicolas: 200, catalogar_biblioteca: 170, cesto_roubado: 110, grande_torneio: 500 };
 function pulsoRyo(cls) { const e = document.getElementById('hRyo'); if (!e) return; e.classList.remove('ganho', 'gasto'); void e.offsetWidth; e.classList.add(cls); }
 function ganharDinheiro(q, avisar) {
   q = Math.floor(q); if (!isFinite(q) || q <= 0) return;
@@ -5418,7 +5423,7 @@ const PERSONAGENS = {
   akira: { nome: 'Akira' },
   rita: { nome: 'Rita' }, debora: { nome: 'Mestra Débora' }, kenzo: { nome: 'Mestre Kenzo' }, ayame: { nome: 'Ayame' }, gil: { nome: 'Gil' },
   davi: { nome: 'Davi' }, ramor: { nome: 'Ramor' }, pibe: { nome: 'Pibe' }, michele: { nome: 'Michele' }, luiza: { nome: 'Luiza' }, lane: { nome: 'Lane' },
-  lucas: { nome: 'Lucas' }, henrique: { nome: 'Henrique' }, nicolas: { nome: 'Nicolas' }, david: { nome: 'David' }, miguel: { nome: 'Miguel' },
+  gabriela: { nome: 'Gabriela' }, lucas: { nome: 'Lucas' }, henrique: { nome: 'Henrique' }, nicolas: { nome: 'Nicolas' }, david: { nome: 'David' }, miguel: { nome: 'Miguel' },
   levi: { nome: 'Levi' }, valkira: { nome: 'Valkira' }, pietra: { nome: 'Pietra' }, maya: { nome: 'Maya' }, karina: { nome: 'Karina' }, alana: { nome: 'Alana' },
   gemeos: { nome: 'David e Miguel', retrato: 'david' }
 };
@@ -5455,6 +5460,7 @@ const MISSOES = {
   buque_imperatriz: { nome: 'O buquê da imperatriz', objetivo: () => (estado.inv.buque ? 'Leve o buquê para Luiza, no Grande Templo' : 'Busque o buquê na Flor de Liz (Caminhos das Cerejeiras)') },
   ajudar_nicolas: { nome: 'Ajude o Nicolas', objetivo: () => 'Derrote os inimigos que cercam o Nicolas nas Cavernas' },
   catalogar_biblioteca: { nome: 'Catalogar a biblioteca', objetivo: () => 'Leia as 4 estantes da biblioteca do Davi (' + Object.keys(estado.mprog.estantes || {}).length + '/4)' },
+  cartas_gabriela: { nome: 'Admiradora secreta', objetivo: () => ((estado.inv.flores_gabriela || estado.inv.carta_gabriela) ? 'Leve as flores e a carta ao Lucas, no Grande Templo' : 'Fale com a Gabriela, na Floresta do Outono') + ' (' + (estado.flags.gab_ent || 0) + '/3 entregas)' },
   cesto_roubado: { nome: 'O cesto roubado', objetivo: () => estado.inv.cesto_karina ? 'Leve o cesto de volta para a Karina' : 'Derrote o Ladrão de Tangerinas, que fugiu pela Floresta das Tangerinas, e recupere o cesto' }
 };
 const stM = id => estado.missoes[id] || 'nao_iniciada';
@@ -5465,9 +5471,9 @@ const stM = id => estado.missoes[id] || 'nao_iniciada';
    ===================================================================== */
 const SOCIAL_MISSOES = {                                                // missões de cada personagem (as que existem no jogo)
   davi: ['papeis_perdidos', 'catalogar_biblioteca'], debora: ['debora_fundamentos', 'debora_alvo', 'debora_defesa', 'debora_gemeos'], nicolas: ['ajudar_nicolas'],
-  luiza: ['buque_imperatriz'], karina: ['cesto_roubado'], gil: ['grande_torneio'], gemeo_agua: ['debora_gemeos'], gemeo_vento: ['debora_gemeos']
+  luiza: ['buque_imperatriz'], gabriela: ['cartas_gabriela'], karina: ['cesto_roubado'], gil: ['grande_torneio'], gemeo_agua: ['debora_gemeos'], gemeo_vento: ['debora_gemeos']
 };
-const SOCIAL_ORDEM = ['henrique', 'nicolas', 'pietra', 'luna', 'gemeo_agua', 'gemeo_vento', 'rita', 'davi', 'debora', 'luiza', 'karina', 'gil'];
+const SOCIAL_ORDEM = ['henrique', 'nicolas', 'pietra', 'luna', 'gemeo_agua', 'gemeo_vento', 'rita', 'davi', 'debora', 'luiza', 'gabriela', 'karina', 'gil'];
 let socialAberto = false, socialAba = 'respeito', socialBloq = 0;
 const socialEl = document.createElement('section'); socialEl.id = 'social'; socialEl.hidden = true; document.body.appendChild(socialEl);
 (() => { const st = document.createElement('style'); st.textContent = `
@@ -5623,8 +5629,46 @@ const DIALOGOS = {
       ], opcoes: 'cardapio' }
   ],
   michele: [{ falas: [F('michele', 'curiosa', 'Você deve ter derrotado muita gente pra chegar aqui, né?'), F('akira', '', 'Alguns...'), F('michele', 'assustada', 'Deus me livre virar lutadora, imagina alguém quebrar minha unha? E só de pensar já fico com medo de apanhar.')] }],
-  lucas: [{ falas: [F('lucas', 'entediado', 'Essa parada de lutar não tá com nada!'), F('akira', '', 'Não diga isso, o karatê é uma arte milenar.'), F('lucas', 'sedutor', 'Baboseira, arte milenar são as garotas daqui, inclusive eu já estou de olho em uma.')] }],
+  gabriela: [
+    { se: () => stM('cartas_gabriela') === 'nao_iniciada', falas: [
+        F('gabriela', 'timida', 'Ah! Desculpa, eu estava escondida atrás dessa árvore... Você viu alguém passar por aqui?'),
+        F('akira', '', 'Não. Você está bem?'),
+        F('gabriela', 'apaixonada', 'Estou... é que eu sou uma admiradora secreta do Lucas!'),
+        F('akira', '', 'Admiradora secreta? Do Lucas?'),
+        F('gabriela', 'apaixonada', 'Eu já me apresentei a ele por carta, como admiradora secreta. Ele nunca soube quem eu sou, e eu quero que continue assim!'),
+        F('gabriela', 'timida', 'Eu não consigo falar com ele cara a cara. Meu coração dispara e as palavras somem.'),
+        F('gabriela', 'pedindo', 'Você pode levar flores e uma carta pra ele? Não diga meu nome, por favor. Diga só que vem de uma admiradora.')],
+      opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'cartas_gabriela', estado: 'em_andamento' }, { item: 'flores_gabriela', qtd: 1 }, { item: 'carta_gabriela', qtd: 1 }] }, { t: 'Agora não.' }] },
+    { se: () => stM('cartas_gabriela') === 'em_andamento' && (estado.inv.flores_gabriela > 0 || estado.inv.carta_gabriela > 0), falas: [
+        F('gabriela', 'animada', 'Leva logo as flores e a carta pro Lucas, no Grande Templo! Ele precisa ler antes que a coragem acabe.')] },
+    { se: () => stM('cartas_gabriela') === 'em_andamento' && (estado.flags.gab_ent || 0) < 3, falas: [
+        F('gabriela', 'apaixonada', 'Ele leu a carta? Não me conta nada ainda... Aqui tem mais flores e outra carta!')],
+      fim: [{ item: 'flores_gabriela', qtd: 1 }, { item: 'carta_gabriela', qtd: 1 }] },
+    { se: () => stM('cartas_gabriela') === 'concluida', falas: [
+        F('gabriela', 'feliz', 'Ele aceitou tudo! Mesmo achando que foi a Luiza... Obrigada, Akira. Um dia eu conto a verdade pra ele.')] },
+    { falas: [F('gabriela', 'timida', 'Ai, nem consigo olhar pra ele direito...')] }
+  ],
+  lucas: [
+    { se: () => stM('cartas_gabriela') === 'em_andamento' && estado.inv.flores_gabriela > 0 && estado.inv.carta_gabriela > 0 && (estado.flags.gab_ent || 0) < 2, falas: [
+        F('lucas', 'sedutor', 'Flores de novo? E uma carta sem assinatura... Essa admiradora secreta só pode ser a Luiza!'),
+        F('akira', '', 'Você acha?'),
+        F('lucas', 'apaixonado', 'Quem mais ficaria me olhando desse jeito? Vou mandar um presente pra ela em agradecimento.'),
+        F('lucas', 'entediado', 'Leva esse presente pra Luiza pra mim, Akira. Obrigado!')],
+      fim: [{ item: 'flores_gabriela', qtd: -1 }, { item: 'carta_gabriela', qtd: -1 }, { item: 'presente_lucas', qtd: 1 }, { fn: () => { estado.flags.gab_ent = (estado.flags.gab_ent || 0) + 1; } }] },
+    { se: () => stM('cartas_gabriela') === 'em_andamento' && estado.inv.flores_gabriela > 0 && estado.inv.carta_gabriela > 0 && (estado.flags.gab_ent || 0) === 2, falas: [
+        F('lucas', 'apaixonado', 'Três buquês e três cartas... Ela deve ser a Luiza mesmo! Eu não sei como agradecer.'),
+        F('lucas', 'sedutor', 'Leva este presente pra ela também, e diz que quem mandou foi o Lucas.')],
+      fim: [{ item: 'flores_gabriela', qtd: -1 }, { item: 'carta_gabriela', qtd: -1 }, { item: 'presente_lucas', qtd: 1 }, { fn: () => { estado.flags.gab_ent = 3; } }, { missao: 'cartas_gabriela', estado: 'concluida' }] },
+    { se: () => stM('cartas_gabriela') === 'em_andamento' && estado.inv.presente_lucas > 0, falas: [F('lucas', 'entediado', 'Já entregou o presente pra Luiza? Ela deve estar no Grande Templo.')] },
+    { falas: [F('lucas', 'entediado', 'Essa parada de lutar não tá com nada!'), F('akira', '', 'Não diga isso, o karatê é uma arte milenar.'), F('lucas', 'sedutor', 'Baboseira, arte milenar são as garotas daqui, inclusive eu já estou de olho em uma.')] }
+  ],
   luiza: [
+    { se: () => estado.inv.presente_lucas > 0, falas: [
+        F('luiza', 'surpresa', 'Um presente do Lucas? Pra mim?'),
+        F('luiza', 'envergonhada', 'Ele anda me mandando coisas... Ai, que fofo! Mas eu nunca mandei nada pra ele, viu?'),
+        F('akira', '', 'Hum... acho que ele acha que foi você.'),
+        F('luiza', 'feliz', 'Então eu aceito! Diz pra ele que eu gostei.')],
+      fim: [{ item: 'presente_lucas', qtd: -1 }, { dinheiro: 40 }] },
     { se: () => stM('buque_imperatriz') === 'nao_iniciada', falas: [F('luiza', 'educada', 'Opa... você está aí, poderia fazer um favor para mim?'), F('akira', '', 'Claro, só pedir.'),
         F('luiza', 'determinada', 'Vá até a Floresta das Cerejeiras e traga um buquê de flores para mim.'), F('akira', '', 'O... o... o quê???'), F('luiza', 'impaciente', 'Não seja tolo, as flores são para a imperatriz. Você vai ou não?')],
       opcoes: [{ t: 'Aceitar a missão', eventos: [{ missao: 'buque_imperatriz', estado: 'em_andamento' }] }, { t: 'Agora não.' }] },
