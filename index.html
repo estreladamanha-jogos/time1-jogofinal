@@ -2584,6 +2584,15 @@ const INTERACOES_ED = {
     venda.forEach(id => op.push({ t: 'Comprar: ' + ITENS[id].nome + ' — Ryō ' + ITENS[id].preco, eventos: [() => comprarItem(id, ITENS[id].preco)] }));
     op.push({ t: 'Só olhar' });
     abrirConversa({ falas: [NARR('No balcão: ' + venda.map(id => ITENS[id].nome + ' (Ryō ' + ITENS[id].preco + ')').join(', ') + '.'), NARR('Seu saldo: Ryō ' + (estado.dinheiro || 0) + '.')], opcoes: op }); },
+  bauKarate: o => {
+    if (estado.flags[o.idBau]) { aviso('O baú do dojo já foi aberto.'); return; }
+    estado.flags[o.idBau] = 1; o.spr = SPR.bauKarateAberto; Som.efeito('confirma'); fagulha(o.x, o.y, '#ffd27a', 14);
+    const r = Math.random();
+    if (r < .06) { const it = ['luvas_combate', 'kimono_reforcado', 'amuleto_foco'][Math.floor(Math.random() * 3)]; estado.inv[it] = (estado.inv[it] || 0) + 1; aviso('Baú do karatê: ' + ITENS[it].nome + '!'); }
+    else if (r < .45) { const q = 20 + Math.floor(Math.random() * 41); ganharDinheiro(q, true); }
+    else if (r < .8) { const it = ['onigiri', 'bandagem', 'cha', 'erva_cura'][Math.floor(Math.random() * 4)]; estado.inv[it] = (estado.inv[it] || 0) + 1; aviso('Baú do karatê: ' + ITENS[it].nome + ' x1'); }
+    else { const it = ['cordas', 'tochas', 'cantil', 'flor_liz'][Math.floor(Math.random() * 4)]; estado.inv[it] = (estado.inv[it] || 0) + 1; aviso('Baú do karatê: material — ' + ITENS[it].nome + ' x1'); }
+    salvar(); },
   bau: o => { const k = 'bau_' + o.idBau; if (estado.flags[k]) { aviso('O baú está vazio.'); return; }
     estado.flags[k] = 1; const p = o.premio || { cha: 1 }; for (const it in p) estado.inv[it] = (estado.inv[it] || 0) + p[it];
     aviso('Baú aberto: ' + Object.entries(p).map(([it, q]) => ITENS[it].nome + ' x' + q).join(', ')); salvar(); },
@@ -2614,7 +2623,7 @@ function falarNpcED(o) {
   const c = CASAS.find(k => k.id === 'cha'), ed = EDIF.vil_suprimentos;          // a Casa de Chá do vilarejo virou Loja de Suprimentos (o restaurante com chá fica no Grande Templo)
   if (c && ed) { c.nome = ed.nome; c.alvo = ed.salas[0].id; c.funcao = 'ed'; c.letreiro = ed.letreiro; c.palha = true; EDIF_POS.vil_suprimentos = { mapa: c.mapa, x: c.x + c.w / 2, y: c.y + c.d + 1.4 }; }
 })();
-Object.assign(DEF_OBJ, { fonte: { r: .9 }, bau: { r: .45 }, forja: { r: .9 }, sino: { r: .5 }, mural: { r: .4 }, tanque: { r: .8 }, rodaMoinho: { r: .9 }, incensario: { r: .25 }, porta: { r: 0 }, portaRocha: { r: 0 }, cestoTangerinas: { r: .3 },
+Object.assign(DEF_OBJ, { fonte: { r: .9 }, bau: { r: .45 }, bauKarate: { r: .45 }, forja: { r: .9 }, sino: { r: .5 }, mural: { r: .4 }, tanque: { r: .8 }, rodaMoinho: { r: .9 }, incensario: { r: .25 }, porta: { r: 0 }, portaRocha: { r: 0 }, cestoTangerinas: { r: .3 },
   relicario: { r: .4 }, trono: { r: .7 }, lareira: { r: .6 }, escombros: { r: .5 }, raiz: { r: .7 }, tear: { r: .7 }, prateleiraErvas: { r: .5 }, prateleiraCeramica: { r: .5 }, ponteArco: { r: 0 }, estatuaGuardiao: { r: .4 }, futon: { r: .6 }, mesaBaixa: { r: .6 } });
 
 /* =====================================================================
@@ -2712,7 +2721,40 @@ function colarNucleo(M, n, ox, oy, regiaoId) {
 
 /* ---------- objetos estáticos em chunks + lista "ativa" perto do Akira ---------- */
 const DINAMICOS = { inimigo: 1, npc: 1, boneco: 1, papel: 1, aliado: 1 };
+// ===== Baús misteriosos do karatê: 5 por região do mapa aberto e 5 na caverna; cada um abre uma vez só =====
+function espalharBausKarate(M, caixa, chave) {
+  const [x0, y0, x1, y1] = caixa, cx = Math.floor((x0 + x1) / 2), cy = Math.floor((y0 + y1) / 2);
+  const ok = (i, j) => i >= x0 && j >= y0 && i < x1 && j < y1 && M.tiles[j] && M.tiles[j][i] != null && !M.bloq[j][i] && M.tiles[j][i] !== T.AGUA;
+  let ini = null;                                                       // ponto de partida: o chão livre mais perto do centro da região
+  for (let r = 0; r < 14 && !ini; r++) for (let dj = -r; dj <= r && !ini; dj++) for (let di = -r; di <= r; di++) if (ok(cx + di, cy + dj)) { ini = [cx + di, cy + dj]; break; }
+  if (!ini) return;
+  const vistos = new Set([ini[0] + ',' + ini[1]]), fila = [ini];       // só entra o que dá para chegar andando (BFS dentro da região)
+  for (let q = 0; q < fila.length; q++) {
+    const [i, j] = fila[q];
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ni = i + a, nj = j + b, k = ni + ',' + nj; if (!vistos.has(k) && ok(ni, nj)) { vistos.add(k); fila.push([ni, nj]); } }
+  }
+  const rnd = mulberry32(([...chave].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 17)) >>> 0);
+  const cand = fila.filter(([i, j]) => {                                // bordas, saídas e áreas ocupadas ficam de fora
+    if (i < x0 + 2 || j < y0 + 2 || i > x1 - 3 || j > y1 - 3) return false;
+    if (M.exits && M.exits.some(e => Math.hypot(e.x - (i + .5), e.y - (j + .5)) < 3)) return false;
+    return !(M.ridx && reservado(M, i + .5, j + .5, 1.1));
+  });
+  for (let k = cand.length - 1; k > 0; k--) { const t = Math.floor(rnd() * (k + 1)); [cand[k], cand[t]] = [cand[t], cand[k]]; }
+  const escolhidos = [];
+  for (const [i, j] of cand) {
+    if (escolhidos.length >= 5) break;
+    if (escolhidos.every(([a, b]) => Math.hypot(a - i, b - j) >= 6)) escolhidos.push([i, j]);   // espalhados pela região
+  }
+  escolhidos.forEach(([i, j], k) => {
+    const id = 'bk_' + M.id + '_' + chave + '_' + k, aberto = !!estado.flags[id];
+    M.objs.push({ tipo: 'bauKarate', x: i + .5, y: j + .5, r: .45, idBau: id, spr: aberto ? SPR.bauKarateAberto : SPR.bauKarate });
+  });
+}
 function prepararChunks(M) {
+  if (!M.bausKarate) { M.bausKarate = true; try {
+    if (M.id === 'caverna') espalharBausKarate(M, [0, 0, M.w, M.h], 'caverna');
+    else if (M.cel) { for (const reg in CELULA) { const R = M.cel[CELULA[reg][1]] && M.cel[CELULA[reg][1]][CELULA[reg][0]]; if (R) espalharBausKarate(M, [R.x0, R.y0, R.x1, R.y1], reg); } }
+  } catch (e) { } }
   M.chunks = new Map(); M.dyn = []; M.idx = new Map(); M.cAtual = null; M.grandes = [];
   const tipoPorNome = {}; Object.keys(TIPOS_INIM).forEach(k => { tipoPorNome[TIPOS_INIM[k].nome] = k; });
   for (const o of M.objs) {
@@ -7071,7 +7113,7 @@ function tickMissoes(dt, antX, antY) {
 }
 
 const INTERATIVOS = { npc: 'Falar', placa: 'Ler', papel: 'Pegar', meditar: 'Meditar', selo: 'Selo antigo', barco: 'Embarcar',
-  leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', obra: 'Ver obras', bau: 'Abrir', sino: 'Tocar o sino', treino: 'Treinar' };
+  leitura: 'Ler', contemplar: 'Contemplar', reliquia: 'Examinar', inscricao: 'Examinar', mural: 'Ler avisos', cama: 'Descansar', banho: 'Banho quente', servico: 'Pedir chá', cardapio: 'Ver cardápio', balcao: 'Ver produtos', obra: 'Ver obras', bau: 'Abrir', bauKarate: 'Abrir baú do karatê', sino: 'Tocar o sino', treino: 'Treinar' };
 function alvoInteracao() {
   let melhor = null, menor = 1.5, melhorP = 9;
   const PRIO = { npc: 0, placa: 1 };                                   // prioridade: NPC > placa > outros
@@ -12011,6 +12053,19 @@ function vasoFlor(g, x, y, s, seed, cores) {                           // vaso c
 }
 // móveis e objetos novos dos interiores (desenhados por código, mesmo estilo dos outros)
 const SP4 = {
+  bauKarate: () => hi(40, 34, 20, 29, g => {                       // baú do dojo: tampa vermelha laqueada, faixa branca (obi) e punho dourado
+    sombraSuave(g, 20, 29, 16, 4, .35); madeira(g, 5, 12, 30, 16, '#6e2a1a', 1.4);
+    retR(g, 4, 6, 32, 9, 4); g.fillStyle = '#a8362a'; g.fill(); contorno(g, '#3a1008', .8, '#1a0604');
+    g.fillStyle = '#f4f0e8'; g.fillRect(4, 14, 32, 3); g.fillStyle = '#1a1a1a'; g.fillRect(4, 14, 2, 3); g.fillRect(34, 14, 2, 3);   // faixa branca com as pontas pretas
+    [9, 31].forEach(x => { g.fillStyle = '#c9a23a'; g.fillRect(x - 1.4, 6, 2.8, 22); });                                       // reforços dourados
+    g.fillStyle = '#f2c94c'; retR(g, 16, 10, 8, 8, 2); g.fill(); g.fillStyle = '#7a4a10'; g.fillRect(18, 13, 4, 1.2); g.fillRect(18, 15.5, 4, 1.2);   // punho fechado (emblema)
+  }),
+  bauKarateAberto: () => hi(40, 34, 20, 29, g => {                 // mesmo baú com a tampa aberta e brilho lá dentro
+    sombraSuave(g, 20, 29, 16, 4, .35); brilho(g, 20, 14, 14, '#ffd27a', .7); madeira(g, 5, 14, 30, 14, '#6e2a1a', 1.4);
+    g.fillStyle = '#1a0604'; g.fillRect(6, 13, 28, 3); g.fillStyle = '#f4f0e8'; g.fillRect(4, 19, 32, 2);
+    retR(g, 4, 0, 32, 6, 3); g.fillStyle = '#a8362a'; g.fill(); contorno(g, '#3a1008', .8, '#1a0604');
+    [9, 31].forEach(x => { g.fillStyle = '#c9a23a'; g.fillRect(x - 1.4, 6, 2.8, 22); });
+  }),
   bau: () => hi(40, 34, 20, 29, g => {                             // baú com reforços de metal
     sombraSuave(g, 20, 29, 16, 4, .35); madeira(g, 5, 12, 30, 16, '#8a5a30', 1.4);
     retR(g, 4, 6, 32, 9, 4); contorno(g, lin(g, 0, 6, 0, 15, ['#c98f50', '#8a5a30']), .8, '#3a2010');
