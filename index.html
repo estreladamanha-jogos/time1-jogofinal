@@ -765,6 +765,7 @@ const ITENS = {
   flor_silvestre: { nome: 'Flor silvestre (presente)', tipo: 'item' },
   marcador: { nome: 'Marcador de páginas (presente do Davi)', tipo: 'missao' },
   // ===== Expansão de itens (parte 1): cada um com raridade, origem e efeito real =====
+  pao_doce: { nome: 'Pão doce (+30 vida)', tipo: 'consumivel', cura: 30, preco: 8, raridade: 'comum', origem: 'Padaria' },
   mochi: { nome: 'Mochi de feijão (+20 vida, +10 aura)', tipo: 'consumivel', cura: 20, aura: 10, preco: 9, raridade: 'comum', origem: 'Vila' },
   ramen: { nome: 'Ramen quente (+70 vida)', tipo: 'consumivel', cura: 70, preco: 24, raridade: 'incomum', origem: 'Restaurante' },
   cha_jasmim: { nome: 'Chá de jasmim (+45 aura)', tipo: 'consumivel', aura: 45, preco: 16, raridade: 'incomum', origem: 'Casas de ervas' },
@@ -786,6 +787,8 @@ const LOJA_VENDA = {
   bam_loja: ['onigiri', 'agua', 'bandagem', 'cordas', 'cantil', 'refresco_yuzu', 'tonico_bambu'],        // Loja da Trilha: suprimentos de viagem
   vil_suprimentos: ['onigiri', 'cha', 'tochas', 'cordas', 'bandagem', 'mochi'],  // Loja de Suprimentos
   vil_alfaiate: ['kimono_treino', 'kimono_azul', 'kimono_reforcado'],                       // Alfaiataria: kimonos
+  vil_padaria: ['onigiri', 'mochi', 'pao_doce'],                                         // Padaria do Hakdey
+  cer_karate: ['kimono_treino', 'kimono_azul', 'luvas_couro', 'luvas_combate', 'kimono_reforcado'],   // Loja de equipamentos de karatê
   vil_ceramica: ['amuleto_foco', 'amuleto_tigre', 'flor_liz'],                           // Cerâmica e artesanato
   cer_oficina: ['kimono_treino', 'luvas_couro', 'luvas_combate'],                        // Oficina dos Artesãos de Sakura: vestimentas e luvas
   tg_oficina: ['kimono_azul', 'kimono_reforcado', 'amuleto_foco', 'luvas_ferro', 'kimono_mestre'],                          // Oficina dos Artesãos do Grande Templo
@@ -2233,6 +2236,7 @@ const EDIFICIOS = {
     ['cer_cripta', 'Cripta das Raízes Rosadas', 'catacumba', '', {}],
     ['cer_casa1', 'Casa da Família Sakurai', 'casa', '', { npc: ['Senhora Sakurai', 'morador'] }],
     ['cer_casa2', 'Casa do Jardineiro Ren-ji', 'casa', '', { npc: ['Jardineiro Hideo', 'morador'] }],
+    ['cer_karate', 'Loja de Equipamentos de Karatê do Caminho das Cerejeiras', 'loja', 'KARATÊ', { salaTipo: ['lojaKarateSala'], npc: ['Lojista Kenta', 'loja'] }],
     ['cer_ultima', 'Pavilhão da Última Pétala', 'pavilhao', 'ÚLTIMA PÉTALA', {}]
   ],
   vilarejo: [
@@ -2242,6 +2246,7 @@ const EDIFICIOS = {
     ['vil_ceramica', 'Oficina de Cerâmica e Artesanato', 'ceramica', 'CERÂMICA', { npc: ['Ceramista Toki', 'artesao'] }],
     ['vil_banhos', 'Casa de Banhos', 'banhos', 'BANHOS', { npc: ['Atendente Yu', 'pousada'] }],
     ['vil_salao', 'Salão Comunitário', 'salaoCom', 'SALÃO', { npc: ['Ancião Kazuo', 'morador'] }],
+    ['vil_padaria', 'Padaria do Hakdey', 'loja', 'PADARIA', { salaTipo: ['padariaSala'], npc: ['Padeiro Hakdey', 'loja'] }],
     ['vil_guarda', 'Posto de Guarda', 'guarda', 'GUARDA', { npc: ['Guarda Masa', 'guarda'] }],
     ['vil_casa1', 'Casa dos Tanaka', 'casa', '', { npc: ['Senhora Tanaka', 'morador'] }],
     ['vil_casa2', 'Casa do Agricultor Ine', 'casa', '', { npc: ['Agricultor Ine', 'morador'] }],
@@ -2322,7 +2327,7 @@ function estiloIntEd(ed) {
 }
 const EDIF = {}, SALA_DE = {}, EDIF_POS = {};
 for (const reg in EDIFICIOS) for (const [id, nome, tipo, letreiro, op] of EDIFICIOS[reg]) {
-  const lista = (TIPO_EDIF[tipo] || []).map(s => typeof s === 'string' ? { k: s } : s);
+  const lista = ((op && op.salaTipo) || TIPO_EDIF[tipo] || []).map(s => typeof s === 'string' ? { k: s } : s);
   const salas = lista.map((s, i) => ({ id: 'ed_' + id + '_' + i, k: s.k, de: i === 0 ? null : (s.de != null ? s.de : 0), i }));
   EDIF[id] = { id, nome, tipo, letreiro, op: op || {}, reg, salas };
   salas.forEach(s => { SALA_DE[s.id] = { ed: id, i: s.i }; });
@@ -2337,10 +2342,10 @@ const NOME_SALA = { dojo: 'Salão de treino', vestiario: 'Vestiário', loja: 'Lo
   alojamento: 'Dormitório', residencia: 'Sala dos mestres', palacioAudiencia: 'Salão de audiência', palacioReuniao: 'Sala de reuniões', palacioPrivado: 'Aposentos', administrativo: 'Administração', refeitorio: 'Refeitório',
   cozinhaServico: 'Cozinha e armazém', tunel: 'Passagem', tunelCamara: 'Câmara escondida', pagode: 'Térreo do pagode', pagodeAlto: 'Andar das eras', abrigo: 'Abrigo',
   restEntrada: 'Entrada e recepção', restSalao: 'Salão principal', restBalcao: 'Balcão de atendimento', restCha: 'Sala de cerimônia do chá', restCozinha: 'Cozinha', restPreparo: 'Área de preparo', restDespensa: 'Despensa',
-  restUtensilios: 'Depósito de utensílios', restJardim: 'Jardim interno', restPrivativa: 'Sala privativa', restDepTraseiro: 'Depósito de alimentos',
+  padariaSala: 'Padaria', lojaKarateSala: 'Loja de equipamentos', restUtensilios: 'Depósito de utensílios', restJardim: 'Jardim interno', restPrivativa: 'Sala privativa', restDepTraseiro: 'Depósito de alimentos',
   tgPatio: 'Pátio externo', tgCerimonial: 'Salão cerimonial', tgDojo: 'Dojo central', tgTreino: 'Salas de treino', tgArena: 'Arena', tgAlojamento: 'Alojamentos', tgMestres: 'Residência dos mestres',
   tgBiblioteca: 'Biblioteca marcial', tgArquivo: 'Arquivo de técnicas lendárias', tgRefeitorio: 'Refeitório e cozinha', tgEnfermaria: 'Enfermaria', tgJardim: 'Jardins de meditação', tgReliquias: 'Câmara de relíquias', tgLideranca: 'Salão da liderança' };
-const TAM_SALA = { santuario: [10, 8], dojo: [12, 9], tgPatio: [15, 11], tgDojo: [13, 10], tgArena: [13, 10], restSalao: [13, 9], palacioAudiencia: [13, 10], catacumbaGaleria: [13, 8], tgCerimonial: [13, 9], quartos: [11, 8], alojamento: [12, 8], refeitorio: [12, 9], tgRefeitorio: [12, 9], restEntrada: [11, 8] };
+const TAM_SALA = { padariaSala: [11, 8], lojaKarateSala: [12, 8], santuario: [10, 8], dojo: [12, 9], tgPatio: [15, 11], tgDojo: [13, 10], tgArena: [13, 10], restSalao: [13, 9], palacioAudiencia: [13, 10], catacumbaGaleria: [13, 8], tgCerimonial: [13, 9], quartos: [11, 8], alojamento: [12, 8], refeitorio: [12, 9], tgRefeitorio: [12, 9], restEntrada: [11, 8] };
 const SALA_SOMBRIA = { ruinas: 1, ruinasCamara: 1, catacumbaEntrada: 1, catacumbaGaleria: 1, catacumbaCripta: 1, tunel: 1, tunelCamara: 1, mina: 1, minaFundo: 1, camaraSelo: 1, arenaNucleo: 1 };
 
 const PAL_ED = [['#3a5a7a', '#f1c9a5', '#2a1a10', 'curto', '#222'], ['#7a3a2a', '#e0a070', '#1a1010', 'coque', '#c9a24a'], ['#4a6a3a', '#c08a60', '#151515', 'longo', '#3a2a1a'], ['#6a4a7a', '#f6c19a', '#3a2010', 'tranca', '#f4d03f'],
@@ -2452,6 +2457,11 @@ const SALAS = {
   fortalezaArmas: C => { const { m, ed } = C; C.linhaFundo('suporteArmas', 3); C.p('barril', .9, 3); C.p('caixote', .9, 4.2); C.i('bau', 'bau', m.w - 1.3, 3, .45, { idBau: ed.id }); },
   arenaNucleo: C => { const { m, ed } = C; pisoMeio(m, 3, 2, m.w - 3, m.h - 2, T.TATAME); C.p('arquibancada', 3, 1.1); C.p('arquibancada', m.w - 3, 1.1); C.i('inscricao', 'altar', m.w / 2, 1.2, .5, { selo: ed.op.selo }); },
   oficinaArt: C => { const { m, ed } = C; C.p('bancadaTrabalho', m.w / 2, 1.8); C.p('ferramentasParede', 1.4, .85); C.p('prateleiraCeramica', m.w - 1.4, .85); C.p('tear', .9, 3.4); C.p('tronco', m.w - 1, 3.6); C.i('balcao', 'balcao_recepcao', m.w / 2 - .6, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 2, 2.6); },
+  padariaSala: C => { const { m, ed } = C; C.linhaFundo('prateleiraCeramica', 3); C.p('fornoBarro', m.w - 1.5, 3.1); C.p('caixote', .9, 2.6); C.p('caixote', 1.9, 2.6); C.p('barril', .9, 4.6); C.p('cesto', m.w - .9, 5.6);
+    C.i('balcao', 'balcao_recepcao', m.w / 2 - .4, 2.6, .9, { estoque: ['Pão doce', 'Mochi', 'Onigiri'], idLoja: ed.id }); C.p('mesaBaixa', m.w - 3.2, 4.6); C.p('almofada', m.w - 4.4, 5.4); C.p('vasoGrande', 1, 4.2);
+    const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.8, 1.8); C.deco(2); },
+  lojaKarateSala: C => { const { m, ed } = C; C.linhaFundo('prateleiraUtensilios', 3); C.p('sacoPancada', .9, 3.4); C.p('suporteArmas', m.w - .9, 2.2); C.p('cesto', m.w - .9, 4.4); C.p('biombo', m.w - 1.6, 5.4);
+    C.i('balcao', 'balcao_recepcao', m.w / 2 - .4, 2.6, .9, { estoque: ['Kimono de treino', 'Luvas de combate'], idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.8, 1.8); C.deco(2); },
   alfaiataria: C => { const { m, ed } = C; C.p('tear', 2, 1); C.p('tear', m.w - 2, 1); C.p('prateleiraUtensilios', m.w / 2, .85); C.p('biombo', m.w - 1.4, 3.6); C.p('mesa', 2.6, 4.2); C.i('balcao', 'balcao_recepcao', m.w / 2 - .6, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2 + 1.4, 2.4); },
   ceramica: C => { const { m, ed } = C; C.p('prateleiraCeramica', 1.4, .85); C.p('prateleiraCeramica', 3.6, .85); C.p('forja', m.w - 2, 1.3); C.p('bancadaTrabalho', 3, 3.6); C.p('vasoGrande', m.w - 1, 4); C.i('balcao', 'balcao_recepcao', m.w / 2 + 1.8, 3.4, .9, { idLoja: ed.id }); const n = ed.op.npc; if (n) C.npc(n[0], n[1], m.w / 2, 2.4); },
   banhosEntrada: C => { const { m, ed } = C; C.p('balcao_recepcao', 3.4, 2.2); C.p('cesto', .9, 1.1); C.p('cesto', .9, 2.2); C.p('vasoGrande', m.w - 1, 1.2); const n = ed.op.npc; if (n) C.npc(n[0], n[1], 5, 1.7); },
@@ -5001,7 +5011,7 @@ function alternarMenu() { menuAberto = !menuAberto; menuEl.hidden = !menuAberto;
 /* ---------- MENU M: três telas próprias (atributos, árvore de técnicas, inventário) ---------- */
 const MENU_ABAS = [['atr', 'Atributos'], ['tec', 'Técnicas'], ['inv', 'Inventário']];
 let menuAba = 'atr', menuItemSel = null;
-const ICONE_ITEM = { onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
+const ICONE_ITEM = { pao_doce: '🥐', onigiri: '🍙', cha: '🍵', agua: '💧', bandagem: '🩹', sushi: '🍣', camarao: '🍤', cha_pessego: '🍑', cha_limao: '🍋',
   cordas: '🪢', tochas: '🔥', cantil: '🫗', flor_liz: '🌸', erva_cura: '🌿', pomada: '🧴', raiz_ginseng: '🫚', lirio_branco: '🌷', arranjo_floral: '💐', flores_gabriela: '💐', carta_gabriela: '💌', presente_lucas: '🎁', kimono_treino: '🥋', kimono_azul: '🥋', kimono_reforcado: '🥋', luvas_combate: '🥊', luvas_couro: '🧤', amuleto_foco: '📿',
   dango: '🍡', incenso: '🪔', flor_silvestre: '🌼', papel: '📜', buque: '💐', cesto_karina: '🧺', marcador: '🔖',
   mochi: '🍡', ramen: '🍜', cha_jasmim: '🫖', refresco_yuzu: '🧃', tonico_bambu: '🎋', elixir_sakura: '🌸', luvas_ferro: '🥊', amuleto_tigre: '🐯', amuleto_lotus: '🪷', kimono_mestre: '🥋', fragmento_jade: '💚', pergaminho_antigo: '📜', cogumelo_shiitake: '🍄', semente_lotus: '🌰' };
@@ -17280,7 +17290,7 @@ function desenharSetaMissao(g) {
   g.restore();
 }
 
-window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
+window.AKIRA = { Som, get modo() { return MODO_TELA; }, Akira, exportarSprites, jog, carregarMapa, Cen, SPR, CASAS, T, EDIF, EDIF_POS, get mapa() { return mapa; }, get estado() { return estado; }, dbg: { sincronizarBarco, barcoCabe, correnteza, aguaEm, BARCO: () => BARCO, Torneio, Luta2D, CenaSelos, tor, faseCampanha, tecla: (k, v) => { teclas[k] = !!v; }, modoTela: m => { MODO_TELA = m; }, usarTecnica, EFX, ALIADOS, MapaMundo, estiloAkira, estiloPal, PAL_NPC, PAL_PIETRA, acessorioChefe, QUAL, aplicarQualidade, aperta: k => { edge[k] = true; }, gerarFichaDragao, conversar, origemNucleo, atualizarAtivos, get chefe() { return chefeAtual; }, chefeZerou, iniciarFinal, escolherParceiro, ganharRespeito, grauDe, perigos, CHEFES, ARQ, IA_FAIXA, INIM_CFG, ESP_ARQ, GOLPE_ARQ, projeteis, prepararArq, mundoYokai, calcularChefe, CHEFE_AJUSTE, CHEFE_CINE, ED: { EDIF, SALA_DE, EDIF_POS, INTERACOES_ED }, MAPAS, CELULA, retrato: (c, id) => desenharRetrato(c, id, 'sorridente', null), PAL_DAVI, PAL_RITA, PAL_PIETRA, PAL_HANA, PAL_KENJI, get cine() { return cine; }, pularCine, ativarSelo, iniciarChefe, GUARDIOES, get desafioGemeos() { return desafioGemeos; }, obterMundo, obterCaverna, gerarChunk, chunkDe, CHUNK, RW, falaMestre, iniciarExame, estadoGraduacao, encerrarExame, get exameAtual() { return exameAtual; }, get dlg() { return dlg; }, GRADUACOES, EXAMES, validarSave, saveGuardado, desenharArqObj, desenharChefeObj, desenharAkira, escuridao, horaJogo, akiraCoberto, get chuvaI() { return chuvaI; } } };                       // para testes no console
 Object.assign(window.AKIRA.dbg, { danoEm, iniciarFimDoJogo, hist: () => ({ c: histCena, f: histFala }), alvoMissaoPrincipal, introAk: () => introAk, baloes: () => baloes, colideP: (x, y) => colide(x, y, jog.r, jog), MISSOES, NPC_ED, MISSOES_ED, aceitarMissaoEd, concluirMissaoEd, missaoNpcED, progM, tickMissoesNpc, darPresente, alternarSocial, montarSocial, missaoCacou, missaoTreinou, EDIF_POS, garantirPosEdif, interagir, RELACOES, relacao, alvoRastreio, stM, get jogRef() { return jog; } });
 Object.assign(window.AKIRA.dbg, { danoJogador, eqEfeito, equipar, multDano });
 
