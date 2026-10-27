@@ -4933,8 +4933,8 @@ function passoPrincipal() {       // devolve { t: texto, a: alvo } do passo atua
   }
   if (estado.faixa < 7) return { t: 'Salão de Graduação (Grande Templo): prova da faixa ' + FAIXAS[estado.faixa + 1].nome, a: ALVOS_P.salao };
   if (!(estado.torneio && estado.torneio.campeao)) {
-    const t = estado.torneio || {}, f = typeof faltamConhecer === 'function' ? faltamConhecer().length : 0;
-    return { t: !t.inscrito && f ? 'Torneio: conheça os 8 competidores (' + (8 - f) + '/8) e fale com o Gil' : !t.inscrito ? 'Fale com o Gil: inscrição no Torneio do Grande Templo' : 'Vença o Torneio do Grande Templo (Arena dos Grandes Mestres)', a: !t.inscrito && f ? null : ALVOS_P.gil };
+    const t = estado.torneio || {};
+    return { t: !t.inscrito ? 'Fale com o Gil: inscrição no Torneio do Grande Templo' : 'Vença o Torneio do Grande Templo (Arena dos Grandes Mestres)', a: ALVOS_P.gil };
   }
   const ch = estado.chefes || {}, falta = ORDEM_CHEFES.filter(id => id !== 'oitavo_dragao' && !ch[id]);
   if (falta.length) return { t: 'Derrote o guardião e o chefe de cada região (' + (7 - falta.length) + '/7): ' + CHEFES[falta[0]].nome + ', em ' + nomeRegiaoEd(CHEFES[falta[0]].regiao), a: { chefe: falta } };
@@ -15986,9 +15986,7 @@ function conheceCompetidor(id) {
 }
 const faltamConhecer = () => COMPETIDORES.filter(c => !conheceCompetidor(c));
 function podeInscrever() {
-  const falta = faltamConhecer();
   if (LIBERAR_TUDO_TESTE) return { ok: true };
-  if (falta.length) return { ok: false, motivo: 'Você ainda não conhece todos os competidores: ' + falta.map(c => NOME_COMP[c]).join(', ') + '.' };
   if (estado.nivel < REGRAS_TORNEIO.nivel || estado.faixa < REGRAS_TORNEIO.faixa) return { ok: false, motivo: 'Para entrar: nível ' + REGRAS_TORNEIO.nivel + ' e faixa ' + FAIXAS[REGRAS_TORNEIO.faixa].nome + ' ou acima.' };
   return { ok: true };
 }
@@ -16038,7 +16036,7 @@ DIALOGOS.gil.unshift(
 );
 MISSOES.grande_torneio = { nome: 'O Torneio do Grande Templo', objetivo: () => {
   const t = tor(); if (t.campeao) return 'Campeão!';
-  if (!t.inscrito) { const f = faltamConhecer().length; return f ? 'Conheça os competidores (' + (8 - f) + '/8) e fale com o Gil' : 'Inscreva-se com o Gil (Arena dos Grandes Mestres)'; }
+  if (!t.inscrito) return 'Inscreva-se com o Gil (Arena dos Grandes Mestres)';
   if (t.elim) return 'Peça revanche ao Gil';
   const m = proximaLutaAkira(); return m ? NOME_RODADA[rodadaDe(m)] + ' contra ' + NOME_COMP[ladosDe(m)[1]] + ' — fale com o Gil' : '';
 } };
