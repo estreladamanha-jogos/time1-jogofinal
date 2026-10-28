@@ -93,10 +93,25 @@
   #fimJogo button:hover, #fimJogo button:focus-visible { background: #d9b25a; color: #1a0a10; outline: none; }
   #fimJogo .fimLista { text-align: left; margin: 0 auto 12px; max-width: 520px; }
   #fimJogo .fimLista p { margin: 0 0 9px; }
-  #fimCreditos { overflow: hidden; height: min(62vh, 440px); margin-bottom: 14px; -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent); }
-  #fimCreditos .rola { animation: fimRola 38s linear forwards; padding-top: 40vh; }
-  @keyframes fimRola { from { transform: translateY(0); } to { transform: translateY(-135%); } }
-  #fimCreditos h3 { color: #fff6d0; margin: 22px 0 6px; font-family: 'Cinzel', serif; }
+  /* CRÉDITOS FINAIS: sobem de baixo para cima, centralizados; no fim vai para a tela "OBRIGADO POR JOGAR!" */
+  #creditosFim { position: fixed; inset: 0; z-index: 61; overflow: hidden; text-align: center; background: radial-gradient(ellipse at 50% 40%, #2a0f36 0%, #0b0614 60%, #000 100%); }
+  #creditosFim[hidden] { display: none; }
+  #creditosFim .rola { position: absolute; left: 0; right: 0; top: 100%; padding: 0 16px; box-sizing: border-box; will-change: transform; animation: creditosSobem 48s linear forwards; }
+  @keyframes creditosSobem { from { transform: translateY(0); } to { transform: translateY(calc(-100vh - 100%)); } }
+  #creditosFim .cargoTitulo { font-family: 'Cinzel', serif; font-weight: 800; color: #f6e2a0; font-size: clamp(30px, 7vw, 54px); letter-spacing: 4px; margin: 0 0 clamp(40px, 10vh, 90px); text-shadow: 0 0 16px rgba(217,178,90,.8), 2px 2px 0 #000; }
+  #creditosFim .nome { font-family: 'Cinzel', serif; font-weight: 800; color: #fff; font-size: clamp(26px, 6vw, 46px); margin: 0 0 clamp(30px, 8vh, 64px); text-shadow: 0 0 12px rgba(255,255,255,.35), 2px 2px 0 #000; }
+  #creditosFim .bloco { margin-top: clamp(60px, 14vh, 120px); }
+  #creditosFim .cargo { font-family: 'Cinzel', serif; color: #d9b25a; font-size: clamp(16px, 3.6vw, 24px); letter-spacing: 3px; margin: 0 0 14px; }
+  #creditosFim .linha { font-size: clamp(14px, 3.2vw, 20px); color: #f1e6d0; margin: 0 0 12px; text-shadow: 1px 1px 0 #000; }
+  #creditosFim .linha b { color: #fff; }
+  /* TELA FINAL: "OBRIGADO POR JOGAR!" */
+  #fimFinal { position: fixed; inset: 0; z-index: 62; display: grid; place-items: center; padding: 18px; box-sizing: border-box; text-align: center; color: #f6e2a0; font-family: 'Pixelify Sans', 'Cinzel', monospace; background: radial-gradient(ellipse at 50% 25%, #4a1f58 0%, #1a0f2e 45%, #05030a 100%); opacity: 0; transition: opacity 1.4s ease; }
+  #fimFinal.on { opacity: 1; }
+  #fimFinal[hidden] { display: none; }
+  #fimFinal h2 { font-family: 'Cinzel', serif; color: #ffe27a; font-size: clamp(26px, 6vw, 44px); letter-spacing: 3px; margin: 0 0 14px; text-shadow: 0 0 16px rgba(217,178,90,.8), 2px 2px 0 #000; }
+  #fimFinal p { color: #f1e6d0; font-size: clamp(14px, 3.4vw, 18px); margin: 0 0 26px; text-shadow: 1px 1px 0 #000; }
+  #fimFinal button { font: inherit; font-size: 16px; padding: 10px 18px; min-height: 44px; margin: 6px; color: #f6e2a0; cursor: pointer; background: linear-gradient(180deg, #5a1630, #14061c); border: 2px solid #d9b25a; border-radius: 4px; box-shadow: 0 0 0 1px #000; }
+  #fimFinal button:hover, #fimFinal button:focus-visible { background: #d9b25a; color: #1a0a10; outline: none; }
   #estrelaZerou { display: inline-block; font-size: 22px; margin-left: 8px; vertical-align: middle; filter: drop-shadow(0 0 6px #ffd84a); }
   #estrelaZerou[hidden] { display: none; }
   /* faixa de missão no topo da tela: SEMPRE mostra a missão principal (uma linha) e, menor, a missão extra */
@@ -709,6 +724,33 @@ body .xp i, body.gotico .xp i { background: linear-gradient(180deg, #fff3c0 0%, 
   <button type="button" id="histPular">PULAR ▸</button>
 </section>
 <section id="fimJogo" hidden aria-live="polite"><div class="fimPag" id="fimPag"></div></section>
+<section id="creditosFim" hidden aria-label="Créditos finais">
+  <div class="rola">
+    <h2 class="cargoTitulo">DESENVOLVEDORES</h2>
+    <p class="nome"><b>Alana</b></p>
+    <p class="nome"><b>Gabriella</b></p>
+    <p class="nome"><b>Henrique</b></p>
+    <p class="nome"><b>Emanuel</b></p>
+    <p class="nome"><b>Gabriel</b></p>
+    <p class="nome"><b>Yagami</b></p>
+    <div class="bloco">
+      <p class="cargo">STUDIO ESTRELA DA MANHÃ</p>
+      <p class="linha">Diretor: <b>Mariana Ruther de Araujo</b></p>
+      <p class="linha">Edição: <b>Emanuel</b></p>
+      <p class="linha">Design: <b>Henrique</b></p>
+    </div>
+  </div>
+</section>
+<section id="fimFinal" hidden>
+  <div>
+    <h2>OBRIGADO POR JOGAR!</h2>
+    <p>Desenvolvido pelo Studio Estrela da Manhã</p>
+    <div>
+      <button type="button" id="fimVoltarMenu">VOLTAR AO MENU</button>
+      <button type="button" id="fimJogarNovamente">JOGAR NOVAMENTE</button>
+    </div>
+  </div>
+</section>
 <section id="pausa" hidden>
   <div class="tela pausaMenu"><div class="painel">
     <h2>PAUSA</h2>
@@ -7984,13 +8026,30 @@ function mostrarVitoria() {
   $('fimCont').onclick = () => { Som.efeito && Som.efeito('confirma'); fecharFimDoJogo(); };
   $('fimCont').focus({ preventScroll: true });
 }
+// Créditos: sobem sozinhos de baixo para cima; ao acabarem, aparece a tela "OBRIGADO POR JOGAR!"
+let creditosRodando = false;
 function mostrarCreditosFim() {
-  const el = $('fimPag');
-  el.innerHTML = '<div id="fimCreditos"><div class="rola"><h2>AKIRA</h2><p>A Jornada do Karatê</p><h3>Equipe</h3><p>Time 1 — Estrela da Manhã Jogos</p><h3>Personagens e retratos</h3><p>Bíblia oficial de NPCs e splash arts da equipe</p>' +
-    '<h3>Cenário</h3><p>Tiles de referência: arte de referência da equipe</p><h3>Código, pixel art, música e efeitos</h3><p>Gerados por código com ajuda do Claude (Anthropic)</p><h3>Professora</h3><p>Por acreditar no jogo desde o primeiro pátio de treino</p><h3>E você</h3><p>Obrigado por jogar até o fim!</p></div></div>' +
-    '<div class="fimBotoes"><button type="button" id="fimVolta">Voltar</button></div>';
-  $('fimVolta').onclick = () => { Som.efeito && Som.efeito('confirma'); mostrarVitoria(); }; $('fimVolta').focus({ preventScroll: true });
+  if (creditosRodando) return;                                   // não inicia duas vezes
+  creditosRodando = true;
+  $('fimJogo').hidden = true;                                    // some a tela de texto/vitória; música e sons continuam
+  const cr = $('creditosFim'), rola = cr.querySelector('.rola');
+  cr.hidden = false;
+  rola.addEventListener('animationend', function fimCreditos() {
+    rola.removeEventListener('animationend', fimCreditos);
+    cr.hidden = true; creditosRodando = false;
+    mostrarTelaFinal();
+  });
+  // reinicia a animação caso já tenha rodado antes
+  rola.style.animation = 'none'; void rola.offsetWidth; rola.style.animation = '';
 }
+function mostrarTelaFinal() {
+  const f = $('fimFinal');
+  f.hidden = false; requestAnimationFrame(() => f.classList.add('on'));
+  $('fimVoltarMenu').focus({ preventScroll: true });
+}
+function sairDaTelaFinal() { const f = $('fimFinal'); f.classList.remove('on'); f.hidden = true; }
+$('fimVoltarMenu').onclick = () => { Som.efeito && Som.efeito('confirma'); sairDaTelaFinal(); MODO_TELA = 'jogo'; voltarAoMenu(); };
+$('fimJogarNovamente').onclick = () => { Som.efeito && Som.efeito('confirma'); sairDaTelaFinal(); MODO_TELA = 'jogo'; comecarJogo(true); };
 function fecharFimDoJogo() {
   $('fimJogo').hidden = true; MODO_TELA = 'jogo'; for (const k in teclas) teclas[k] = false; edge = {}; hudChave = ''; canvas.focus();
   aviso('Você pode continuar explorando. Volte pelo portal ao sul da arena.');
